@@ -1,6 +1,21 @@
 # create a new token and deploy it (use DSTokenBase)
-
 # test that it does sensible stuff
+
+
+# TODO:
+# scan through auction manager looking for new auctions
+# i.e. reconstrut auction managers state
+
+# reconstruct an individual auctions state (by scanning bid / split events)
+
+
+# watch an auction manager for new auctions and do something
+
+
+# watch an auction for new bids and do something, where something is
+# probably a trading strategy
+
+
 
 # include .sol assets with the package
 import collections
