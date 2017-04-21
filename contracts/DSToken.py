@@ -25,6 +25,9 @@ class DSToken:
     def balance_of(self, address):
         return self.contract.call().balanceOf(address)
 
+    def allowance_of(self, address, payee):
+        return self.contract.call().allowance(address, payee)
+
     def transfer(self, address, amount):
         return self.contract.transact().transfer(address, amount)
 
