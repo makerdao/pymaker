@@ -28,6 +28,9 @@ class DSToken:
     def transfer(self, address, amount):
         return self.contract.transact().transfer(address, amount)
 
+    def approve(self, address, limit):
+        return self.contract.transact().approve(address, limit)
+
     def reconstruct(self, filter_params=None):
         """Scan over Transfer event history and determine the
         current token holdings."""
