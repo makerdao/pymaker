@@ -6,8 +6,7 @@ class BasicProcessor:
     def __init__(self, strategy):
         self.strategy = strategy
 
-    def process_auctionlet(self, auction_manager, auctionlet_id, our_buyer):
-        auctionlet = auction_manager.get_auctionlet(auctionlet_id)
+    def process_auctionlet(self, auctionlet, our_buyer, auction_manager_address):
         auctionlet_info = auctionlet.get_info()
         auctionlet_expired = auctionlet.is_expired()
 
@@ -16,29 +15,26 @@ class BasicProcessor:
             return ProcessResult('Auctionlet is already gone. Removing.', forget_auctionlet=True)
 
         # get the base auction info
-        auction = auction_manager.get_auction(auctionlet_info.auction_id)
+        auction = auctionlet.get_auction()
         auction_info = auction.get_info()
 
         if auctionlet.is_expired():
             if auctionlet_info.unclaimed and (auctionlet_info.last_bidder == our_buyer):
-                # TODO CLAIM
-                # return True if claimed successfully, False otherwise
-                return ProcessResult('Expired, we will claim it. TODO.', forget_auctionlet=False)
+                claim_result = auctionlet.claim()
+                if claim_result:
+                    return ProcessResult(f"Expired, we won, claimed by us successfully.", forget_auctionlet=True)
+                else:
+                    return ProcessResult(f"Expired, we won, tried to claim it but it failed")
             else:
                 return ProcessResult('Expired, waiting to be claimed by somebody else. Removing.', forget_auctionlet=True)
         else:
-            # print("Auction status is:")
-            # print(auction_info)
-            # print(auctionlet_info)
-            # print("")
-
             if auctionlet_info.last_bidder == our_buyer:
                 return ProcessResult('We are the highest bidder. Not doing anything.')
             else:
-                action = self.strategy.action(auction_info, auctionlet_info, our_buyer.address, auction_manager.address)
+                action = self.strategy.action(auction_info, auctionlet_info, our_buyer.address, auction_manager_address)
                 if isinstance(action, ActionBid):
                     bid_amount = action.bid_amount
-                    bid_result = auction_manager.bid(auctionlet_id, bid_amount)
+                    bid_result = auctionlet.bid(bid_amount)
 
                     if bid_result:
                         return ProcessResult(f"Strategy told us to bid {bid_amount} and the bid was successfull")

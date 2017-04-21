@@ -74,15 +74,16 @@ auction_manager.on_bid(lambda bid_auction_id:
 
 
 
-active_auctions = [1, 2, 3, 4, 5, 6]
+active_auctionlets = [1, 2, 3, 4, 5, 6]
 # active_auctions = [4]
 
 while True:
-    for auction_id in active_auctions[:]:
-        print("Processing auction " + str(auction_id))
-        result = processor.process_auctionlet(auction_manager, auction_id, our_buyer)
+    for auctionlet_id in active_auctionlets[:]:
+        print("Processing auctionlet " + str(auctionlet_id))
+        auctionlet = auction_manager.get_auctionlet(auctionlet_id)
+        result = processor.process_auctionlet(auctionlet, our_buyer, auction_manager.address)
         print("Result: " + result.description)
-        if result.forget_auctionlet: active_auctions.remove(auction_id)
+        if result.forget_auctionlet: active_auctionlets.remove(auctionlet_id)
     time.sleep(5)
 
 

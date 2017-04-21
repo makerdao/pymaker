@@ -93,12 +93,23 @@ class AuctionManager:
         except:
             return None
 
-    def bid(self, auction_id, how_much):
+    def bid(self, auctionlet_id, how_much):
         """
         """
         try:
-            tx_hash = self.contract.transact().bid(auction_id, int(how_much))
+            tx_hash = self.contract.transact().bid(auctionlet_id, int(how_much))
             self.__our_tx_hashes.add(tx_hash)
+            receipt = self.wait_for_receipt(tx_hash)
+            receipt_logs = receipt['logs']
+            return (receipt_logs is not None) and (len(receipt_logs) > 0)
+        except:
+            return False
+
+    def claim(self, auctionlet_id):
+        """
+        """
+        try:
+            tx_hash = self.contract.transact().claim(auctionlet_id)
             receipt = self.wait_for_receipt(tx_hash)
             receipt_logs = receipt['logs']
             return (receipt_logs is not None) and (len(receipt_logs) > 0)
@@ -155,8 +166,17 @@ class Auctionlet:
     def is_expired(self):
         return self.auction_manager.is_auctionlet_expired(self.auctionlet_id)
 
+    def get_auction(self):
+        return Auction(self.auction_manager, self.get_info().auction_id)
+
     def get_info(self):
         return self.auction_manager.get_auctionlet_info(self.auctionlet_id)
+
+    def bid(self, how_much):
+        return self.auction_manager.bid(self.auctionlet_id, how_much)
+
+    def claim(self):
+        return self.auction_manager.claim(self.auctionlet_id)
 
     def __str__(self):
         return f"Auctionlet(auctionlet_id={self.auctionlet_id})"
