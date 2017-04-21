@@ -5,6 +5,7 @@ import json
 class DSToken:
     def __init__(self, web3, address):
         abi = self.__abi('contracts/DSToken.abi')
+        self.address = address
         self.contract = web3.eth.contract(abi=abi)(address=address)
 
         # {address => balance}

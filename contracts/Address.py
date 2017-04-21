@@ -12,4 +12,4 @@ class Address:
         return f"Address('{self.address}')"
 
     def __eq__(self, other):
-        return (self.address == other.address)
+        return self.address == other.address

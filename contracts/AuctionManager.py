@@ -68,11 +68,30 @@ class AuctionManager:
     #     state of the auction (following splits).
     #     """
 
+    def get_auction(self, auction_id):
+        return Auction(self, auction_id)
+
     def get_auction_info(self, auction_id):
         return AuctionInfo(self.contract.call().getAuctionInfo(auction_id))
 
+    def get_auctionlet(self, auctionlet_id):
+        return Auctionlet(self, auctionlet_id)
+
     def get_auctionlet_info(self, auctionlet_id):
-        return AuctionletInfo(self.contract.call().getAuctionletInfo(auctionlet_id))
+        # in case of expired and claimed auctionlets, the contract method throws
+        # so we return 'None' to let caller know the auctionlet isn't available anymore
+        try:
+            return AuctionletInfo(self.contract.call().getAuctionletInfo(auctionlet_id))
+        except:
+            return None
+
+    def is_auctionlet_expired(self, auctionlet_id):
+        # in case of expired and claimed auctionlets, the contract method throws
+        # so we return 'None' to let caller know the auctionlet isn't available anymore
+        try:
+            return self.contract.call().isExpired(auctionlet_id)
+        except:
+            return None
 
     def bid(self, auction_id, how_much):
         """
@@ -99,11 +118,23 @@ class AuctionManager:
     #     """
 
 
+class Auction:
+    def __init__(self, auction_manager, auction_id):
+        self.auction_manager = auction_manager
+        self.auction_id = auction_id
+
+    def get_info(self):
+        return self.auction_manager.get_auction_info(self.auction_id)
+
+    def __str__(self):
+        return f"Auction(auction_id={self.auction_id})"
+
+
 class AuctionInfo:
     def __init__(self, auction_info):
         self.creator = Address(auction_info[0])
-        self.buying = Address(auction_info[1])
-        self.selling = Address(auction_info[2])
+        self.selling = Address(auction_info[1])
+        self.buying = Address(auction_info[2])
         self.start_bid = auction_info[3]
         self.min_increase = auction_info[4]
         self.min_decrease = auction_info[5]
@@ -114,6 +145,21 @@ class AuctionInfo:
 
     def __str__(self):
         return pformat (vars(self))
+
+
+class Auctionlet:
+    def __init__(self, auction_manager, auctionlet_id):
+        self.auction_manager = auction_manager
+        self.auctionlet_id = auctionlet_id
+
+    def is_expired(self):
+        return self.auction_manager.is_auctionlet_expired(self.auctionlet_id)
+
+    def get_info(self):
+        return self.auction_manager.get_auctionlet_info(self.auctionlet_id)
+
+    def __str__(self):
+        return f"Auctionlet(auctionlet_id={self.auctionlet_id})"
 
 
 class AuctionletInfo:
@@ -128,3 +174,4 @@ class AuctionletInfo:
 
     def __str__(self):
         return pformat (vars(self))
+
