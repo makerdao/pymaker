@@ -1,12 +1,12 @@
+from auctions.BidUpToMaxRateStrategy import BidUpToMaxRateStrategy
+from auctions.HandleExpiredAuctionletsStrategy import HandleExpiredAuctionletsStrategy
+from auctions.IgnoreWinningAuctionletsStrategy import IgnoreWinningAuctionletsStrategy
+from auctions.OnlyOurPairStrategy import OnlyOurPairStrategy
 from web3 import HTTPProvider
 from web3 import Web3
 
-from auctions.Auctioner import Auctioner
-from auctions.strategy.BidUpToMaxRateStrategy import BidUpToMaxRateStrategy
-from auctions.strategy.ForgetGoneAuctionletsStrategy import ForgetGoneAuctionletsStrategy
-from auctions.strategy.IgnoreWinningAuctionletsStrategy import IgnoreWinningAuctionletsStrategy
-from auctions.strategy.OnlyOurPairStrategy import OnlyOurPairStrategy
-from auctions.strategy.HandleExpiredAuctionletsStrategy import HandleExpiredAuctionletsStrategy
+from auctions.AuctionEngine import AuctionEngine
+from auctions.ForgetGoneAuctionletsStrategy import ForgetGoneAuctionletsStrategy
 from contracts.Address import Address
 from contracts.DSToken import DSToken
 from contracts.ERC20Token import ERC20Token
@@ -24,6 +24,9 @@ auction_manager = AuctionManager(web3=web3, address=auction_manager_address)
 
 # the address we are trading from
 trader_address = Address('0x0061f1dbAf1e1B2E412A75D3eD6B48c3D7412D35') # buyer1
+
+#TODO we should not rely on the default account
+#TODO replace with 'from' everywhere
 web3.eth.defaultAccount = trader_address.address
 
 # DAI is what is being sold
@@ -36,6 +39,15 @@ mkr_token = DSToken(web3=web3, address=mkr_address)
 
 # maximum MKR/DAI rate we are willing to pay
 max_mkr_to_dai_rate = 0.4500
+
+
+
+# for auction discovery
+average_block_time_in_seconds = 4
+number_of_blocks_per_minute = int(60/average_block_time_in_seconds)
+number_of_hours_to_look_back_for_active_auctionlets = 24
+number_of_historical_blocks_to_scan_for_active_auctionlets = number_of_blocks_per_minute*60*number_of_hours_to_look_back_for_active_auctionlets
+
 
 
 
@@ -54,6 +66,6 @@ strategy = ForgetGoneAuctionletsStrategy(
 
 
 
-auctioner = Auctioner(auction_manager, trader_address)
-auctioner.start(strategy)
+auctioner = AuctionEngine(auction_manager, trader_address, strategy, 100000)
+auctioner.start()
 

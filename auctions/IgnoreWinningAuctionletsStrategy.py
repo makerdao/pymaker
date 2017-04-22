@@ -1,5 +1,5 @@
-from auctions.Result import Result
-from auctions.strategy.Strategy import Strategy
+from auctions.StrategyResult import StrategyResult
+from auctions.Strategy import Strategy
 
 
 # we trade only on our token pair
@@ -10,6 +10,6 @@ class IgnoreWinningAuctionletsStrategy(Strategy):
     def perform(self, auctionlet, context):
         auctionlet_info = auctionlet.get_info()
         if auctionlet_info.last_bidder == context.trader_address:
-            return Result('We are the highest bidder. Not doing anything.')
+            return StrategyResult('We are the highest bidder. Not doing anything.')
         else:
             return self.next_strategy.perform(auctionlet, context)

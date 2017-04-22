@@ -1,5 +1,5 @@
-from auctions.Result import Result
-from auctions.strategy.Strategy import Strategy
+from auctions.StrategyResult import StrategyResult
+from auctions.Strategy import Strategy
 
 
 class HandleExpiredAuctionletsStrategy(Strategy):
@@ -12,10 +12,10 @@ class HandleExpiredAuctionletsStrategy(Strategy):
             if auctionlet_info.unclaimed and (auctionlet_info.last_bidder == context.trader_address):
                 claim_result = auctionlet.claim()
                 if claim_result:
-                    return Result(f"Expired, we won, claimed by us successfully.", forget=True)
+                    return StrategyResult("Expired, we won, claimed by us successfully. Forgetting it.", forget=True)
                 else:
-                    return Result(f"Expired, we won, tried to claim it but it failed")
+                    return StrategyResult("Expired, we won, tried to claim it but claim failed")
             else:
-                return Result('Expired, waiting to be claimed by somebody else. Removing.', forget=True)
+                return StrategyResult('Expired, waiting to be claimed by somebody else. Forgetting it.', forget=True)
         else:
             return self.next_strategy.perform(auctionlet, context)

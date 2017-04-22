@@ -1,5 +1,5 @@
-from auctions.Result import Result
-from auctions.strategy.Strategy import Strategy
+from auctions.StrategyResult import StrategyResult
+from auctions.Strategy import Strategy
 
 
 class ForgetGoneAuctionletsStrategy(Strategy):
@@ -12,6 +12,6 @@ class ForgetGoneAuctionletsStrategy(Strategy):
 
         # for expired&claimed auctionlets, these methods return None
         if (auctionlet_info is None) or (auctionlet_expired is None):
-            return Result('Auctionlet is already gone. Removing.', forget=True)
+            return StrategyResult('Auctionlet is already gone. Forgetting it.', forget=True)
         else:
             return self.next_strategy.perform(auctionlet, context)

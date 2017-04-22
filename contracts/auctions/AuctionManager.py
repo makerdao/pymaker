@@ -1,4 +1,3 @@
-import time
 from pprint import pformat
 
 from contracts.Address import Address

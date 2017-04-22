@@ -1,5 +1,5 @@
-from auctions.Result import Result
-from auctions.strategy.Strategy import Strategy
+from auctions.StrategyResult import StrategyResult
+from auctions.Strategy import Strategy
 
 
 # we trade only on our token pair
@@ -14,4 +14,4 @@ class OnlyOurPairStrategy(Strategy):
         if (auction_info.selling == self.token_sell) and (auction_info.buying == self.token_buy):
             return self.next_strategy.perform(auctionlet, context)
         else:
-            return Result("Not our token pair", forget=True)
+            return StrategyResult("Not our token pair. Forgetting it.", forget=True)

@@ -1,12 +1,12 @@
-from auctions.Result import Result
 import math
 
-from auctions.strategy.Strategy import Strategy
+from auctions.StrategyResult import StrategyResult
+from auctions.Strategy import Strategy
 
 
 class BidUpToMaxRateStrategy(Strategy):
-    def __init__(self, max_sell_to_buy_rate, percentage_step):
-        self.max_sell_to_buy_rate = max_sell_to_buy_rate
+    def __init__(self, max_rate_offered, percentage_step):
+        self.max_rate_offered = max_rate_offered
         self.percentage_step = percentage_step
 
     def perform(self, auctionlet, context):
@@ -19,17 +19,17 @@ class BidUpToMaxRateStrategy(Strategy):
         assert (auction_min_next_bid >= auction_current_bid)
 
         # calculate our maximum bid
-        our_max_bid = auctionlet_info.sell_amount * self.max_sell_to_buy_rate
+        our_max_bid = auctionlet_info.sell_amount * self.max_rate_offered
 
         # if the current auction bid amount has already reached our maximum bid
         # then we can not go higher, so we do not bid
         if auction_current_bid >= our_max_bid:
-            return Result("Our maximum possible bid reached")
+            return StrategyResult("Our maximum possible bid reached")
 
         # if the auction next minimum bid is greater than our maximum bid
         # then we can not go higher, so we do not bid
         if auction_min_next_bid > our_max_bid:
-            return Result("Minimal next bid exceeds our maximum possible bid")
+            return StrategyResult("Minimal next bid exceeds our maximum possible bid")
 
         # this his how much we want to bid in ideal conditions...
         our_preferred_bid = int(auction_current_bid + (our_max_bid-auction_current_bid)*self.percentage_step)
@@ -44,11 +44,11 @@ class BidUpToMaxRateStrategy(Strategy):
         our_allowance = auction_info.buying.allowance_of(context.trader_address, context.auction_manager_address)
 
         if our_bid <= auction_current_bid:
-            return Result("Our available balance is less or equal to the current auction bid")
+            return StrategyResult("Our available balance is less or equal to the current auction bid")
         elif our_bid < auction_min_next_bid:
-            return Result("Our available balance is below minimal next bid")
+            return StrategyResult("Our available balance is below minimal next bid")
         elif our_bid > our_allowance:
-            return Result("Allowance is too low, please raise allowance in order to continue participating")
+            return StrategyResult("Allowance is too low, please raise allowance in order to continue participating")
         else:
             # a set of assertions to double-check our calculations
             assert (our_bid > auction_current_bid)
@@ -57,6 +57,6 @@ class BidUpToMaxRateStrategy(Strategy):
 
             bid_result = auctionlet.bid(our_bid)
             if bid_result:
-                return Result(f"Placed a bid at {our_bid}, bid was successfull")
+                return StrategyResult(f"Placed a bid at {our_bid}, bid was successful")
             else:
-                return Result(f"Tried to place a bid at {our_bid}, but the bid failed")
+                return StrategyResult(f"Tried to place a bid at {our_bid}, but the bid failed")
