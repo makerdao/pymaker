@@ -31,7 +31,7 @@ class BasicProcessor:
             if auctionlet_info.last_bidder == our_buyer:
                 return ProcessResult('We are the highest bidder. Not doing anything.')
             else:
-                action = self.strategy.action(auction_info, auctionlet_info, our_buyer.address, auction_manager_address)
+                action = self.strategy.action(auction_info, auctionlet_info, our_buyer, auction_manager_address)
                 if isinstance(action, ActionBid):
                     bid_amount = action.bid_amount
                     bid_result = auctionlet.bid(bid_amount)

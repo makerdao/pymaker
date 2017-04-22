@@ -17,16 +17,16 @@ class ERC20Token(Contract):
         return self.contract.call().totalSupply()
 
     def balance_of(self, address):
-        return self.contract.call().balanceOf(address)
+        return self.contract.call().balanceOf(address.address)
 
     def allowance_of(self, address, payee):
-        return self.contract.call().allowance(address, payee)
+        return self.contract.call().allowance(address.address, payee.address)
 
     def transfer(self, address, amount):
-        return self.contract.transact().transfer(address, amount)
+        return self.contract.transact().transfer(address.address, amount)
 
     def approve(self, address, limit):
-        return self.contract.transact().approve(address, limit)
+        return self.contract.transact().approve(address.address, limit)
 
     def reconstruct(self, filter_params=None):
         """Scan over Transfer event history and determine the
@@ -44,3 +44,9 @@ class ERC20Token(Contract):
 
         self.state[args['from']] -= args['value']
         self.state[args['to']] += args['value']
+
+    def __eq__(self, other):
+        return self.address == other.address
+
+    def __repr__(self):
+        return f"ERC20Token(address='{self.address}'"

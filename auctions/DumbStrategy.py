@@ -13,8 +13,8 @@ class DumbStrategy:
 
     def action(self, auction_info, auctionlet_info, auctioning_address, auction_manager_address):
         # we trade only on our token pair
-        if auction_info.selling != Address(self.token_sell.address): return ActionPass("Not our token pair")
-        if auction_info.buying != Address(self.token_buy.address): return ActionPass("Not our token pair")
+        if auction_info.selling != self.token_sell: return ActionPass("Not our token pair")
+        if auction_info.buying != self.token_buy: return ActionPass("Not our token pair")
 
         # we trade only if we are not already winning the auction
         # TODO

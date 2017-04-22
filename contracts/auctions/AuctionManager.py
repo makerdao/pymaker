@@ -3,6 +3,7 @@ from pprint import pformat
 
 from contracts.Address import Address
 from contracts.Contract import Contract
+from contracts.ERC20Token import ERC20Token
 
 
 class AuctionManager(Contract):
@@ -72,7 +73,7 @@ class AuctionManager(Contract):
         return Auction(self, auction_id)
 
     def get_auction_info(self, auction_id):
-        return AuctionInfo(self.contract.call().getAuctionInfo(auction_id))
+        return AuctionInfo(self.web3, self.contract.call().getAuctionInfo(auction_id))
 
     def get_auctionlet(self, auctionlet_id):
         return Auctionlet(self, auctionlet_id)
@@ -99,7 +100,7 @@ class AuctionManager(Contract):
         try:
             tx_hash = self.contract.transact().bid(auctionlet_id, int(how_much))
             self.__our_tx_hashes.add(tx_hash)
-            receipt = self.wait_for_receipt(tx_hash)
+            receipt = self._wait_for_receipt(tx_hash)
             receipt_logs = receipt['logs']
             return (receipt_logs is not None) and (len(receipt_logs) > 0)
         except:
@@ -110,18 +111,11 @@ class AuctionManager(Contract):
         """
         try:
             tx_hash = self.contract.transact().claim(auctionlet_id)
-            receipt = self.wait_for_receipt(tx_hash)
+            receipt = self._wait_for_receipt(tx_hash)
             receipt_logs = receipt['logs']
             return (receipt_logs is not None) and (len(receipt_logs) > 0)
         except:
             return False
-
-    def wait_for_receipt(self, transaction_hash):
-        while True:
-            receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
-            if receipt != None and receipt['blockNumber'] != None:
-                return receipt
-            time.sleep(0.5)
 
 
     # def bid(self, auction_id, how_much, quantity):
@@ -142,10 +136,10 @@ class Auction:
 
 
 class AuctionInfo:
-    def __init__(self, auction_info):
+    def __init__(self, web3, auction_info):
         self.creator = Address(auction_info[0])
-        self.selling = Address(auction_info[1])
-        self.buying = Address(auction_info[2])
+        self.selling = ERC20Token(web3=web3, address=Address(auction_info[1]))
+        self.buying = ERC20Token(web3=web3, address=Address(auction_info[2]))
         self.start_bid = auction_info[3]
         self.min_increase = auction_info[4]
         self.min_decrease = auction_info[5]
