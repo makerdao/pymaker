@@ -63,6 +63,13 @@ class AuctionManager:
     def on_auction_reversal(self, handler):
         self.__on_auction_reversal_handler = handler
 
+    def discover_recent_auctionlets(self, number_of_historical_blocks, on_auctionlet_discovered):
+        """Scan over LogNewAuction event history and determine the
+        auctions that can still be active."""
+        start_block_number = self.web3.eth.blockNumber - int(number_of_historical_blocks)
+        return self.contract.pastEvents('LogNewAuction', {'fromBlock': start_block_number},
+                                        lambda log: on_auctionlet_discovered(log['args']['base_id']))
+
     # def reconstruct(self):
     #     """Scan over the event history and determine the current
     #     state of the auction (following splits).
