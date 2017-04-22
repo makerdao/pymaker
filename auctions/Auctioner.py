@@ -1,6 +1,10 @@
 import time
 
 
+# TODO the class name is not proper English
+from auctions.strategy.StrategyContext import StrategyContext
+
+
 class Auctioner:
     def __init__(self, auction_manager, trader_address):
         self.auction_manager = auction_manager
@@ -8,7 +12,7 @@ class Auctioner:
         self.active_auctionlets = []
 
 
-    def start(self, processor):
+    def start(self, strategy):
         # for auction discovery
         average_block_time_in_seconds = 4
         number_of_blocks_per_minute = int(60/average_block_time_in_seconds)
@@ -28,7 +32,8 @@ class Auctioner:
             for auctionlet_id in self.active_auctionlets[:]:
                 print("Processing auctionlet " + str(auctionlet_id))
                 auctionlet = self.auction_manager.get_auctionlet(auctionlet_id)
-                result = processor.process_auctionlet(auctionlet, self.trader_address, self.auction_manager.address)
-                print("Result: " + result.description)
-                if result.forget_auctionlet: self.active_auctionlets.remove(auctionlet_id)
+
+                result = strategy.perform(auctionlet, StrategyContext(self.auction_manager.address, self.trader_address))
+                print("    Result: " + result.description)
+                if result.forget: self.active_auctionlets.remove(auctionlet_id)
             time.sleep(5)

@@ -1,11 +1,12 @@
-import time
-
 from web3 import HTTPProvider
 from web3 import Web3
 
 from auctions.Auctioner import Auctioner
-from auctions.BasicProcessor import BasicProcessor
-from auctions.DumbStrategy import DumbStrategy
+from auctions.strategy.BidUpToMaxRateStrategy import BidUpToMaxRateStrategy
+from auctions.strategy.ForgetGoneAuctionletsStrategy import ForgetGoneAuctionletsStrategy
+from auctions.strategy.IgnoreWinningAuctionletsStrategy import IgnoreWinningAuctionletsStrategy
+from auctions.strategy.OnlyOurPairStrategy import OnlyOurPairStrategy
+from auctions.strategy.HandleExpiredAuctionletsStrategy import HandleExpiredAuctionletsStrategy
 from contracts.Address import Address
 from contracts.DSToken import DSToken
 from contracts.ERC20Token import ERC20Token
@@ -38,9 +39,21 @@ max_mkr_to_dai_rate = 0.4500
 
 
 
-strategy = DumbStrategy(dai_token, mkr_token, max_mkr_to_dai_rate, 0.8)
-processor = BasicProcessor(strategy)
+
+
+
+strategy = ForgetGoneAuctionletsStrategy(
+    OnlyOurPairStrategy(dai_token, mkr_token,
+        HandleExpiredAuctionletsStrategy(
+            IgnoreWinningAuctionletsStrategy(
+                BidUpToMaxRateStrategy(max_mkr_to_dai_rate, 0.8)
+            )
+        )
+    )
+)
+
+
 
 auctioner = Auctioner(auction_manager, trader_address)
-auctioner.start(processor)
+auctioner.start(strategy)
 

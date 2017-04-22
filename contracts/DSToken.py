@@ -2,7 +2,6 @@ from contracts.ERC20Token import ERC20Token
 
 
 class DSToken(ERC20Token):
-
     def is_stopped(self):
         raise NotImplementedError
 
