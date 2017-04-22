@@ -7,7 +7,7 @@ class ERC20Token(Contract):
     def __init__(self, web3, address):
         self.web3 = web3
         self.address = address
-        self.contract = web3.eth.contract(abi=self._load_abi('contracts/ERC20Token.abi'))(address=address.address)
+        self.contract = web3.eth.contract(abi=self._load_abi(__name__, 'ERC20Token.abi'))(address=address.address)
 
         # {address => balance}
         self.state = collections.defaultdict(lambda: 0)

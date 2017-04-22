@@ -1,4 +1,5 @@
 import json
+import pkg_resources
 import time
 
 
@@ -11,9 +12,6 @@ class Contract:
                 return receipt
             time.sleep(0.25)
 
-
     @staticmethod
-    def _load_abi(path):
-        with open(path) as f:
-            abi = json.load(f)
-        return abi
+    def _load_abi(package, resource):
+        return json.loads(pkg_resources.resource_string(package, resource))

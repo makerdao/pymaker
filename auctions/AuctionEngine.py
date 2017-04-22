@@ -1,4 +1,5 @@
 import time
+import threading
 
 from auctions.StrategyContext import StrategyContext
 
@@ -11,6 +12,7 @@ class AuctionEngine:
         self.frequency = frequency
         self.number_of_recent_blocks = number_of_recent_blocks
         self.active_auctionlets = []
+        self.lock = threading.Lock()
 
 
     def start(self):
@@ -50,9 +52,12 @@ class AuctionEngine:
         self._process_auctionlet(auctionlet_id)
 
     def _process_auctionlet(self, auctionlet_id):
-        print("Processing auctionlet " + str(auctionlet_id))
-        auctionlet = self.auction_manager.get_auctionlet(auctionlet_id)
+        with self.lock:
+            print("Processing auctionlet " + str(auctionlet_id))
+            auctionlet = self.auction_manager.get_auctionlet(auctionlet_id)
+            # auction_info = auctionlet.get_auction().get_info() if auctionlet_info is not None else None
+            # print(f"Processing auctionlet #{auctionlet_id} [sell: {auctionlet_info.sell_amount} of {auction_info.selling}]")
 
-        result = self.strategy.perform(auctionlet, StrategyContext(self.auction_manager.address, self.trader_address))
-        print("    Result: " + result.description)
-        if result.forget: self.active_auctionlets.remove(auctionlet_id)
+            result = self.strategy.perform(auctionlet, StrategyContext(self.auction_manager.address, self.trader_address))
+            print("    Result: " + result.description)
+            if result.forget: self.active_auctionlets.remove(auctionlet_id)

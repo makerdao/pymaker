@@ -7,11 +7,10 @@ class ForgetGoneAuctionletsStrategy(Strategy):
         self.next_strategy = next_strategy
 
     def perform(self, auctionlet, context):
-        auctionlet_info = auctionlet.get_info()
-        auctionlet_expired = auctionlet.is_expired()
+        auctionlet_expired = auctionlet.is_expired() if auctionlet is not None else None
 
         # for expired&claimed auctionlets, these methods return None
-        if (auctionlet_info is None) or (auctionlet_expired is None):
+        if (auctionlet is None) or (auctionlet_expired is None):
             return StrategyResult('Auctionlet is already gone. Forgetting it.', forget=True)
         else:
             return self.next_strategy.perform(auctionlet, context)

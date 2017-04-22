@@ -10,16 +10,15 @@ class BidUpToMaxRateStrategy(Strategy):
         self.percentage_step = percentage_step
 
     def perform(self, auctionlet, context):
-        auctionlet_info = auctionlet.get_info()
         auction_info = auctionlet.get_auction().get_info()
 
         # get the current buy amount and the minimum possible increase
-        auction_current_bid = auctionlet_info.buy_amount
+        auction_current_bid = auctionlet.buy_amount
         auction_min_next_bid = int(math.ceil(auction_current_bid * (100 + auction_info.min_increase) / 100))
         assert (auction_min_next_bid >= auction_current_bid)
 
         # calculate our maximum bid
-        our_max_bid = auctionlet_info.sell_amount * self.max_rate_offered
+        our_max_bid = auctionlet.sell_amount * self.max_rate_offered
 
         # if the current auction bid amount has already reached our maximum bid
         # then we can not go higher, so we do not bid

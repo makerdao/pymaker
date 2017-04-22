@@ -1,16 +1,17 @@
+from auctions.AuctionEngine import AuctionEngine
 from auctions.BidUpToMaxRateStrategy import BidUpToMaxRateStrategy
 from auctions.HandleExpiredAuctionletsStrategy import HandleExpiredAuctionletsStrategy
 from auctions.IgnoreWinningAuctionletsStrategy import IgnoreWinningAuctionletsStrategy
-from auctions.OnlyOurPairStrategy import OnlyOurPairStrategy
-from web3 import HTTPProvider
-from web3 import Web3
-
-from auctions.AuctionEngine import AuctionEngine
+from auctions.OnlyOneTokenPairPairStrategy import OnlyOneTokenPairPairStrategy
 from auctions.ForgetGoneAuctionletsStrategy import ForgetGoneAuctionletsStrategy
 from contracts.Address import Address
 from contracts.DSToken import DSToken
 from contracts.ERC20Token import ERC20Token
 from contracts.auctions.AuctionManager import AuctionManager
+
+from web3 import HTTPProvider
+from web3 import Web3
+
 
 ######################
 # simulated Buy&Burn #
@@ -39,6 +40,11 @@ mkr_token = DSToken(web3=web3, address=mkr_address)
 
 # maximum MKR/DAI rate we are willing to pay
 max_mkr_to_dai_rate = 0.4500
+percentage_step = 0.8
+
+
+
+# TODO fetch auctionlet data only once, not with each 'info' call
 
 
 
@@ -48,24 +54,14 @@ number_of_blocks_per_minute = int(60/average_block_time_in_seconds)
 number_of_hours_to_look_back_for_active_auctionlets = 24
 number_of_historical_blocks_to_scan_for_active_auctionlets = number_of_blocks_per_minute*60*number_of_hours_to_look_back_for_active_auctionlets
 
+strategy = BidUpToMaxRateStrategy(max_mkr_to_dai_rate, percentage_step)
+strategy = IgnoreWinningAuctionletsStrategy(strategy)
+strategy = HandleExpiredAuctionletsStrategy(strategy)
+strategy = OnlyOneTokenPairPairStrategy(dai_token, mkr_token, strategy)
+strategy = ForgetGoneAuctionletsStrategy(strategy)
 
 
 
-
-
-
-strategy = ForgetGoneAuctionletsStrategy(
-    OnlyOurPairStrategy(dai_token, mkr_token,
-        HandleExpiredAuctionletsStrategy(
-            IgnoreWinningAuctionletsStrategy(
-                BidUpToMaxRateStrategy(max_mkr_to_dai_rate, 0.8)
-            )
-        )
-    )
-)
-
-
-
-auctioner = AuctionEngine(auction_manager, trader_address, strategy, 100000)
-auctioner.start()
+engine = AuctionEngine(auction_manager, trader_address, strategy, 100000)
+engine.start()
 

@@ -9,7 +9,7 @@ class AuctionManager(Contract):
     def __init__(self, web3, address):
         self.web3 = web3
         self.address = address
-        self.contract = web3.eth.contract(abi=self._load_abi('contracts/auctions/AuctionManager.abi'))(address=address.address)
+        self.contract = web3.eth.contract(abi=self._load_abi(__name__, 'AuctionManager.abi'))(address=address.address)
         self.__our_tx_hashes = set()
 
         self.__on_new_auction_handler = None
@@ -71,21 +71,18 @@ class AuctionManager(Contract):
     def get_auction(self, auction_id):
         return Auction(self, auction_id)
 
-    def get_auction_info(self, auction_id):
+    def _get_auction_info(self, auction_id):
         return AuctionInfo(self.web3, self.contract.call().getAuctionInfo(auction_id))
 
     def get_auctionlet(self, auctionlet_id):
-        return Auctionlet(self, auctionlet_id)
-
-    def get_auctionlet_info(self, auctionlet_id):
         # in case of expired and claimed auctionlets, the contract method throws
         # so we return 'None' to let caller know the auctionlet isn't available anymore
         try:
-            return AuctionletInfo(self.contract.call().getAuctionletInfo(auctionlet_id))
+            return Auctionlet(self, auctionlet_id, self.contract.call().getAuctionletInfo(auctionlet_id))
         except:
             return None
 
-    def is_auctionlet_expired(self, auctionlet_id):
+    def _is_auctionlet_expired(self, auctionlet_id):
         # in case of expired and claimed auctionlets, the contract method throws
         # so we return 'None' to let caller know the auctionlet isn't available anymore
         try:
@@ -128,7 +125,7 @@ class Auction:
         self.auction_id = auction_id
 
     def get_info(self):
-        return self.auction_manager.get_auction_info(self.auction_id)
+        return self.auction_manager._get_auction_info(self.auction_id)
 
     def __str__(self):
         return f"Auction(auction_id={self.auction_id})"
@@ -152,31 +149,9 @@ class AuctionInfo:
 
 
 class Auctionlet:
-    def __init__(self, auction_manager, auctionlet_id):
-        self.auction_manager = auction_manager
+    def __init__(self, auction_manager, auctionlet_id, auctionlet_info):
+        self._auction_manager = auction_manager
         self.auctionlet_id = auctionlet_id
-
-    def is_expired(self):
-        return self.auction_manager.is_auctionlet_expired(self.auctionlet_id)
-
-    def get_auction(self):
-        return Auction(self.auction_manager, self.get_info().auction_id)
-
-    def get_info(self):
-        return self.auction_manager.get_auctionlet_info(self.auctionlet_id)
-
-    def bid(self, how_much):
-        return self.auction_manager.bid(self.auctionlet_id, how_much)
-
-    def claim(self):
-        return self.auction_manager.claim(self.auctionlet_id)
-
-    def __str__(self):
-        return f"Auctionlet(auctionlet_id={self.auctionlet_id})"
-
-
-class AuctionletInfo:
-    def __init__(self, auctionlet_info):
         self.auction_id = auctionlet_info[0]
         self.last_bidder = Address(auctionlet_info[1])
         self.last_bid_time = auctionlet_info[2]
@@ -185,6 +160,20 @@ class AuctionletInfo:
         self.unclaimed = auctionlet_info[5]
         self.base = auctionlet_info[6]
 
+    def is_expired(self):
+        return self._auction_manager._is_auctionlet_expired(self.auctionlet_id)
+
+    def get_auction(self):
+        return Auction(self._auction_manager, self.auction_id)
+
+    def bid(self, how_much):
+        return self._auction_manager.bid(self.auctionlet_id, how_much)
+
+    def claim(self):
+        return self._auction_manager.claim(self.auctionlet_id)
+
+    def __eq__(self, other):
+        return self.auctionlet_id == other.auctionlet_id
+
     def __str__(self):
         return pformat (vars(self))
-

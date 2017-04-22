@@ -8,8 +8,7 @@ class HandleExpiredAuctionletsStrategy(Strategy):
 
     def perform(self, auctionlet, context):
         if auctionlet.is_expired():
-            auctionlet_info = auctionlet.get_info()
-            if auctionlet_info.unclaimed and (auctionlet_info.last_bidder == context.trader_address):
+            if auctionlet.unclaimed and (auctionlet.last_bidder == context.trader_address):
                 claim_result = auctionlet.claim()
                 if claim_result:
                     return StrategyResult("Expired, we won, claimed by us successfully. Forgetting it.", forget=True)
