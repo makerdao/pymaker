@@ -1,5 +1,5 @@
 class SimpleMarket:
-    def __init__(self, address):
+    def __init__(self, web3, address):
         Market = web3.eth.contract(abi=abi, bytecode=bytecode)
         self.contract = Market(address=address)
 

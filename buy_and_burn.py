@@ -1,16 +1,14 @@
-from web3 import Web3
-from web3 import HTTPProvider
 import time
-import json
-import math
 
-from auctions.ActionBid import ActionBid
-from auctions.ActionPass import ActionPass
+from web3 import HTTPProvider
+from web3 import Web3
+
 from auctions.BasicProcessor import BasicProcessor
 from auctions.DumbStrategy import DumbStrategy
 from contracts.Address import Address
 from contracts.DSToken import DSToken
-from contracts.AuctionManager import AuctionManager
+from contracts.ERC20Token import ERC20Token
+from contracts.auctions.AuctionManager import AuctionManager
 
 
 def wait_for_receipt(transaction_hash):
@@ -29,10 +27,12 @@ web3.eth.defaultAccount = our_buyer.address
 
 # simulated Buy&Burn
 # DAI is what is being sold
-token_dai = DSToken(web3=web3, address='0x383105dc3dab1646119335ae54afdfd9f2af4713')
+dai_address = Address('0x383105dc3dab1646119335ae54afdfd9f2af4713')
+dai_token = ERC20Token(web3=web3, address=dai_address)
 
 # MKR is what we pay with
-token_mkr = DSToken(web3=web3, address='0x408f224724a7680b6172bd37bf482c50e2be5d02')
+mkr_address = Address('0x408f224724a7680b6172bd37bf482c50e2be5d02')
+mkr_token = DSToken(web3=web3, address=mkr_address)
 
 # maximum MKR/DAI rate we are willing to pay
 max_mkr_to_dai_rate = 0.4500
@@ -48,14 +48,17 @@ number_of_historical_blocks_to_scan_for_active_auctionlets = number_of_blocks_pe
 # print(number_of_historical_blocks_to_scan_for_active_auctionlets)
 
 
-auction_manager = AuctionManager(web3=web3, address='0xc40affcbb4457400a145c90322714aa7b702d319')
+active_auctionlets = []
 
-auction_manager.discover_recent_auctionlets(number_of_historical_blocks_to_scan_for_active_auctionlets, lambda auctionlet_id: print(auctionlet_id))
+auction_manager_address = Address('0xc40affcbb4457400a145c90322714aa7b702d319')
+auction_manager = AuctionManager(web3=web3, address=auction_manager_address)
 
-time.sleep(60)
-exit(-1)
+auction_manager.discover_recent_auctionlets(number_of_historical_blocks_to_scan_for_active_auctionlets, lambda auctionlet_id: active_auctionlets.append(auctionlet_id))
 
-strategy = DumbStrategy(token_dai, token_mkr, max_mkr_to_dai_rate, 0.8)
+# time.sleep(60)
+# exit(-1)
+
+strategy = DumbStrategy(dai_token, mkr_token, max_mkr_to_dai_rate, 0.8)
 processor = BasicProcessor(strategy)
 
 # hash = token_paid_with.approve(auction_manager.address, 1000*1000000000000000000)
@@ -89,7 +92,6 @@ auction_manager.on_bid(lambda bid_auction_id:
 
 
 
-active_auctionlets = [1, 2, 3, 4, 5, 6]
 # active_auctions = [4]
 
 while True:

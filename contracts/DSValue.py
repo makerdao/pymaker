@@ -1,15 +1,11 @@
-import json
+from contracts.Contract import Contract
 
 
-class DSValue:
+class DSValue(Contract):
     def __init__(self, web3, address):
-        abi = self.__abi('contracts/DSValue.abi')
-        self.contract = web3.eth.contract(abi=abi)(address=address)
-
-    def __abi(self, path):
-        with open(path) as f:
-            abi = json.load(f)
-        return abi
+        self.web3 = web3
+        self.address = address
+        self.contract = web3.eth.contract(abi=self._load_abi('contracts/DSValue.abi'))(address=address.address)
 
     def has_value(self):
         return self.contract.call().peek()[1]

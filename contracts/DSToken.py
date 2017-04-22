@@ -1,53 +1,26 @@
-import collections
-import json
+from contracts.ERC20Token import ERC20Token
 
 
-class DSToken:
-    def __init__(self, web3, address):
-        abi = self.__abi('contracts/DSToken.abi')
-        self.address = address
-        self.contract = web3.eth.contract(abi=abi)(address=address)
+class DSToken(ERC20Token):
 
-        # {address => balance}
-        self.state = collections.defaultdict(lambda: 0)
-        #  reconstruction = self.reconstruct()
-        #  reconstruction.join()
-        #  self.watch({'fromBlock': self.contract.web3.eth.blockNumber})
-        self.watch()
+    def is_stopped(self):
+        raise NotImplementedError
 
-    def __abi(self, path):
-        with open(path) as f:
-            abi = json.load(f)
-        return abi
+    def stop(self):
+        raise NotImplementedError
 
-    def total_supply(self):
-        return self.contract.call().totalSupply()
+    def start(self):
+        raise NotImplementedError
 
-    def balance_of(self, address):
-        return self.contract.call().balanceOf(address)
+    def push(self, address, amount):
+        raise NotImplementedError
 
-    def allowance_of(self, address, payee):
-        return self.contract.call().allowance(address, payee)
+    def pull(self, address, amount):
+        raise NotImplementedError
 
-    def transfer(self, address, amount):
-        return self.contract.transact().transfer(address, amount)
+    def mint(self, amount):
+        raise NotImplementedError
 
-    def approve(self, address, limit):
-        return self.contract.transact().approve(address, limit)
+    def burn(self, amount):
+        raise NotImplementedError
 
-    def reconstruct(self, filter_params=None):
-        """Scan over Transfer event history and determine the
-        current token holdings."""
-        return self.contract.pastEvents('Transfer', filter_params, self.__update_balance)
-
-    def watch(self, filter_params=None):
-        return self.contract.on('Transfer', filter_params, self.__update_balance)
-
-    def __update_balance(self, log):
-        args = log['args']
-        # state initialisation
-        if not self.state:
-            self.state[args['from']] = self.total_supply()
-
-        self.state[args['from']] -= args['value']
-        self.state[args['to']] += args['value']

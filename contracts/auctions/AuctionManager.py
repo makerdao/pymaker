@@ -1,17 +1,15 @@
-import collections
-import json
 import time
 from pprint import pformat
 
 from contracts.Address import Address
+from contracts.Contract import Contract
 
 
-class AuctionManager:
+class AuctionManager(Contract):
     def __init__(self, web3, address):
-        abi = self.__abi('contracts/AuctionManager.abi')
         self.web3 = web3
         self.address = address
-        self.contract = web3.eth.contract(abi=abi)(address=address)
+        self.contract = web3.eth.contract(abi=self._load_abi('contracts/auctions/AuctionManager.abi'))(address=address.address)
         self.__our_tx_hashes = set()
 
         self.__on_new_auction_handler = None
@@ -25,11 +23,6 @@ class AuctionManager:
 
 
 
-
-    def __abi(self, path):
-        with open(path) as f:
-            abi = json.load(f)
-        return abi
 
     def __on_new_auction(self, log):
         if log['transactionHash'] not in self.__our_tx_hashes:
