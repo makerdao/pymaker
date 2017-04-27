@@ -155,6 +155,7 @@ class Auction:
 class Auctionlet:
     def __init__(self, auction_manager, auctionlet_id, auctionlet_info):
         self._auction_manager = auction_manager
+        self._auction = None
         self.auctionlet_id = auctionlet_id
         self.auction_id = auctionlet_info[0]
         self.last_bidder = Address(auctionlet_info[1])
@@ -168,7 +169,9 @@ class Auctionlet:
         return self._auction_manager._is_auctionlet_expired(self.auctionlet_id)
 
     def get_auction(self):
-        return self._auction_manager.get_auction(self.auction_id)
+        if self._auction is None:
+            self._auction = self._auction_manager.get_auction(self.auction_id)
+        return self._auction
 
     def bid(self, how_much):
         return self._auction_manager._bid(self.auctionlet_id, how_much.value)

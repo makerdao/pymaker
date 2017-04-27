@@ -5,7 +5,7 @@ from auctions.StrategyContext import StrategyContext
 
 
 class AuctionEngine:
-    def __init__(self, auction_manager, trader_address, strategy, number_of_recent_blocks=None, frequency=60):
+    def __init__(self, auction_manager, trader_address, strategy, number_of_recent_blocks, frequency):
         self.auction_manager = auction_manager
         self.trader_address = trader_address
         self.strategy = strategy
@@ -64,12 +64,10 @@ class AuctionEngine:
         if auctionlet is not None:
             auction = auctionlet.get_auction()
 
-            print("")
             print(f"{heading} [   selling: {auctionlet.sell_amount} {auction.selling.name()}] [     creator: {auction.creator}]")
             print(f"{padding} [ start_bid: {auction.start_bid} {auction.buying.name()}] [  parameters: min_incr={auction.min_increase}, min_decr={auction.min_decrease}, ttl={auction.ttl}, reversed={auction.reversed}, is_expired={auctionlet.is_expired()}]")
             print(f"{padding} [  last_bid: {auctionlet.buy_amount} {auction.buying.name()}] [ last_bidder: {auctionlet.last_bidder} (@ {auctionlet.last_bid_time})]" )
         else:
-            print("")
             print(f"{heading} ???")
 
     def _print_auctionlet_outcome(self, auctionlet_id, result):

@@ -6,9 +6,12 @@ from contracts.Wad import Wad
 
 
 class BidUpToMaxRateStrategy(Strategy):
-    def __init__(self, max_rate_offered, percentage_step):
-        self.max_rate_offered = max_rate_offered
-        self.percentage_step = percentage_step
+    def __init__(self, max_price, step):
+        self.max_price = max_price
+        self.step = step
+        assert(self.max_price > 0)
+        assert(self.step > 0)
+        assert(self.step < 1)
 
     def perform(self, auctionlet, context):
         auction = auctionlet.get_auction()
@@ -19,7 +22,7 @@ class BidUpToMaxRateStrategy(Strategy):
         assert (auction_min_next_bid >= auction_current_bid)
 
         # calculate our maximum bid
-        our_max_bid = auctionlet.sell_amount * self.max_rate_offered
+        our_max_bid = auctionlet.sell_amount * self.max_price
 
         # if the current auction bid amount has already reached our maximum bid
         # then we can not go higher, so we do not bid
@@ -32,7 +35,7 @@ class BidUpToMaxRateStrategy(Strategy):
             return StrategyResult("Minimal next bid exceeds our maximum possible bid")
 
         # this his how much we want to bid in ideal conditions...
-        our_preferred_bid = auction_current_bid + (our_max_bid-auction_current_bid)*self.percentage_step
+        our_preferred_bid = auction_current_bid + (our_max_bid-auction_current_bid)*self.step
         # ...but we can still end up bidding more (because of the 'min_increase' auction parameter)
         our_preferred_bid = Wad.max(our_preferred_bid, auction_min_next_bid)
 
