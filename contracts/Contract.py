@@ -13,5 +13,10 @@ class Contract:
             time.sleep(0.25)
 
     @staticmethod
+    def _has_any_log_message(receipt):
+        receipt_logs = receipt['logs']
+        return (receipt_logs is not None) and (len(receipt_logs) > 0)
+
+    @staticmethod
     def _load_abi(package, resource):
         return json.loads(pkg_resources.resource_string(package, resource))

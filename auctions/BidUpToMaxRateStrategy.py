@@ -43,16 +43,17 @@ class BidUpToMaxRateStrategy(Strategy):
         our_balance = auction.buying.balance_of(context.trader_address)
         our_bid = Wad.min(our_preferred_bid, our_balance)
 
-        # we check our allowance, as we cannot bid above it
-        our_allowance = auction.buying.allowance_of(context.trader_address, context.auction_manager_address)
-
         if our_bid <= auction_current_bid:
             return StrategyResult("Our available balance is less or equal to the current auction bid")
         elif our_bid < auction_min_next_bid:
             return StrategyResult("Our available balance is below minimal next bid")
-        elif our_bid > our_allowance:
-            return StrategyResult("Allowance is too low, please raise allowance in order to continue participating")
         else:
+            # we check our allowance, and raise it if necessary
+            our_allowance = auction.buying.allowance_of(context.trader_address, context.auction_manager_address)
+            if our_bid > our_allowance:
+                if not auction.buying.approve(context.auction_manager_address, Wad(1000000*1000000000000000000)):
+                    return StrategyResult(f"Tried to raise allowance, but the attempt failed")
+
             # a set of assertions to double-check our calculations
             assert (our_bid > auction_current_bid)
             assert (our_bid > auction_min_next_bid)

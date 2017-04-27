@@ -20,7 +20,7 @@ from web3 import Web3
 parser = argparse.ArgumentParser(description='Maker BuyAndBurn keeper. Continuously trades MKR for DAI.')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
 parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
-parser.add_argument("--number-of-recent-blocks", help="Number of blocks to scan looking for active auctions (default: 10000)", default=10000, type=int)
+parser.add_argument("--number-of-recent-blocks", help="Number of previous blocks to scan looking for active auctions (default: 10000)", default=10000, type=int)
 parser.add_argument("--frequency", help="Frequency of periodical checking of existing auctions (in seconds) (default: 60)", default=60, type=int)
 parser.add_argument("--auction-manager", help="Ethereum address of the AuctionManager to trade on", required=True, type=str)
 parser.add_argument("--trader", help="Ethereum address of the trader ie. the account that owns MKR and DAI", required=True, type=str)
@@ -31,6 +31,7 @@ parser.add_argument("--step", help="Incremental step towards the maximum price (
 args = parser.parse_args()
 
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}"))
+web3.eth.defaultAccount = args.trader
 
 auction_manager_address = Address(args.auction_manager)
 auction_manager = AuctionManager(web3=web3, address=auction_manager_address)
@@ -39,10 +40,6 @@ dai_address = Address(args.dai_token)
 dai_token = ERC20Token(web3=web3, address=dai_address)
 mkr_address = Address(args.mkr_token)
 mkr_token = DSToken(web3=web3, address=mkr_address)
-
-#TODO we should not rely on the default account
-#TODO replace with 'from' everywhere
-web3.eth.defaultAccount = trader_address.address
 
 ERC20Token.register_token(dai_address, 'DAI')
 ERC20Token.register_token(mkr_address, 'MKR')
@@ -55,4 +52,3 @@ strategy = ForgetGoneAuctionletsStrategy(strategy)
 
 engine = AuctionEngine(auction_manager, trader_address, strategy, args.number_of_recent_blocks, args.frequency)
 engine.start()
-

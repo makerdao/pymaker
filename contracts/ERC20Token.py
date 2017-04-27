@@ -29,10 +29,12 @@ class ERC20Token(Contract):
         return Wad(self._contract.call().allowance(address.address, payee.address))
 
     def transfer(self, address, amount):
-        return self._contract.transact().transfer(address.address, amount)
+        tx_hash = self._contract.transact().transfer(address.address, amount.value)
+        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
 
     def approve(self, address, limit):
-        return self._contract.transact().approve(address.address, limit)
+        tx_hash = self._contract.transact().approve(address.address, limit.value)
+        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
 
     def reconstruct(self, filter_params=None):
         """Scan over Transfer event history and determine the

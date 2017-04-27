@@ -109,14 +109,14 @@ class AuctionManager(Contract):
     def _bid(self, auctionlet_id, how_much):
         """
         """
-        try:
-            tx_hash = self._contract.transact().bid(auctionlet_id, int(how_much))
-            self._our_tx_hashes.add(tx_hash)
-            receipt = self._wait_for_receipt(tx_hash)
-            receipt_logs = receipt['logs']
-            return (receipt_logs is not None) and (len(receipt_logs) > 0)
-        except:
-            return False
+        # try:
+        tx_hash = self._contract.transact().bid(auctionlet_id, int(how_much))
+        self._our_tx_hashes.add(tx_hash)
+        receipt = self._wait_for_receipt(tx_hash)
+        receipt_logs = receipt['logs']
+        return (receipt_logs is not None) and (len(receipt_logs) > 0)
+        # except:
+        #     return False
 
     def _claim(self, auctionlet_id):
         """
