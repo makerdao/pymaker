@@ -10,8 +10,8 @@ class OnlyOneTokenPairPairStrategy(Strategy):
         self.next_strategy = next_strategy
 
     def perform(self, auctionlet, context):
-        auction_info = auctionlet.get_auction().get_info()
-        if (auction_info.selling == self.selling_token) and (auction_info.buying == self.buying_token):
+        auction = auctionlet.get_auction()
+        if (auction.selling == self.selling_token) and (auction.buying == self.buying_token):
             return self.next_strategy.perform(auctionlet, context)
         else:
             return StrategyResult("Unrecognized token pair. Forgetting it.", forget=True)

@@ -2,6 +2,7 @@ import math
 
 from auctions.StrategyResult import StrategyResult
 from auctions.Strategy import Strategy
+from contracts.Wad import Wad
 
 
 class BidUpToMaxRateStrategy(Strategy):
@@ -10,11 +11,11 @@ class BidUpToMaxRateStrategy(Strategy):
         self.percentage_step = percentage_step
 
     def perform(self, auctionlet, context):
-        auction_info = auctionlet.get_auction().get_info()
+        auction = auctionlet.get_auction()
 
         # get the current buy amount and the minimum possible increase
         auction_current_bid = auctionlet.buy_amount
-        auction_min_next_bid = int(math.ceil(auction_current_bid * (100 + auction_info.min_increase) / 100))
+        auction_min_next_bid = auction_current_bid * ((100 + auction.min_increase) / 100)
         assert (auction_min_next_bid >= auction_current_bid)
 
         # calculate our maximum bid
@@ -31,16 +32,16 @@ class BidUpToMaxRateStrategy(Strategy):
             return StrategyResult("Minimal next bid exceeds our maximum possible bid")
 
         # this his how much we want to bid in ideal conditions...
-        our_preferred_bid = int(auction_current_bid + (our_max_bid-auction_current_bid)*self.percentage_step)
+        our_preferred_bid = auction_current_bid + (our_max_bid-auction_current_bid)*self.percentage_step
         # ...but we can still end up bidding more (because of the 'min_increase' auction parameter)
-        our_preferred_bid = int(max(our_preferred_bid, auction_min_next_bid))
+        our_preferred_bid = Wad.max(our_preferred_bid, auction_min_next_bid)
 
         # at the end, we cannot bid more than we actually have in our account
-        our_balance = auction_info.buying.balance_of(context.trader_address)
-        our_bid = int(min(our_preferred_bid, our_balance))
+        our_balance = auction.buying.balance_of(context.trader_address)
+        our_bid = Wad.min(our_preferred_bid, our_balance)
 
         # we check our allowance, as we cannot bid above it
-        our_allowance = auction_info.buying.allowance_of(context.trader_address, context.auction_manager_address)
+        our_allowance = auction.buying.allowance_of(context.trader_address, context.auction_manager_address)
 
         if our_bid <= auction_current_bid:
             return StrategyResult("Our available balance is less or equal to the current auction bid")
@@ -56,6 +57,6 @@ class BidUpToMaxRateStrategy(Strategy):
 
             bid_result = auctionlet.bid(our_bid)
             if bid_result:
-                return StrategyResult(f"Placed a bid at {our_bid}, bid was successful")
+                return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()}, bid was successful")
             else:
-                return StrategyResult(f"Tried to place a bid at {our_bid}, but the bid failed")
+                return StrategyResult(f"Tried to place a new bid at {our_bid} {auction.buying.name()}, but the bid failed")

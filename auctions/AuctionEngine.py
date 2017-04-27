@@ -25,11 +25,9 @@ class AuctionEngine:
 
     def _discover_recent_auctionlets(self):
         if (self.number_of_recent_blocks is not None):
-            print(f"Looking for auctionlets in {self.number_of_recent_blocks} recent blocks...")
             self.auction_manager.discover_recent_auctionlets(self.number_of_recent_blocks, self._on_recovered_auctionlet)
 
     def _bind_events(self):
-        print("Monitoring for new auctionlets...")
         self.auction_manager.on_new_auction(self._on_new_auctionlet)
         self.auction_manager.on_bid(self._on_bid)
 
@@ -53,11 +51,30 @@ class AuctionEngine:
 
     def _process_auctionlet(self, auctionlet_id):
         with self.lock:
-            print("Processing auctionlet " + str(auctionlet_id))
             auctionlet = self.auction_manager.get_auctionlet(auctionlet_id)
-            # auction_info = auctionlet.get_auction().get_info() if auctionlet_info is not None else None
-            # print(f"Processing auctionlet #{auctionlet_id} [sell: {auctionlet_info.sell_amount} of {auction_info.selling}]")
-
+            self._print_auctionlet(auctionlet_id, auctionlet)
             result = self.strategy.perform(auctionlet, StrategyContext(self.auction_manager.address, self.trader_address))
-            print("    Result: " + result.description)
+            self._print_auctionlet_outcome(auctionlet_id, result.description)
             if result.forget: self.active_auctionlets.remove(auctionlet_id)
+
+    def _print_auctionlet(self, auctionlet_id, auctionlet):
+        heading = f"Auctionlet #{auctionlet_id}:"
+        padding = ' ' * len(heading)
+
+        if auctionlet is not None:
+            auction = auctionlet.get_auction()
+
+            print("")
+            print(f"{heading} [   selling: {auctionlet.sell_amount} {auction.selling.name()}] [     creator: {auction.creator}]")
+            print(f"{padding} [ start_bid: {auction.start_bid} {auction.buying.name()}] [  parameters: min_incr={auction.min_increase}, min_decr={auction.min_decrease}, ttl={auction.ttl}, reversed={auction.reversed}, is_expired={auctionlet.is_expired()}]")
+            print(f"{padding} [  last_bid: {auctionlet.buy_amount} {auction.buying.name()}] [ last_bidder: {auctionlet.last_bidder} (@ {auctionlet.last_bid_time})]" )
+        else:
+            print("")
+            print(f"{heading} ???")
+
+    def _print_auctionlet_outcome(self, auctionlet_id, result):
+        heading = f"Auctionlet #{auctionlet_id}:"
+        padding = ' ' * len(heading)
+
+        print(f"{padding} [   outcome: {result}]")
+        print("")

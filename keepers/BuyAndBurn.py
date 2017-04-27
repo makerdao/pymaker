@@ -38,6 +38,9 @@ dai_token = ERC20Token(web3=web3, address=dai_address)
 mkr_address = Address('0x408f224724a7680b6172bd37bf482c50e2be5d02')
 mkr_token = DSToken(web3=web3, address=mkr_address)
 
+ERC20Token.register_token(dai_address, 'DAI')
+ERC20Token.register_token(mkr_address, 'MKR')
+
 # maximum MKR/DAI rate we are willing to pay
 max_mkr_to_dai_rate = 0.4500
 percentage_step = 0.8
