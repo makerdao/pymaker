@@ -30,6 +30,7 @@ class AuctionEngine:
     def _bind_events(self):
         self.auction_manager.on_new_auction(self._on_new_auctionlet)
         self.auction_manager.on_bid(self._on_bid)
+        self.auction_manager.on_split(self._on_split)
 
     def _on_recovered_auctionlet(self, auctionlet_id):
         print(f"Found old auctionlet #{auctionlet_id}")
@@ -48,6 +49,12 @@ class AuctionEngine:
         else:
             print(f"Discovered new bid on an existing auctionlet #{auctionlet_id}")
         self._process_auctionlet(auctionlet_id)
+
+    def _on_split(self, base_id, new_id, split_id):
+        print(f"Discovered a split of auctionlet #{base_id} into auctionlets #{new_id} and #{split_id}")
+        self.active_auctionlets.append(split_id)
+        self._process_auctionlet(new_id)
+        self._process_auctionlet(split_id)
 
     def _process_auctionlet(self, auctionlet_id):
         with self.lock:

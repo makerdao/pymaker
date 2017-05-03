@@ -1,5 +1,3 @@
-import math
-
 from auctions.StrategyResult import StrategyResult
 from auctions.Strategy import Strategy
 from contracts.Wad import Wad
@@ -59,7 +57,11 @@ class BidUpToMaxRateStrategy(Strategy):
             assert (our_bid > auction_min_next_bid)
             assert (our_bid <= our_max_bid)
 
-            bid_result = auctionlet.bid(our_bid)
+            # TODO in order to test splitting auctions
+            if auctionlet._auction_manager.is_splitting:
+                bid_result = auctionlet.bid(our_bid, auction.sell_amount-Wad(1000000000000000000))
+            else:
+                bid_result = auctionlet.bid(our_bid)
             if bid_result:
                 return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()}, bid was successful")
             else:

@@ -15,15 +15,16 @@ class AuctionManager(Contract):
 
     There are two basic entities in this ecosystem:
     * Auctions.
-    * Auctionlets - the splittable unit of an auction. Each auction initially has a single auctionlet.
-      Auctionlets are the object on which bidders place bids. Splitting an auctionlet produces a new auctionlet
-      of reduced quantity and reduces the available quantity in the original auctionlet.
+    * Auctionlets - the splittable unit of an auction. Each auction initially has a single auctionlet
+      and for non-splitting auctions it stays like that throughout the entire duration of an auction.
+      Auctionlets are the objects on which bidders place bids.
 
-    For now, only forward and non-splitting auctions are supported.
+    For now, only forward auctions are supported.
     """
-    def __init__(self, web3, address):
+    def __init__(self, web3, address, is_splitting):
         self.address = address
-        self._contract = web3.eth.contract(abi=self._load_abi(__name__, 'AuctionManager.abi'))(address=address.address)
+        self.is_splitting = is_splitting
+        self._contract = web3.eth.contract(abi=self._load_abi(__name__, 'SplittingAuctionManager.abi'))(address=address.address)
         self._web3 = web3
         self._our_tx_hashes = set()
 
@@ -37,9 +38,6 @@ class AuctionManager(Contract):
         self._contract.on('LogSplit', None, self._on_split)
         self._contract.on('LogAuctionReversal', None, self._on_auction_reversal)
 
-
-
-
     def _on_new_auction(self, log):
         if log['transactionHash'] not in self._our_tx_hashes:
             if self._on_new_auction_handler is not None:
@@ -51,14 +49,12 @@ class AuctionManager(Contract):
                 self._on_bid_handler(log['args']['auctionlet_id'])
 
     def _on_split(self, log):
-        if log['transactionHash'] not in self._our_tx_hashes:
-            if self._on_split_handler is not None:
-                self._on_split_handler(log['args']['base_id'], log['args']['new_id'], log['args']['split_id'])
+        if self._on_split_handler is not None:
+            self._on_split_handler(log['args']['base_id'], log['args']['new_id'], log['args']['split_id'])
 
     def _on_auction_reversal(self, log):
-        if log['transactionHash'] not in self._our_tx_hashes:
-            if self._on_auction_reversal_handler is not None:
-                self._on_auction_reversal_handler(log['args']['auction_id'])
+        if self._on_auction_reversal_handler is not None:
+            self._on_auction_reversal_handler(log['args']['auction_id'])
 
     def on_new_auction(self, handler):
         self._on_new_auction_handler = handler
@@ -75,8 +71,11 @@ class AuctionManager(Contract):
     def discover_recent_auctionlets(self, number_of_historical_blocks, on_auctionlet_discovered):
         """Scan over LogNewAuction event history and determine which auctions can still be active."""
         start_block_number = self._web3.eth.blockNumber - int(number_of_historical_blocks)
-        return self._contract.pastEvents('LogNewAuction', {'fromBlock': start_block_number},
-                                         lambda log: on_auctionlet_discovered(log['args']['base_id']))
+        start_block_filter = {'fromBlock': start_block_number}
+        self._contract.pastEvents('LogNewAuction', start_block_filter,
+                                  lambda log: on_auctionlet_discovered(log['args']['base_id']))
+        self._contract.pastEvents('LogSplit', start_block_filter,
+                                  lambda log: on_auctionlet_discovered(log['args']['split_id']))
 
     # def reconstruct(self):
     #     """Scan over the event history and determine the current
@@ -106,17 +105,24 @@ class AuctionManager(Contract):
         except:
             return None
 
-    def _bid(self, auctionlet_id, how_much):
+    def _bid(self, auctionlet_id, how_much, quantity):
         """
         """
-        # try:
-        tx_hash = self._contract.transact().bid(auctionlet_id, int(how_much))
-        self._our_tx_hashes.add(tx_hash)
-        receipt = self._wait_for_receipt(tx_hash)
-        receipt_logs = receipt['logs']
-        return (receipt_logs is not None) and (len(receipt_logs) > 0)
-        # except:
-        #     return False
+        try:
+            if quantity is None:
+                if self.is_splitting:
+                    return False
+                tx_hash = self._contract.transact().bid(auctionlet_id, int(how_much.value))
+            else:
+                if not self.is_splitting:
+                    return False
+                tx_hash = self._contract.transact().bid(auctionlet_id, int(how_much.value), int(quantity.value))
+            self._our_tx_hashes.add(tx_hash)
+            receipt = self._wait_for_receipt(tx_hash)
+            receipt_logs = receipt['logs']
+            return (receipt_logs is not None) and (len(receipt_logs) > 0)
+        except:
+            return False
 
     def _claim(self, auctionlet_id):
         """
@@ -173,8 +179,8 @@ class Auctionlet:
             self._auction = self._auction_manager.get_auction(self.auction_id)
         return self._auction
 
-    def bid(self, how_much):
-        return self._auction_manager._bid(self.auctionlet_id, how_much.value)
+    def bid(self, how_much, quantity=None):
+        return self._auction_manager._bid(self.auctionlet_id, how_much, quantity)
 
     def claim(self):
         return self._auction_manager._claim(self.auctionlet_id)

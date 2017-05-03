@@ -16,7 +16,6 @@ from contracts.auctions.AuctionManager import AuctionManager
 from web3 import HTTPProvider
 from web3 import Web3
 
-
 parser = argparse.ArgumentParser(description='Maker BuyAndBurn keeper. Continuously trades MKR for DAI.')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
 parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
@@ -34,7 +33,7 @@ web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}")
 web3.eth.defaultAccount = args.trader
 
 auction_manager_address = Address(args.auction_manager)
-auction_manager = AuctionManager(web3=web3, address=auction_manager_address)
+auction_manager = AuctionManager(web3=web3, address=auction_manager_address, is_splitting=True)
 trader_address = Address(args.trader)
 dai_address = Address(args.dai_token)
 dai_token = ERC20Token(web3=web3, address=dai_address)
