@@ -9,7 +9,7 @@ class BidUpToMaxRateStrategy(Strategy):
         self.step = step
         assert(self.max_price > 0)
         assert(self.step > 0)
-        assert(self.step < 1)
+        assert(self.step <= 1)
 
     def perform(self, auctionlet, context):
         auction = auctionlet.get_auction()
@@ -42,7 +42,18 @@ class BidUpToMaxRateStrategy(Strategy):
         our_bid = Wad.min(our_preferred_bid, our_balance)
 
         if our_bid < auction_min_next_bid:
-            return StrategyResult("Our available balance is below minimal next bid")
+            if auctionlet.can_split():
+                our_preferred_rate = our_preferred_bid/auctionlet.sell_amount
+                our_bid = our_balance
+                quantity = our_balance/our_preferred_rate
+
+                bid_result = auctionlet.bid(our_bid, quantity)
+                if bid_result:
+                    return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()} (partial bid for {quantity} {auction.selling.name()}), bid was successful")
+                else:
+                    return StrategyResult(f"Tried to place a new bid at {our_bid} {auction.buying.name()} (partial bid for {quantity} {auction.selling.name()}), but the bid failed")
+            else:
+                return StrategyResult("Our available balance is below minimal next bid and splitting is unavailable")
         else:
             # we check our allowance, and raise it if necessary
             our_allowance = auction.buying.allowance_of(context.trader_address, context.auction_manager_address)

@@ -78,17 +78,12 @@ class AuctionManager(Contract):
         self._contract.pastEvents('LogSplit', start_block_filter,
                                   lambda log: on_auctionlet_discovered(log['args']['split_id']))
 
-    # def reconstruct(self):
-    #     """Scan over the event history and determine the current
-    #     state of the auction (following splits).
-    #     """
-
     def get_auction(self, auction_id):
-        """Returns an auction with specified identifier."""
+        """Returns the auction with specified identifier."""
         return Auction(self, auction_id, self._contract.call().getAuctionInfo(auction_id))
 
     def get_auctionlet(self, auctionlet_id):
-        """Returns an auctionlet with specified identifier.
+        """Returns the auctionlet with specified identifier.
 
         In case of expired and claimed auctionlets, this methods returns 'None' as an indicator that
         the auctionlet isn't available anymore (the contract method basically throws in that case).
@@ -179,6 +174,9 @@ class Auctionlet:
         if self._auction is None:
             self._auction = self._auction_manager.get_auction(self.auction_id)
         return self._auction
+
+    def can_split(self):
+        return self._auction_manager.is_splitting
 
     def bid(self, how_much, quantity=None):
         return self._auction_manager._bid(self.auctionlet_id, how_much, quantity)

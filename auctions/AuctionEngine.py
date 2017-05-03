@@ -65,15 +65,19 @@ class AuctionEngine:
                 self._print_auctionlet_outcome(auctionlet_id, result.description)
                 if result.forget: self.active_auctionlets.remove(auctionlet_id)
             else:
-                self.active_auctionlets.remove(auctionlet_id)
+                try:
+                    self.active_auctionlets.remove(auctionlet_id)
+                except:
+                    print("Failed to remove") #TODO implement thread-safe lists
 
     def _print_auctionlet(self, auctionlet_id, auctionlet):
         auction = auctionlet.get_auction()
         heading = f"Auctionlet #{auctionlet_id}:"
         padding = ' ' * len(heading)
-        print(f"{heading} [   selling: {auctionlet.sell_amount} {auction.selling.name()}] [     creator: {auction.creator}]")
-        print(f"{padding} [ start_bid: {auction.start_bid} {auction.buying.name()}] [  parameters: min_incr={auction.min_increase}, min_decr={auction.min_decrease}, ttl={auction.ttl}, reversed={auction.reversed}, is_expired={auctionlet.is_expired()}]")
-        print(f"{padding} [  last_bid: {auctionlet.buy_amount} {auction.buying.name()}] [ last_bidder: {auctionlet.last_bidder} (@ {auctionlet.last_bid_time})]" )
+        width = 23
+        print(f"{heading} [   selling: {str(auctionlet.sell_amount).rjust(width)} {auction.selling.name()}] [     creator: {auction.creator}]")
+        print(f"{padding} [ start_bid: {str(auction.start_bid).rjust(width)} {auction.buying.name()}] [  parameters: min_incr={auction.min_increase}, min_decr={auction.min_decrease}, ttl={auction.ttl}, reversed={auction.reversed}, is_expired={auctionlet.is_expired()}]")
+        print(f"{padding} [  last_bid: {str(auctionlet.buy_amount).rjust(width)} {auction.buying.name()}] [ last_bidder: {auctionlet.last_bidder} (@ {auctionlet.last_bid_time})]" )
 
     def _print_auctionlet_outcome(self, auctionlet_id, result):
         heading = f"Auctionlet #{auctionlet_id}:"

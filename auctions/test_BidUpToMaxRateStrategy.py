@@ -1,9 +1,7 @@
+import math
 import unittest
 
-import datetime
 from unittest.mock import MagicMock
-
-import math
 
 from auctions.BidUpToMaxRateStrategy import BidUpToMaxRateStrategy
 from auctions.StrategyContext import StrategyContext
@@ -16,16 +14,16 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
 
     def setUp(self):
         self.auction_manager = MagicMock()
-        self.auction_manager_address = Address('0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826')
-        self.dai_token = MagicMock
+        self.auction_manager_address = Address('0x0101010101010101010101010101010101010101')
+        self.dai_token = MagicMock()
         self.dai_token.name = MagicMock(return_value='DAI')
-        self.dai_token_address = Address('0x0404010101010101010101010101010101010101')
-        self.mkr_token = MagicMock
+        self.dai_token_address = Address('0x0202020202020202020202020202020202020202')
+        self.mkr_token = MagicMock()
         self.mkr_token.name = MagicMock(return_value='MKR')
-        self.mkr_token_address = Address('0x0505050101010101010101010101010101010101')
-        self.creator_address = Address('0x0303010101010101010101010101010101010101')
-        self.our_address = Address('0x0101010101010101010101010101010101010101')
-        self.competitor_address = Address('0x0202010101010101010101010101010101010101')
+        self.mkr_token_address = Address('0x0303030303030303030303030303030303030303')
+        self.creator_address = Address('0x0404040404040404040404040404040404040404')
+        self.our_address = Address('0x0505050505050505050505050505050505050505')
+        self.competitor_address = Address('0x0606060606060606060606060606060606060606')
         self.auction = Auction(self.auction_manager, 1, [self.creator_address, self.dai_token_address, self.mkr_token_address, 0, 1, 0, 0, 120, False, False])
         self.auction.selling = self.dai_token
         self.auction.buying = self.mkr_token
@@ -42,6 +40,15 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.set_mkr_balance(self.lots_of_money)
         self.set_mkr_allowance(self.lots_of_money)
 
+    def set_mkr_balance(self, value):
+        self.mkr_token.balance_of = MagicMock(self.our_address, return_value=value)
+
+    def set_mkr_allowance(self, value):
+        self.mkr_token.allowance_of = MagicMock([self.our_address, self.auction_manager_address], return_value=value)
+
+    def wei(self):
+        return int(math.pow(10, 18))
+
     def test_should_bid_on_newly_created_auctions(self):
         # given
         # (newly created auction)
@@ -51,7 +58,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at    100.500000000000000000 MKR, bid was successful", result.description)
+        self.assertEqual("Placed a new bid at 100.500000000000000000 MKR, bid was successful", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(100.5*self.wei()))
 
@@ -65,7 +72,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at    125.000000000000000000 MKR, bid was successful", result.description)
+        self.assertEqual("Placed a new bid at 125.000000000000000000 MKR, bid was successful", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(125*self.wei()))
 
@@ -109,7 +116,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at    198.900000000000000000 MKR, bid was successful", result.description)
+        self.assertEqual("Placed a new bid at 198.900000000000000000 MKR, bid was successful", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(198.9*self.wei()))
 
@@ -124,7 +131,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at    197.500000000000000000 MKR, bid was successful", result.description)
+        self.assertEqual("Placed a new bid at 197.500000000000000000 MKR, bid was successful", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(197.5*self.wei()))
 
@@ -139,15 +146,16 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at     79.000000000000000000 MKR, bid was successful", result.description)
+        self.assertEqual("Placed a new bid at 79.000000000000000000 MKR, bid was successful", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(79*self.wei()))
 
-    def test_should_not_bid_if_available_balance_below_min_increase(self):
+    def test_should_not_bid_if_available_balance_below_min_increase_and_cannot_split(self):
         # given
         self.auction.min_increase = 10
         self.auctionlet.buy_amount = Wad(50*self.wei())
         self.auctionlet.last_bidder = self.competitor_address
+        self.auctionlet.can_split = MagicMock(return_value=False)
         self.set_mkr_balance(Wad(54 * self.wei()))
 
         # when
@@ -155,9 +163,45 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Our available balance is below minimal next bid", result.description)
+        self.assertEqual("Our available balance is below minimal next bid and splitting is unavailable", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_not_called()
+
+    def test_should_make_a_partial_bid_if_available_balance_below_min_increase_and_can_split(self):
+        # given
+        self.auction.min_increase = 10
+        self.auction.can_split = MagicMock(return_value=False)
+        self.auctionlet.buy_amount = Wad(50*self.wei())
+        self.auctionlet.last_bidder = self.competitor_address
+        self.auctionlet.can_split = MagicMock(return_value=True)
+        self.set_mkr_balance(Wad(54 * self.wei()))
+
+        # when
+        strategy = BidUpToMaxRateStrategy(20, 0.5)
+        result = strategy.perform(self.auctionlet, self.context)
+
+        # then
+        self.assertEqual("Placed a new bid at 54.000000000000000000 MKR (partial bid for 4.320000000000000000 DAI), bid was successful", result.description)
+        self.assertFalse(result.forget)
+        self.auctionlet.bid.assert_called_once_with(Wad(54*self.wei()), Wad(4320000000000000000))
+
+    def test_should_make_a_partial_bid_ensuring_relative_increase_in_value(self):
+        # given
+        self.auction.min_increase = 20
+        self.auction.can_split = MagicMock(return_value=False)
+        self.auctionlet.buy_amount = Wad(50*self.wei())
+        self.auctionlet.last_bidder = self.competitor_address
+        self.auctionlet.can_split = MagicMock(return_value=True)
+        self.set_mkr_balance(Wad(54 * self.wei()))
+
+        # when
+        strategy = BidUpToMaxRateStrategy(20, 0.05)
+        result = strategy.perform(self.auctionlet, self.context)
+
+        # then
+        self.assertEqual("Placed a new bid at 54.000000000000000000 MKR (partial bid for 9.000000000000000000 DAI), bid was successful", result.description)
+        self.assertFalse(result.forget)
+        self.auctionlet.bid.assert_called_once_with(Wad(54*self.wei()), Wad(9*self.wei()))
 
     def test_should_raise_allowance_if_too_low_before_bidding(self):
         # given
@@ -171,7 +215,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at    125.000000000000000000 MKR, bid was successful", result.description)
+        self.assertEqual("Placed a new bid at 125.000000000000000000 MKR, bid was successful", result.description)
         self.assertFalse(result.forget)
         self.mkr_token.approve.assert_called_once_with(self.auction_manager_address, Wad(1000000*self.wei()))
         self.auctionlet.bid.assert_called_once_with(Wad(125*self.wei()))
@@ -203,18 +247,9 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Tried to place a new bid at    125.000000000000000000 MKR, but the bid failed", result.description)
+        self.assertEqual("Tried to place a new bid at 125.000000000000000000 MKR, but the bid failed", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(125*self.wei()))
-
-    def set_mkr_balance(self, value):
-        self.mkr_token.balance_of = MagicMock(self.our_address, return_value=value)
-
-    def set_mkr_allowance(self, value):
-        self.mkr_token.allowance_of = MagicMock([self.our_address, self.auction_manager_address], return_value=value)
-
-    def wei(self):
-        return int(math.pow(10, 18))
 
 
 if __name__ == '__main__':

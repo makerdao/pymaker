@@ -14,9 +14,8 @@ class Wad:
         return "Wad(" + str(self.value) + ")"
 
     def __str__(self):
-        length = 24
-        tmp = str(self.value).zfill(length)
-        return re.sub("^(0+)", lambda m: ' '*len(m.group()), tmp[0:length-18]) + "." + tmp[length-18:length]
+        tmp = str(self.value).zfill(19)
+        return tmp[0:len(tmp)-18] + "." + tmp[len(tmp)-18:len(tmp)]
 
     def __add__(self, other):
         return Wad(self.value + other.value)
@@ -27,7 +26,13 @@ class Wad:
     def __mul__(self, other):
         if isinstance(other, Wad):
             raise ArithmeticError
-        return Wad(self.value * other)
+        return Wad(int(math.ceil(self.value * other)))
+
+    def __truediv__(self, other):
+        if isinstance(other, Wad):
+            return self.value/other.value
+        else:
+            return Wad(int(math.ceil(self.value/other)))
 
     def __eq__(self, other):
         return self.value == other.value
