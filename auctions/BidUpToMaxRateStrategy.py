@@ -16,7 +16,7 @@ class BidUpToMaxRateStrategy(Strategy):
 
         # get the current buy amount and the minimum possible increase
         auction_current_bid = auctionlet.buy_amount
-        auction_min_next_bid = auction_current_bid.percentage_change(auction.min_increase) # * ((100 + auction.min_increase) / 100)
+        auction_min_next_bid = auction_current_bid.percentage_change(auction.min_increase)
         assert (auction_min_next_bid >= auction_current_bid)
 
         # calculate our maximum bid
@@ -41,9 +41,7 @@ class BidUpToMaxRateStrategy(Strategy):
         our_balance = auction.buying.balance_of(context.trader_address)
         our_bid = Wad.min(our_preferred_bid, our_balance)
 
-        if our_bid <= auction_current_bid:
-            return StrategyResult("Our available balance is less or equal to the current auction bid")
-        elif our_bid < auction_min_next_bid:
+        if our_bid < auction_min_next_bid:
             return StrategyResult("Our available balance is below minimal next bid")
         else:
             # we check our allowance, and raise it if necessary
