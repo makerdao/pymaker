@@ -54,14 +54,14 @@ class BidUpToMaxRateStrategy(Strategy):
 
             # a set of assertions to double-check our calculations
             assert (our_bid > auction_current_bid)
-            assert (our_bid > auction_min_next_bid)
+            assert (our_bid >= auction_min_next_bid)
             assert (our_bid <= our_max_bid)
 
             # TODO in order to test splitting auctions
-            if auctionlet._auction_manager.is_splitting:
-                bid_result = auctionlet.bid(our_bid, auction.sell_amount-Wad(1000000000000000000))
-            else:
-                bid_result = auctionlet.bid(our_bid)
+            # if auctionlet._auction_manager.is_splitting:
+            #     bid_result = auctionlet.bid(our_bid, auction.sell_amount-Wad(1000000000000000000))
+            # else:
+            bid_result = auctionlet.bid(our_bid)
             if bid_result:
                 return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()}, bid was successful")
             else:

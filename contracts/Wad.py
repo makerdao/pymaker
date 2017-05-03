@@ -9,6 +9,9 @@ class Wad:
         # TODO do not use 'int' for internal representation
         self.value = int(math.ceil(value))
 
+    def __repr__(self):
+        return "Wad(" + str(self.value) + ")"
+
     def __str__(self):
         return "{:25.18f}".format(self.value/math.pow(10, 18))
 

@@ -22,7 +22,7 @@ parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", defaul
 parser.add_argument("--number-of-recent-blocks", help="Number of previous blocks to scan looking for active auctions (default: 10000)", default=10000, type=int)
 parser.add_argument("--frequency", help="Frequency of periodical checking of existing auctions (in seconds) (default: 60)", default=60, type=int)
 parser.add_argument("--auction-manager", help="Ethereum address of the AuctionManager to trade on", required=True, type=str)
-parser.add_argument("--trader", help="Ethereum address of the trader ie. the account that owns MKR and DAI", required=True, type=str)
+parser.add_argument("--trader", help="Ethereum address of the trader ie. the account that owns MKR will receive DAI", required=True, type=str)
 parser.add_argument("--mkr-token", help="Ethereum address of the MKR ERC20 token contract", required=True, type=str)
 parser.add_argument("--dai-token", help="Ethereum address of the DAI ERC20 token contract", required=True, type=str)
 parser.add_argument("--max-price", help="Maximum number of MKR you are willing to pay for one DAI", required=True, type=float)
