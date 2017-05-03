@@ -1,8 +1,6 @@
 import math
 from functools import total_ordering
 
-import re
-
 
 @total_ordering
 class Wad:
