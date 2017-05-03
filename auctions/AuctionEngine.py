@@ -59,27 +59,24 @@ class AuctionEngine:
     def _process_auctionlet(self, auctionlet_id):
         with self.lock:
             auctionlet = self.auction_manager.get_auctionlet(auctionlet_id)
-            self._print_auctionlet(auctionlet_id, auctionlet)
-            result = self.strategy.perform(auctionlet, StrategyContext(self.auction_manager.address, self.trader_address))
-            self._print_auctionlet_outcome(auctionlet_id, result.description)
-            if result.forget: self.active_auctionlets.remove(auctionlet_id)
+            if auctionlet is not None:
+                self._print_auctionlet(auctionlet_id, auctionlet)
+                result = self.strategy.perform(auctionlet, StrategyContext(self.auction_manager.address, self.trader_address))
+                self._print_auctionlet_outcome(auctionlet_id, result.description)
+                if result.forget: self.active_auctionlets.remove(auctionlet_id)
+            else:
+                self.active_auctionlets.remove(auctionlet_id)
 
     def _print_auctionlet(self, auctionlet_id, auctionlet):
+        auction = auctionlet.get_auction()
         heading = f"Auctionlet #{auctionlet_id}:"
         padding = ' ' * len(heading)
-
-        if auctionlet is not None:
-            auction = auctionlet.get_auction()
-
-            print(f"{heading} [   selling: {auctionlet.sell_amount} {auction.selling.name()}] [     creator: {auction.creator}]")
-            print(f"{padding} [ start_bid: {auction.start_bid} {auction.buying.name()}] [  parameters: min_incr={auction.min_increase}, min_decr={auction.min_decrease}, ttl={auction.ttl}, reversed={auction.reversed}, is_expired={auctionlet.is_expired()}]")
-            print(f"{padding} [  last_bid: {auctionlet.buy_amount} {auction.buying.name()}] [ last_bidder: {auctionlet.last_bidder} (@ {auctionlet.last_bid_time})]" )
-        else:
-            print(f"{heading} ???")
+        print(f"{heading} [   selling: {auctionlet.sell_amount} {auction.selling.name()}] [     creator: {auction.creator}]")
+        print(f"{padding} [ start_bid: {auction.start_bid} {auction.buying.name()}] [  parameters: min_incr={auction.min_increase}, min_decr={auction.min_decrease}, ttl={auction.ttl}, reversed={auction.reversed}, is_expired={auctionlet.is_expired()}]")
+        print(f"{padding} [  last_bid: {auctionlet.buy_amount} {auction.buying.name()}] [ last_bidder: {auctionlet.last_bidder} (@ {auctionlet.last_bid_time})]" )
 
     def _print_auctionlet_outcome(self, auctionlet_id, result):
         heading = f"Auctionlet #{auctionlet_id}:"
         padding = ' ' * len(heading)
-
         print(f"{padding} [   outcome: {result}]")
         print("")

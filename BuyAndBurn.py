@@ -7,7 +7,6 @@ from auctions.BidUpToMaxRateStrategy import BidUpToMaxRateStrategy
 from auctions.HandleExpiredAuctionletsStrategy import HandleExpiredAuctionletsStrategy
 from auctions.IgnoreWinningAuctionletsStrategy import IgnoreWinningAuctionletsStrategy
 from auctions.OnlyOneTokenPairPairStrategy import OnlyOneTokenPairPairStrategy
-from auctions.ForgetGoneAuctionletsStrategy import ForgetGoneAuctionletsStrategy
 from contracts.Address import Address
 from contracts.DSToken import DSToken
 from contracts.ERC20Token import ERC20Token
@@ -33,7 +32,7 @@ web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}")
 web3.eth.defaultAccount = args.trader
 
 auction_manager_address = Address(args.auction_manager)
-auction_manager = AuctionManager(web3=web3, address=auction_manager_address, is_splitting=True)
+auction_manager = AuctionManager(web3=web3, address=auction_manager_address, is_splitting=False)
 trader_address = Address(args.trader)
 dai_address = Address(args.dai_token)
 dai_token = ERC20Token(web3=web3, address=dai_address)
@@ -47,7 +46,6 @@ strategy = BidUpToMaxRateStrategy(args.max_price, args.step)
 strategy = IgnoreWinningAuctionletsStrategy(strategy)
 strategy = HandleExpiredAuctionletsStrategy(strategy)
 strategy = OnlyOneTokenPairPairStrategy(dai_token, mkr_token, strategy)
-strategy = ForgetGoneAuctionletsStrategy(strategy)
 
 engine = AuctionEngine(auction_manager, trader_address, strategy, args.number_of_recent_blocks, args.frequency)
 engine.start()

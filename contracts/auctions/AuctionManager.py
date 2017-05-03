@@ -24,7 +24,8 @@ class AuctionManager(Contract):
     def __init__(self, web3, address, is_splitting):
         self.address = address
         self.is_splitting = is_splitting
-        self._contract = web3.eth.contract(abi=self._load_abi(__name__, 'SplittingAuctionManager.abi'))(address=address.address)
+        abi_name = 'SplittingAuctionManager.abi' if is_splitting else 'AuctionManager.abi'
+        self._contract = web3.eth.contract(abi=self._load_abi(__name__, abi_name))(address=address.address)
         self._web3 = web3
         self._our_tx_hashes = set()
 
