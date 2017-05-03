@@ -1,22 +1,24 @@
 import math
 from functools import total_ordering
 
+import re
+
 
 @total_ordering
 class Wad:
     def __init__(self, value):
-        # TODO check if non-negative
-        # TODO do not use 'int' for internal representation
-        self.value = int(math.ceil(value))
+        assert(value >= 0)
+        self.value = int(value)
 
     def __repr__(self):
         return "Wad(" + str(self.value) + ")"
 
     def __str__(self):
-        return "{:25.18f}".format(self.value/math.pow(10, 18))
+        length = 24
+        tmp = str(self.value).zfill(length)
+        return re.sub("^(0+)", lambda m: ' '*len(m.group()), tmp[0:length-18]) + "." + tmp[length-18:length]
 
     def __add__(self, other):
-        # TODO check for overflow
         return Wad(self.value + other.value)
 
     def __sub__(self, other):
@@ -41,16 +43,17 @@ class Wad:
         else:
             return 0
 
+    def percentage_change(self, change):
+        return Wad((self.value * (100 + change)) // 100)
+
     @staticmethod
     def min(first, second):
         if not isinstance(first, Wad) or not isinstance(second, Wad):
             raise ArithmeticError
-        # TODO do not use 'int' for internal representation
         return Wad(min(first.value, second.value))
 
     @staticmethod
     def max(first, second):
         if not isinstance(first, Wad) or not isinstance(second, Wad):
             raise ArithmeticError
-        # TODO do not use 'int' for internal representation
         return Wad(max(first.value, second.value))

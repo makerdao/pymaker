@@ -26,10 +26,10 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.creator_address = Address('0x0303010101010101010101010101010101010101')
         self.our_address = Address('0x0101010101010101010101010101010101010101')
         self.competitor_address = Address('0x0202010101010101010101010101010101010101')
-        self.auction = Auction(self.auction_manager, 1, [self.creator_address, self.dai_token_address, self.mkr_token_address, self.int_value(1), 1, 0, self.int_value(1), 120, False, False])
+        self.auction = Auction(self.auction_manager, 1, [self.creator_address, self.dai_token_address, self.mkr_token_address, 0, 1, 0, 0, 120, False, False])
         self.auction.selling = self.dai_token
         self.auction.buying = self.mkr_token
-        self.auctionlet = Auctionlet(self.auction_manager, 1, [1, Address('0x0000000000000000000000000000000000000000'), 1493817473, self.int_value(1), self.int_value(1), True, 1])
+        self.auctionlet = Auctionlet(self.auction_manager, 1, [1, Address('0x0000000000000000000000000000000000000000'), 1493817473, 0, 0, True, 1])
         self.auctionlet.get_auction = MagicMock(return_value=self.auction)
         self.auctionlet.bid = MagicMock(return_value=True)
         self.context = StrategyContext(self.auction_manager_address, self.our_address)
@@ -80,7 +80,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_not_called()
 
-    def test_should_not_bid_under_min_increase(self):
+    def test_should_not_bid_if_min_increase_would_go_over_max_price(self):
         # given
         self.auction.min_increase = 3
         self.auctionlet.buy_amount = Wad(195*self.wei())
@@ -95,7 +95,22 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_not_called()
 
-    def test_should_bid_over_min_increase(self):
+    def test_should_bid_more_than_step_because_of_min_increase(self):
+        # given
+        self.auction.min_increase = 2
+        self.auctionlet.buy_amount = Wad(195*self.wei())
+        self.auctionlet.last_bidder = self.competitor_address
+
+        # when
+        strategy = BidUpToMaxRateStrategy(20, 0.5)
+        result = strategy.perform(self.auctionlet, self.context)
+
+        # then
+        self.assertEqual("Placed a new bid at    198.900000000000000000 MKR, bid was successful", result.description)
+        self.assertFalse(result.forget)
+        self.auctionlet.bid.assert_called_once_with(Wad(198.9*self.wei()))
+
+    def test_should_bid_normally_if_min_increase_is_low(self):
         # given
         self.auction.min_increase = 1
         self.auctionlet.buy_amount = Wad(195*self.wei())
