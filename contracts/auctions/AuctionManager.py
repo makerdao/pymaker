@@ -101,24 +101,7 @@ class AuctionManager(Contract):
         except:
             return None
 
-    def _bid(self, auctionlet_id, how_much, quantity):
-        """
-        """
-        try:
-            if quantity is None:
-                if self.is_splitting:
-                    return False
-                tx_hash = self._contract.transact().bid(auctionlet_id, int(how_much.value))
-            else:
-                if not self.is_splitting:
-                    return False
-                tx_hash = self._contract.transact().bid(auctionlet_id, int(how_much.value), int(quantity.value))
-            self._our_tx_hashes.add(tx_hash)
-            receipt = self._wait_for_receipt(tx_hash)
-            receipt_logs = receipt['logs']
-            return (receipt_logs is not None) and (len(receipt_logs) > 0)
-        except:
-            return False
+    # def _bid(self, auctionlet_id, how_much, quantity):
 
     def _claim(self, auctionlet_id):
         """
@@ -179,7 +162,27 @@ class Auctionlet:
         return self._auction_manager.is_splitting
 
     def bid(self, how_much, quantity=None):
-        return self._auction_manager._bid(self.auctionlet_id, how_much, quantity)
+        """
+        """
+        try:
+            if quantity is None:
+                if self._auction_manager.is_splitting:
+                    tx_hash = self._auction_manager._contract.transact().bid(self.auctionlet_id, int(how_much.value), int(self.sell_amount.value))
+                else:
+                    tx_hash = self._auction_manager._contract.transact().bid(self.auctionlet_id, int(how_much.value))
+            else:
+                if not self._auction_manager.is_splitting:
+                    return False
+                else:
+                    tx_hash = self._auction_manager._contract.transact().bid(self.auctionlet_id, int(how_much.value), int(quantity.value))
+            # self._our_tx_hashes.add(tx_hash)
+            receipt = self._auction_manager._wait_for_receipt(tx_hash)
+            receipt_logs = receipt['logs']
+            return (receipt_logs is not None) and (len(receipt_logs) > 0)
+        except:
+            return False
+
+        # return self._auction_manager._bid(self.auctionlet_id, how_much, quantity)
 
     def claim(self):
         return self._auction_manager._claim(self.auctionlet_id)

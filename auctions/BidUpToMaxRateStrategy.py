@@ -4,12 +4,15 @@ from contracts.Wad import Wad
 
 
 class BidUpToMaxRateStrategy(Strategy):
-    def __init__(self, max_price, step):
+    def __init__(self, max_price, step, minimal_bid):
         self.max_price = max_price
         self.step = step
+        self.minimal_bid = minimal_bid
         assert(self.max_price > 0)
         assert(self.step > 0)
         assert(self.step <= 1)
+        assert(isinstance(self.minimal_bid, Wad))
+        assert(self.minimal_bid > Wad(0))
 
     def perform(self, auctionlet, context):
         auction = auctionlet.get_auction()
@@ -25,23 +28,35 @@ class BidUpToMaxRateStrategy(Strategy):
         # if the current auction bid amount has already reached our maximum bid
         # then we can not go higher, so we do not bid
         if auction_current_bid >= our_max_bid:
-            return StrategyResult("Our maximum possible bid reached")
+            return StrategyResult("Our maximum possible bid reached") #TODO print current price and our max price
 
-        # if the auction next minimum bid is greater than our maximum bid
+        # if the auction next minimum increase is greater than our maximum possible bid
         # then we can not go higher, so we do not bid
         if auction_min_next_bid > our_max_bid:
-            return StrategyResult("Minimal next bid exceeds our maximum possible bid")
+            return StrategyResult("Minimal increase exceeds our maximum possible bid")
+
+        # if the our global minimal bid is greater than our maximum possible bid
+        # then we do not bid
+        if self.minimal_bid > our_max_bid:
+            return StrategyResult("Minimal bid exceeds our maximum possible bid")
+
+        # we never bid if our available balance is below global minimal bid
+        our_balance = auction.buying.balance_of(context.trader_address)
+        if our_balance < self.minimal_bid:
+            return StrategyResult("Not bidding as available balance is less than minimal bid")
 
         # this his how much we want to bid in ideal conditions...
         our_preferred_bid = auction_current_bid + (our_max_bid-auction_current_bid)*self.step
-        # ...but we can still end up bidding more (because of the 'min_increase' auction parameter)
+        # ...but we can still end up bidding more (either because of the 'min_increase' auction parameter...
         our_preferred_bid = Wad.max(our_preferred_bid, auction_min_next_bid)
+        # ...or because of the global minimal bid)
+        our_preferred_bid = Wad.max(our_preferred_bid, self.minimal_bid)
 
         # at the end, we cannot bid more than we actually have in our account
-        our_balance = auction.buying.balance_of(context.trader_address)
         our_bid = Wad.min(our_preferred_bid, our_balance)
 
         if our_bid < auction_min_next_bid:
+            #TODO test for raising allowance in partial bids as well
             if auctionlet.can_split():
                 our_preferred_rate = our_preferred_bid/auctionlet.sell_amount
                 our_bid = our_balance

@@ -10,6 +10,7 @@ from auctions.OnlyOneTokenPairPairStrategy import OnlyOneTokenPairPairStrategy
 from contracts.Address import Address
 from contracts.DSToken import DSToken
 from contracts.ERC20Token import ERC20Token
+from contracts.Wad import Wad
 from contracts.auctions.AuctionManager import AuctionManager
 
 from web3 import HTTPProvider
@@ -25,6 +26,7 @@ parser.add_argument("--trader", help="Ethereum address of the trader ie. the acc
 parser.add_argument("--mkr-token", help="Ethereum address of the MKR ERC20 token contract", required=True, type=str)
 parser.add_argument("--dai-token", help="Ethereum address of the DAI ERC20 token contract", required=True, type=str)
 parser.add_argument("--max-price", help="Maximum number of MKR you are willing to pay for one DAI", required=True, type=float)
+parser.add_argument("--minimal-bid", help="Minimal amount of MKR you want to bid", required=True, type=float)
 parser.add_argument("--step", help="Incremental step towards the maximum price (value between 0 and 1)", required=True, type=float)
 args = parser.parse_args()
 
@@ -32,7 +34,7 @@ web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}")
 web3.eth.defaultAccount = args.trader
 
 auction_manager_address = Address(args.auction_manager)
-auction_manager = AuctionManager(web3=web3, address=auction_manager_address, is_splitting=False)
+auction_manager = AuctionManager(web3=web3, address=auction_manager_address, is_splitting=True)
 trader_address = Address(args.trader)
 dai_address = Address(args.dai_token)
 dai_token = ERC20Token(web3=web3, address=dai_address)
@@ -42,7 +44,7 @@ mkr_token = DSToken(web3=web3, address=mkr_address)
 ERC20Token.register_token(dai_address, 'DAI')
 ERC20Token.register_token(mkr_address, 'MKR')
 
-strategy = BidUpToMaxRateStrategy(args.max_price, args.step)
+strategy = BidUpToMaxRateStrategy(args.max_price, args.step, Wad(args.minimal_bid*18))
 strategy = IgnoreWinningAuctionletsStrategy(strategy)
 strategy = HandleExpiredAuctionletsStrategy(strategy)
 strategy = OnlyOneTokenPairPairStrategy(dai_token, mkr_token, strategy)

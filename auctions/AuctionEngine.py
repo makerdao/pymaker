@@ -63,7 +63,11 @@ class AuctionEngine:
                 self._print_auctionlet(auctionlet_id, auctionlet)
                 result = self.strategy.perform(auctionlet, StrategyContext(self.auction_manager.address, self.trader_address))
                 self._print_auctionlet_outcome(auctionlet_id, result.description)
-                if result.forget: self.active_auctionlets.remove(auctionlet_id)
+                if result.forget:
+                    try:
+                        self.active_auctionlets.remove(auctionlet_id)
+                    except:
+                        print("Failed to remove") #TODO implement thread-safe lists
             else:
                 try:
                     self.active_auctionlets.remove(auctionlet_id)
