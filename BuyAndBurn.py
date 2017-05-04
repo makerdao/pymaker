@@ -49,5 +49,5 @@ strategy = IgnoreWinningAuctionletsStrategy(strategy)
 strategy = HandleExpiredAuctionletsStrategy(strategy)
 strategy = OnlyOneTokenPairPairStrategy(dai_token, mkr_token, strategy)
 
-engine = AuctionEngine(auction_manager, trader_address, strategy, args.number_of_recent_blocks, args.frequency)
+engine = AuctionEngine(auction_manager, trader_address, strategy, args.frequency, args.number_of_recent_blocks)
 engine.start()
