@@ -58,7 +58,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at 100.500000000000000000 MKR, bid was successful. Will carry on bidding up to 200.000000000000000000 MKR", result.description)
+        self.assertEqual("Placed a new bid at 100.500000000000000000 MKR, bid was successful. Our maximum bid on this auctionlet is 200.000000000000000000 MKR", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(100.5*self.wei()))
 
@@ -72,7 +72,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at 125.000000000000000000 MKR, bid was successful. Will carry on bidding up to 200.000000000000000000 MKR", result.description)
+        self.assertEqual("Placed a new bid at 125.000000000000000000 MKR, bid was successful. Our maximum bid on this auctionlet is 200.000000000000000000 MKR", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(125*self.wei()))
 
@@ -129,7 +129,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at 190.000000000000000000 MKR, bid was successful. Will carry on bidding up to 200.000000000000000000 MKR", result.description)
+        self.assertEqual("Placed a new bid at 190.000000000000000000 MKR, bid was successful. Our maximum bid on this auctionlet is 200.000000000000000000 MKR", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(190*self.wei()))
 
@@ -158,7 +158,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at 198.900000000000000000 MKR, bid was successful. Will carry on bidding up to 200.000000000000000000 MKR", result.description)
+        self.assertEqual("Placed a new bid at 198.900000000000000000 MKR, bid was successful. Our maximum bid on this auctionlet is 200.000000000000000000 MKR", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(198.9*self.wei()))
 
@@ -173,7 +173,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at 197.500000000000000000 MKR, bid was successful. Will carry on bidding up to 200.000000000000000000 MKR", result.description)
+        self.assertEqual("Placed a new bid at 197.500000000000000000 MKR, bid was successful. Our maximum bid on this auctionlet is 200.000000000000000000 MKR", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(197.5*self.wei()))
 
@@ -188,7 +188,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at 79.000000000000000000 MKR, bid was successful. Will carry on bidding up to 200.000000000000000000 MKR", result.description)
+        self.assertEqual("Placed a new bid at 79.000000000000000000 MKR, bid was successful. Our maximum bid on this auctionlet is 200.000000000000000000 MKR", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(79*self.wei()))
 
@@ -220,7 +220,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at 60.000000000000000000 MKR, bid was successful. Will carry on bidding up to 200.000000000000000000 MKR", result.description)
+        self.assertEqual("Placed a new bid at 60.000000000000000000 MKR, bid was successful. Our maximum bid on this auctionlet is 200.000000000000000000 MKR", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(60*self.wei()))
 
@@ -238,7 +238,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at 54.000000000000000000 MKR (partial bid for 4.320000000000000000 DAI), bid was successful", result.description)
+        self.assertEqual("Placed a new partial bid at 54.000000000000000000 MKR (for 4.320000000000000000 DAI), bid was successful, new auctionlet got created", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(54*self.wei()), Wad(4320000000000000000))
 
@@ -292,7 +292,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at 54.000000000000000000 MKR (partial bid for 9.000000000000000000 DAI), bid was successful", result.description)
+        self.assertEqual("Placed a new partial bid at 54.000000000000000000 MKR (for 9.000000000000000000 DAI), bid was successful, new auctionlet got created", result.description)
         self.assertFalse(result.forget)
         self.auctionlet.bid.assert_called_once_with(Wad(54*self.wei()), Wad(9*self.wei()))
 
@@ -308,7 +308,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
-        self.assertEqual("Placed a new bid at 125.000000000000000000 MKR, bid was successful. Will carry on bidding up to 200.000000000000000000 MKR", result.description)
+        self.assertEqual("Placed a new bid at 125.000000000000000000 MKR, bid was successful. Our maximum bid on this auctionlet is 200.000000000000000000 MKR", result.description)
         self.assertFalse(result.forget)
         self.mkr_token.approve.assert_called_once_with(self.auction_manager_address, Wad(1000000*self.wei()))
         self.auctionlet.bid.assert_called_once_with(Wad(125*self.wei()))

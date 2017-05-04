@@ -1,5 +1,6 @@
 import time
 import threading
+from sortedcontainers import SortedList, SortedDict, SortedSet
 
 from auctions.StrategyContext import StrategyContext
 
@@ -11,8 +12,9 @@ class AuctionEngine:
         self.strategy = strategy
         self.frequency = frequency
         self.number_of_recent_blocks = number_of_recent_blocks
-        self.active_auctionlets = []
-        self.lock = threading.Lock()
+        self.active_auctionlets = SortedSet()
+        self.process_lock = threading.Lock()
+        self.set_lock = threading.Lock()
 
 
     def start(self):
@@ -23,56 +25,59 @@ class AuctionEngine:
                 self._process_auctionlet(auctionlet_id)
             time.sleep(self.frequency)
 
-    def _discover_recent_auctionlets(self):
-        if (self.number_of_recent_blocks is not None):
-            self.auction_manager.discover_recent_auctionlets(self.number_of_recent_blocks, self._on_recovered_auctionlet)
-
     def _bind_events(self):
         self.auction_manager.on_new_auction(self._on_new_auctionlet)
         self.auction_manager.on_bid(self._on_bid)
         self.auction_manager.on_split(self._on_split)
 
+    def _discover_recent_auctionlets(self):
+        if (self.number_of_recent_blocks is not None):
+            self.auction_manager.discover_recent_auctionlets(self.number_of_recent_blocks, self._on_recovered_auctionlet)
+
     def _on_recovered_auctionlet(self, auctionlet_id):
-        print(f"Found old auctionlet #{auctionlet_id}")
-        self.active_auctionlets.append(auctionlet_id)
+        print(f"Found old auctionlet #{auctionlet_id}") #TODO would be nice to get rid of these messages
+        self._register_auctionlet(auctionlet_id)
         self._process_auctionlet(auctionlet_id)
 
     def _on_new_auctionlet(self, auctionlet_id):
-        print(f"Discovered new auctionlet #{auctionlet_id}")
-        self.active_auctionlets.append(auctionlet_id)
+        print(f"Discovered new auctionlet #{auctionlet_id}") #TODO would be nice to get rid of these messages
+        self._register_auctionlet(auctionlet_id)
         self._process_auctionlet(auctionlet_id)
 
     def _on_bid(self, auctionlet_id):
-        if (auctionlet_id not in self.active_auctionlets):
-            print(f"Discovered new bid on a previously unknown auctionlet #{auctionlet_id}")
-            self.active_auctionlets.append(auctionlet_id)
-        else:
-            print(f"Discovered new bid on an existing auctionlet #{auctionlet_id}")
+        print(f"Discovered new bid on auctionlet #{auctionlet_id}") #TODO would be nice to get rid of these messages
+        self._register_auctionlet(auctionlet_id)
         self._process_auctionlet(auctionlet_id)
 
     def _on_split(self, base_id, new_id, split_id):
         print(f"Discovered a split of auctionlet #{base_id} into auctionlets #{new_id} and #{split_id}")
-        self.active_auctionlets.append(split_id)
+        self._register_auctionlet(new_id)
+        self._register_auctionlet(split_id)
         self._process_auctionlet(new_id)
         self._process_auctionlet(split_id)
 
+    def _register_auctionlet(self, auctionlet_id):
+        with self.set_lock:
+            self.active_auctionlets.add(auctionlet_id)
+
+    def _unregister_auctionlet(self, auctionlet_id):
+        with self.set_lock:
+            try:
+                self.active_auctionlets.remove(auctionlet_id)
+            except:
+                pass
+
     def _process_auctionlet(self, auctionlet_id):
-        with self.lock:
+        with self.process_lock:
             auctionlet = self.auction_manager.get_auctionlet(auctionlet_id)
             if auctionlet is not None:
                 self._print_auctionlet(auctionlet_id, auctionlet)
                 result = self.strategy.perform(auctionlet, StrategyContext(self.auction_manager.address, self.trader_address))
                 self._print_auctionlet_outcome(auctionlet_id, result.description)
                 if result.forget:
-                    try:
-                        self.active_auctionlets.remove(auctionlet_id)
-                    except:
-                        print("Failed to remove") #TODO implement thread-safe lists
+                    self._unregister_auctionlet(auctionlet_id)
             else:
-                try:
-                    self.active_auctionlets.remove(auctionlet_id)
-                except:
-                    print("Failed to remove") #TODO implement thread-safe lists
+                self._unregister_auctionlet(auctionlet_id)
 
     def _print_auctionlet(self, auctionlet_id, auctionlet):
         auction = auctionlet.get_auction()

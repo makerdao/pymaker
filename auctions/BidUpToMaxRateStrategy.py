@@ -65,7 +65,7 @@ class BidUpToMaxRateStrategy(Strategy):
                     return StrategyResult(f"Tried to raise {auction.buying.name()} allowance, but the attempt failed")
 
                 if auctionlet.bid(our_bid, quantity):
-                    return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()} (partial bid for {quantity} {auction.selling.name()}), bid was successful")
+                    return StrategyResult(f"Placed a new partial bid at {our_bid} {auction.buying.name()} (for {quantity} {auction.selling.name()}), bid was successful, new auctionlet got created")
                 else:
                     return StrategyResult(f"Tried to place a new bid at {our_bid} {auction.buying.name()} (partial bid for {quantity} {auction.selling.name()}), but the bid failed")
             else:
@@ -82,7 +82,7 @@ class BidUpToMaxRateStrategy(Strategy):
 
             if auctionlet.bid(our_bid):
                 if our_bid < our_max_bid:
-                    return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()}, bid was successful. Will carry on bidding up to {our_max_bid} {auction.buying.name()}")
+                    return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()}, bid was successful. Our maximum bid on this auctionlet is {our_max_bid} {auction.buying.name()}")
                 else:
                     return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()}, bid was successful")
             else:

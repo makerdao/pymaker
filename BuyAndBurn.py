@@ -44,7 +44,7 @@ mkr_token = DSToken(web3=web3, address=mkr_address)
 ERC20Token.register_token(dai_address, 'DAI')
 ERC20Token.register_token(mkr_address, 'MKR')
 
-strategy = BidUpToMaxRateStrategy(args.max_price, args.step, Wad(args.minimal_bid*18))
+strategy = BidUpToMaxRateStrategy(args.max_price, args.step, Wad(args.minimal_bid*1000000000000000000))
 strategy = IgnoreWinningAuctionletsStrategy(strategy)
 strategy = HandleExpiredAuctionletsStrategy(strategy)
 strategy = OnlyOneTokenPairPairStrategy(dai_token, mkr_token, strategy)
