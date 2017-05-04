@@ -89,15 +89,8 @@ class AuctionManager(Contract):
         the auctionlet isn't available anymore (the contract method basically throws in that case).
         """
         try:
-            return Auctionlet(self, auctionlet_id, self._contract.call().getAuctionletInfo(auctionlet_id))
-        except:
-            return None
-
-    def _is_auctionlet_expired(self, auctionlet_id):
-        # in case of expired and claimed auctionlets, the contract method throws
-        # so we return 'None' to let caller know the auctionlet isn't available anymore
-        try:
-            return self._contract.call().isExpired(auctionlet_id)
+            return Auctionlet(self, auctionlet_id, self._contract.call().getAuctionletInfo(auctionlet_id),
+                              self._contract.call().isExpired(auctionlet_id))
         except:
             return None
 
@@ -136,7 +129,7 @@ class Auction:
 
 
 class Auctionlet:
-    def __init__(self, auction_manager, auctionlet_id, auctionlet_info):
+    def __init__(self, auction_manager, auctionlet_id, auctionlet_info, is_expired):
         self._auction_manager = auction_manager
         self._auction = None
         self.auctionlet_id = auctionlet_id
@@ -147,10 +140,7 @@ class Auctionlet:
         self.sell_amount = Wad(auctionlet_info[4])
         self.unclaimed = auctionlet_info[5]
         self.base = auctionlet_info[6]
-
-    #TODO remember if auction is expired; not check every time
-    def is_expired(self):
-        return self._auction_manager._is_auctionlet_expired(self.auctionlet_id)
+        self.expired = is_expired
 
     def get_auction(self):
         if self._auction is None:

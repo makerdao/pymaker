@@ -7,7 +7,7 @@ class HandleExpiredAuctionletsStrategy(Strategy):
         self.next_strategy = next_strategy
 
     def perform(self, auctionlet, context):
-        if auctionlet.is_expired():
+        if auctionlet.expired:
             if auctionlet.unclaimed and (auctionlet.last_bidder == context.trader_address):
                 claim_result = auctionlet.claim()
                 if claim_result:

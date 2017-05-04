@@ -81,7 +81,7 @@ class AuctionEngine:
         price = "{0:.8f}".format(auctionlet.buy_amount / auctionlet.sell_amount)
         print(f"{heading} [  selling: {str(auctionlet.sell_amount).rjust(25)} {auction.selling.name()}] [     creator: {auction.creator}]")
         print(f"{padding} [ last_bid: {str(auctionlet.buy_amount).rjust(25)} {auction.buying.name()}] [ last_bidder: {auctionlet.last_bidder} (@ {auctionlet.last_bid_time})]" )
-        print(f"{padding} [    price: {price.rjust(21)} {auction.buying.name()}/{auction.selling.name()}] [  parameters: min_incr={auction.min_increase}, min_decr={auction.min_decrease}, ttl={auction.ttl}, reversed={auction.reversed}, is_expired={auctionlet.is_expired()}]")
+        print(f"{padding} [    price: {price.rjust(21)} {auction.buying.name()}/{auction.selling.name()}] [  parameters: min_incr={auction.min_increase}, min_decr={auction.min_decrease}, ttl={auction.ttl}, reversed={auction.reversed}, expired={auctionlet.expired}]")
 
     def _print_auctionlet_outcome(self, auctionlet_id, result):
         padding = ' ' * len(self._heading(auctionlet_id))
