@@ -28,22 +28,21 @@ class BidUpToMaxRateStrategy(Strategy):
         # if the current auction bid amount has already reached our maximum bid
         # then we can not go higher, so we do not bid
         if auction_current_bid >= our_max_bid:
-            return StrategyResult("Our maximum possible bid reached") #TODO print current price and our max price
+            return StrategyResult(f"Our maximum possible bid ({our_max_bid} {auction.buying.name()}) reached")
 
         # if the auction next minimum increase is greater than our maximum possible bid
         # then we can not go higher, so we do not bid
         if auction_min_next_bid > our_max_bid:
-            return StrategyResult("Minimal increase exceeds our maximum possible bid")
+            return StrategyResult(f"Minimal increase ({auction_min_next_bid} {auction.buying.name()}) exceeds our maximum possible bid ({our_max_bid} {auction.buying.name()})")
 
-        # if the our global minimal bid is greater than our maximum possible bid
-        # then we do not bid
+        # if the our global minimal bid is greater than our maximum possible bid then we do not bid
         if self.minimal_bid > our_max_bid:
-            return StrategyResult("Minimal bid exceeds our maximum possible bid")
+            return StrategyResult(f"Minimal allowed bid ({self.minimal_bid} {auction.buying.name()}) exceeds our maximum possible bid ({our_max_bid} {auction.buying.name()})")
 
         # we never bid if our available balance is below global minimal bid
         our_balance = auction.buying.balance_of(context.trader_address)
         if our_balance < self.minimal_bid:
-            return StrategyResult("Not bidding as available balance is less than minimal bid")
+            return StrategyResult(f"Not bidding as available balance ({our_balance} {auction.buying.name()}) is less than minimal allowed bid ({self.minimal_bid} {auction.buying.name()})")
 
         # this his how much we want to bid in ideal conditions...
         our_preferred_bid = auction_current_bid + (our_max_bid-auction_current_bid)*self.step
@@ -56,37 +55,43 @@ class BidUpToMaxRateStrategy(Strategy):
         our_bid = Wad.min(our_preferred_bid, our_balance)
 
         if our_bid < auction_min_next_bid:
-            #TODO test for raising allowance in partial bids as well
             if auctionlet.can_split():
                 our_preferred_rate = our_preferred_bid/auctionlet.sell_amount
                 our_bid = our_balance
                 quantity = our_balance/our_preferred_rate
 
-                bid_result = auctionlet.bid(our_bid, quantity)
-                if bid_result:
+                # we check our allowance, and raise it if necessary
+                if not self._ensure_allowance(auction, context, our_bid):
+                    return StrategyResult(f"Tried to raise {auction.buying.name()} allowance, but the attempt failed")
+
+                if auctionlet.bid(our_bid, quantity):
                     return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()} (partial bid for {quantity} {auction.selling.name()}), bid was successful")
                 else:
                     return StrategyResult(f"Tried to place a new bid at {our_bid} {auction.buying.name()} (partial bid for {quantity} {auction.selling.name()}), but the bid failed")
             else:
-                return StrategyResult("Our available balance is below minimal next bid and splitting is unavailable")
+                return StrategyResult(f"Our available balance ({our_balance} {auction.buying.name()} is below minimal next bid ({auction_min_next_bid} {auction.buying.name()}) and splitting is unavailable")
         else:
             # we check our allowance, and raise it if necessary
-            our_allowance = auction.buying.allowance_of(context.trader_address, context.auction_manager_address)
-            if our_bid > our_allowance:
-                if not auction.buying.approve(context.auction_manager_address, Wad(1000000*1000000000000000000)):
-                    return StrategyResult(f"Tried to raise allowance, but the attempt failed")
+            if not self._ensure_allowance(auction, context, our_bid):
+                return StrategyResult(f"Tried to raise {auction.buying.name()} allowance, but the attempt failed")
 
             # a set of assertions to double-check our calculations
             assert (our_bid > auction_current_bid)
             assert (our_bid >= auction_min_next_bid)
             assert (our_bid <= our_max_bid)
 
-            # TODO in order to test splitting auctions
-            # if auctionlet._auction_manager.is_splitting:
-            #     bid_result = auctionlet.bid(our_bid, auction.sell_amount-Wad(1000000000000000000))
-            # else:
-            bid_result = auctionlet.bid(our_bid)
-            if bid_result:
-                return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()}, bid was successful")
+            if auctionlet.bid(our_bid):
+                if our_bid < our_max_bid:
+                    return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()}, bid was successful. Will carry on bidding up to {our_max_bid} {auction.buying.name()}")
+                else:
+                    return StrategyResult(f"Placed a new bid at {our_bid} {auction.buying.name()}, bid was successful")
             else:
                 return StrategyResult(f"Tried to place a new bid at {our_bid} {auction.buying.name()}, but the bid failed")
+
+    @staticmethod
+    def _ensure_allowance(auction, context, bid_amount):
+        our_allowance = auction.buying.allowance_of(context.trader_address, context.auction_manager_address)
+        if bid_amount > our_allowance:
+            return auction.buying.approve(context.auction_manager_address, Wad(1000000*1000000000000000000))
+        else:
+            return True

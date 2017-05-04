@@ -101,8 +101,6 @@ class AuctionManager(Contract):
         except:
             return None
 
-    # def _bid(self, auctionlet_id, how_much, quantity):
-
     def _claim(self, auctionlet_id):
         """
         """
@@ -150,6 +148,7 @@ class Auctionlet:
         self.unclaimed = auctionlet_info[5]
         self.base = auctionlet_info[6]
 
+    #TODO remember if auction is expired; not check every time
     def is_expired(self):
         return self._auction_manager._is_auctionlet_expired(self.auctionlet_id)
 
@@ -181,8 +180,6 @@ class Auctionlet:
             return (receipt_logs is not None) and (len(receipt_logs) > 0)
         except:
             return False
-
-        # return self._auction_manager._bid(self.auctionlet_id, how_much, quantity)
 
     def claim(self):
         return self._auction_manager._claim(self.auctionlet_id)
