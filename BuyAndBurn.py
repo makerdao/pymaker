@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 
 from auctions.AuctionEngine import AuctionEngine
 from auctions.BidUpToMaxRateStrategy import BidUpToMaxRateStrategy
@@ -30,19 +31,23 @@ parser.add_argument("--minimal-bid", help="Minimal amount of MKR you want to bid
 parser.add_argument("--step", help="Incremental step towards the maximum price (value between 0 and 1)", required=True, type=float)
 args = parser.parse_args()
 
+with open('addresses.json') as data_file:
+    network = "kovan"
+    addresses = json.load(data_file)
+
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}"))
 web3.eth.defaultAccount = args.trader
 
 auction_manager_address = Address(args.auction_manager)
 auction_manager = AuctionManager(web3=web3, address=auction_manager_address, is_splitting=True)
 trader_address = Address(args.trader)
-dai_address = Address(args.dai_token)
+dai_address = Address(addresses[network]["DAI"])
 dai_token = ERC20Token(web3=web3, address=dai_address)
-mkr_address = Address(args.mkr_token)
+mkr_address = Address(addresses[network]["MKR"])
 mkr_token = DSToken(web3=web3, address=mkr_address)
 
-ERC20Token.register_token(dai_address, 'DAI')
-ERC20Token.register_token(mkr_address, 'MKR')
+for key, value in addresses[network].items():
+    ERC20Token.register_token(Address(value), key)
 
 strategy = BidUpToMaxRateStrategy(args.max_price, args.step, Wad(args.minimal_bid*1000000000000000000))
 strategy = IgnoreWinningAuctionletsStrategy(strategy)
