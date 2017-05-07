@@ -121,6 +121,12 @@ class Auction:
         self.reversed = auction_info[8]
         self.unsold = auction_info[9]
 
+    def is_forward(self):
+        return (self.min_increase > 0) and (self.min_decrease == 0)
+
+    def is_reverse(self):
+        return (self.min_increase == 0) and (self.min_decrease > 0)
+
     def __eq__(self, other):
         return self.auction_id == other.auction_id
 

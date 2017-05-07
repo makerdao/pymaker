@@ -4,11 +4,6 @@
     "DAI": "0x383105dc3dab1646119335ae54afdfd9f2af4713",
     "MKR": "0x4bb514a7f83fbb13c2b41448208e89fabbcfe2fb"
   },
-  "ropsten": {
-    "W-ETH": "0xece9fa304cc965b00afc186f5d0281a00d3dbbfd",
-    "DAI": "0x0000000000000000000000000000000000000000",
-    "MKR": "0xa7f6c9a5052a08a14ff0e3349094b6efbc591ea4"
-  },
   "live": {
     "W-ETH": "0xecf8f87f810ecf450940c9f60066b4a7a501d6a7",
     "DAI": "0x0000000000000000000000000000000000000000",
