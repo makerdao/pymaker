@@ -6,12 +6,11 @@ from auctions.StrategyContext import StrategyContext
 
 
 class AuctionEngine:
-    def __init__(self, auction_manager, trader_address, strategy, frequency, number_of_recent_blocks):
+    def __init__(self, auction_manager, trader_address, strategy, frequency):
         self.auction_manager = auction_manager
         self.trader_address = trader_address
         self.strategy = strategy
         self.frequency = frequency
-        self.number_of_recent_blocks = number_of_recent_blocks
         self._active_auctionlets = SortedSet()
         self._process_lock = threading.Lock()
         self._set_lock = threading.Lock()
@@ -30,8 +29,7 @@ class AuctionEngine:
         self.auction_manager.on_split(self._on_split)
 
     def _discover_recent_auctionlets(self):
-        if (self.number_of_recent_blocks is not None):
-            self.auction_manager.discover_recent_auctionlets(self.number_of_recent_blocks, self._on_recovered_auctionlet)
+        self.auction_manager.discover_recent_auctionlets(self._on_recovered_auctionlet)
 
     def _on_recovered_auctionlet(self, auctionlet_id):
         self._register_auctionlet(auctionlet_id)

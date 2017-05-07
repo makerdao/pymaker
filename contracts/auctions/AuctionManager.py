@@ -14,9 +14,9 @@ class AuctionManager(Contract):
     for use with standard tokens (https://github.com/makerdao/token-auction).
 
     There are two basic entities in this ecosystem:
-    * Auctions.
+    * Auctions - get created directly by creators.
     * Auctionlets - the splittable unit of an auction. Each auction initially has a single auctionlet
-      and for non-splitting auctions it stays like that throughout the entire duration of an auction.
+      and for non-splitting auctions it stays like that throughout the entire duration of the auction.
       Auctionlets are the objects on which bidders place bids.
 
     For now, only forward auctions are supported.
@@ -69,13 +69,11 @@ class AuctionManager(Contract):
     def on_auction_reversal(self, handler):
         self._on_auction_reversal_handler = handler
 
-    def discover_recent_auctionlets(self, number_of_historical_blocks, on_auctionlet_discovered):
-        """Scan over LogNewAuction event history and determine which auctions can still be active."""
-        start_block_number = self._web3.eth.blockNumber - int(number_of_historical_blocks)
-        start_block_filter = {'fromBlock': start_block_number}
-        self._contract.pastEvents('LogNewAuction', start_block_filter,
+    def discover_recent_auctionlets(self, on_auctionlet_discovered):
+        """Scan over LogNewAuction and LogSplit events and determine which auctionlets can still be active."""
+        self._contract.pastEvents('LogNewAuction', {'fromBlock': 0},
                                   lambda log: on_auctionlet_discovered(log['args']['base_id']))
-        self._contract.pastEvents('LogSplit', start_block_filter,
+        self._contract.pastEvents('LogSplit', {'fromBlock': 0},
                                   lambda log: on_auctionlet_discovered(log['args']['split_id']))
 
     def get_auction(self, auction_id):
