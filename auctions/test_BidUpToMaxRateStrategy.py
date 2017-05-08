@@ -310,7 +310,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         # then
         self.assertEqual("Placed a new bid at 125.000000000000000000 MKR, bid was successful. Our maximum bid on this auctionlet is 200.000000000000000000 MKR", result.description)
         self.assertFalse(result.forget)
-        self.mkr_token.approve.assert_called_once_with(self.auction_manager_address, Wad(1000000*self.wei()))
+        self.mkr_token.approve.assert_called_once_with(self.auction_manager_address, Wad(2**256-1))
         self.auctionlet.bid.assert_called_once_with(Wad(125*self.wei()))
 
     def test_should_fail_if_unable_to_raise_allowance(self):
