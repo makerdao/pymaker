@@ -4,10 +4,7 @@ import argparse
 import json
 
 from auctions.AuctionEngine import AuctionEngine
-from auctions.BidUpToMaxRateStrategy import BidUpToMaxRateStrategy
-from auctions.HandleExpiredAuctionletsStrategy import HandleExpiredAuctionletsStrategy
-from auctions.IgnoreWinningAuctionletsStrategy import IgnoreWinningAuctionletsStrategy
-from auctions.OnlyOneTokenPairPairStrategy import OnlyOneTokenPairPairStrategy
+from auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
 from contracts.Address import Address
 from contracts.DSToken import DSToken
 from contracts.ERC20Token import ERC20Token
@@ -46,10 +43,6 @@ mkr_token = DSToken(web3=web3, address=mkr_address)
 for key, value in addresses[network].items():
     ERC20Token.register_token(Address(value), key)
 
-strategy = BidUpToMaxRateStrategy(args.mkr_dai_rate, args.step, Wad(args.minimal_mkr_bid * 1000000000000000000))
-strategy = IgnoreWinningAuctionletsStrategy(strategy)
-strategy = HandleExpiredAuctionletsStrategy(strategy)
-strategy = OnlyOneTokenPairPairStrategy(dai_token, mkr_token, strategy)
-
+strategy = BasicForwardAuctionStrategy(dai_token, mkr_token, args.mkr_dai_rate, args.step, Wad(args.minimal_mkr_bid * 1000000000000000000))
 engine = AuctionEngine(auction_manager, trader_address, strategy, args.frequency)
 engine.start()

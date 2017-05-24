@@ -1,13 +1,18 @@
 from auctions.StrategyResult import StrategyResult
 from auctions.Strategy import Strategy
+from contracts.ERC20Token import ERC20Token
 from contracts.Wad import Wad
 
 
-class BidUpToMaxRateStrategy(Strategy):
-    def __init__(self, mkr_dai_rate, step, minimal_bid):
+class BasicForwardAuctionStrategy(Strategy):
+    def __init__(self, we_buy, we_sell, mkr_dai_rate, step, minimal_bid):
+        self.we_buy = we_buy
+        self.we_sell = we_sell
         self.mkr_dai_rate = mkr_dai_rate
         self.step = step
         self.minimal_bid = minimal_bid
+        assert(isinstance(self.we_buy, ERC20Token))
+        assert(isinstance(self.we_sell, ERC20Token))
         assert(self.mkr_dai_rate > 0)
         assert(self.step > 0)
         assert(self.step <= 1)
@@ -17,6 +22,31 @@ class BidUpToMaxRateStrategy(Strategy):
     def perform(self, auctionlet, context):
         auction = auctionlet.get_auction()
 
+        # this strategy supports forward auctions only
+        if not auction.is_forward():
+            return StrategyResult(f"Not a forward auction. Forgetting it.", forget=True)
+
+        # we trade only on our token pair
+        if (auction.selling != self.we_buy) or (auction.buying != self.we_sell):
+            return StrategyResult("Unrecognized token pair. Forgetting it.", forget=True)
+
+        # we do not do anything if we are already winning
+        if auctionlet.last_bidder == context.trader_address:
+            return StrategyResult('We are the highest bidder. Not doing anything.')
+
+        # handle expired auctions, we either claim them or forget them
+        if auctionlet.expired:
+            if auctionlet.unclaimed:
+                if auctionlet.last_bidder == context.trader_address:
+                    if auctionlet.claim():
+                        return StrategyResult("Expired and unclaimed, we won, claimed by us successfully. Forgetting it.", forget=True)
+                    else:
+                        return StrategyResult("Expired and unclaimed, we won, tried to claim it but claim failed")
+                else:
+                    return StrategyResult('Expired and unclaimed, waiting to be claimed by somebody else. Forgetting it.', forget=True)
+            else:
+                return StrategyResult('Expired and claimed. Forgetting it.', forget=True)
+
         # get the current buy amount and the minimum possible increase
         auction_current_bid = auctionlet.buy_amount
         auction_min_next_bid = auction_current_bid.percentage_change(auction.min_increase)
@@ -24,10 +54,6 @@ class BidUpToMaxRateStrategy(Strategy):
 
         # calculate our maximum bid
         our_max_bid = auctionlet.sell_amount / self.mkr_dai_rate
-
-        # we only support forward auctions for now
-        if not auction.is_forward():
-            return StrategyResult(f"Not a forward auction. Forgetting it.", forget=True)
 
         # if the current auction bid amount has already reached our maximum bid
         # then we can not go higher, so we do not bid

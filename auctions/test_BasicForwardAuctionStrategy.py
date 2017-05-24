@@ -3,22 +3,23 @@ import unittest
 
 from unittest.mock import MagicMock
 
-from auctions.BidUpToMaxRateStrategy import BidUpToMaxRateStrategy
+from auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
 from auctions.StrategyContext import StrategyContext
 from contracts.Address import Address
+from contracts.ERC20Token import ERC20Token
 from contracts.Wad import Wad
 from contracts.auctions.AuctionManager import Auctionlet, Auction
 
 
-class TestBidUpToMaxRateStrategy(unittest.TestCase):
+class TestBasicForwardAuctionStrategy(unittest.TestCase):
 
     def setUp(self):
         self.auction_manager = MagicMock()
         self.auction_manager_address = Address('0x0101010101010101010101010101010101010101')
-        self.dai_token = MagicMock()
+        self.dai_token = MagicMock(spec=ERC20Token)
         self.dai_token.name = MagicMock(return_value='DAI')
         self.dai_token_address = Address('0x0202020202020202020202020202020202020202')
-        self.mkr_token = MagicMock()
+        self.mkr_token = MagicMock(spec=ERC20Token)
         self.mkr_token.name = MagicMock(return_value='MKR')
         self.mkr_token_address = Address('0x0303030303030303030303030303030303030303')
         self.creator_address = Address('0x0404040404040404040404040404040404040404')
@@ -54,7 +55,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         # (newly created auction)
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -68,7 +69,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.auctionlet.last_bidder = self.competitor_address
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -82,7 +83,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.auctionlet.last_bidder = self.competitor_address
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -97,7 +98,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.auctionlet.last_bidder = self.competitor_address
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -111,7 +112,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.auctionlet.last_bidder = self.competitor_address
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(201 * self.wei()))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(201 * self.wei()))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -125,7 +126,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.auctionlet.last_bidder = self.competitor_address
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(190 * self.wei()))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(190 * self.wei()))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -139,7 +140,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.auctionlet.last_bidder = self.competitor_address
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(200 * self.wei()))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(200 * self.wei()))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -154,7 +155,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.auctionlet.last_bidder = self.competitor_address
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -169,7 +170,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.auctionlet.last_bidder = self.competitor_address
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -184,7 +185,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.set_mkr_balance(Wad(79 * self.wei()))
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -200,7 +201,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.set_mkr_balance(Wad(60 * self.wei()))
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(65 * self.wei()))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(65 * self.wei()))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -216,7 +217,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.set_mkr_balance(Wad(60 * self.wei()))
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(60 * self.wei()))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(60 * self.wei()))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -234,7 +235,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.set_mkr_balance(Wad(54 * self.wei()))
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -252,7 +253,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.set_mkr_balance(Wad(54 * self.wei()))
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -270,7 +271,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.set_mkr_balance(Wad(54 * self.wei()))
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(55 * self.wei()))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(55 * self.wei()))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -288,7 +289,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.set_mkr_balance(Wad(54 * self.wei()))
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.05, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.05, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -304,7 +305,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.mkr_token.approve = MagicMock(return_value=True)
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -321,7 +322,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.mkr_token.approve = MagicMock(return_value=False)
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then
@@ -336,7 +337,7 @@ class TestBidUpToMaxRateStrategy(unittest.TestCase):
         self.auctionlet.bid = MagicMock(return_value=False)
 
         # when
-        strategy = BidUpToMaxRateStrategy(0.05, 0.5, Wad(1))
+        strategy = BasicForwardAuctionStrategy(self.dai_token, self.mkr_token, 0.05, 0.5, Wad(1))
         result = strategy.perform(self.auctionlet, self.context)
 
         # then

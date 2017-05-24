@@ -1,7 +1,8 @@
 {
   "kovan": {
     "W-ETH": "0x53eccc9246c1e537d79199d0c7231e425a40f896",
-    "DAI": "0x383105dc3dab1646119335ae54afdfd9f2af4713",
+    "DAI": "0x0000000000000000000000000000000000000000",
+    "RAI": "0x383105dc3dab1646119335ae54afdfd9f2af4713", //TODO a substitute of DAI by @reverendus
     "MKR": "0x4bb514a7f83fbb13c2b41448208e89fabbcfe2fb"
   },
   "live": {
