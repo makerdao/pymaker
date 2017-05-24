@@ -48,6 +48,19 @@ to keep the Dai Stablecoin System liquid in its initial phase. Having said that,
 they were designed with extensibility in mind, so keeper designers can build their
 own more sophisticated logic on top of them.
 
+### Installation
+```
+pip install -r requirements.txt
+```
+
+In order for the requirements to install correctly on _macOS_, you may need to set
+some environment variables:
+```
+export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
+```
+
+Also, installing `openssl` and `libtool` using Homebrew may help as well.
+
 ### Buy&Burn
 
 TODO
