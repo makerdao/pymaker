@@ -119,6 +119,9 @@ class Auction:
         self.reversed = auction_info[8]
         self.unsold = auction_info[9]
 
+    def get_auction_manager(self):
+        return self._auction_manager
+
     def is_forward(self):
         return (self.min_increase > 0) and (self.min_decrease == 0)
 
@@ -145,6 +148,9 @@ class Auctionlet:
         self.unclaimed = auctionlet_info[5]
         self.base = auctionlet_info[6]
         self.expired = is_expired
+
+    def get_auction_manager(self):
+        return self._auction_manager
 
     def get_auction(self):
         if self._auction is None:
