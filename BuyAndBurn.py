@@ -35,12 +35,12 @@ web3.eth.defaultAccount = args.trader
 auction_manager_address = Address(args.auction_manager)
 auction_manager = AuctionManager(web3=web3, address=auction_manager_address, is_splitting=True)
 trader_address = Address(args.trader)
-dai_address = Address(addresses[network]["DAI"])
+dai_address = Address(addresses[network]["tokens"]["DAI"])
 dai_token = ERC20Token(web3=web3, address=dai_address)
-mkr_address = Address(addresses[network]["MKR"])
+mkr_address = Address(addresses[network]["tokens"]["MKR"])
 mkr_token = DSToken(web3=web3, address=mkr_address)
 
-for key, value in addresses[network].items():
+for key, value in addresses[network]["tokens"].items():
     ERC20Token.register_token(Address(value), key)
 
 strategy = BasicForwardAuctionStrategy(dai_token, mkr_token, args.mkr_dai_rate, args.step, Wad(args.minimal_mkr_bid * 1000000000000000000))
