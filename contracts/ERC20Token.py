@@ -62,3 +62,10 @@ class ERC20Token(Contract):
     @staticmethod
     def register_token(address, name):
         ERC20Token.registry[address] = name
+
+    @staticmethod
+    def token_address_by_name(token_name):
+        for address, name in ERC20Token.registry.items():
+            if name == token_name:
+                return address
+        raise Exception(f"Token {token_name} not found")

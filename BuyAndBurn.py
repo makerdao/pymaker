@@ -29,19 +29,19 @@ with open('addresses.json') as data_file:
     network = "kovan"
     addresses = json.load(data_file)
 
+for key, value in addresses[network]["tokens"].items():
+    ERC20Token.register_token(Address(value), key)
+
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}"))
 web3.eth.defaultAccount = args.trader
 
 auction_manager_address = Address(args.auction_manager)
 auction_manager = AuctionManager(web3=web3, address=auction_manager_address, is_splitting=True)
 trader_address = Address(args.trader)
-dai_address = Address(addresses[network]["tokens"]["DAI"])
+dai_address = ERC20Token.token_address_by_name("DAI")
 dai_token = ERC20Token(web3=web3, address=dai_address)
-mkr_address = Address(addresses[network]["tokens"]["MKR"])
+mkr_address = ERC20Token.token_address_by_name("MKR")
 mkr_token = DSToken(web3=web3, address=mkr_address)
-
-for key, value in addresses[network]["tokens"].items():
-    ERC20Token.register_token(Address(value), key)
 
 strategy = BasicForwardAuctionStrategy(dai_token, mkr_token, args.mkr_dai_rate, args.step, Wad(args.minimal_mkr_bid * 1000000000000000000))
 engine = AuctionEngine(auction_manager, trader_address, strategy, args.frequency)

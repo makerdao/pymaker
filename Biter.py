@@ -46,11 +46,3 @@ while True:
             print(f"Cup {cup_id} is safe")
 
     time.sleep(args.frequency)
-
-
-# for key, value in addresses[network].items():
-#     ERC20Token.register_token(Address(value), key)
-#
-# strategy = BasicForwardAuctionStrategy(dai_token, mkr_token, args.mkr_dai_rate, args.step, Wad(args.minimal_mkr_bid * 1000000000000000000))
-# engine = AuctionEngine(auction_manager, trader_address, strategy, args.frequency)
-# engine.start()
