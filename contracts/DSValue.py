@@ -5,7 +5,7 @@ class DSValue(Contract):
     def __init__(self, web3, address):
         self.web3 = web3
         self.address = address
-        self.contract = web3.eth.contract(abi=self._load_abi('contracts/DSValue.abi'))(address=address.address)
+        self.contract = web3.eth.contract(abi=self._load_abi(__name__, 'DSValue.abi'))(address=address.address)
 
     def has_value(self):
         return self.contract.call().peek()[1]
