@@ -11,7 +11,7 @@ from web3 import Web3
 from contracts.Address import Address
 from contracts.sai.Tub import Tub
 
-parser = argparse.ArgumentParser(description='Sai biter keeper. Bites unsafe cups.')
+parser = argparse.ArgumentParser(description='Sai cups top-up keeper. Locks additional collateral in cups if they gett close to liquidation threshold.')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
 parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
 parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
