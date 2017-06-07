@@ -15,7 +15,7 @@ from contracts.sai.Tub import Tub
 parser = argparse.ArgumentParser(description='Tub biter keeper.')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
 parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
-parser.add_argument("--frequency", help="Frequency of periodical checking of existing auctions (in seconds) (default: 60)", default=60, type=int)
+parser.add_argument("--frequency", help="Frequency of checking for unsafe cups (in seconds) (default: 60)", default=60, type=int)
 parser.add_argument("--trader", help="Ethereum address of the trader ie. the biter", required=True, type=str)
 args = parser.parse_args()
 
