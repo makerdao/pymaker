@@ -3,13 +3,12 @@
 import argparse
 import time
 
-from Config import Config
-
 from web3 import HTTPProvider
 from web3 import Web3
 
 from contracts.Address import Address
 from contracts.sai.Tub import Tub
+from keepers.Config import Config
 
 parser = argparse.ArgumentParser(description='Sai bite keeper. Bites unsafe cups.')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)

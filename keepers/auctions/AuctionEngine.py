@@ -1,8 +1,9 @@
-import time
 import threading
+import time
+
 from sortedcontainers import SortedSet
 
-from auctions.StrategyContext import StrategyContext
+from keepers.auctions.StrategyContext import StrategyContext
 
 
 class AuctionEngine:

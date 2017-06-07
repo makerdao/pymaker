@@ -2,17 +2,17 @@
 
 import argparse
 
-from Config import Config
 from auctions.AuctionEngine import AuctionEngine
-from auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
+from web3 import HTTPProvider
+from web3 import Web3
+
 from contracts.Address import Address
 from contracts.DSToken import DSToken
 from contracts.ERC20Token import ERC20Token
 from contracts.Wad import Wad
 from contracts.auctions.AuctionManager import AuctionManager
-
-from web3 import HTTPProvider
-from web3 import Web3
+from keepers.Config import Config
+from keepers.auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
 
 parser = argparse.ArgumentParser(description='Dai Buy&Burn keeper. Buys DAI for MKR on forward auctions.')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)

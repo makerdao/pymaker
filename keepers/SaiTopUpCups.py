@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
-import time
-
-from Config import Config
 
 from web3 import HTTPProvider
 from web3 import Web3
 
 from contracts.Address import Address
 from contracts.sai.Tub import Tub
+from keepers.Config import Config
 
 parser = argparse.ArgumentParser(description='Sai cups top-up keeper. Locks additional collateral in cups if they gett close to liquidation threshold.')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)

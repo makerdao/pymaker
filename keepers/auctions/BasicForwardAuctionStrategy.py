@@ -1,7 +1,8 @@
-from auctions.StrategyResult import StrategyResult
-from auctions.Strategy import Strategy
+from keepers.auctions.Strategy import Strategy
+
 from contracts.ERC20Token import ERC20Token
 from contracts.Wad import Wad
+from keepers.auctions.StrategyResult import StrategyResult
 
 
 class BasicForwardAuctionStrategy(Strategy):
