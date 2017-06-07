@@ -12,5 +12,5 @@ class Config:
         for key, value in self.addresses[self.network]["tokens"].items():
             ERC20Token.register_token(Address(value), key)
 
-    def contracts(self):
-        return self.addresses[self.network]["contracts"]
+    def get_contract_address(self, name):
+        return self.addresses[self.network]["contracts"][name]

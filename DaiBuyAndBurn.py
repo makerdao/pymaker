@@ -14,7 +14,7 @@ from contracts.auctions.AuctionManager import AuctionManager
 from web3 import HTTPProvider
 from web3 import Web3
 
-parser = argparse.ArgumentParser(description='Maker BuyAndBurn keeper. Buys DAI for MKR on forward auctions.')
+parser = argparse.ArgumentParser(description='Dai Buy&Burn keeper. Buys DAI for MKR on forward auctions.')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
 parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
 parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
@@ -29,7 +29,7 @@ config = Config()
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}"))
 web3.eth.defaultAccount = args.eth_from #TODO allow to use ETH_FROM env variable
 
-auction_manager_address = Address(config.contracts()["auctionManager"])
+auction_manager_address = Address(config.get_contract_address("auctionManager"))
 auction_manager = AuctionManager(web3=web3, address=auction_manager_address, is_splitting=True)
 trader_address = Address(args.eth_from)
 dai_address = ERC20Token.token_address_by_name("DAI")
