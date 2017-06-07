@@ -2,6 +2,9 @@ import math
 from functools import total_ordering
 
 
+# TODO the math here is untested and probably in many cases the rounding
+# is done wrong. use on your own responsibility
+
 @total_ordering
 class Wad:
     def __init__(self, value):
@@ -22,9 +25,13 @@ class Wad:
         return Wad(self.value - other.value)
 
     def __mul__(self, other):
+        from contracts.Ray import Ray
         if isinstance(other, Wad):
-            raise ArithmeticError
-        return Wad(int(math.ceil(self.value * other)))
+            return Wad(int(math.ceil(self.value * other.value)) // int(math.pow(10, 18)))
+        elif isinstance(other, Ray):
+            return Ray(int(math.ceil(self.value * other.value)) // int(math.pow(10, 18)))
+        else:
+            return Wad(int(math.ceil(self.value * other)))
 
     def __truediv__(self, other):
         if isinstance(other, Wad):

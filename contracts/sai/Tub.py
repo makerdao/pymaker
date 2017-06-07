@@ -54,6 +54,10 @@ class Tub(Contract):
     def fog(self):
         return Wad(self._contract.call().fog())
 
+    """Get the current entry price (gem per skr)"""
+    def per(self):
+        return Ray(self._contract.call().per())
+
     """Get the reference price (ref per gem)"""
     def tag(self):
         return Wad(self._contract.call().tag())
@@ -65,6 +69,15 @@ class Tub(Contract):
     """Get the last cup id"""
     def cupi(self):
         return self._contract.call().cupi()
+
+    """Get the cup details"""
+    def cups(self, cup_id):
+        array = self._contract.call().cups(self._to_bytes32(cup_id))
+        return Cup(Address(array[0]), Wad(array[1]), Wad(array[2]))
+
+    """Get how much debt in a cup"""
+    def tab(self, cup_id):
+        return Wad(self._contract.call().tab(self._to_bytes32(cup_id)))
 
     """Determine if a cup is safe"""
     def safe(self, cup_id):
@@ -82,3 +95,13 @@ class Tub(Contract):
 
     def __repr__(self):
         return f"Tub(address='{self.address}')"
+
+
+class Cup:
+    def __init__(self, lad, art, ink):
+        self.lad = lad
+        self.art = art
+        self.ink = ink
+
+    def __repr__(self):
+        return f"Cup(lad={repr(self.lad)}, art={self.art}, ink={self.ink})"
