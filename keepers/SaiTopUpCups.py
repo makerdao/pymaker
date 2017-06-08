@@ -2,10 +2,13 @@
 
 import argparse
 
+import time
 from web3 import HTTPProvider
 from web3 import Web3
 
 from contracts.Address import Address
+from contracts.DSValue import DSValue
+from contracts.Wad import Wad
 from contracts.sai.Tub import Tub
 from keepers.Config import Config
 
@@ -36,6 +39,12 @@ print(tub.cups(1))
 print(tub.tab(1))
 print("TODO")
 
+
+tip = DSValue(web3=web3, address=tub.tip())
+print(Wad(tip.read_as_int()))
+tip.watch(None)
+
+time.sleep(1000)
 
 for cup_id in range(1, tub.cupi()+1):
     #TODO as we do cups(...) and tab(...) in two separate calls, there is a slight chance that they might get evaulated

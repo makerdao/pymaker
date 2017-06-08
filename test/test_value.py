@@ -19,8 +19,8 @@ print(value2.has_value())
 print(value3.has_value())
 print(value_medianizer.has_value())
 
-print(value1.get_value_as_dec())
-print(value2.get_value_as_dec())
-print(value3.get_value_as_dec())
-print(value_medianizer.get_value_as_dec())
+print(value1.read_as_int())
+print(value2.read_as_int())
+print(value3.read_as_int())
+print(value_medianizer.read_as_int())
 
