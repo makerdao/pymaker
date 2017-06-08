@@ -1,5 +1,6 @@
 import math
 from functools import total_ordering
+from decimal import *
 
 # TODO the math here is untested and probably in many cases the rounding
 # is done wrong. use on your own responsibility
@@ -9,6 +10,13 @@ class Ray:
     def __init__(self, value):
         assert(value >= 0)
         self.value = int(value)
+
+    @classmethod
+    def from_number(cls, number):
+        assert(number >= 0)
+        pwr = Decimal(10) ** 27
+        dec = Decimal(str(number)) * pwr
+        return Ray(int(dec.quantize(1)))
 
     def __repr__(self):
         return "Ray(" + str(self.value) + ")"

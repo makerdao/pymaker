@@ -62,6 +62,10 @@ class Tub(Contract):
     def tag(self):
         return Wad(self._contract.call().tag())
 
+    """Get the liquidation ratio"""
+    def mat(self):
+        return Ray(self._contract.call().mat())
+
     """Get the gem price feed"""
     def tip(self):
         return Address(self._contract.call().tip())
@@ -72,20 +76,32 @@ class Tub(Contract):
 
     """Get the cup details"""
     def cups(self, cup_id):
+        assert isinstance(cup_id, int)
         array = self._contract.call().cups(self._to_bytes32(cup_id))
         return Cup(Address(array[0]), Wad(array[1]), Wad(array[2]))
 
     """Get how much debt in a cup"""
     def tab(self, cup_id):
+        assert isinstance(cup_id, int)
         return Wad(self._contract.call().tab(self._to_bytes32(cup_id)))
 
     """Determine if a cup is safe"""
     def safe(self, cup_id):
+        assert isinstance(cup_id, int)
         return self._contract.call().safe(self._to_bytes32(cup_id))
+
+    """Post additional SKR collateral to a cup"""
+    def lock(self, cup_id, wad):
+        assert isinstance(wad, Wad)
+        assert isinstance(cup_id, int)
+        tx_hash = self._contract.transact().lock(self._to_bytes32(cup_id), wad.value)
+        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
 
     """Initiate liquidation of an undercollateralized cup"""
     def bite(self, cup_id):
-        self._contract.transact().bite(self._to_bytes32(cup_id))
+        assert isinstance(cup_id, int)
+        tx_hash = self._contract.transact().bite(self._to_bytes32(cup_id))
+        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
 
     def _to_bytes32(self, value):
         return value.to_bytes(32, byteorder='big')

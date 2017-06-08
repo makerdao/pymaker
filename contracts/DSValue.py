@@ -19,19 +19,17 @@ class DSValue(Contract):
     def read_as_int(self):
         return int(self.read_as_hex(), 16)
 
-    def watch(self, filter_params=None):
-        self.contract.on('LogNote', None, self.__note)
-        self.contract.on('LogNote', {'fromBlock': 0}, self.__note)
+    def watch(self):
+        self.contract.on("LogNote", {'filter': {'sig': bytearray.fromhex('1504460f')}}, self.__note)
+        self.contract.pastEvents("LogNote", {'fromBlock': 0, 'filter': {'sig': bytearray.fromhex('1504460f')}}, self.__note)
+
+        # 'topics': ['0x1504460f00000000000000000000000000000000000000000000000000000000']
+        # 'topics': ['0x1504460f00000000000000000000000000000000000000000000000000000000']
 
     def __note(self, log):
+        print("AAA")
         args = log['args']
         print(args)
-        # # state initialisation
-        # if not self._state:
-        #     self._state[args['from']] = self.total_supply().value
-        #
-        # self._state[args['from']] -= args['value']
-        # self._state[args['to']] += args['value']
 
 
 

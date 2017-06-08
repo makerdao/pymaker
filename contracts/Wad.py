@@ -4,12 +4,21 @@ from functools import total_ordering
 
 # TODO the math here is untested and probably in many cases the rounding
 # is done wrong. use on your own responsibility
+from decimal import Decimal
+
 
 @total_ordering
 class Wad:
     def __init__(self, value):
         assert(value >= 0)
         self.value = int(value)
+
+    @classmethod
+    def from_number(cls, number):
+        assert(number >= 0)
+        pwr = Decimal(10) ** 18
+        dec = Decimal(str(number)) * pwr
+        return Wad(int(dec.quantize(1)))
 
     def __repr__(self):
         return "Wad(" + str(self.value) + ")"
