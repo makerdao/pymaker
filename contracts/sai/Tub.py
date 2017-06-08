@@ -91,16 +91,30 @@ class Tub(Contract):
         return self._contract.call().safe(self._to_bytes32(cup_id))
 
     """Post additional SKR collateral to a cup"""
-    def lock(self, cup_id, wad):
-        assert isinstance(wad, Wad)
+    def lock(self, cup_id, amount_in_skr):
         assert isinstance(cup_id, int)
-        tx_hash = self._contract.transact().lock(self._to_bytes32(cup_id), wad.value)
+        assert isinstance(amount_in_skr, Wad)
+        tx_hash = self._contract.transact().lock(self._to_bytes32(cup_id), amount_in_skr.value)
         return self._has_any_log_message(self._wait_for_receipt(tx_hash))
 
     """Initiate liquidation of an undercollateralized cup"""
     def bite(self, cup_id):
         assert isinstance(cup_id, int)
         tx_hash = self._contract.transact().bite(self._to_bytes32(cup_id))
+        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+
+    """Buy some amount of sai to process joy (surplus)"""
+    def boom(self, cup_id, amount_in_skr):
+        assert isinstance(cup_id, int)
+        assert isinstance(amount_in_skr, Wad)
+        tx_hash = self._contract.transact().boom(self._to_bytes32(cup_id), amount_in_skr.value)
+        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+
+    """Sell some amount of sai to process woe (bad debt)"""
+    def bust(self, cup_id, amount_in_skr):
+        assert isinstance(cup_id, int)
+        assert isinstance(amount_in_skr, Wad)
+        tx_hash = self._contract.transact().bust(self._to_bytes32(cup_id), amount_in_skr.value)
         return self._has_any_log_message(self._wait_for_receipt(tx_hash))
 
     def _to_bytes32(self, value):
