@@ -5,6 +5,11 @@ import time
 
 class Contract:
 
+    def _assert_contract_exists(self, web3, address):
+        code = web3.eth.getCode(address.address)
+        if (code == "0x") or (code is None):
+            raise Exception(f"No contract found at {address}")
+
     def _wait_for_receipt(self, transaction_hash):
         while True:
             receipt = self._web3.eth.getTransactionReceipt(transaction_hash)

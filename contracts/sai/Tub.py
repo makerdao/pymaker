@@ -6,6 +6,7 @@ from contracts.Wad import Wad
 
 class Tub(Contract):
     def __init__(self, web3, address):
+        self._assert_contract_exists(web3, address)
         self.address = address
         self._contract = web3.eth.contract(abi=self._load_abi(__name__, 'Tub.abi'))(address=address.address)
         self._web3 = web3
