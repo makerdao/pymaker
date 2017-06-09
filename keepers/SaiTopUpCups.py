@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(description='SaiTopUpCups keeper. Locks additio
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
 parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
 parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
-parser.add_argument("--frequency", help="Frequency of checking for unsafe cups (in seconds) (default: 5)", default=5, type=float)
+parser.add_argument("--frequency", help="Frequency of checking for undercollateralized cups (in seconds) (default: 5)", default=5, type=float)
 parser.add_argument("--minimum-margin", help="Margin between the liquidation ratio and the top-up threshold", default=0.1, type=int)
 parser.add_argument("--target-margin", help="Margin between the liquidation ratio and the top-up target", default=0.25, type=float)
 args = parser.parse_args()
