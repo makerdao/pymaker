@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(description='Sai bite keeper. Bites unsafe cups
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
 parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
 parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
-parser.add_argument("--frequency", help="Frequency of checking for unsafe cups (in seconds) (default: 60)", default=60, type=int)
+parser.add_argument("--frequency", help="Frequency of checking for unsafe cups (in seconds) (default: 5)", default=5, type=int)
 args = parser.parse_args()
 
 config = Config()
@@ -29,8 +29,10 @@ while True:
     for cup_id in range(1, tub.cupi()+1):
         if not tub.safe(cup_id):
             print(f"Cup {cup_id} is not safe, biting it")
-            tub.bite(cup_id)
+            if tub.bite(cup_id):
+                print(f"Cup {cup_id} has been successfully bitten")
+            else:
+                print(f"*** FAILED to bite cup {cup_id}")
         else:
             print(f"Cup {cup_id} is safe")
     time.sleep(args.frequency)
-    #TODO what about recovering CDPs?
