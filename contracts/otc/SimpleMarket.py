@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 class SimpleMarket:
     def __init__(self, web3, address):
         Market = web3.eth.contract(abi=abi, bytecode=bytecode)
