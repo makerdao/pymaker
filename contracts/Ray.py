@@ -19,8 +19,11 @@ import math
 from functools import total_ordering
 from decimal import *
 
+
 # TODO the math here is untested and probably in many cases the rounding
-# is done wrong. use on your own responsibility
+# TODO is done wrong. for now use on your own responsibility
+#
+# TODO but the goal is to keep these classes to make Ray/Wad math easier
 
 @total_ordering
 class Ray:
