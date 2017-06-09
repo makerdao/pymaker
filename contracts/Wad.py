@@ -1,11 +1,6 @@
-import math
-from functools import total_ordering
-
-
-# TODO the math here is untested and probably in many cases the rounding
-# is done wrong. use on your own responsibility
 # This file is part of "maker.py".
-# Copyright (C) 2017 MakerDAO
+#
+# Copyright (C) 2017 reverendus
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -20,8 +15,13 @@ from functools import total_ordering
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
+from functools import total_ordering
 from decimal import Decimal
 
+
+# TODO the math here is untested and probably in many cases the rounding
+# is done wrong. use on your own responsibility
 
 @total_ordering
 class Wad:
