@@ -35,6 +35,10 @@ class Contract:
             time.sleep(0.25)
 
     @staticmethod
+    def _to_bytes32(value):
+        return value.to_bytes(32, byteorder='big')
+
+    @staticmethod
     def _has_any_log_message(receipt):
         receipt_logs = receipt['logs']
         return (receipt_logs is not None) and (len(receipt_logs) > 0)

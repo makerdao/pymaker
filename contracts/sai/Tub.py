@@ -118,9 +118,6 @@ class Tub(Contract):
         tx_hash = self._contract.transact().bust(self._to_bytes32(cup_id), amount_in_skr.value)
         return self._has_any_log_message(self._wait_for_receipt(tx_hash))
 
-    def _to_bytes32(self, value):
-        return value.to_bytes(32, byteorder='big')
-
     def __eq__(self, other):
         return self.address == other.address
 

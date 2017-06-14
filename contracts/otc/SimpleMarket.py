@@ -36,26 +36,27 @@ class SimpleMarket(Contract):
 
     def get_offer(self, offer_id):
         array = self._contract.call().offers(offer_id)
-        return OfferInfo(sell_how_much=Wad(array[0]),
-                         # sell_which_token=Address(array[1]),
-                         sell_which_token=ERC20Token(web3=self._web3, address=Address(array[1])),
-                         buy_how_much=Wad(array[2]),
-                         # buy_which_token=Address(array[3]),
-                         buy_which_token=ERC20Token(web3=self._web3, address=Address(array[3])),
-                         owner=Address(array[4]),
-                         active=array[5],
-                         timestamp=datetime.datetime.fromtimestamp(array[6]))
+        if array[5] is not True:
+            return None
+        else:
+            return OfferInfo(sell_how_much=Wad(array[0]),
+                             sell_which_token=ERC20Token(web3=self._web3, address=Address(array[1])),
+                             buy_how_much=Wad(array[2]),
+                             buy_which_token=ERC20Token(web3=self._web3, address=Address(array[3])),
+                             owner=Address(array[4]),
+                             active=array[5],
+                             timestamp=datetime.datetime.fromtimestamp(array[6]))
 
     def make(self, have_token, want_token, have_amount, want_amount):
         tx_hash = self._contract.transact().make(have_token, want_token, have_amount, want_amount)
         return self._has_any_log_message(self._wait_for_receipt(tx_hash))
 
     def take(self, offer_id, quantity):
-        tx_hash = self._contract.transact().take(offer_id, quantity)
+        tx_hash = self._contract.transact().take(self._to_bytes32(offer_id), quantity.value)
         return self._has_any_log_message(self._wait_for_receipt(tx_hash))
 
     def kill(self, offer_id):
-        tx_hash = self._contract.transact().kill(offer_id)
+        tx_hash = self._contract.transact().kill(self._to_bytes32(offer_id))
         return self._has_any_log_message(self._wait_for_receipt(tx_hash))
 
 
