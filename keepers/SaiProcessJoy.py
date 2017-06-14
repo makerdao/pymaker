@@ -28,6 +28,7 @@ from contracts.DSValue import DSValue
 from contracts.ERC20Token import ERC20Token
 from contracts.Ray import Ray
 from contracts.Wad import Wad
+from contracts.otc.SimpleMarket import SimpleMarket
 from contracts.sai.Tub import Tub
 from keepers.Config import Config
 
@@ -88,3 +89,24 @@ print("WOE: " + str(woe))
 
 woe_in_skr = Wad.from_number(woe / (price))
 print(f"WOE IN SKR: {woe_in_skr} SKR")
+
+
+market = SimpleMarket(web3=web3, address=Address("0x45ab8d410049116c7a01f6edfc08d564475c08ed"))
+
+for x in range(0, 1000):
+    market.get_last_offer_id()
+    print(x)
+
+print(market.get_last_offer_id())
+for offer_id in range(0, market.get_last_offer_id()):
+    offer = market.get_offer(offer_id)
+    print(offer_id)
+
+time.sleep(10)
+
+for offer_id in range(0, market.get_last_offer_id()):
+    offer = market.get_offer(offer_id)
+    print(offer_id)
+
+    # if offer.active:
+    #     print(offer)
