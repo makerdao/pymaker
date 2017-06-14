@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import collections
-
 from contracts.Contract import Contract
 from contracts.Wad import Wad
 
@@ -28,10 +26,6 @@ class ERC20Token(Contract):
         self.address = address
         self._contract = web3.eth.contract(abi=self._load_abi(__name__, 'ERC20Token.abi'))(address=address.address)
         self._web3 = web3
-
-        # {address => balance}
-        self._state = collections.defaultdict(lambda: 0)
-        self.watch()
 
     def name(self):
         return ERC20Token.registry.get(self.address, '???')
@@ -52,23 +46,6 @@ class ERC20Token(Contract):
     def approve(self, address, limit):
         tx_hash = self._contract.transact().approve(address.address, limit.value)
         return self._has_any_log_message(self._wait_for_receipt(tx_hash))
-
-    def reconstruct(self, filter_params=None):
-        """Scan over Transfer event history and determine the
-        current token holdings."""
-        return self._contract.pastEvents('Transfer', filter_params, self.__update_balance)
-
-    def watch(self, filter_params=None):
-        return self._contract.on('Transfer', filter_params, self.__update_balance)
-
-    def __update_balance(self, log):
-        args = log['args']
-        # state initialisation
-        if not self._state:
-            self._state[args['from']] = self.total_supply().value
-
-        self._state[args['from']] -= args['value']
-        self._state[args['to']] += args['value']
 
     def __eq__(self, other):
         return self.address == other.address
