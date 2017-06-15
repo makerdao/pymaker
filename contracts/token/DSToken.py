@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from contracts.Contract import Contract
-from contracts.ERC20Token import ERC20Token
+from contracts.token.ERC20Token import ERC20Token
 
 
 class DSToken(ERC20Token):

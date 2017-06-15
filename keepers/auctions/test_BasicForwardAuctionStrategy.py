@@ -2,13 +2,12 @@ import math
 import unittest
 from unittest.mock import MagicMock
 
-from keepers.auctions.StrategyContext import StrategyContext
-from keepers.auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
-
 from contracts.Address import Address
-from contracts.ERC20Token import ERC20Token
 from contracts.Wad import Wad
 from contracts.auctions.AuctionManager import Auctionlet, Auction
+from contracts.token.ERC20Token import ERC20Token
+from keepers.auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
+from keepers.auctions.StrategyContext import StrategyContext
 
 
 class TestBasicForwardAuctionStrategy(unittest.TestCase):

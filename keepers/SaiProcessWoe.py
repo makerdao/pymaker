@@ -18,20 +18,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
-
+import datetime
 import time
 
-import datetime
 from web3 import HTTPProvider
 from web3 import Web3
 
 from contracts.Address import Address
 from contracts.DSValue import DSValue
-from contracts.ERC20Token import ERC20Token
 from contracts.Ray import Ray
 from contracts.Wad import Wad
 from contracts.otc.SimpleMarket import SimpleMarket
 from contracts.sai.Tub import Tub
+from contracts.token.ERC20Token import ERC20Token
 from keepers.Config import Config
 
 

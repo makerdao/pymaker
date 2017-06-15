@@ -20,14 +20,14 @@
 import argparse
 
 from auctions.AuctionEngine import AuctionEngine
+from contracts.DSToken import DSToken
 from web3 import HTTPProvider
 from web3 import Web3
 
 from contracts.Address import Address
-from contracts.DSToken import DSToken
-from contracts.ERC20Token import ERC20Token
 from contracts.Wad import Wad
 from contracts.auctions.AuctionManager import AuctionManager
+from contracts.token.ERC20Token import ERC20Token
 from keepers.Config import Config
 from keepers.auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
 

@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pprint import pformat
 import datetime
+from pprint import pformat
 
 from contracts.Address import Address
 from contracts.Contract import Contract
-from contracts.ERC20Token import ERC20Token
 from contracts.Wad import Wad
+from contracts.token.ERC20Token import ERC20Token
 
 
 class AuctionManager(Contract):

@@ -18,7 +18,7 @@
 import json
 
 from contracts.Address import Address
-from contracts.ERC20Token import ERC20Token
+from contracts.token.ERC20Token import ERC20Token
 
 
 class Config:

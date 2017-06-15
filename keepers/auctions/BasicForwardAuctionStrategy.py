@@ -1,7 +1,6 @@
-from keepers.auctions.Strategy import Strategy
-
-from contracts.ERC20Token import ERC20Token
 from contracts.Wad import Wad
+from contracts.token.ERC20Token import ERC20Token
+from keepers.auctions.Strategy import Strategy
 from keepers.auctions.StrategyResult import StrategyResult
 
 

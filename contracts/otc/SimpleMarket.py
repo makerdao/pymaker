@@ -20,8 +20,8 @@ from pprint import pformat
 
 from contracts.Address import Address
 from contracts.Contract import Contract
-from contracts.ERC20Token import ERC20Token
 from contracts.Wad import Wad
+from contracts.token.ERC20Token import ERC20Token
 
 
 class SimpleMarket(Contract):
