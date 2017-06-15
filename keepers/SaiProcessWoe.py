@@ -25,12 +25,12 @@ from web3 import HTTPProvider
 from web3 import Web3
 
 from contracts.Address import Address
-from contracts.DSValue import DSValue
 from contracts.Ray import Ray
 from contracts.Wad import Wad
 from contracts.otc.SimpleMarket import SimpleMarket
 from contracts.sai.Tub import Tub
 from contracts.token.ERC20Token import ERC20Token
+from contracts.value.DSValue import DSValue
 from keepers.Config import Config
 
 
