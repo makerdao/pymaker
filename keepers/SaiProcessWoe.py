@@ -32,9 +32,10 @@ from contracts.sai.Tub import Tub
 from contracts.token.ERC20Token import ERC20Token
 from contracts.value.DSValue import DSValue
 from keepers.Config import Config
+from keepers.Keeper import Keeper
 
 
-class SaiProcessWoe:
+class SaiProcessWoe(Keeper):
     def all_offers(self, market):
         all_offers = [market.get_offer(offer_id) for offer_id in range(1, market.get_last_offer_id()+1)]
         return [offer for offer in all_offers if offer is not None]
@@ -43,6 +44,7 @@ class SaiProcessWoe:
         return [offer for offer in offers if offer.sell_which_token == sell_which_token and offer.buy_which_token == buy_which_token]
 
     def sell_to_buy_price(self, offer):
+        #TODO I think this is the reason of the rounding error
         return Ray.from_number(offer.sell_how_much/offer.buy_how_much)
 
     def buy_to_sell_price(self, offer):
@@ -153,7 +155,9 @@ class SaiProcessWoe:
 
         take_result = self.market.take(best_offer.offer_id, offer_sai)
         if not take_result:
+            print(best_offer)
             print(f"Failed to take quantity={offer_sai} of offer #{best_offer.offer_id} failed, will not carry on")
+            exit(-1)
             return
 
         skr_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.skr.address and transfer.from_address == self.our_address, take_result.transfers))

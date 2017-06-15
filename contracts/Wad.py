@@ -17,7 +17,7 @@
 
 import math
 from functools import total_ordering
-from decimal import Decimal
+from decimal import Decimal, ROUND_UP, ROUND_DOWN
 
 
 # TODO the math here is untested and probably in many cases the rounding
@@ -44,6 +44,10 @@ class Wad:
         dec = Decimal(str(number)) * pwr
         return Wad(int(dec.quantize(1)))
 
+    @classmethod
+    def from_uint(cls, uint):
+        return Wad(uint)
+
     def __repr__(self):
         return "Wad(" + str(self.value) + ")"
 
@@ -52,19 +56,32 @@ class Wad:
         return tmp[0:len(tmp)-18] + "." + tmp[len(tmp)-18:len(tmp)]
 
     def __add__(self, other):
-        return Wad(self.value + other.value)
+        if isinstance(other, Wad):
+            return Wad(self.value + other.value)
+        else:
+            raise ArithmeticError
 
     def __sub__(self, other):
-        return Wad(self.value - other.value)
+        if isinstance(other, Wad):
+            return Wad(self.value - other.value)
+        else:
+            raise ArithmeticError
 
+    # z = cast((uint256(x) * y + WAD / 2) / WAD);
     def __mul__(self, other):
         from contracts.Ray import Ray
         if isinstance(other, Wad):
-            return Wad(int(math.ceil(self.value * other.value)) // int(math.pow(10, 18)))
+            return Wad(int((Decimal(self.value) * Decimal(other.value) / Decimal(1000000000000000000)).quantize(1, rounding=ROUND_DOWN)))
         elif isinstance(other, Ray):
-            return Ray(int(math.ceil(self.value * other.value)) // int(math.pow(10, 18)))
+            return Wad(int((Decimal(self.value) * Decimal(other.value) / Decimal(1000000000000000000000000000)).quantize(1, rounding=ROUND_DOWN)))
+
+            # TODO Wad should be returned, which means it should get divided by math.pow(10, 27)
+            # return Ray(int(math.ceil(self.value * other.value)) // int(math.pow(10, 18)))
+        elif isinstance(other, int):
+            # raise ArithmeticError # DO WE NEED THIS??
+            return Wad((Decimal(self.value) * Decimal(other)).quantize(1))
         else:
-            return Wad(int(math.ceil(self.value * other)))
+            raise ArithmeticError # DO WE NEED THIS??
 
     def __truediv__(self, other):
         from contracts.Ray import Ray
