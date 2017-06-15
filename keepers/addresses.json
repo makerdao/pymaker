@@ -7,6 +7,7 @@
       "MKR": "0x4bb514a7f83fbb13c2b41448208e89fabbcfe2fb"
     },
     "contracts": {
+      "otc": "0x45ab8d410049116c7a01f6edfc08d564475c08ed",
       "saiTub": "0x8738cc8ff5222744dde9626b5a20946968a9baef",
       "auctionManager": "0xD0Abb0e61A905a50b21Bf4c74F39B9e101469365"
     }

@@ -186,7 +186,7 @@ class SaiProcessWoe:
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
-        parser.add_argument("--frequency", help="Frequency of checking for arbitrage opportunities for joy_in_sai (default: 5)", default=5, type=float)
+        parser.add_argument("--frequency", help="Frequency of checking for arbitrage opportunities (default: 5)", default=5, type=float)
         args = parser.parse_args()
 
         config = Config()
@@ -201,7 +201,8 @@ class SaiProcessWoe:
         self.skr = ERC20Token(web3=web3, address=self.tub.skr())
         self.sai = ERC20Token(web3=web3, address=self.tub.sai())
 
-        self.market = SimpleMarket(web3=web3, address=Address("0x45ab8d410049116c7a01f6edfc08d564475c08ed"))
+        self.market_address = Address(config.get_contract_address("otc"))
+        self.market = SimpleMarket(web3=web3, address=self.market_address)
 
         print(f"")
         print(f"SaiProcessWoe keeper")
