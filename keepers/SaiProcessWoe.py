@@ -61,12 +61,13 @@ class SaiProcessWoe:
         minimum_allowance = Wad.from_number(1000000000)
         target_allowance = Wad.from_number(1000000000000)
         if token.allowance_of(self.our_address, address) < minimum_allowance:
-            print(f"Raising {token.name} allowance for {address}")
+            print(f"Raising {token.name()} allowance for {address}")
             token.approve(address, target_allowance)
 
     def process(self):
         print(f"Processing (@ {datetime.datetime.now()})")
 
+        # TODO what we read from .joy() is not up to date as drip() hasn't happened!!
         joy_in_sai = self.tub.joy()
         woe_in_sai = self.tub.woe()
         mendable_amount = Wad.min(joy_in_sai, woe_in_sai)
@@ -95,7 +96,7 @@ class SaiProcessWoe:
 
         # We do not process anything if below limits
         if woe_in_sai < min_order_size_in_sai or woe_in_skr < min_order_size_in_skr:
-            print("No woe or woe below minimum limits, will not process anything.")
+            print("No woe() or woe() below minimum limits, will not process anything.")
             return
 
         our_skr_balance = self.skr.balance_of(self.our_address)
@@ -115,7 +116,7 @@ class SaiProcessWoe:
         # we end up with some extra SAI which we think it's not too bad.
 
         price_limit = price_sai_skr * (1 + 0.001)
-        print(f"The Tub performs bust() at {price_sai_skr} SAI/SKR")
+        print(f"Tub performs bust() at {price_sai_skr} SAI/SKR")
         print(f"Looking for a SAI sell offer on OasisDEX with price at least {price_limit} SAI/SKR")
 
         # We list all active orders on OasisDEX and filter on the SAI/SKR pair
@@ -143,7 +144,8 @@ class SaiProcessWoe:
         offer_skr = Wad.min(woe_in_skr, Wad.min(best_offer.buy_how_much, our_skr_balance))
         offer_sai = Wad(offer_skr * self.sell_to_buy_price(best_offer))
 
-        print(f"Found offer #{best_offer.offer_id} which will get us {offer_sai} SAI for {offer_skr} SKR")
+        print(f"Found offer #{best_offer.offer_id} with price {self.sell_to_buy_price(best_offer)} SAI/SKR")
+        print(f"This offer should get us {offer_sai} SAI for {offer_skr} SKR")
         print(f"Taking quantity={offer_sai} of offer #{best_offer.offer_id}")
 
         self.setup_allowances()
