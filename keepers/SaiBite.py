@@ -43,6 +43,7 @@ tub_address = Address(config.get_contract_address("saiTub"))
 tub = Tub(web3=web3, address=tub_address)
 
 while True:
+    print(f"")
     for cup_id in range(1, tub.cupi()+1):
         if not tub.safe(cup_id):
             print(f"Cup {cup_id} is not safe, biting it")
