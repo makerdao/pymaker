@@ -18,8 +18,6 @@
 import datetime
 from pprint import pformat
 
-from web3.utils.events import get_event_data
-
 from contracts.Address import Address
 from contracts.Contract import Contract
 from contracts.ERC20Token import ERC20Token
@@ -55,21 +53,21 @@ class SimpleMarket(Contract):
     def make(self, have_token, want_token, have_amount, want_amount):
         try:
             tx_hash = self._contract.transact().make(have_token, want_token, have_amount, want_amount)
-            return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+            return self._prepare_receipt(self._wait_for_receipt(tx_hash))
         except:
             return False
 
     def take(self, offer_id, quantity):
         try:
             tx_hash = self._contract.transact().take(self._to_bytes32(offer_id), quantity.value)
-            return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+            return self._prepare_receipt(self._wait_for_receipt(tx_hash))
         except:
             return False
 
     def kill(self, offer_id):
         try:
             tx_hash = self._contract.transact().kill(self._to_bytes32(offer_id))
-            return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+            return self._prepare_receipt(self._wait_for_receipt(tx_hash))
         except:
             return False
 

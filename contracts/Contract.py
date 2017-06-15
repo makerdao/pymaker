@@ -46,7 +46,7 @@ class Contract:
         return value.to_bytes(32, byteorder='big')
 
     @staticmethod
-    def _has_any_log_message(receipt):
+    def _prepare_receipt(receipt):
         receipt_logs = receipt['logs']
         if (receipt_logs is not None) and (len(receipt_logs) > 0):
             transfers = []

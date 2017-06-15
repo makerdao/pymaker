@@ -102,20 +102,20 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
         tx_hash = self._contract.transact().lock(self._to_bytes32(cup_id), amount_in_skr.value)
-        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        return self._prepare_receipt(self._wait_for_receipt(tx_hash))
 
     def bite(self, cup_id):
         """Initiate liquidation of an undercollateralized cup"""
         assert isinstance(cup_id, int)
         tx_hash = self._contract.transact().bite(self._to_bytes32(cup_id))
-        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        return self._prepare_receipt(self._wait_for_receipt(tx_hash))
 
     def boom(self, amount_in_skr):
         """Buy some amount of sai to process joy (surplus)"""
         assert isinstance(amount_in_skr, Wad)
         try:
             tx_hash = self._contract.transact().boom(amount_in_skr.value)
-            return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+            return self._prepare_receipt(self._wait_for_receipt(tx_hash))
         except:
             return False
 
@@ -124,7 +124,7 @@ class Tub(Contract):
         assert isinstance(amount_in_skr, Wad)
         try:
             tx_hash = self._contract.transact().bust(amount_in_skr.value)
-            return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+            return self._prepare_receipt(self._wait_for_receipt(tx_hash))
         except:
             return False
 

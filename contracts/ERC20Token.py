@@ -42,11 +42,11 @@ class ERC20Token(Contract):
 
     def transfer(self, address, amount):
         tx_hash = self._contract.transact().transfer(address.address, amount.value)
-        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        return self._prepare_receipt(self._wait_for_receipt(tx_hash))
 
     def approve(self, address, limit):
         tx_hash = self._contract.transact().approve(address.address, limit.value)
-        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        return self._prepare_receipt(self._wait_for_receipt(tx_hash))
 
     def __eq__(self, other):
         return self.address == other.address
