@@ -71,6 +71,10 @@ while True:
         if cup.lad == our_address:
             pro = cup.ink*tub.per()*tub.tag()
             tab = tub.tab(cup_id)
+            if tab == Wad(0):
+                print(f"Cup {cup_id} has no debt (SAI) drawn from it, definitely no need for top-up")
+                continue
+
             current_ratio = Ray.from_number(pro / tab)
 
             if current_ratio < minimum_ratio:
