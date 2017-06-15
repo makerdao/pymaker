@@ -18,6 +18,8 @@
 import datetime
 from pprint import pformat
 
+from web3.utils.events import get_event_data
+
 from contracts.Address import Address
 from contracts.Contract import Contract
 from contracts.ERC20Token import ERC20Token

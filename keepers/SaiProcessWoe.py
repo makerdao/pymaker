@@ -65,6 +65,8 @@ class SaiProcessWoe:
             token.approve(address, target_allowance)
 
     def process(self):
+        print(f"")
+        self.setup_allowances()
         print(f"Processing (@ {datetime.datetime.now()})")
 
         # TODO what we read from .joy() is not up to date as drip() hasn't happened!!
@@ -140,42 +142,44 @@ class SaiProcessWoe:
             print("No attractive enough offer found on OasisDEX, will not process anything.")
             return
 
+        print(f"Found offer #{best_offer.offer_id} with price {self.sell_to_buy_price(best_offer)} SAI/SKR")
+
         # Perform SKR to SAI exchange on OasisDEX
         offer_skr = Wad.min(woe_in_skr, Wad.min(best_offer.buy_how_much, our_skr_balance))
         offer_sai = Wad(offer_skr * self.sell_to_buy_price(best_offer))
 
-        print(f"Found offer #{best_offer.offer_id} with price {self.sell_to_buy_price(best_offer)} SAI/SKR")
-        print(f"This offer should get us {offer_sai} SAI for {offer_skr} SKR")
+        print(f"--- Phase 1 (taking the offer on OasisDEX) ---")
         print(f"Taking quantity={offer_sai} of offer #{best_offer.offer_id}")
+        print(f"This should get us {offer_sai} SAI for {offer_skr} SKR")
 
-        self.setup_allowances()
-
-        print(best_offer)
-
-        if not self.market.take(best_offer.offer_id, offer_sai):
+        take_result = self.market.take(best_offer.offer_id, offer_sai)
+        if not take_result:
             print(f"Failed to take quantity={offer_sai} of offer #{best_offer.offer_id} failed, will not carry on")
             return
 
-        print(f"Successfully took quantity={offer_sai} of offer #{best_offer.offer_id}")
-        print(f"It should have given us {offer_sai} SAI for {offer_skr} SKR")
+        skr_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.skr.address and transfer.from_address == self.our_address, take_result.transfers))
+        sai_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.sai.address and transfer.to_address == self.our_address, take_result.transfers))
+
+        print(f"Take was successful, we received {sai_transfer_on_take.wad} SAI for {skr_transfer_on_take.wad} SKR")
+
 
         # Perform SAI to SKR exchange on Tub by calling bust()
-        bust_sai = offer_sai
-        bust_skr = Wad.from_number(bust_sai / price_sai_skr)
+        bust_sai = Wad.min(woe_in_sai, sai_transfer_on_take.wad)
+        bust_skr = Wad.min(woe_in_skr, Wad.from_number(bust_sai / price_sai_skr))
 
+        print(f"--- Phase 2 (performing bust() on Tub) ---")
         print(f"Calling bust() with {bust_skr} which should take {bust_sai} SAI from us and give us {bust_skr} SKR")
 
-        if not self.tub.bust(bust_skr):
-            print(f"Failed to call bust() with {bust_skr}, we ended up with {bust_sai} SAI...")
+        bust_result = self.tub.bust(bust_skr)
+        if not bust_result:
+            print(f"Failed to call bust() with {bust_skr}, we ended up with {sai_transfer_on_take.wad} extra SAI...")
             return
 
-        print(f"Successfully called bust(), it should have given us {bust_skr} SKR")
-        print(f"That would mean that we made {bust_skr - offer_skr} SKR profit")
+        skr_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.skr.address and transfer.to_address == self.our_address, bust_result.transfers))
+        sai_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.sai.address and transfer.from_address == self.our_address, bust_result.transfers))
 
-
-
-        exit(-1)
-
+        print(f"Successfully called bust(), we got {skr_transfer_on_bust.wad} SKR for {sai_transfer_on_bust.wad} SAI")
+        print(f"It all means we made a profit of {skr_transfer_on_bust.wad - skr_transfer_on_take.wad} SKR")
 
     def run(self):
         parser = argparse.ArgumentParser(description='SaiProcessWoe keeper..')
@@ -199,18 +203,9 @@ class SaiProcessWoe:
 
         self.market = SimpleMarket(web3=web3, address=Address("0x45ab8d410049116c7a01f6edfc08d564475c08ed"))
 
-        # TODO
-        # ^ true. ~My guess would be simultaneously, since if you wait for one to complete first you have an even greater risk of one of them failing and one succeeding.~
-        # ^ oh actually, ending up with excess Sai is much safer than ending up with excess SKR. So perhaps the sensible option is to do the Sai purchase first (either on Oasis or `boom`, depending on which arb direction we are in), and upon its completion do the Sai sale (either on Oasis or `bust`)
-
-
-
-
-
         print(f"")
         print(f"SaiProcessWoe keeper")
         print(f"--------------------")
-        print(f"")
 
         while True:
             self.process()

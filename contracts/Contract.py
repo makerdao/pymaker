@@ -19,6 +19,13 @@ import json
 import pkg_resources
 import time
 
+from web3.utils.events import get_event_data
+
+from contracts.Address import Address
+from contracts.Receipt import Receipt
+from contracts.Transfer import Transfer
+from contracts.Wad import Wad
+
 
 class Contract:
 
@@ -41,7 +48,20 @@ class Contract:
     @staticmethod
     def _has_any_log_message(receipt):
         receipt_logs = receipt['logs']
-        return (receipt_logs is not None) and (len(receipt_logs) > 0)
+        if (receipt_logs is not None) and (len(receipt_logs) > 0):
+            transfers = []
+            for receipt_log in receipt_logs:
+                if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
+                    from contracts.ERC20Token import ERC20Token
+                    transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
+                    event_data = get_event_data(transfer_abi, receipt_log)
+                    transfers.append(Transfer(token_address=Address(event_data['address']),
+                                              from_address=Address(event_data['args']['from']),
+                                              to_address=Address(event_data['args']['to']),
+                                              wad=Wad(event_data['args']['value'])))
+            return Receipt(transfers=transfers)
+        else:
+            return False
 
     @staticmethod
     def _load_abi(package, resource):
