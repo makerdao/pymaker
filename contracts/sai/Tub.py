@@ -105,18 +105,22 @@ class Tub(Contract):
         return self._has_any_log_message(self._wait_for_receipt(tx_hash))
 
     """Buy some amount of sai to process joy (surplus)"""
-    def boom(self, cup_id, amount_in_skr):
-        assert isinstance(cup_id, int)
+    def boom(self, amount_in_skr):
         assert isinstance(amount_in_skr, Wad)
-        tx_hash = self._contract.transact().boom(self._to_bytes32(cup_id), amount_in_skr.value)
-        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        try:
+            tx_hash = self._contract.transact().boom(amount_in_skr.value)
+            return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        except:
+            return False
 
     """Sell some amount of sai to process woe (bad debt)"""
-    def bust(self, cup_id, amount_in_skr):
-        assert isinstance(cup_id, int)
+    def bust(self, amount_in_skr):
         assert isinstance(amount_in_skr, Wad)
-        tx_hash = self._contract.transact().bust(self._to_bytes32(cup_id), amount_in_skr.value)
-        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        try:
+            tx_hash = self._contract.transact().bust(amount_in_skr.value)
+            return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        except:
+            return False
 
     def __eq__(self, other):
         return self.address == other.address

@@ -28,8 +28,14 @@ from decimal import Decimal
 @total_ordering
 class Wad:
     def __init__(self, value):
-        assert(value >= 0)
-        self.value = int(value)
+        from contracts.Ray import Ray
+        if isinstance(value, Wad):
+            self.value = value.value
+        elif isinstance(value, Ray):
+            self.value = int(value.value // int(math.pow(10, 9)))
+        else:
+            assert(value >= 0)
+            self.value = int(value)
 
     @classmethod
     def from_number(cls, number):

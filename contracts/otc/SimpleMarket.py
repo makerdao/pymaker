@@ -39,7 +39,8 @@ class SimpleMarket(Contract):
         if array[5] is not True:
             return None
         else:
-            return OfferInfo(sell_how_much=Wad(array[0]),
+            return OfferInfo(offer_id=offer_id,
+                             sell_how_much=Wad(array[0]),
                              sell_which_token=ERC20Token(web3=self._web3, address=Address(array[1])),
                              buy_how_much=Wad(array[2]),
                              buy_which_token=ERC20Token(web3=self._web3, address=Address(array[3])),
@@ -48,20 +49,30 @@ class SimpleMarket(Contract):
                              timestamp=datetime.datetime.fromtimestamp(array[6]))
 
     def make(self, have_token, want_token, have_amount, want_amount):
-        tx_hash = self._contract.transact().make(have_token, want_token, have_amount, want_amount)
-        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        try:
+            tx_hash = self._contract.transact().make(have_token, want_token, have_amount, want_amount)
+            return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        except:
+            return False
 
     def take(self, offer_id, quantity):
-        tx_hash = self._contract.transact().take(self._to_bytes32(offer_id), quantity.value)
-        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        try:
+            tx_hash = self._contract.transact().take(self._to_bytes32(offer_id), quantity.value)
+            return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        except:
+            return False
 
     def kill(self, offer_id):
-        tx_hash = self._contract.transact().kill(self._to_bytes32(offer_id))
-        return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        try:
+            tx_hash = self._contract.transact().kill(self._to_bytes32(offer_id))
+            return self._has_any_log_message(self._wait_for_receipt(tx_hash))
+        except:
+            return False
 
 
 class OfferInfo:
-    def __init__(self, sell_how_much, sell_which_token, buy_how_much, buy_which_token, owner, active, timestamp):
+    def __init__(self, offer_id, sell_how_much, sell_which_token, buy_how_much, buy_which_token, owner, active, timestamp):
+        self.offer_id = offer_id
         self.sell_how_much = sell_how_much
         self.sell_which_token = sell_which_token
         self.buy_how_much = buy_how_much
