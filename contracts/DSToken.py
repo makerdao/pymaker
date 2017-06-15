@@ -15,10 +15,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from contracts.Contract import Contract
 from contracts.ERC20Token import ERC20Token
 
 
 class DSToken(ERC20Token):
+    abi = Contract._load_abi(__name__, 'DSValue.abi')
+
     def is_stopped(self):
         raise NotImplementedError
 

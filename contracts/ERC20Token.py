@@ -25,7 +25,7 @@ class ERC20Token(Contract):
 
     def __init__(self, web3, address):
         self.address = address
-        self._contract = web3.eth.contract(abi=ERC20Token.abi)(address=address.address)
+        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
         self._web3 = web3
 
     def name(self):
