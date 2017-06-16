@@ -140,7 +140,7 @@ class SaiProcessWoe(Keeper):
 
         # If no single offer found, we do not process
         if best_offer is None:
-            print("No attractive enough offer found on OasisDEX, will not process anything.")
+            print("No offer profitable enough found on OasisDEX, will not process anything.")
             return
 
         print(f"Found offer #{best_offer.offer_id} with price {self.sell_to_buy_price(best_offer)} SAI/SKR")
@@ -148,6 +148,11 @@ class SaiProcessWoe(Keeper):
         # Perform SKR to SAI exchange on OasisDEX
         offer_skr = Wad.min(woe_in_skr, Wad.min(best_offer.buy_how_much, our_skr_balance))
         offer_sai = Wad(offer_skr * self.sell_to_buy_price(best_offer))
+
+        # If we want to buy everything, we use best_offer.sell_how_much as quantity
+        # in order to avoid math rounding discrepancies
+        if offer_skr == best_offer.buy_how_much:
+            offer_sai = best_offer.sell_how_much
 
         print(f"--- Phase 1 (taking the offer on OasisDEX) ---")
         print(f"Taking quantity={offer_sai} of offer #{best_offer.offer_id}")
