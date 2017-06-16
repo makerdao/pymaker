@@ -1,8 +1,5 @@
-api\.otc package
-======================
-
-Submodules
-----------
+OasisDEX/OTC API
+================
 
 .. automodule:: api.otc.SimpleMarket
     :members:

@@ -1,14 +1,18 @@
-api\.value package
-========================
+Data feeds API
+==============
 
-Submodules
-----------
-
-api\.value\.DSValue module
---------------------------------
+DSValue
+-------
 
 .. automodule:: api.value.DSValue
     :members:
-    :undoc-members:
-    :show-inheritance:
 
+DSCache
+-------
+
+TODO
+
+Medianizer
+----------
+
+TODO

@@ -1,22 +1,8 @@
-api\.token package
-========================
-
-Submodules
-----------
-
-api\.token\.DSToken module
---------------------------------
-
-.. automodule:: api.token.DSToken
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-api\.token\.ERC20Token module
------------------------------------
+ERC20 API
+=========
 
 .. automodule:: api.token.ERC20Token
     :members:
-    :undoc-members:
-    :show-inheritance:
 
+.. automodule:: api.token.DSToken
+    :members:

@@ -1,29 +1,17 @@
-api\.sai package
-======================
+SAI Stablecoin API
+==================
 
-Submodules
-----------
-
-api\.sai\.Cup module
---------------------------
-
-.. automodule:: api.sai.Cup
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-api\.sai\.SaiLPC module
------------------------------
-
-.. automodule:: api.sai.SaiLPC
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-api\.sai\.Tub module
---------------------------
+Tub
+---
 
 .. automodule:: api.sai.Tub
     :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. automodule:: api.sai.Cup
+    :members:
+
+Lpc
+---
+
+.. automodule:: api.sai.SaiLPC
+    :members:
