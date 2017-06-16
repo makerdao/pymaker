@@ -36,6 +36,8 @@ class SimpleMarket(Contract):
     def get_last_offer_id(self):
         return self._contract.call().last_offer_id()
 
+    # TODO introduce empty offer caching, as if an offer is None
+    # it won't ever become not-None again
     def get_offer(self, offer_id):
         array = self._contract.call().offers(offer_id)
         if array[5] is not True:
@@ -50,21 +52,22 @@ class SimpleMarket(Contract):
                              active=array[5],
                              timestamp=datetime.datetime.fromtimestamp(array[6]))
 
-    def make(self, have_token, want_token, have_amount, want_amount):
+    def make(self, have_token: Address, want_token: Address, have_amount: Wad, want_amount: Wad):
         try:
-            tx_hash = self._contract.transact().make(have_token, want_token, have_amount, want_amount)
+            tx_hash = self._contract.transact().make(have_token.address, want_token.address,
+                                                     have_amount.value, want_amount.value)
             return self._prepare_receipt(self._wait_for_receipt(tx_hash))
         except:
             return False
 
-    def take(self, offer_id, quantity):
+    def take(self, offer_id: int, quantity: Wad):
         try:
             tx_hash = self._contract.transact().take(self._to_bytes32(offer_id), quantity.value)
             return self._prepare_receipt(self._wait_for_receipt(tx_hash))
         except:
             return False
 
-    def kill(self, offer_id):
+    def kill(self, offer_id: int):
         try:
             tx_hash = self._contract.transact().kill(self._to_bytes32(offer_id))
             return self._prepare_receipt(self._wait_for_receipt(tx_hash))
@@ -73,7 +76,8 @@ class SimpleMarket(Contract):
 
 
 class OfferInfo:
-    def __init__(self, offer_id, sell_how_much, sell_which_token, buy_how_much, buy_which_token, owner, active, timestamp):
+    def __init__(self, offer_id: int, sell_how_much: Wad, sell_which_token: ERC20Token, buy_how_much: Wad,
+                 buy_which_token: ERC20Token, owner: Address, active: bool, timestamp: datetime):
         self.offer_id = offer_id
         self.sell_how_much = sell_how_much
         self.sell_which_token = sell_which_token
@@ -83,5 +87,8 @@ class OfferInfo:
         self.active = active
         self.timestamp = timestamp
 
+    def __eq__(self, other):
+        return self.offer_id == other.offer_id
+    
     def __str__(self):
         return pformat(vars(self))
