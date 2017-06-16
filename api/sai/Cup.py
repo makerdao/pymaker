@@ -20,6 +20,17 @@ from api.Wad import Wad
 
 
 class Cup:
+    """Represents details of a single Cup managed by a Tub.
+
+    Notes:
+        `art` is denominated in internal debt unit and should not be used directly, unless you really
+        know what you're doing and you know what `chi()` and `rho()` are.
+
+    Attributes:
+        lad: Address of the owner of the cup.
+        art: The amount of outstanding debt (denominated in internal debt unit).
+        ink: The amount of skr collateral locked in the cup.
+    """
     def __init__(self, lad: Address, art: Wad, ink: Wad):
         assert(isinstance(lad, Address))
         assert(isinstance(art, Wad))

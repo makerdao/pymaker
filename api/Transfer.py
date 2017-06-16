@@ -20,7 +20,15 @@ from api.Wad import Wad
 
 
 class Transfer:
-    def __init__(self, token_address, from_address, to_address, value):
+    """Represents an ERC20 token transfer.
+
+    Attributes:
+        token_address: Address of the token that has been transferred.
+        from_address: Source address of the transfer.
+        to_address: Destination address of the transfer.
+        value: Value transferred.
+    """
+    def __init__(self, token_address: Address, from_address: Address, to_address: Address, value: Wad):
         assert(isinstance(token_address, Address))
         assert(isinstance(from_address, Address))
         assert(isinstance(to_address, Address))

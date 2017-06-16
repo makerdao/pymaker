@@ -19,6 +19,17 @@ import eth_utils
 
 
 class Address:
+    """Represents an Ethereum address.
+
+    Addresses get automatically normalized, so instances of this class can be safely compared to each other.
+
+    Args:
+        address: Can be any address representation allowed by web3.py
+            or another instance of the Address class.
+
+    Attributes:
+        address: Normalized hexadecimal representation of the address.
+    """
     def __init__(self, address):
         if isinstance(address, Address):
             self.address = address.address
