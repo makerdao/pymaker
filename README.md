@@ -2,51 +2,28 @@
 
 ## Rationale
 
-The _Dai Stablecoin System_ relies on auctions for collateral liquidation and
-incentivisation of MKR holders. However, despite occasional interest,
-there has been little public development of off chain auction agents.
-
-The aim of this project is to develop a framework for bidding on the
-auctions and market and allow new trading strategies to be easily implemented.
-It will also be easy to simulate this aspect of the system and
-potentially search for dynamical instabilities in usage.
+The _SAI Stablecoin System_, as well as the _DAI Stablecoin System_ in the future,
+both rely on external agents, often called keepers, to automate certain operations
+around the Ethereum blockchain.
 
 ## Scope
 
-_Maker.py_ covers two areas:
-1. Provides a set of Python APIs to enable easy interaction with
-   _Dai Stablecoin System_ smart contracts.
-2. Provides a basic set of necessary keepers needed to keep liquidity
-   of the system.
+_Maker.py_ covers three areas:
+1. Provides a set of Python APIs to enable easy interaction with _SAI Stablecoin System_
+   smart contracts and some other smart contracts surrounding it.
+2. Provides some examples showing how to use these APIs.
+3. Provides a basic set of keepers using these APIs aiming to keep liquidity of the system.
 
-## Python APIs for Maker contracts
+## Python APIs for Maker smart contracts
 
-### AuctionManager and SplittingAuctionManager 
+The current version provides APIs for `Tub`, `Lpc`, `ERC20Token`, `DSValue` and in addition
+also for `SimpleMarket` (OasisDEX/OTC).
 
-TODO
+You can find the full documentation here: **TODO**. The documentation covers also examples and
+sample keepers provided.
 
-### DSToken
-
-TODO
-
-### DSValue
-
-TODO
-
-### ERC20Token
-
-TODO
-
-### Tub
-
-TODO
-
-## Keepers
-
-The keepers being part of this project are the most basic implementation, necessary
-to keep the Dai Stablecoin System liquid in its initial phase. Having said that,
-they were designed with extensibility in mind, so keeper designers can build their
-own more sophisticated logic on top of them.
+There is also a working API around `AuctionManager` and `SplittingAuctionManager`, but they
+will be used in _DAI Stablecoin System_, not in _SAI Stablecoin System_.
 
 ### Installation
 ```
@@ -60,7 +37,3 @@ export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openss
 ```
 
 Also, installing `openssl` and `libtool` using Homebrew may help as well.
-
-### Buy&Burn
-
-TODO
