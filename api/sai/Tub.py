@@ -300,6 +300,7 @@ class Tub(Contract):
         """
         return Wad(self._contract.call().fog())
 
+    #TODO beware that it doesn't call drip() underneath so if `tax`>1.0 we won't get an up-to-date value of joy()
     def joy(self) -> Wad:
         """Get the amount of surplus SAI.
 

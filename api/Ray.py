@@ -86,7 +86,7 @@ class Ray:
             result = Decimal(self.value) * Decimal(other.value) / (Decimal(10) ** Decimal(18))
             return Ray(int(result.quantize(1, rounding=ROUND_DOWN)))
         elif isinstance(other, int):
-            return Ray((Decimal(self.value) * Decimal(other)).quantize(1))
+            return Ray(int((Decimal(self.value) * Decimal(other)).quantize(1)))
         else:
             raise ArithmeticError
 
