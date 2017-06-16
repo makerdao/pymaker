@@ -106,6 +106,7 @@ class Wad:
         else:
             return 0
 
+    #TODO remove this method from the API
     def percentage_change(self, change):
         return Wad((self.value * (100 + change)) // 100)
 
