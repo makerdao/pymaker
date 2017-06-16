@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from typing import Optional
 
 from api.Address import Address
@@ -23,10 +24,27 @@ from api.Wad import Wad
 
 
 class ERC20Token(Contract):
+    """A client for a standard ERC20 token contract.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the ERC20 token.
+    """
+
     abi = Contract._load_abi(__name__, 'ERC20Token.abi')
     registry = {}
 
     def __init__(self, web3, address):
+        """Creates a new client for a standard ERC20 token contract.
+
+        Notes:
+            Existence of a contract on the Ethereum blockchain under given address is verified the moment
+                the instance of this class is created.
+
+        Args:
+            web3: An instance of `Web` from `web3.py`.
+            address: Ethereum address of the ERC20 token.
+        """
         self.web3 = web3
         self.address = address
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
@@ -35,9 +53,22 @@ class ERC20Token(Contract):
         return ERC20Token.registry.get(self.address, '???')
 
     def total_supply(self) -> Wad:
+        """Returns the total supply of the ERC20 token.
+        
+        Returns:
+            The total supply of the ERC20 token.
+        """
         return Wad(self._contract.call().totalSupply())
 
     def balance_of(self, address: Address) -> Wad:
+        """Returns the token balance of a given address.
+
+        Args:
+            address: The address to check the balance of.
+
+        Returns:
+            The token balance of the address specified.
+        """
         return Wad(self._contract.call().balanceOf(address.address))
 
     def allowance_of(self, address: Address, payee: Address) -> Wad:

@@ -29,6 +29,13 @@ from api.token.ERC20Token import ERC20Token
 
 
 class SimpleMarket(Contract):
+    """A client for a `SimpleMarket` contract, a contract powering the OasisDEX decentralized exchange.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `SimpleMarket` contract.
+    """
+
     abi = Contract._load_abi(__name__, 'SimpleMarket.abi')
 
     def __init__(self, web3: Web3, address: Address):
@@ -57,14 +64,6 @@ class SimpleMarket(Contract):
                              timestamp=datetime.datetime.fromtimestamp(array[6]))
 
     def make(self, have_token: Address, want_token: Address, have_amount: Wad, want_amount: Wad) -> Optional[Receipt]:
-        """
-
-        :param have_token:
-        :param want_token:
-        :param have_amount:
-        :param want_amount:
-        :return:
-        """
         try:
             tx_hash = self._contract.transact().make(have_token.address, want_token.address,
                                                      have_amount.value, want_amount.value)

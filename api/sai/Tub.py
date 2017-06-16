@@ -28,9 +28,26 @@ from api.sai.Cup import Cup
 
 
 class Tub(Contract):
+    """A client for a `Tub` contract, a Maker contract driving the `Sai Stablecoin System`.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `Tub`.
+    """
+
     abi = Contract._load_abi(__name__, 'Tub.abi')
 
     def __init__(self, web3: Web3, address: Address):
+        """Creates a new client for a `Tub` contract.
+
+        Notes:
+            Existence of a contract on the Ethereum blockchain under given address is verified the moment
+                the instance of this class is created.
+
+        Args:
+            web3: An instance of `Web` from `web3.py`.
+            address: Ethereum address of the `Tub`.
+        """
         self.web3 = web3
         self.address = address
         self._assert_contract_exists(web3, address)

@@ -22,8 +22,11 @@ from api.Wad import Wad
 class Transfer:
     """Represents an ERC20 token transfer.
 
+    Designed to enable monitoring transfers resulting from smart contract method execution.
+    A list of transfers can be found in the `Receipt` class.
+
     Attributes:
-        token_address: Address of the token that has been transferred.
+        token_address: Address of the ERC20 token that has been transferred.
         from_address: Source address of the transfer.
         to_address: Destination address of the transfer.
         value: Value transferred.

@@ -20,14 +20,28 @@ from functools import total_ordering
 from decimal import *
 
 
-# TODO the math here is untested and probably in many cases the rounding
-# TODO is done wrong. for now use on your own responsibility
-#
-# TODO but the goal is to keep these classes to make Ray/Wad math easier
-
 @total_ordering
 class Ray:
+    """Represents a number with 27 decimal places. `Ray`, along with `Wad`, are the two basic numeric types
+    used by Maker contracts.
+
+    `Ray` implements comparison, addition, subtraction, multiplication and division operators. Comparison, addition,
+    subtraction and division only work with other instances of `Ray`. Multiplication works with instances
+    of `Ray` and `And` and also with `int` numbers. The result of multiplication is always a `Ray`.
+
+    Notes:
+        The internal representation of `Ray` is an unbounded integer, the last 27 digits of it being treated
+        as decimal places. It is similar to the representation used in Maker contracts (`uint128`).
+    """
+
     def __init__(self, value):
+        """Creates a new Ray number.
+
+        Args:
+            value: an instance of `Ray`, `Wad` or an integer. In case of an integer, the internal representation
+                of Maker contracts is used which means that passing `1` will create an instance of `Ray`
+                with a value of `0.000000000000000000000000001'.
+        """
         from api.Wad import Wad
         if isinstance(value, Ray):
             self.value = value.value
@@ -108,6 +122,7 @@ class Ray:
     @staticmethod
     # TODO try to implement a variable argument min()
     def min(first, second):
+        """Returns the lower of the two Ray values"""
         if not isinstance(first, Ray) or not isinstance(second, Ray):
             raise ArithmeticError
         return Ray(min(first.value, second.value))
@@ -115,6 +130,7 @@ class Ray:
     @staticmethod
     # TODO try to implement a variable argument max()
     def max(first, second):
+        """Returns the higher of the two Ray values"""
         if not isinstance(first, Ray) or not isinstance(second, Ray):
             raise ArithmeticError
         return Ray(max(first.value, second.value))

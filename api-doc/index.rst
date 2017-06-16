@@ -1,65 +1,65 @@
 API Documentation
 =================
 
-Subpackages
------------
+Smart contracts
+---------------
+
+SAI
+~~~
 
 .. toctree::
 
-    api.auctions
     api.otc
     api.sai
+
+ERC20
+~~~~~
+
+.. toctree::
     api.token
+
+Feeds
+~~~~~
+
+.. toctree::
     api.value
 
-Submodules
-----------
+OasisDEX/OTC
+~~~~~~~~~~~~
 
-api\.Address module
--------------------------
+.. toctree::
+    api.otc
 
-.. automodule:: api.Address
-    :members:
-    :undoc-members:
-    :show-inheritance:
+Numeric types
+-------------
 
-api\.Contract module
---------------------------
-
-.. automodule:: api.Contract
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-api\.Ray module
----------------------
-
-.. automodule:: api.Ray
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-api\.Receipt module
--------------------------
-
-.. automodule:: api.Receipt
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-api\.Transfer module
---------------------------
-
-.. automodule:: api.Transfer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-api\.Wad module
----------------------
+Wad
+~~~
 
 .. automodule:: api.Wad
     :members:
-    :undoc-members:
-    :show-inheritance:
 
+Ray
+~~~
+
+.. automodule:: api.Ray
+    :members:
+
+
+Other classes
+-------------
+
+Address
+~~~~~~~
+
+.. automodule:: api.Address
+    :members:
+
+Receipt, Transfer
+~~~~~~~~~~~~~~~~~
+
+.. automodule:: api.Receipt
+    :members:
+
+.. automodule:: api.Transfer
+    :members:
