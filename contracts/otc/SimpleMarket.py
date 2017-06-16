@@ -16,11 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
-from pprint import pformat
+from typing import Optional
 
 from contracts.Address import Address
 from contracts.Contract import Contract
+from contracts.Receipt import Receipt
 from contracts.Wad import Wad
+from contracts.otc.OfferInfo import OfferInfo
 from contracts.token.ERC20Token import ERC20Token
 
 
@@ -33,12 +35,12 @@ class SimpleMarket(Contract):
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
         self._web3 = web3
 
-    def get_last_offer_id(self):
+    def get_last_offer_id(self) -> int:
         return self._contract.call().last_offer_id()
 
     # TODO introduce empty offer caching, as if an offer is None
     # it won't ever become not-None again
-    def get_offer(self, offer_id):
+    def get_offer(self, offer_id) -> Optional[OfferInfo]:
         array = self._contract.call().offers(offer_id)
         if array[5] is not True:
             return None
@@ -52,43 +54,26 @@ class SimpleMarket(Contract):
                              active=array[5],
                              timestamp=datetime.datetime.fromtimestamp(array[6]))
 
-    def make(self, have_token: Address, want_token: Address, have_amount: Wad, want_amount: Wad):
+    def make(self, have_token: Address, want_token: Address, have_amount: Wad, want_amount: Wad) -> Optional[Receipt]:
         try:
             tx_hash = self._contract.transact().make(have_token.address, want_token.address,
                                                      have_amount.value, want_amount.value)
             return self._prepare_receipt(self._wait_for_receipt(tx_hash))
         except:
-            return False
+            return None
 
-    def take(self, offer_id: int, quantity: Wad):
+    def take(self, offer_id: int, quantity: Wad) -> Optional[Receipt]:
         try:
             tx_hash = self._contract.transact().take(self._to_bytes32(offer_id), quantity.value)
             return self._prepare_receipt(self._wait_for_receipt(tx_hash))
         except:
-            return False
+            return None
 
-    def kill(self, offer_id: int):
+    def kill(self, offer_id: int) -> Optional[Receipt]:
         try:
             tx_hash = self._contract.transact().kill(self._to_bytes32(offer_id))
             return self._prepare_receipt(self._wait_for_receipt(tx_hash))
         except:
-            return False
+            return None
 
 
-class OfferInfo:
-    def __init__(self, offer_id: int, sell_how_much: Wad, sell_which_token: ERC20Token, buy_how_much: Wad,
-                 buy_which_token: ERC20Token, owner: Address, active: bool, timestamp: datetime):
-        self.offer_id = offer_id
-        self.sell_how_much = sell_how_much
-        self.sell_which_token = sell_which_token
-        self.buy_how_much = buy_how_much
-        self.buy_which_token = buy_which_token
-        self.owner = owner
-        self.active = active
-        self.timestamp = timestamp
-
-    def __eq__(self, other):
-        return self.offer_id == other.offer_id
-    
-    def __str__(self):
-        return pformat(vars(self))
