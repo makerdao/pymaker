@@ -15,31 +15,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from contracts.Contract import Contract
-from contracts.token.ERC20Token import ERC20Token
+from api.Address import Address
+from api.Wad import Wad
 
 
-class DSToken(ERC20Token):
-    abi = Contract._load_abi(__name__, 'DSValue.abi')
-
-    def is_stopped(self):
-        raise NotImplementedError
-
-    def stop(self):
-        raise NotImplementedError
-
-    def start(self):
-        raise NotImplementedError
-
-    def push(self, address, amount):
-        raise NotImplementedError
-
-    def pull(self, address, amount):
-        raise NotImplementedError
-
-    def mint(self, amount):
-        raise NotImplementedError
-
-    def burn(self, amount):
-        raise NotImplementedError
-
+class Transfer:
+    def __init__(self, token_address, from_address, to_address, wad):
+        assert(isinstance(token_address, Address))
+        assert(isinstance(from_address, Address))
+        assert(isinstance(to_address, Address))
+        assert(isinstance(wad, Wad))
+        self.token_address = token_address
+        self.from_address = from_address
+        self.to_address = to_address
+        self.wad = wad

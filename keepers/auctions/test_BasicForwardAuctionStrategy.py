@@ -2,10 +2,10 @@ import math
 import unittest
 from unittest.mock import MagicMock
 
-from contracts.Address import Address
-from contracts.Wad import Wad
-from contracts.auctions.AuctionManager import Auctionlet, Auction
-from contracts.token.ERC20Token import ERC20Token
+from api.Address import Address
+from api.Wad import Wad
+from api.auctions.AuctionManager import Auctionlet, Auction
+from api.token.ERC20Token import ERC20Token
 from keepers.auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
 from keepers.auctions.StrategyContext import StrategyContext
 

@@ -15,19 +15,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
-
 from api.Address import Address
-from api.token.ERC20Token import ERC20Token
+from api.Contract import Contract
+from api.Ray import Ray
+from api.Wad import Wad
 
 
-class Config:
-    def __init__(self):
-        with open('keepers/addresses.json') as data_file:
-            self.network = "kovan" #TODO implement network detection
-            self.addresses = json.load(data_file)
-        for key, value in self.addresses[self.network]["tokens"].items():
-            ERC20Token.register_token(Address(value), key)
-
-    def get_contract_address(self, name):
-        return self.addresses[self.network]["contracts"][name]
+class SaiLPC(Contract):
+    abi = Contract._load_abi(__name__, 'SaiLPC.abi')

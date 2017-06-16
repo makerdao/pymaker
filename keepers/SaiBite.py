@@ -23,8 +23,8 @@ import time
 from web3 import HTTPProvider
 from web3 import Web3
 
-from contracts.Address import Address
-from contracts.sai.Tub import Tub
+from api.Address import Address
+from api.sai.Tub import Tub
 from keepers.Config import Config
 
 parser = argparse.ArgumentParser(description='Sai bite keeper. Bites unsafe cups.')

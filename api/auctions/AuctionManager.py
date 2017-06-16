@@ -18,10 +18,10 @@
 import datetime
 from pprint import pformat
 
-from contracts.Address import Address
-from contracts.Contract import Contract
-from contracts.Wad import Wad
-from contracts.token.ERC20Token import ERC20Token
+from api.Address import Address
+from api.Contract import Contract
+from api.Wad import Wad
+from api.token.ERC20Token import ERC20Token
 
 
 class AuctionManager(Contract):
@@ -39,11 +39,11 @@ class AuctionManager(Contract):
     For now, only forward auctions are supported.
     """
     def __init__(self, web3, address, is_splitting):
+        self.web3 = web3
         self.address = address
         self.is_splitting = is_splitting
         abi_name = 'SplittingAuctionManager.abi' if is_splitting else 'AuctionManager.abi'
         self._contract = web3.eth.contract(abi=self._load_abi(__name__, abi_name))(address=address.address)
-        self._web3 = web3
         self._our_tx_hashes = set()
 
         self._on_new_auction_handler = None
@@ -126,8 +126,8 @@ class Auction:
         self._auction_manager = auction_manager
         self.auction_id = auction_id
         self.creator = Address(auction_info[0])
-        self.selling = ERC20Token(web3=auction_manager._web3, address=Address(auction_info[1]))
-        self.buying = ERC20Token(web3=auction_manager._web3, address=Address(auction_info[2]))
+        self.selling = ERC20Token(web3=auction_manager.web3, address=Address(auction_info[1]))
+        self.buying = ERC20Token(web3=auction_manager.web3, address=Address(auction_info[2]))
         self.start_bid = Wad(auction_info[3])
         self.min_increase = auction_info[4]
         self.min_decrease = auction_info[5]

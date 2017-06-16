@@ -18,22 +18,24 @@
 import datetime
 from typing import Optional
 
-from contracts.Address import Address
-from contracts.Contract import Contract
-from contracts.Receipt import Receipt
-from contracts.Wad import Wad
-from contracts.otc.OfferInfo import OfferInfo
-from contracts.token.ERC20Token import ERC20Token
+from web3 import Web3
+
+from api.Address import Address
+from api.Contract import Contract
+from api.Receipt import Receipt
+from api.Wad import Wad
+from api.otc.OfferInfo import OfferInfo
+from api.token.ERC20Token import ERC20Token
 
 
 class SimpleMarket(Contract):
     abi = Contract._load_abi(__name__, 'SimpleMarket.abi')
 
-    def __init__(self, web3, address):
-        self._assert_contract_exists(web3, address)
+    def __init__(self, web3: Web3, address: Address):
+        self.web3 = web3
         self.address = address
+        self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
-        self._web3 = web3
 
     def get_last_offer_id(self) -> int:
         return self._contract.call().last_offer_id()
@@ -47,33 +49,39 @@ class SimpleMarket(Contract):
         else:
             return OfferInfo(offer_id=offer_id,
                              sell_how_much=Wad(array[0]),
-                             sell_which_token=ERC20Token(web3=self._web3, address=Address(array[1])),
+                             sell_which_token=ERC20Token(web3=self.web3, address=Address(array[1])),
                              buy_how_much=Wad(array[2]),
-                             buy_which_token=ERC20Token(web3=self._web3, address=Address(array[3])),
+                             buy_which_token=ERC20Token(web3=self.web3, address=Address(array[3])),
                              owner=Address(array[4]),
                              active=array[5],
                              timestamp=datetime.datetime.fromtimestamp(array[6]))
 
     def make(self, have_token: Address, want_token: Address, have_amount: Wad, want_amount: Wad) -> Optional[Receipt]:
+        """
+
+        :param have_token:
+        :param want_token:
+        :param have_amount:
+        :param want_amount:
+        :return:
+        """
         try:
             tx_hash = self._contract.transact().make(have_token.address, want_token.address,
                                                      have_amount.value, want_amount.value)
-            return self._prepare_receipt(self._wait_for_receipt(tx_hash))
+            return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
 
     def take(self, offer_id: int, quantity: Wad) -> Optional[Receipt]:
         try:
             tx_hash = self._contract.transact().take(self._to_bytes32(offer_id), quantity.value)
-            return self._prepare_receipt(self._wait_for_receipt(tx_hash))
+            return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
 
     def kill(self, offer_id: int) -> Optional[Receipt]:
         try:
             tx_hash = self._contract.transact().kill(self._to_bytes32(offer_id))
-            return self._prepare_receipt(self._wait_for_receipt(tx_hash))
+            return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
-
-

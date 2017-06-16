@@ -28,7 +28,7 @@ from decimal import Decimal, ROUND_UP, ROUND_DOWN
 @total_ordering
 class Wad:
     def __init__(self, value):
-        from contracts.Ray import Ray
+        from api.Ray import Ray
         if isinstance(value, Wad):
             self.value = value.value
         elif isinstance(value, Ray):
@@ -69,7 +69,7 @@ class Wad:
 
     # z = cast((uint256(x) * y + WAD / 2) / WAD);
     def __mul__(self, other):
-        from contracts.Ray import Ray
+        from api.Ray import Ray
         if isinstance(other, Wad):
             return Wad(int((Decimal(self.value) * Decimal(other.value) / Decimal(1000000000000000000)).quantize(1, rounding=ROUND_DOWN)))
         elif isinstance(other, Ray):
@@ -84,7 +84,7 @@ class Wad:
             raise ArithmeticError # DO WE NEED THIS??
 
     def __truediv__(self, other):
-        from contracts.Ray import Ray
+        from api.Ray import Ray
         if isinstance(other, Wad):
             return self.value/other.value
         elif isinstance(other, Ray):

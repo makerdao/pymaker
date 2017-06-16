@@ -14,9 +14,12 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from typing import Optional
 
-from contracts.Contract import Contract
-from contracts.Wad import Wad
+from api.Address import Address
+from api.Contract import Contract
+from api.Receipt import Receipt
+from api.Wad import Wad
 
 
 class ERC20Token(Contract):
@@ -24,29 +27,35 @@ class ERC20Token(Contract):
     registry = {}
 
     def __init__(self, web3, address):
+        self.web3 = web3
         self.address = address
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
-        self._web3 = web3
 
     def name(self):
         return ERC20Token.registry.get(self.address, '???')
 
-    def total_supply(self):
+    def total_supply(self) -> Wad:
         return Wad(self._contract.call().totalSupply())
 
-    def balance_of(self, address):
+    def balance_of(self, address: Address) -> Wad:
         return Wad(self._contract.call().balanceOf(address.address))
 
-    def allowance_of(self, address, payee):
+    def allowance_of(self, address: Address, payee: Address) -> Wad:
         return Wad(self._contract.call().allowance(address.address, payee.address))
 
-    def transfer(self, address, amount):
-        tx_hash = self._contract.transact().transfer(address.address, amount.value)
-        return self._prepare_receipt(self._wait_for_receipt(tx_hash))
+    def transfer(self, address: Address, amount: Wad) -> Optional[Receipt]:
+        try:
+            tx_hash = self._contract.transact().transfer(address.address, amount.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
 
-    def approve(self, address, limit):
-        tx_hash = self._contract.transact().approve(address.address, limit.value)
-        return self._prepare_receipt(self._wait_for_receipt(tx_hash))
+    def approve(self, address: Address, limit: Wad) -> Optional[Receipt]:
+        try:
+            tx_hash = self._contract.transact().approve(address.address, limit.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
 
     def __eq__(self, other):
         return self.address == other.address

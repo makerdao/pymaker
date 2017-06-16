@@ -15,11 +15,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from contracts.Address import Address
-from contracts.Contract import Contract
-from contracts.Ray import Ray
-from contracts.Wad import Wad
+from api.Address import Address
+from api.Wad import Wad
 
 
-class SaiLPC(Contract):
-    abi = Contract._load_abi(__name__, 'SaiLPC.abi')
+class Cup:
+    def __init__(self, lad: Address, art: Wad, ink: Wad):
+        assert(isinstance(lad, Address))
+        assert(isinstance(art, Wad))
+        assert(isinstance(ink, Wad))
+        self.lad = lad
+        self.art = art
+        self.ink = ink
+
+    def __repr__(self):
+        return f"Cup(lad={repr(self.lad)}, art={self.art}, ink={self.ink})"

@@ -21,10 +21,10 @@ import time
 import pkg_resources
 from web3.utils.events import get_event_data
 
-from contracts.Address import Address
-from contracts.Receipt import Receipt
-from contracts.Transfer import Transfer
-from contracts.Wad import Wad
+from api.Address import Address
+from api.Receipt import Receipt
+from api.Transfer import Transfer
+from api.Wad import Wad
 
 
 class Contract:
@@ -34,25 +34,21 @@ class Contract:
         if (code == "0x") or (code is None):
             raise Exception(f"No contract found at {address}")
 
-    def _wait_for_receipt(self, transaction_hash):
+    def _wait_for_receipt(self, web3, transaction_hash):
         while True:
-            receipt = self._web3.eth.getTransactionReceipt(transaction_hash)
+            receipt = web3.eth.getTransactionReceipt(transaction_hash)
             if receipt is not None and receipt['blockNumber'] is not None:
                 return receipt
             time.sleep(0.25)
 
-    @staticmethod
-    def _to_bytes32(value):
-        return value.to_bytes(32, byteorder='big')
-
-    @staticmethod
-    def _prepare_receipt(receipt):
+    def _prepare_receipt(self, web3, transaction_hash):
+        receipt = self._wait_for_receipt(web3, transaction_hash)
         receipt_logs = receipt['logs']
         if (receipt_logs is not None) and (len(receipt_logs) > 0):
             transfers = []
             for receipt_log in receipt_logs:
                 if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
-                    from contracts.token.ERC20Token import ERC20Token
+                    from api.token.ERC20Token import ERC20Token
                     transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
                     event_data = get_event_data(transfer_abi, receipt_log)
                     transfers.append(Transfer(token_address=Address(event_data['address']),
@@ -62,6 +58,10 @@ class Contract:
             return Receipt(transfers=transfers)
         else:
             return False
+
+    @staticmethod
+    def _to_bytes32(value):
+        return value.to_bytes(32, byteorder='big')
 
     @staticmethod
     def _load_abi(package, resource):

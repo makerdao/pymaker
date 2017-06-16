@@ -1,5 +1,5 @@
-from contracts.Wad import Wad
-from contracts.token.ERC20Token import ERC20Token
+from api.Wad import Wad
+from api.token.ERC20Token import ERC20Token
 from keepers.auctions.Strategy import Strategy
 from keepers.auctions.StrategyResult import StrategyResult
 

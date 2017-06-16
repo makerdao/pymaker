@@ -52,7 +52,7 @@ class Ray:
         return Ray(self.value - other.value)
 
     def __mul__(self, other):
-        from contracts.Wad import Wad
+        from api.Wad import Wad
         if isinstance(other, Ray):
             return Ray(int(math.ceil(self.value * other.value)) // int(math.pow(10, 27)))
         elif isinstance(other, Wad):
@@ -61,7 +61,7 @@ class Ray:
             return Ray(int(math.ceil(self.value * other)))
 
     def __truediv__(self, other):
-        from contracts.Wad import Wad
+        from api.Wad import Wad
         if isinstance(other, Ray):
             return self.value/other.value
         elif isinstance(other, Wad):

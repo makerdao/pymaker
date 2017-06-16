@@ -18,9 +18,9 @@
 import datetime
 from pprint import pformat
 
-from contracts.Address import Address
-from contracts.Wad import Wad
-from contracts.token.ERC20Token import ERC20Token
+from api.Address import Address
+from api.Wad import Wad
+from api.token.ERC20Token import ERC20Token
 
 
 class OfferInfo:
