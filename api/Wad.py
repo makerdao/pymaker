@@ -92,7 +92,7 @@ class Wad:
             result = Decimal(self.value) * Decimal(other.value) / (Decimal(10) ** Decimal(27))
             return Wad(int(result.quantize(1, rounding=ROUND_DOWN)))
         elif isinstance(other, int):
-            return Wad((Decimal(self.value) * Decimal(other)).quantize(1))
+            return Wad(int((Decimal(self.value) * Decimal(other)).quantize(1)))
         else:
             raise ArithmeticError
 
