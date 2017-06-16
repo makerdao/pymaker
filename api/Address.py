@@ -20,7 +20,7 @@ import eth_utils
 
 class Address:
     def __init__(self, address):
-        if (isinstance(address, Address)):
+        if isinstance(address, Address):
             self.address = address.address
         else:
             self.address = eth_utils.to_normalized_address(address)
@@ -35,4 +35,5 @@ class Address:
         return self.address.__hash__()
 
     def __eq__(self, other):
+        assert(isinstance(other, Address))
         return self.address == other.address
