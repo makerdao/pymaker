@@ -54,7 +54,7 @@ class Contract:
                     transfers.append(Transfer(token_address=Address(event_data['address']),
                                               from_address=Address(event_data['args']['from']),
                                               to_address=Address(event_data['args']['to']),
-                                              wad=Wad(event_data['args']['value'])))
+                                              value=Wad(event_data['args']['value'])))
             return Receipt(transfers=transfers)
         else:
             return False

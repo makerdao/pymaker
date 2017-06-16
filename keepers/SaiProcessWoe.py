@@ -44,11 +44,10 @@ class SaiProcessWoe(Keeper):
         return [offer for offer in offers if offer.sell_which_token == sell_which_token and offer.buy_which_token == buy_which_token]
 
     def sell_to_buy_price(self, offer):
-        #TODO I think this is the reason of the rounding error
-        return Ray.from_number(offer.sell_how_much/offer.buy_how_much)
+        return Ray(offer.sell_how_much)/Ray(offer.buy_how_much)
 
     def buy_to_sell_price(self, offer):
-        return Ray.from_number(offer.sell_how_much/offer.buy_how_much)
+        return Ray(offer.sell_how_much)/Ray(offer.buy_how_much)
 
     def first_offer(self, offers):
         if len(offers) > 0: return offers[0]
@@ -84,15 +83,15 @@ class SaiProcessWoe(Keeper):
 
         joy_in_sai -= mendable_amount
         woe_in_sai -= mendable_amount
-        joy_in_skr = joy_in_sai/price_sai_skr
-        woe_in_skr = Wad.from_number(woe_in_sai / price_sai_skr)
+        joy_in_skr = Wad(Ray(joy_in_sai) / price_sai_skr)
+        woe_in_skr = Wad(Ray(woe_in_sai) / price_sai_skr)
 
         print(f"Joy: {joy_in_sai} SAI (= {joy_in_skr} SKR)")
         print(f"Woe: {woe_in_sai} SAI (= {woe_in_skr} SKR)")
         print(f"SAI/SKR price: {price_sai_skr}")
 
         min_order_size_in_sai = Wad.from_number(5)
-        min_order_size_in_skr = Wad.from_number(min_order_size_in_sai / price_sai_skr)
+        min_order_size_in_skr = min_order_size_in_sai / Wad(price_sai_skr)
 
         print(f"Minimum processable size in SAI: {min_order_size_in_sai} SAI")
         print(f"Minimum processable size in SKR: {min_order_size_in_skr} SKR")
@@ -118,7 +117,7 @@ class SaiProcessWoe(Keeper):
         # in the trade. If somebody managed to call `bust` earlier than us,
         # we end up with some extra SAI which we think it's not too bad.
 
-        price_limit = price_sai_skr * (1 + 0.001)
+        price_limit = price_sai_skr * Ray.from_number(1 + 0.001)
         print(f"Tub performs bust() at {price_sai_skr} SAI/SKR")
         print(f"Looking for a SAI sell offer on OasisDEX with price at least {price_limit} SAI/SKR")
 
@@ -161,33 +160,33 @@ class SaiProcessWoe(Keeper):
         take_result = self.market.take(best_offer.offer_id, offer_sai)
         if not take_result:
             print(best_offer)
-            print(f"Failed to take quantity={offer_sai} of offer #{best_offer.offer_id} failed, will not carry on")
+            print(f"Failed to take quantity={offer_sai} of offer #{best_offer.offer_id}, will not carry on")
             exit(-1)
             return
 
         skr_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.skr.address and transfer.from_address == self.our_address, take_result.transfers))
         sai_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.sai.address and transfer.to_address == self.our_address, take_result.transfers))
 
-        print(f"Take was successful, we received {sai_transfer_on_take.wad} SAI for {skr_transfer_on_take.wad} SKR")
+        print(f"Take was successful, we received {sai_transfer_on_take.value} SAI for {skr_transfer_on_take.value} SKR")
 
 
         # Perform SAI to SKR exchange on Tub by calling bust()
-        bust_sai = Wad.min(woe_in_sai, sai_transfer_on_take.wad)
-        bust_skr = Wad.min(woe_in_skr, Wad.from_number(bust_sai / price_sai_skr))
+        bust_sai = Wad.min(woe_in_sai, sai_transfer_on_take.value)
+        bust_skr = Wad.min(woe_in_skr, Wad(Ray(bust_sai) / price_sai_skr))
 
         print(f"--- Phase 2 (performing bust() on Tub) ---")
         print(f"Calling bust() with {bust_skr} which should take {bust_sai} SAI from us and give us {bust_skr} SKR")
 
         bust_result = self.tub.bust(bust_skr)
         if not bust_result:
-            print(f"Failed to call bust() with {bust_skr}, we ended up with {sai_transfer_on_take.wad} extra SAI...")
+            print(f"Failed to call bust() with {bust_skr}, we ended up with {sai_transfer_on_take.value} extra SAI...")
             return
 
         skr_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.skr.address and transfer.to_address == self.our_address, bust_result.transfers))
         sai_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.sai.address and transfer.from_address == self.our_address, bust_result.transfers))
 
-        print(f"Successfully called bust(), we got {skr_transfer_on_bust.wad} SKR for {sai_transfer_on_bust.wad} SAI")
-        print(f"It all means we made a profit of {skr_transfer_on_bust.wad - skr_transfer_on_take.wad} SKR")
+        print(f"Successfully called bust(), we got {skr_transfer_on_bust.value} SKR for {sai_transfer_on_bust.value} SAI")
+        print(f"It all means we made a profit of {skr_transfer_on_bust.value - skr_transfer_on_take.value} SKR and {sai_transfer_on_take.value - sai_transfer_on_bust.value} SAI")
 
     def run(self):
         parser = argparse.ArgumentParser(description='SaiProcessWoe keeper..')

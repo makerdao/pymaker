@@ -32,10 +32,12 @@ class Wad:
         if isinstance(value, Wad):
             self.value = value.value
         elif isinstance(value, Ray):
-            self.value = int(value.value // int(math.pow(10, 9)))
-        else:
+            self.value = int((Decimal(value.value) / (Decimal(10)**Decimal(9))).quantize(1, rounding=ROUND_DOWN))
+        elif isinstance(value, int):
             assert(value >= 0)
-            self.value = int(value)
+            self.value = value
+        else:
+            raise ArithmeticError
 
     @classmethod
     def from_number(cls, number):
@@ -71,52 +73,58 @@ class Wad:
     def __mul__(self, other):
         from api.Ray import Ray
         if isinstance(other, Wad):
-            return Wad(int((Decimal(self.value) * Decimal(other.value) / Decimal(1000000000000000000)).quantize(1, rounding=ROUND_DOWN)))
+            result = Decimal(self.value) * Decimal(other.value) / (Decimal(10) ** Decimal(18))
+            return Wad(int(result.quantize(1, rounding=ROUND_DOWN)))
         elif isinstance(other, Ray):
-            return Wad(int((Decimal(self.value) * Decimal(other.value) / Decimal(1000000000000000000000000000)).quantize(1, rounding=ROUND_DOWN)))
-
-            # TODO Wad should be returned, which means it should get divided by math.pow(10, 27)
-            # return Ray(int(math.ceil(self.value * other.value)) // int(math.pow(10, 18)))
+            result = Decimal(self.value) * Decimal(other.value) / (Decimal(10) ** Decimal(27))
+            return Wad(int(result.quantize(1, rounding=ROUND_DOWN)))
         elif isinstance(other, int):
-            # raise ArithmeticError # DO WE NEED THIS??
             return Wad((Decimal(self.value) * Decimal(other)).quantize(1))
         else:
-            raise ArithmeticError # DO WE NEED THIS??
+            raise ArithmeticError
 
     def __truediv__(self, other):
-        from api.Ray import Ray
         if isinstance(other, Wad):
-            return self.value/other.value
-        elif isinstance(other, Ray):
-            return self.value/other.value * int(math.pow(10, 9))
+            return Wad(int((Decimal(self.value) * (Decimal(10) ** Decimal(18)) / Decimal(other.value)).quantize(1, rounding=ROUND_DOWN)))
         else:
-            return Wad(int(math.ceil(self.value/other)))
+            raise ArithmeticError
 
     def __eq__(self, other):
-        return self.value == other.value
+        if isinstance(other, Wad):
+            return self.value == other.value
+        else:
+            raise ArithmeticError
 
     def __lt__(self, other):
-        return self.value < other.value
+        if isinstance(other, Wad):
+            return self.value < other.value
+        else:
+            raise ArithmeticError
 
     def __cmp__(self, other):
-        if self.value < other.value:
-            return -1
-        elif self.value > other.value:
-            return 1
+        if isinstance(other, Wad):
+            if self.value < other.value:
+                return -1
+            elif self.value > other.value:
+                return 1
+            else:
+                return 0
         else:
-            return 0
+            raise ArithmeticError
 
     #TODO remove this method from the API
     def percentage_change(self, change):
         return Wad((self.value * (100 + change)) // 100)
 
     @staticmethod
+    # TODO try to implement a variable argument min()
     def min(first, second):
         if not isinstance(first, Wad) or not isinstance(second, Wad):
             raise ArithmeticError
         return Wad(min(first.value, second.value))
 
     @staticmethod
+    # TODO try to implement a variable argument max()
     def max(first, second):
         if not isinstance(first, Wad) or not isinstance(second, Wad):
             raise ArithmeticError

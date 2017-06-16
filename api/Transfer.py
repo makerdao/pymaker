@@ -20,12 +20,12 @@ from api.Wad import Wad
 
 
 class Transfer:
-    def __init__(self, token_address, from_address, to_address, wad):
+    def __init__(self, token_address, from_address, to_address, value):
         assert(isinstance(token_address, Address))
         assert(isinstance(from_address, Address))
         assert(isinstance(to_address, Address))
-        assert(isinstance(wad, Wad))
+        assert(isinstance(value, Wad))
         self.token_address = token_address
         self.from_address = from_address
         self.to_address = to_address
-        self.wad = wad
+        self.value = value

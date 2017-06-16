@@ -28,8 +28,16 @@ from decimal import *
 @total_ordering
 class Ray:
     def __init__(self, value):
-        assert(value >= 0)
-        self.value = int(value)
+        from api.Wad import Wad
+        if isinstance(value, Ray):
+            self.value = value.value
+        elif isinstance(value, Wad):
+            self.value = int((Decimal(value.value) * (Decimal(10)**Decimal(9))).quantize(1))
+        elif isinstance(value, int):
+            assert(value >= 0)
+            self.value = value
+        else:
+            raise ArithmeticError
 
     @classmethod
     def from_number(cls, number):
@@ -37,6 +45,10 @@ class Ray:
         pwr = Decimal(10) ** 27
         dec = Decimal(str(number)) * pwr
         return Ray(int(dec.quantize(1)))
+
+    @classmethod
+    def from_uint(cls, uint):
+        return Ray(uint)
 
     def __repr__(self):
         return "Ray(" + str(self.value) + ")"
@@ -54,42 +66,54 @@ class Ray:
     def __mul__(self, other):
         from api.Wad import Wad
         if isinstance(other, Ray):
-            return Ray(int(math.ceil(self.value * other.value)) // int(math.pow(10, 27)))
+            result = Decimal(self.value) * Decimal(other.value) / (Decimal(10) ** Decimal(27))
+            return Ray(int(result.quantize(1, rounding=ROUND_DOWN)))
         elif isinstance(other, Wad):
-            return Ray(int(math.ceil(self.value * other.value)) // int(math.pow(10, 18)))
+            result = Decimal(self.value) * Decimal(other.value) / (Decimal(10) ** Decimal(18))
+            return Ray(int(result.quantize(1, rounding=ROUND_DOWN)))
+        elif isinstance(other, int):
+            return Ray((Decimal(self.value) * Decimal(other)).quantize(1))
         else:
-            return Ray(int(math.ceil(self.value * other)))
+            raise ArithmeticError
 
     def __truediv__(self, other):
-        from api.Wad import Wad
         if isinstance(other, Ray):
-            return self.value/other.value
-        elif isinstance(other, Wad):
-            return (self.value/other.value) / int(math.pow(10, 9))
+            return Ray(int((Decimal(self.value) * (Decimal(10) ** Decimal(27)) / Decimal(other.value)).quantize(1, rounding=ROUND_DOWN)))
         else:
-            return Ray(int(math.ceil(self.value/other)))
+            raise ArithmeticError
 
     def __eq__(self, other):
-        return self.value == other.value
+        if isinstance(other, Ray):
+            return self.value == other.value
+        else:
+            raise ArithmeticError
 
     def __lt__(self, other):
-        return self.value < other.value
+        if isinstance(other, Ray):
+            return self.value < other.value
+        else:
+            raise ArithmeticError
 
     def __cmp__(self, other):
-        if self.value < other.value:
-            return -1
-        elif self.value > other.value:
-            return 1
+        if isinstance(other, Ray):
+            if self.value < other.value:
+                return -1
+            elif self.value > other.value:
+                return 1
+            else:
+                return 0
         else:
-            return 0
+            raise ArithmeticError
 
     @staticmethod
+    # TODO try to implement a variable argument min()
     def min(first, second):
         if not isinstance(first, Ray) or not isinstance(second, Ray):
             raise ArithmeticError
         return Ray(min(first.value, second.value))
 
     @staticmethod
+    # TODO try to implement a variable argument max()
     def max(first, second):
         if not isinstance(first, Ray) or not isinstance(second, Ray):
             raise ArithmeticError
