@@ -13,5 +13,5 @@ Tub
 Lpc
 ---
 
-.. automodule:: api.sai.SaiLPC
+.. automodule:: api.sai.Lpc
     :members:

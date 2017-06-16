@@ -21,5 +21,5 @@ from api.Ray import Ray
 from api.Wad import Wad
 
 
-class SaiLPC(Contract):
-    abi = Contract._load_abi(__name__, 'SaiLPC.abi')
+class Lpc(Contract):
+    abi = Contract._load_abi(__name__, 'Lpc.abi')
