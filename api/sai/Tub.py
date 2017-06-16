@@ -397,11 +397,73 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         return self._contract.call().safe(self._to_bytes32(cup_id))
 
-    #TODO join
-    #TODO exit
-    
-    #TODO open
-    #TODO shut
+    def join(self, amount_in_gem: Wad) -> Optional[Receipt]:
+        """Buy SKR for GEMs.
+
+        Args:
+            amount_in_gem: The amount of GEMs to buy SKR for.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(amount_in_gem, Wad)
+        try:
+            tx_hash = self._contract.transact().join(amount_in_gem.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def exit(self, amount_in_skr: Wad) -> Optional[Receipt]:
+        """Sell SKR for GEMs.
+
+        Args:
+            amount_in_skr: The amount of SKR to sell for GEMs.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(amount_in_skr, Wad)
+        try:
+            tx_hash = self._contract.transact().exit(amount_in_skr.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    #TODO make it return the id of the newly created cup
+    def open(self) -> Optional[Receipt]:
+        """Create a new cup.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        try:
+            tx_hash = self._contract.transact().open()
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def shut(self, cup_id: int) -> Optional[Receipt]:
+        """Close a cup.
+
+        Involves calling `wipe()` and `free()` internally in order to clear all remaining SAI debt and free
+        all remaining SKR collateral.
+
+        Args:
+            cup_id: Id of the cup to close.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(cup_id, int)
+        try:
+            tx_hash = self._contract.transact().shut(self._to_bytes32(cup_id))
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
 
     def lock(self, cup_id: int, amount_in_skr: Wad) -> Optional[Receipt]:
         """Post additional SKR collateral to a cup.
