@@ -53,46 +53,6 @@ class Tub(Contract):
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
-    def air(self) -> Wad:
-        """Get the amount of backing collateral."""
-        return Wad(self._contract.call().air())
-
-    def axe(self) -> Ray:
-        """Get the liquidation penalty."""
-        return Ray(self._contract.call().axe())
-
-    def chi(self) -> Ray:
-        """Get the internal debt price."""
-        return Ray(self._contract.call().chi())
-
-    def tax(self) -> Ray:
-        """Get the stability fee."""
-        return Ray(self._contract.call().tax())
-
-    def hat(self) -> Wad:
-        """Get the debt ceiling."""
-        return Wad(self._contract.call().hat())
-
-    def rho(self) -> int:
-        """Get the time of the last drip."""
-        return self._contract.call().rho()
-
-    def fix(self) -> Wad:
-        """Get the SAI settlement price"""
-        return Wad(self._contract.call().fix())
-
-    def joy(self) -> Wad:
-        """Get the amount of surplus SAI"""
-        return Wad(self._contract.call().joy())
-
-    def gem(self) -> Address:
-        """Get the collateral token.
-
-        Returns:
-            The address of the collateral token.
-        """
-        return Address(self._contract.call().gem())
-
     def sai(self) -> Address:
         """Get the SAI token.
 
@@ -109,6 +69,14 @@ class Tub(Contract):
         """
         return Address(self._contract.call().sin())
 
+    def pot(self) -> Address:
+        """Get the good debt vault.
+
+        Returns:
+            The address of the `DSVault` holding the good debt.
+        """
+        return Address(self._contract.call().pot())
+
     def skr(self) -> Address:
         """Get the SKR token.
 
@@ -117,53 +85,248 @@ class Tub(Contract):
         """
         return Address(self._contract.call().skr())
 
+    def gem(self) -> Address:
+        """Get the collateral token (eg. W-ETH).
+
+        Returns:
+            The address of the collateral token.
+        """
+        return Address(self._contract.call().gem())
+
+    def tip(self) -> Address:
+        """Get the GEM price feed.
+
+        You can get the current feed value by calling `tag()`.
+
+        Returns:
+            The address of the GEM price feed, which could be a `DSValue`, a `DSCache`, a `Mednianizer` etc.
+        """
+        return Address(self._contract.call().tip())
+
+    def axe(self) -> Ray:
+        """Get the liquidation penalty.
+
+        Returns:
+            The liquidation penalty. `1.0` means no penalty. `1.2` means 20% penalty.
+        """
+        return Ray(self._contract.call().axe())
+
+    def hat(self) -> Wad:
+        """Get the debt ceiling.
+
+        Returns:
+            The debt ceiling in SAI.
+        """
+        return Wad(self._contract.call().hat())
+
+    def mat(self) -> Ray:
+        """Get the liquidation ratio.
+
+        Returns:
+            The liquidation ratio. `1.5` means the liquidation ratio is 150%.
+        """
+        return Ray(self._contract.call().mat())
+
+    def tax(self) -> Ray:
+        """Get the stability fee.
+
+        Returns:
+            Per-second value of the stability fee. `1.0` means no stability fee.
+        """
+        return Ray(self._contract.call().tax())
+
+    def reg(self) -> int:
+        """Get the Tub stage ('register').
+
+        Returns:
+            The current Tub stage (0=Usual, 1=Caged, 2=Empty).
+        """
+        return self._contract.call().reg()
+
+    def fix(self) -> Wad:
+        """Get the SAI settlement price.
+        
+        Returns:
+            The SAI settlement (kill) price (in GEM per SAI).
+        """
+        return Wad(self._contract.call().fix())
+
+    def par(self) -> Ray:
+        """Get the GEM per SKR price just before settlement.
+
+        Returns:
+            The GEM per SKR price saved just before settlement.
+        """
+        return Ray(self._contract.call().par())
+
+    def rho(self) -> int:
+        """Get the time of the last drip.
+
+        Returns:
+            The time of the last drip as a unix timestamp.
+        """
+        return self._contract.call().rho()
+
+    def chi(self) -> Ray:
+        """Get the internal debt price.
+
+        Every invocation of this method calls `drip()` internally, so the value we receive is always up-to-date.
+        But as calling it doesn't result in an Ethereum transaction, the actual `_chi` value in the smart
+        contract storage does not get updated.
+
+        Returns:
+            The internal debt price in SAI.
+        """
+        return Ray(self._contract.call().chi())
+
+    def chop(self, new_axe: Ray) -> Optional[Receipt]:
+        """Update the liquidation penalty.
+
+        Args:
+            new_axe: The new value of the liquidation penalty (`axe`). `1.0` means no penalty. `1.2` means 20% penalty.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(new_axe, Ray)
+        try:
+            tx_hash = self._contract.transact().chop(new_axe.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def cork(self, new_hat: Wad) -> Optional[Receipt]:
+        """Update the debt ceiling.
+
+        Args:
+            new_hat: The new value of the debt ceiling (`hat`), in SAI.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(new_hat, Wad)
+        try:
+            tx_hash = self._contract.transact().cork(new_hat.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def cuff(self, new_mat: Ray) -> Optional[Receipt]:
+        """Update the liquidation ratio.
+
+        Args:
+            new_mat: The new value of the liquidation ratio (`mat`). `1.5` means the liquidation ratio is 150%.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(new_mat, Ray)
+        try:
+            tx_hash = self._contract.transact().cuff(new_mat.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def crop(self, new_tax: Ray) -> Optional[Receipt]:
+        """Update the stability fee.
+
+        Args:
+            new_tax: The new per-second value of the stability fee (`tax`). `1.0` means no stability fee.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(new_tax, Ray)
+        try:
+            tx_hash = self._contract.transact().crop(new_tax.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def drip(self) -> Optional[Receipt]:
+        """Recalculate the internal debt price.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        try:
+            tx_hash = self._contract.transact().drip()
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
     def ice(self) -> Wad:
-        """Get the amount of good debt."""
+        """Get the amount of good debt.
+
+        Returns:
+            The amount of good debt in SAI.
+        """
         return Wad(self._contract.call().ice())
 
     def woe(self) -> Wad:
-        """Get the amount of bad debt."""
+        """Get the amount of bad debt.
+
+        Returns:
+            The amount of bad debt in SAI.
+        """
         return Wad(self._contract.call().woe())
 
-    def fog(self) -> Wad:
-        """Get the amount of skr pending liquidation."""
-        return Wad(self._contract.call().fog())
-
     def pie(self) -> Wad:
-        """Get the amount of raw collateral."""
+        """Get the amount of raw collateral.
+
+        Returns:
+            The amount of raw collateral in GEM.
+        """
         return Wad(self._contract.call().pie())
 
-    def par(self) -> Ray:
-        """Get the gem per skr price just before settlement."""
-        return Ray(self._contract.call().par())
+    def air(self) -> Wad:
+        """Get the amount of backing collateral.
 
-    def per(self) -> Ray:
-        """Get the current entry price (gem per skr)."""
-        return Ray(self._contract.call().per())
+        Returns:
+            The amount of backing collateral in SKR.
+        """
+        return Wad(self._contract.call().air())
+
+    def fog(self) -> Wad:
+        """Get the amount of SKR pending liquidation.
+
+        Returns:
+            The amount of SKR pending liquidation, in SKR.
+        """
+        return Wad(self._contract.call().fog())
+
+    def joy(self) -> Wad:
+        """Get the amount of surplus SAI.
+
+        Surplus SAI can be processed using `boom()`.
+
+        Returns:
+            The amount of surplus SAI accumulated in the Tub.
+        """
+        return Wad(self._contract.call().joy())
 
     def tag(self) -> Wad:
-        """Get the reference price (ref per gem)."""
+        """Get the reference price (REF per GEM).
+
+        The price is read from the price feed (`tip()`) every time this method gets called.
+
+        Returns:
+            The reference price (REF per GEM).
+        """
         return Wad(self._contract.call().tag())
 
-    def mat(self) -> Ray:
-        """Get the liquidation ratio."""
-        return Ray(self._contract.call().mat())
-
-    def pot(self) -> Address:
-        """Get the good debt vault.
+    def per(self) -> Ray:
+        """Get the current entry price (GEM per SKR).
 
         Returns:
-            The address of the DSVault holding the good debt.
+            The current GEM per SKR price.
         """
-        return Address(self._contract.call().pot())
-
-    def tip(self) -> Address:
-        """Get the gem price feed.
-
-        Returns:
-            The address of the gem price feed, which could be a DSValue, DSCache, Mednianizer etc.
-        """
-        return Address(self._contract.call().tip())
+        return Ray(self._contract.call().per())
 
     def cupi(self) -> int:
         """Get the last cup id
@@ -187,25 +350,25 @@ class Tub(Contract):
         return Cup(Address(array[0]), Wad(array[1]), Wad(array[2]))
 
     def tab(self, cup_id: int) -> Wad:
-        """Get how much debt in a cup.
+        """Get the amount of debt in a cup.
 
         Args:
             cup_id: Id of the cup.
 
         Returns:
-            Amount of debt in the cup.
+            Amount of debt in the cup, in SAI.
         """
         assert isinstance(cup_id, int)
         return Wad(self._contract.call().tab(self._to_bytes32(cup_id)))
 
     def ink(self, cup_id: int) -> Wad:
-        """Get the amount of skr collateral locked in a cup.
+        """Get the amount of SKR collateral locked in a cup.
 
         Args:
             cup_id: Id of the cup.
 
         Returns:
-            Amount of skr collateral locked in the cup.
+            Amount of SKR collateral locked in the cup, in SKR.
         """
         assert isinstance(cup_id, int)
         return Wad(self._contract.call().ink(self._to_bytes32(cup_id)))
@@ -223,27 +386,33 @@ class Tub(Contract):
         return Address(self._contract.call().lad(self._to_bytes32(cup_id)))
 
     def safe(self, cup_id: int) -> bool:
-        """Determine if a cup is safe
+        """Determine if a cup is safe.
 
         Args:
             cup_id: Id of the cup
 
         Returns:
-            True if the cup is safe. False otherwise.
+            `True` if the cup is safe. `False` otherwise.
         """
         assert isinstance(cup_id, int)
         return self._contract.call().safe(self._to_bytes32(cup_id))
+
+    #TODO join
+    #TODO exit
+    
+    #TODO open
+    #TODO shut
 
     def lock(self, cup_id: int, amount_in_skr: Wad) -> Optional[Receipt]:
         """Post additional SKR collateral to a cup.
 
         Args:
             cup_id: Id of the cup to post the collateral into.
-            amount_in_skr: The amount of collateral to post.
+            amount_in_skr: The amount of collateral to post, in SKR.
 
         Returns:
-            A Receipt if the Ethereum transaction was successful.
-            None if the Ethereum transaction failed.
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
@@ -253,15 +422,91 @@ class Tub(Contract):
         except:
             return None
 
+    def free(self, cup_id: int, amount_in_skr: Wad) -> Optional[Receipt]:
+        """Remove excess SKR collateral from a cup.
+
+        Args:
+            cup_id: Id of the cup to remove the collateral from.
+            amount_in_skr: The amount of collateral to remove, in SKR.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(cup_id, int)
+        assert isinstance(amount_in_skr, Wad)
+        try:
+            tx_hash = self._contract.transact().free(self._to_bytes32(cup_id), amount_in_skr.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def draw(self, cup_id: int, amount_in_sai: Wad) -> Optional[Receipt]:
+        """Issue the specified amount of SAI stablecoins.
+
+        Args:
+            cup_id: Id of the cup to issue the SAI from.
+            amount_in_sai: The amount SAI to be issued.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(cup_id, int)
+        assert isinstance(amount_in_sai, Wad)
+        try:
+            tx_hash = self._contract.transact().draw(self._to_bytes32(cup_id), amount_in_sai.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def wipe(self, cup_id: int, amount_in_sai: Wad) -> Optional[Receipt]:
+        """Repay some portion of existing SAI debt.
+
+        Args:
+            cup_id: Id of the cup to repay the SAI to.
+            amount_in_sai: The amount SAI to be repaid.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(cup_id, int)
+        assert isinstance(amount_in_sai, Wad)
+        try:
+            tx_hash = self._contract.transact().wipe(self._to_bytes32(cup_id), amount_in_sai.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def give(self, cup_id: int, new_lad: Address) -> Optional[Receipt]:
+        """Transfer ownership of a cup.
+
+        Args:
+            cup_id: Id of the cup to transfer ownership of.
+            new_lad: New owner of the cup.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(cup_id, int)
+        assert isinstance(new_lad, Address)
+        try:
+            tx_hash = self._contract.transact().give(self._to_bytes32(cup_id), new_lad.address)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
     def bite(self, cup_id: int) -> Optional[Receipt]:
         """Initiate liquidation of an undercollateralized cup.
 
         Args:
-            cup_id: Id of the cup to bite.
+            cup_id: Id of the cup to liquidate.
 
         Returns:
-            A Receipt if the Ethereum transaction was successful.
-            None if the Ethereum transaction failed.
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
         """
         assert isinstance(cup_id, int)
         try:
@@ -271,14 +516,14 @@ class Tub(Contract):
             return None
 
     def boom(self, amount_in_skr: Wad) -> Optional[Receipt]:
-        """Buy some amount of sai to process joy (surplus).
+        """Buy some amount of SAI to process joy (surplus).
 
         Args:
             amount_in_skr: The amount of SKR we want to send in order to receive SAI.
 
         Returns:
-            A Receipt if the Ethereum transaction was successful.
-            None if the Ethereum transaction failed.
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
         """
         assert isinstance(amount_in_skr, Wad)
         try:
@@ -288,14 +533,14 @@ class Tub(Contract):
             return None
 
     def bust(self, amount_in_skr: Wad) -> Optional[Receipt]:
-        """Sell some amount of sai to process woe (bad debt).
+        """Sell some amount of SAI to process woe (bad debt).
 
         Args:
             amount_in_skr: The amount of SKR we want to receive in exchange for our SAI.
 
         Returns:
-            A Receipt if the Ethereum transaction was successful.
-            None if the Ethereum transaction failed.
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
         """
         assert isinstance(amount_in_skr, Wad)
         try:
@@ -303,14 +548,11 @@ class Tub(Contract):
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
-
-    def reg(self) -> int:
-        """Get the Tub stage ('register').
-
-        Returns:
-            The current Tub stage (0=Usual, 1=Caged, 2=Empty).
-        """
-        return self._contract.call().reg()
+        
+    # TODO cage
+    # TODO cash
+    # TODO bail
+    # TODO vent
 
     def __eq__(self, other):
         return self.address == other.address
