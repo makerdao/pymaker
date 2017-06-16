@@ -28,7 +28,7 @@ from api.sai.Cup import Cup
 
 
 class Tub(Contract):
-    """A client for a `Tub` contract, a Maker contract driving the `Sai Stablecoin System`.
+    """A client for the `Tub` contract, the primary contract driving the `SAI Stablecoin System`.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
