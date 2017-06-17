@@ -9,4 +9,3 @@ doc-build: doc-clean        ## Build the documentation
 
 doc-deploy: doc-build       ## Deploy the documentation at http://maker-py-docs.surge.sh
 	surge --project _doc --domain maker-py-docs.surge.sh
-
