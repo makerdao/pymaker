@@ -29,15 +29,14 @@ from api.Wad import Wad
 class Lpc(Contract):
     """A client for the `SaiLPC` contract, a simple two-token liquidity pool created together for Sai.
 
-    `SaiLPC` relies on an external price feed (the `tip()`).
+    `SaiLPC` relies on an external price feed (the `tip`).
 
     Makers
     - `pool()` their gems and receive LPS tokens, which are a claim on the pool.
     - `exit()` and trade their LPS tokens for a share of the gems in the pool.
 
     Takers
-    - `take()` and exchange one gem for another, whilst paying a fee
-      (the `gap()`). The collected fee goes into the pool.
+    - `take()` and exchange one gem for another, whilst paying a fee (the `gap`). The collected fee goes into the pool.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
