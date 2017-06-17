@@ -28,6 +28,10 @@ sample keepers provided.
 in the future.
 
 ### Installation
+
+_Maker.py_ uses Python 3.6.1.
+
+In order to install required third-party packages please execute:
 ```
 pip install -r requirements.txt
 ```

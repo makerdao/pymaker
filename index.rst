@@ -23,7 +23,10 @@ API documentation
 Basic examples
 --------------
 
-TODO
+.. toctree::
+   :maxdepth: 4
+
+   examples-doc/index
 
 Sample keepers
 --------------
