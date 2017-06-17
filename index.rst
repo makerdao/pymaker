@@ -31,4 +31,7 @@ Basic examples
 Sample keepers
 --------------
 
-TODO
+.. toctree::
+   :maxdepth: 4
+
+   keepers-doc/index
