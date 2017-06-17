@@ -190,7 +190,7 @@ class Lpc(Contract):
         If `token` is ref, credits `amount` of ref to your account, taking the equivalent amount of alts from you.
         If `token` is alt, credits `amount` of alt to your account, taking the equivalent amount of refs from you.
 
-        The current price (`tag()`) is used as the exchange rate.
+        The current price (`tag`) is used as the exchange rate.
 
         Args:
             token: The token you want to get from the pool (either ref or alt).
