@@ -17,13 +17,15 @@ _Maker.py_ covers three areas:
 ## Python APIs for Maker smart contracts
 
 The current version provides APIs for `Tub`, `Lpc`, `ERC20Token`, `DSValue` and in addition
-also for `SimpleMarket` (OasisDEX/OTC).
+also for `SimpleMarket` (OasisDEX/OTC). There is also a working API around `AuctionManager`
+and `SplittingAuctionManager`, but they will be used in _DAI Stablecoin System_, not in
+_SAI Stablecoin System_.
 
 You can find the full documentation here: **TODO**. The documentation covers also examples and
 sample keepers provided.
 
-There is also a working API around `AuctionManager` and `SplittingAuctionManager`, but they
-will be used in _DAI Stablecoin System_, not in _SAI Stablecoin System_.
+**Beware!** This is the first version of the APIs and they will definitely change and/or evolve
+in the future.
 
 ### Installation
 ```
