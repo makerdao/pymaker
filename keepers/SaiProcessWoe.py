@@ -54,17 +54,17 @@ class SaiProcessWoe(Keeper):
         return None
 
     def setup_allowances(self):
-        self.setup_allowance(self.skr, self.market.address)
-        self.setup_allowance(self.sai, self.tub.address)
+        self.setup_allowance(self.skr, 'SKR', self.market.address)
+        self.setup_allowance(self.sai, 'SAI', self.tub.address)
 
-    def setup_allowance(self, token, address):
-        minimum_allowance = Wad.from_number(1000000000)
-        target_allowance = Wad.from_number(1000000000000)
+    def setup_allowance(self, token, token_name, address):
+        minimum_allowance = Wad(2**248-1)
+        target_allowance = Wad(2**256-1)
         if token.allowance_of(self.our_address, address) < minimum_allowance:
-            print(f"Raising {token.name()} allowance for {address}")
+            print(f"Raising {token_name} allowance for {address}")
             token.approve(address, target_allowance)
 
-    def process(self):
+    def process(self, minimum_sai, minimum_price_difference):
         print(f"")
         self.setup_allowances()
         print(f"Processing (@ {datetime.datetime.now()})")
@@ -90,7 +90,7 @@ class SaiProcessWoe(Keeper):
         print(f"Woe: {woe_in_sai} SAI (= {woe_in_skr} SKR)")
         print(f"SAI/SKR price: {price_sai_skr}")
 
-        min_order_size_in_sai = Wad.from_number(5)
+        min_order_size_in_sai = Wad.from_number(minimum_sai)
         min_order_size_in_skr = min_order_size_in_sai / Wad(price_sai_skr)
 
         print(f"Minimum processable size in SAI: {min_order_size_in_sai} SAI")
@@ -114,10 +114,10 @@ class SaiProcessWoe(Keeper):
         # on OasisDEX, if the trade is successfull we call `bust` to receive SKR.
         # If it's still not too late for `bust`, the amount of SKR received
         # from the `Tub` should be greater than the original SKR amount invested
-        # in the trade. If somebody managed to call `bust` earlier than us,
-        # we end up with some extra SAI which we think it's not too bad.
+        # in the trade. If somebody manages to call `bust` earlier than us,
+        # we will end up with some extra SAI which we think it's not too bad.
 
-        price_limit = price_sai_skr * Ray.from_number(1 + 0.001)
+        price_limit = price_sai_skr * Ray.from_number(1 + minimum_price_difference)
         print(f"Tub performs bust() at {price_sai_skr} SAI/SKR")
         print(f"Looking for a SAI sell offer on OasisDEX with price at least {price_limit} SAI/SKR")
 
@@ -189,11 +189,13 @@ class SaiProcessWoe(Keeper):
         print(f"It all means we made a profit of {skr_transfer_on_bust.value - skr_transfer_on_take.value} SKR and {sai_transfer_on_take.value - sai_transfer_on_bust.value} SAI")
 
     def run(self):
-        parser = argparse.ArgumentParser(description='SaiProcessWoe keeper..')
+        parser = argparse.ArgumentParser(description='SaiProcessWoe keeper. Arbitrages on SAI/SKR price via bust().')
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
         parser.add_argument("--frequency", help="Frequency of checking for arbitrage opportunities (default: 5)", default=5, type=float)
+        parser.add_argument("--minimum-sai", help="Minimum order size in SAI (default: 50)", default=50, type=float)
+        parser.add_argument("--minimum-price-difference", help="Minimum price difference (default: 0.01)", default=0.01, type=float)
         args = parser.parse_args()
 
         config = Config()
@@ -216,8 +218,8 @@ class SaiProcessWoe(Keeper):
         print(f"--------------------")
 
         while True:
-            self.process()
-            time.sleep(5)
+            self.process(args.minimum_sai, args.minimum_price_difference)
+            time.sleep(args.frequency)
 
 
 if __name__ == '__main__':
