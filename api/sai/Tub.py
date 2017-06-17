@@ -30,24 +30,24 @@ from api.sai.Cup import Cup
 class Tub(Contract):
     """A client for the `Tub` contract, the primary contract driving the `SAI Stablecoin System`.
 
+    SAI is a simple version of the diversely collateralized DAI stablecoin.
+
+    In this model there is one type of underlying collateral (called gems).
+    The SKR token represents claims on the system's excess gems, and is the
+    only admissible type of collateral.  Gems can be converted to/from SKR.
+
+    Any transfers of SAI or SKR are done using the normal ERC20 interface;
+    until settlement mode is triggered, SAI users should only need ERC20.
+    ``ERC20Token`` class may be used for it.
+
     Attributes:
         web3: An instance of `Web` from `web3.py`.
-        address: Ethereum address of the `Tub`.
+        address: Ethereum address of the `Tub` contract.
     """
 
     abi = Contract._load_abi(__name__, 'Tub.abi')
 
     def __init__(self, web3: Web3, address: Address):
-        """Creates a new client for a `Tub` contract.
-
-        Notes:
-            Existence of a contract on the Ethereum blockchain under given address is verified the moment
-                the instance of this class is created.
-
-        Args:
-            web3: An instance of `Web` from `web3.py`.
-            address: Ethereum address of the `Tub`.
-        """
         self.web3 = web3
         self.address = address
         self._assert_contract_exists(web3, address)
