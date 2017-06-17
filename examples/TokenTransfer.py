@@ -22,7 +22,6 @@ from web3 import Web3
 
 from api.Address import Address
 from api.Wad import Wad
-from api.sai.Lpc import Lpc
 from api.sai.Tub import Tub
 from api.token.ERC20Token import ERC20Token
 
@@ -30,24 +29,19 @@ web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
 web3.eth.defaultAccount = "0x002ca7F9b416B2304cDd20c26882d1EF5c53F611"
 
 our_address = Address(web3.eth.defaultAccount)
+destination_address = Address("0x0061f1dbAf1e1B2E412A75D3eD6B48c3D7412D35")
 tub = Tub(web3=web3, address=Address('0x97bf1ff371ceabbb9e821480d31dd743c4b71e0e'))
-lpc = Lpc(web3=web3, address=Address('0x3bd1eeeffcbd8c922cadd5d76b2182debb3ca5af'))
 sai = ERC20Token(web3=web3, address=tub.sai())
-gem = ERC20Token(web3=web3, address=tub.gem())
 
-# Print our SAI and GEM (W-ETH) balance
-print(f"Our balance before the exchange is: {sai.balance_of(our_address)} SAI")
-print(f"                                    {gem.balance_of(our_address)} W-ETH")
+print(f"Source balance before the transfer is {sai.balance_of(our_address)} SAI")
+print(f"Destination balance before the transfer is {sai.balance_of(destination_address)} SAI")
 print(f"")
-print(f"Attempting to get 10 SAI in exchange for W-ETH...")
-print(f"The rate used will be {lpc.tag()}")
-print(f"")
+print(f"Attempting to transfer 10 SAI...")
 
-# Perform the exchange (`take()`) via LPC
-# Print our balances again afterwards
-if lpc.take(tub.sai(), Wad.from_number(10)):
-    print(f"Exchange was successful.")
-    print(f"Our balance after the exchange is:  {sai.balance_of(our_address)} SAI")
-    print(f"                                    {gem.balance_of(our_address)} W-ETH")
+if sai.transfer(destination_address, Wad.from_number(10)):
+    print(f"Transfer was successful")
+    print(f"")
+    print(f"Source balance after the transfer is {sai.balance_of(our_address)} SAI")
+    print(f"Destination balance after the transfer is {sai.balance_of(destination_address)} SAI")
 else:
-    print(f"Exchange failed. Check if you have enough W-ETH balance.")
+    print(f"Transfer failed. Check if you have enough SAI balance.")

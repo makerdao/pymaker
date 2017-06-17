@@ -1,5 +1,5 @@
-Examples
-========
+Basic examples
+==============
 
 These examples are meant to demonstrate how to use the `maker.py` APIs.
 
@@ -11,6 +11,18 @@ This example demonstrates how to easily exchange `W-ETH` for `SAI`.
 From `examples/LpcExchange.py`:
 
 .. literalinclude:: ../examples/LpcExchange.py
+    :language: python
+    :linenos:
+
+TokenTransfer.py
+----------------
+
+This example demonstrates transfer some SAI to another Ethereum address. Basically any other ERC20 token
+can be transferred this way.
+
+From `examples/TokenTransfer.py`:
+
+.. literalinclude:: ../examples/TokenTransfer.py
     :language: python
     :linenos:
 
