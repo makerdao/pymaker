@@ -78,7 +78,7 @@ while True:
             current_ratio = Ray(pro / tab)
 
             if current_ratio < minimum_ratio:
-                top_up_amount = Wad.from_number((target_ratio - current_ratio) * tab / (tub.per() * tub.tag()))
+                top_up_amount = tab * ((target_ratio - current_ratio) / (tub.per() * tub.tag()))
                 print(f"Cup {cup_id} has collateralization ratio {current_ratio}, below {minimum_ratio}")
                 print(f"Cup {cup_id} needs top-up with {top_up_amount} SKR so the collateralization ratio reaches {target_ratio}")
 
