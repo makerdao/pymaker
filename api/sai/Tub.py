@@ -579,7 +579,7 @@ class Tub(Contract):
             return None
 
     def boom(self, amount_in_skr: Wad) -> Optional[Receipt]:
-        """Buy some amount of SAI to process joy (surplus).
+        """Buy some amount of SAI to process `joy` (surplus).
 
         Args:
             amount_in_skr: The amount of SKR we want to send in order to receive SAI.
@@ -596,7 +596,7 @@ class Tub(Contract):
             return None
 
     def bust(self, amount_in_skr: Wad) -> Optional[Receipt]:
-        """Sell some amount of SAI to process woe (bad debt).
+        """Sell some amount of SAI to process `woe` (bad debt).
 
         Args:
             amount_in_skr: The amount of SKR we want to receive in exchange for our SAI.
