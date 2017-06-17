@@ -61,12 +61,12 @@ print(f"-------------------")
 print(f"Liquidation ratio: {liquidation_ratio}")
 print(f"Minimum ratio    : {minimum_ratio}")
 print(f"Target ratio     : {target_ratio}")
-print(f"")
 
 while True:
+    print(f"")
     for cup_id in range(1, tub.cupi()+1):
-        #TODO as we do cups(...) and tab(...) in two separate calls, there is a slight chance that they might get evaulated
-        #TODO on two different blocks, which will make the collateralization ratio calculation wrong
+        #TODO as we do cups(...) and tab(...) in two separate calls, there is a slight chance that they might get
+        #TODO evaulated on two different blocks, which will make the collateralization ratio calculation wrong
         cup = tub.cups(cup_id)
         if cup.lad == our_address:
             pro = cup.ink*tub.per()*tub.tag()
@@ -75,7 +75,7 @@ while True:
                 print(f"Cup {cup_id} has no debt (SAI) drawn from it, definitely no need for top-up")
                 continue
 
-            current_ratio = Ray.from_number(pro / tab)
+            current_ratio = Ray(pro / tab)
 
             if current_ratio < minimum_ratio:
                 top_up_amount = Wad.from_number((target_ratio - current_ratio) * tab / (tub.per() * tub.tag()))

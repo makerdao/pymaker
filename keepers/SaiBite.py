@@ -27,7 +27,7 @@ from api.Address import Address
 from api.sai.Tub import Tub
 from keepers.Config import Config
 
-parser = argparse.ArgumentParser(description='Sai bite keeper. Bites unsafe cups.')
+parser = argparse.ArgumentParser(description='SaiBite keeper. Bites unsafe cups.')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
 parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
 parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
@@ -42,6 +42,10 @@ web3.eth.defaultAccount = args.eth_from #TODO allow to use ETH_FROM env variable
 tub_address = Address(config.get_contract_address("saiTub"))
 tub = Tub(web3=web3, address=tub_address)
 
+print(f"")
+print(f"SaiBite keeper")
+print(f"--------------")
+
 while True:
     print(f"")
     for cup_id in range(1, tub.cupi()+1):
@@ -53,4 +57,5 @@ while True:
                 print(f"*** FAILED to bite cup {cup_id}")
         else:
             print(f"Cup {cup_id} is safe")
+
     time.sleep(args.frequency)
