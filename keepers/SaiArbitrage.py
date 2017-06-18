@@ -4,11 +4,13 @@ import math
 
 
 class Conversion:
-    def __init__(self, from_currency, to_currency, rate):
+    def __init__(self, from_currency, to_currency, rate, fee_in_usd=None, method=None):
         self.from_currency = from_currency
         self.to_currency = to_currency
         self.rate = rate
         self.rate_for_graph = float(-math.log(float(rate)))
+        self.fee_in_usd = fee_in_usd
+        self.method = method
 
 
 def rates():
@@ -25,6 +27,12 @@ def rates():
         Conversion("BTC", "JPY", "11178.1471392"),
         Conversion("BTC", "EUR", "80.5469380"),
         Conversion("USD", "BTC", "0.0074307"),
+
+        Conversion("ETH", "SKR", "1", 0.6, "join"),
+        Conversion("SKR", "ETH", "1", 0.6, "exit"),
+
+        Conversion("ETH", "SAI", "362.830", 0.6, "take-SAI"),
+        Conversion("SAI", "ETH", str(1/float("362.830")), 0.6, "take-ETH"),
     ]
 
 def rates_to_graph(rates):
@@ -90,11 +98,12 @@ graph = rates_to_graph(rates())
 
 for key in graph:
     path = bellman_ford(graph, key)
-    if path not in paths and not None:
-        paths.append(path)
+    if path not in paths:
+        if path is not None:
+            paths.append(path)
 
 for path in paths:
-    if path == None:
+    if path is None:
         print("No opportunity here :(")
     else:
         money = 100
