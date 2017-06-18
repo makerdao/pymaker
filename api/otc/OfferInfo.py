@@ -34,11 +34,11 @@ class OfferInfo:
         buy_which_token: The token the offer creator wants to be paid with.
         owner: Ethereum address of the owner of this offer.
         active: Flag whether this offer is active or not. Actually it is always `True`.
-        timestamp: Date and time when this offer has been created.
+        timestamp: Date and time when this offer has been created, as a unix timestamp.
     """
 
     def __init__(self, offer_id: int, sell_how_much: Wad, sell_which_token: ERC20Token, buy_how_much: Wad,
-                 buy_which_token: ERC20Token, owner: Address, active: bool, timestamp: datetime):
+                 buy_which_token: ERC20Token, owner: Address, active: bool, timestamp: int):
         self.offer_id = offer_id
         self.sell_how_much = sell_how_much
         self.sell_which_token = sell_which_token

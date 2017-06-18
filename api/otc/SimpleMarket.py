@@ -81,7 +81,7 @@ class SimpleMarket(Contract):
                              buy_which_token=ERC20Token(web3=self.web3, address=Address(array[3])),
                              owner=Address(array[4]),
                              active=array[5],
-                             timestamp=datetime.datetime.fromtimestamp(array[6]))
+                             timestamp=array[6])
 
     #TODO make it return the id of the newly created offer
     def make(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> Optional[Receipt]:
