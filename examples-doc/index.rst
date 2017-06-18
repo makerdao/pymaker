@@ -3,6 +3,17 @@ Basic examples
 
 These examples are meant to demonstrate how to use the `maker.py` APIs.
 
+CryptocompareFeed.py
+--------------------
+
+This example demonstrates how to populate a `DSValue` feed with price data from the `cryptocompare.com` API.
+
+From `examples/CryptocompareFeed.py`:
+
+.. literalinclude:: ../examples/CryptocompareFeed.py
+    :language: python
+    :linenos:
+
 LpcExchange.py
 --------------
 
