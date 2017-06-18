@@ -24,6 +24,19 @@ from api.token.ERC20Token import ERC20Token
 
 
 class OfferInfo:
+    """Represents a single offer on `SimpleMarket` (`OasisDEX`).
+
+    Attributes:
+        offer_id: Id of the offer.
+        sell_how_much: The amount of the `sell_which_token` token which is put on sale.
+        sell_which_token: The token which is put on sale.
+        buy_how_much: The price the offer creator wants to be paid, denominated in the `buy_which_token` token.
+        buy_which_token: The token the offer creator wants to be paid with.
+        owner: Ethereum address of the owner of this offer.
+        active: Flag whether this offer is active or not. Actually it is always `True`.
+        timestamp: Date and time when this offer has been created.
+    """
+
     def __init__(self, offer_id: int, sell_how_much: Wad, sell_which_token: ERC20Token, buy_how_much: Wad,
                  buy_which_token: ERC20Token, owner: Address, active: bool, timestamp: datetime):
         self.offer_id = offer_id
