@@ -30,7 +30,7 @@ from api.Wad import Wad
 from api.otc.SimpleMarket import SimpleMarket
 from api.sai.Tub import Tub
 from api.token.ERC20Token import ERC20Token
-from api.value.DSValue import DSValue
+from api.feed.DSValue import DSValue
 from keepers.Config import Config
 from keepers.Keeper import Keeper
 

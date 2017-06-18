@@ -35,7 +35,7 @@ Data feeds
 `SAI Stablecoin System` revolves around ``DSValue`` and its descendants, ``DSCache`` and ``Medianizer``.
 
 .. toctree::
-    api.value
+    api.feed
 
 OasisDEX/OTC
 ~~~~~~~~~~~~

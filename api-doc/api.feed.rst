@@ -4,7 +4,7 @@ Data feeds API
 DSValue
 -------
 
-.. automodule:: api.value.DSValue
+.. automodule:: api.feed.DSValue
     :members:
 
 DSCache

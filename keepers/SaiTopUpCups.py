@@ -28,7 +28,7 @@ from api.Ray import Ray
 from api.Wad import Wad
 from api.sai.Tub import Tub
 from api.token.ERC20Token import ERC20Token
-from api.value.DSValue import DSValue
+from api.feed.DSValue import DSValue
 from keepers.Config import Config
 
 parser = argparse.ArgumentParser(description='SaiTopUpCups keeper. Locks additional collateral in cups if they get too close to the liquidation ratio.')
