@@ -32,7 +32,10 @@ class SimpleMarket(Contract):
     """A client for a `SimpleMarket` contract.
 
     `SimpleMarket` is a simple on-chain OTC market for ERC20-compatible tokens.
-    It powers the `OasisDEX` decentralized exchange
+    It powers the `OasisDEX` decentralized exchange.
+
+    You can find the source code of the `SimpleMarket` contract here:
+    <https://github.com/makerdao/maker-otc>.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
