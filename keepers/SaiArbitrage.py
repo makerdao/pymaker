@@ -1,19 +1,31 @@
-# From https://raw.githubusercontent.com/rosshochwert/arbitrage/master/arbitrage.py
+# Based on https://raw.githubusercontent.com/rosshochwert/arbitrage/master/arbitrage.py
 
-import math, urllib.request, json, re
+import math
 
 
-def download():
+def rates():
+    return [
+        {"from": "USD", "to": "JPY", "rate": "91.7074025"},
+        {"from": "JPY", "to": "EUR", "rate": "0.0083835"},
+        {"from": "BTC", "to": "USD", "rate": "109.1976214"},
+        {"from": "JPY", "to": "BTC", "rate": "0.0000896"},
+        {"from": "USD", "to": "EUR", "rate": "0.6962706"},
+        {"from": "EUR", "to": "USD", "rate": "1.4047063"},
+        {"from": "EUR", "to": "JPY", "rate": "143.9234472"},
+        {"from": "JPY", "to": "USD", "rate": "0.0107770"},
+        {"from": "EUR", "to": "BTC", "rate": "0.0122985"},
+        {"from": "BTC", "to": "JPY", "rate": "11178.1471392"},
+        {"from": "BTC", "to": "EUR", "rate": "80.5469380"},
+        {"from": "USD", "to": "BTC", "rate": "0.0074307"},
+    ]
+
+def rates_to_graph(rates):
     graph = {}
-    page = urllib.request.urlopen("http://fx.priceonomics.com/v1/rates/?q=1")
-    jsrates = json.loads(page.read())
 
-    pattern = re.compile("([A-Z]{3})_([A-Z]{3})")
-    for key in jsrates:
-        matches = pattern.match(key)
-        conversion_rate = -math.log(float(jsrates[key]))
-        from_rate = matches.group(1).encode('ascii','ignore')
-        to_rate = matches.group(2).encode('ascii','ignore')
+    for entry in rates:
+        conversion_rate = -math.log(float(entry["rate"]))
+        from_rate = entry["from"]
+        to_rate = entry["to"]
         if from_rate != to_rate:
             if from_rate not in graph:
                 graph[from_rate] = {}
@@ -67,7 +79,7 @@ def bellman_ford(graph, source):
 
 paths = []
 
-graph = download()
+graph = rates_to_graph(rates())
 
 for key in graph:
     path = bellman_ford(graph, key)
