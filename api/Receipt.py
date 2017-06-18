@@ -17,6 +17,13 @@
 
 
 class Receipt:
-    def __init__(self, transfers):
+    """Represents a confirmation of a successful Ethereum transaction.
+
+    Attributes:
+        transfers: A list of ERC20 token transfers resulting from the execution
+            of this Ethereum transaction. Each transfer is an instance of the
+            `Transfer` class.
+    """
+    def __init__(self, transfers: list):
         assert(isinstance(transfers, list))
         self.transfers = transfers
