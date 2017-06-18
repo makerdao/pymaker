@@ -68,6 +68,8 @@ def retrace_negative_loop(p, start):
     arbitrageLoop = [start]
     next_node = start
     while True:
+        if next_node is None:
+            return None
         next_node = p[next_node]
         if next_node not in arbitrageLoop:
             arbitrageLoop.append(next_node)
