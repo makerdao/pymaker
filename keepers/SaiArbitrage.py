@@ -3,33 +3,40 @@
 import math
 
 
+class Conversion:
+    def __init__(self, from_currency, to_currency, rate):
+        self.from_currency = from_currency
+        self.to_currency = to_currency
+        self.rate = rate
+        self.rate_for_graph = float(-math.log(float(rate)))
+
+
 def rates():
     return [
-        {"from": "USD", "to": "JPY", "rate": "91.7074025"},
-        {"from": "JPY", "to": "EUR", "rate": "0.0083835"},
-        {"from": "BTC", "to": "USD", "rate": "109.1976214"},
-        {"from": "JPY", "to": "BTC", "rate": "0.0000896"},
-        {"from": "USD", "to": "EUR", "rate": "0.6962706"},
-        {"from": "EUR", "to": "USD", "rate": "1.4047063"},
-        {"from": "EUR", "to": "JPY", "rate": "143.9234472"},
-        {"from": "JPY", "to": "USD", "rate": "0.0107770"},
-        {"from": "EUR", "to": "BTC", "rate": "0.0122985"},
-        {"from": "BTC", "to": "JPY", "rate": "11178.1471392"},
-        {"from": "BTC", "to": "EUR", "rate": "80.5469380"},
-        {"from": "USD", "to": "BTC", "rate": "0.0074307"},
+        Conversion("USD", "JPY", "91.7074025"),
+        Conversion("JPY", "EUR", "0.0083835"),
+        Conversion("BTC", "USD", "109.1976214"),
+        Conversion("JPY", "BTC", "0.0000896"),
+        Conversion("USD", "EUR", "0.6962706"),
+        Conversion("EUR", "USD", "1.4047063"),
+        Conversion("EUR", "JPY", "143.9234472"),
+        Conversion("JPY", "USD", "0.0107770"),
+        Conversion("EUR", "BTC", "0.0122985"),
+        Conversion("BTC", "JPY", "11178.1471392"),
+        Conversion("BTC", "EUR", "80.5469380"),
+        Conversion("USD", "BTC", "0.0074307"),
     ]
 
 def rates_to_graph(rates):
     graph = {}
 
     for entry in rates:
-        conversion_rate = -math.log(float(entry["rate"]))
-        from_rate = entry["from"]
-        to_rate = entry["to"]
+        from_rate = entry.from_currency
+        to_rate = entry.to_currency
         if from_rate != to_rate:
             if from_rate not in graph:
                 graph[from_rate] = {}
-            graph[from_rate][to_rate] = float(conversion_rate)
+            graph[from_rate][to_rate] = entry.rate_for_graph
     return graph
 
 # Step 1: For each node prepare the destination and predecessor
