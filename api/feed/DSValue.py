@@ -58,7 +58,7 @@ class DSValue(Contract):
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
     def has_value(self) -> bool:
-        """Checks whether this instance of `DSValue` contains a value.
+        """Checks whether this instance contains a value.
 
         Returns:
             `True` if this instance contains a value, which can be read. `False` otherwise.
@@ -66,7 +66,7 @@ class DSValue(Contract):
         return self._contract.call().peek()[1]
 
     def read(self) -> bytes:
-        """Reads the current value from this `DSValue` instance as a byte array.
+        """Reads the current value from this instance as a byte array.
 
         If this instance does not contain a value, throws an exception.
 
@@ -100,7 +100,7 @@ class DSValue(Contract):
         return int(self.read_as_hex(), 16)
 
     def poke(self, new_value: bytes) -> Optional[Receipt]:
-        """Populated this `DSValue` instance with a new value.
+        """Populates this instance with a new value.
 
         Args:
             new_value: A 32-byte array with the new value to be set.
@@ -118,7 +118,7 @@ class DSValue(Contract):
             return None
 
     def poke_with_int(self, new_value: int) -> Optional[Receipt]:
-        """Populate this `DSValue` instance with a new value.
+        """Populates this instance with a new value.
 
         Handles the conversion of a Python `int` into the Solidity `bytes32` type automatically.
 
@@ -137,7 +137,7 @@ class DSValue(Contract):
         return self.poke(new_value.to_bytes(32, byteorder='big'))
 
     def void(self) -> Optional[Receipt]:
-        """Removes the current value from this `DSValue` instance.
+        """Removes the current value from this instance.
 
         Returns:
             A `Receipt` if the Ethereum transaction was successful and the value has been removed.
