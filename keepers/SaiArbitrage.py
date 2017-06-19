@@ -39,6 +39,7 @@ from keepers.arbitrage.OpportunityFinder import OpportunityFinder
 from keepers.arbitrage.conversions.LpcTakeEthConversion import LpcTakeEthConversion
 from keepers.arbitrage.conversions.LpcTakeSaiConversion import LpcTakeSaiConversion
 from keepers.arbitrage.conversions.OasisTakeConversion import OasisTakeConversion
+from keepers.arbitrage.conversions.TubBoomConversion import TubBoomConversion
 from keepers.arbitrage.conversions.TubBustConversion import TubBustConversion
 from keepers.arbitrage.conversions.TubExitConversion import TubExitConversion
 from keepers.arbitrage.conversions.TubJoinConversion import TubJoinConversion
@@ -71,6 +72,7 @@ class SaiArbitrage(Keeper):
         conversions = [
             TubJoinConversion(self.tub),
             TubExitConversion(self.tub),
+            TubBoomConversion(self.tub),
             TubBustConversion(self.tub),
             LpcTakeEthConversion(self.tub, self.lpc),
             LpcTakeSaiConversion(self.tub, self.lpc)

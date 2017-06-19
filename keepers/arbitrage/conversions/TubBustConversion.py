@@ -41,7 +41,7 @@ class TubBustConversion(Conversion):
         #drip happened enough time ago
         return Wad.max(tub.woe() - tub.joy() - Wad.from_number(10), Wad.from_number(0))
 
-    #TODO at some point a concept of spread on bust() will be introduced in the Tub
+    #TODO at some point a concept of spread on boom()/bust() will be introduced in the Tub
     #then this concept has to be moved here so the keeper understand the actual price
     #he can get on bust(), and on boom() as well
     def perform(self):
@@ -49,8 +49,8 @@ class TubBustConversion(Conversion):
         bust_result = self.tub.bust(self.to_amount)
         if bust_result:
             our_address = Address(self.tub.web3.eth.defaultAccount)
-            skr_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.tub.skr() and transfer.to_address == our_address, bust_result.transfers))
             sai_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.tub.sai() and transfer.from_address == our_address, bust_result.transfers))
+            skr_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.tub.skr() and transfer.to_address == our_address, bust_result.transfers))
             print(f"  Bust was successful, exchanged {sai_transfer_on_bust.value} SAI to {skr_transfer_on_bust.value} SKR")
             return bust_result
         else:

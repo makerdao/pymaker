@@ -20,13 +20,13 @@
 import math
 from pprint import pformat
 
+from api.Address import Address
 from api.Ray import Ray
 from api.Wad import Wad
 from api.sai import Tub
 from keepers.arbitrage.Conversion import Conversion
 
 
-#TODO BoomConversion is not implemented yet
 class TubBoomConversion(Conversion):
     def __init__(self, tub: Tub):
         self.tub = tub
@@ -37,8 +37,26 @@ class TubBoomConversion(Conversion):
                          max_from_amount=self.boomable_amount_in_skr(tub),
                          method="tub-boom")
 
-    def boomable_amount_in_skr(self, tub: Tub):
-        return Wad(Ray(tub.joy()) / (tub.per() * tub.tag()))
+    #TODO currently the keeper doesn't see `joy` changing unless `drip` gets called
+    #this is the thing `sai-explorer` is trying to calculate on his own
+    def boomable_amount_in_sai(self, tub: Tub):
+        return Wad.max(tub.joy() - tub.woe(), Wad.from_number(0))
 
+    def boomable_amount_in_skr(self, tub: Tub):
+        return Wad(Ray(self.boomable_amount_in_sai(tub)) / (tub.per() * tub.tag()))
+
+    #TODO at some point a concept of spread on boom()/bust() will be introduced in the Tub
+    #then this concept has to be moved here so the keeper understand the actual price
+    #he can get on bust(), and on boom() as well
     def perform(self):
-        raise Exception("BOOM Not implemented")
+        print(f"  Executing boom('{self.from_amount}') in order to exchange {self.from_amount} SKR to {self.to_amount} SAI")
+        boom_result = self.tub.boom(self.from_amount)
+        if boom_result:
+            our_address = Address(self.tub.web3.eth.defaultAccount)
+            skr_transfer_on_boom = next(filter(lambda transfer: transfer.token_address == self.tub.skr() and transfer.from_address == our_address, boom_result.transfers))
+            sai_transfer_on_boom = next(filter(lambda transfer: transfer.token_address == self.tub.sai() and transfer.to_address == our_address, boom_result.transfers))
+            print(f"  Boom was successful, exchanged {skr_transfer_on_boom.value} SKR to {sai_transfer_on_boom.value} SAI")
+            return boom_result
+        else:
+            print(f"  Boom failed!")
+            return None
