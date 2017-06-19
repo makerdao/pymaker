@@ -34,13 +34,13 @@ from api.token.ERC20Token import ERC20Token
 from api.feed.DSValue import DSValue
 from keepers.Config import Config
 from keepers.Keeper import Keeper
-from keepers.arbitrage.Conversion import Conversion
 from keepers.arbitrage.OpportunityFinder import OpportunityFinder
+from keepers.arbitrage.conversions.BoomConversion import BoomConversion
 from keepers.arbitrage.conversions.BustConversion import BustConversion
 from keepers.arbitrage.conversions.OasisConversion import OasisConversion
 
 
-class SaiProcessWoe(Keeper):
+class SaiArbitrage(Keeper):
     def all_offers(self, market):
         all_offers = [market.get_offer(offer_id) for offer_id in range(1, market.get_last_offer_id()+1)]
         return [offer for offer in all_offers if offer is not None]
@@ -101,6 +101,7 @@ class SaiProcessWoe(Keeper):
             # plus all the orders from Oasis
             # Conversion("SKR", "SAI", Ray.from_number(363.830), 100, "oasis-takeOrder-121"), #real data
         ]
+        conversions.append(BoomConversion(self.tub))
         conversions.append(BustConversion(self.tub))
 
         # We list all active orders on OasisDEX and filter on the SAI/SKR pair
@@ -128,7 +129,7 @@ class SaiProcessWoe(Keeper):
             print(repr(opportunity))
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description='SaiProcessWoe keeper. Arbitrages on SAI/SKR price via bust().')
+        parser = argparse.ArgumentParser(description='SaiArbitrage keeper.')
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
@@ -169,7 +170,7 @@ class SaiProcessWoe(Keeper):
 
 
 if __name__ == '__main__':
-    SaiProcessWoe().run()
+    SaiArbitrage()
 
 
 

@@ -17,27 +17,27 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
 from pprint import pformat
 
 from api.Ray import Ray
 from api.Wad import Wad
+from api.sai import Tub
+from keepers.arbitrage.Conversion import Conversion
 
 
-class Conversion:
-    def __init__(self, from_currency: str, to_currency: str, rate: Ray, min_amount: Wad, max_amount: Wad, method: str):
-        self.from_currency = from_currency
-        self.to_currency = to_currency
-        self.rate = rate
-        self.min_amount = min_amount
-        self.max_amount = max_amount
-        self.method = method
+class BoomConversion(Conversion):
+    def __init__(self, tub: Tub):
+        self.tub = tub
+        super().__init__(from_currency='SKR',
+                         to_currency='SAI',
+                         rate=(tub.per() * tub.tag()),
+                         min_amount=Wad.from_number(0),
+                         max_amount=self.boomable_amount_in_skr(tub),
+                         method="tub-boom")
+
+    def boomable_amount_in_skr(self, tub: Tub):
+        return Wad(Ray(tub.joy()) / (tub.per() * tub.tag()))
 
     def perform(self, from_amount):
-        raise Exception("Not implemented")
-
-    def __str__(self):
-        return pformat(vars(self))
-
-    def __repr__(self):
-        return f"[{self.from_currency}->{self.to_currency} @{self.rate} by {self.method} " \
-               f"(min={self.min_amount} {self.from_currency}, max={self.max_amount} {self.from_currency})]"
+        raise Exception("BUST Not implemented")

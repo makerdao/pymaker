@@ -31,12 +31,12 @@ class OpportunityFinder:
     def _create_base_link(dod, link_from, link_to):
         if link_from not in dod:
             dod[link_from] = {}
-        dod[link_from][link_to] = {'weight': 1}
+        dod[link_from][link_to] = {}
 
     def opportunities(self, base_currency):
         dod = {}
         for conversion in self.conversions:
-            # for each currency XXX we create an XXX-last node with linked to XXX
+            # for each currency XXX we create an XXX-pre node which is linked to XXX
             # this is in order to simplify simple paths finding
             self._create_base_link(dod, conversion.from_currency + "-pre", conversion.from_currency)
 
@@ -44,7 +44,7 @@ class OpportunityFinder:
             if conversion.from_currency not in dod:
                 dod[conversion.from_currency] = {}
 
-            dod[conversion.from_currency][conversion.to_currency + "-via-" + conversion.method] = {'weight': 1, 'conversion': conversion}
+            dod[conversion.from_currency][conversion.to_currency + "-via-" + conversion.method] = {'conversion': conversion}
             self._create_base_link(dod, conversion.to_currency + "-via-" + conversion.method, conversion.to_currency + "-pre")
 
         G=nx.DiGraph(dod)
