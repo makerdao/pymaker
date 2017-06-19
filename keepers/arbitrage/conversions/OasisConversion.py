@@ -50,8 +50,17 @@ class OasisConversion(Conversion):
 
     def perform(self):
         quantity = self.to_amount
+
+        # if by any chance rounding makes us want to buy more quantity than is available,
+        # we just buy the whole lot
         if quantity > self.offer.sell_how_much:
             quantity = self.offer.sell_how_much
+
+        # if by any chance rounding makes us want to buy only slightly less than the available lot,
+        # we buy everything as this is probably what we wanted in the first place
+        if self.offer.sell_how_much - quantity < Wad.from_number(0.0000000001):
+            quantity = self.offer.sell_how_much
+
         print(f"  Executing take({self.offer.offer_id}, '{quantity}') in order exchange {self.from_amount} {self.from_currency} to {self.to_amount} {self.to_currency}")
         take_result = self.market.take(self.offer.offer_id, quantity)
         if take_result:
