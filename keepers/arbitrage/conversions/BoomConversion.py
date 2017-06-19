@@ -26,6 +26,7 @@ from api.sai import Tub
 from keepers.arbitrage.Conversion import Conversion
 
 
+#TODO BoomConversion is not implemented yet
 class BoomConversion(Conversion):
     def __init__(self, tub: Tub):
         self.tub = tub
