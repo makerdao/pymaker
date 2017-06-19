@@ -27,7 +27,7 @@ from keepers.arbitrage.Conversion import Conversion
 
 
 #TODO BoomConversion is not implemented yet
-class BoomConversion(Conversion):
+class TubBoomConversion(Conversion):
     def __init__(self, tub: Tub):
         self.tub = tub
         super().__init__(from_currency='SKR',

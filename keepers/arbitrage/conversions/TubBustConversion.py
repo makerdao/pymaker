@@ -24,7 +24,7 @@ from api.sai import Tub
 from keepers.arbitrage.Conversion import Conversion
 
 
-class BustConversion(Conversion):
+class TubBustConversion(Conversion):
     def __init__(self, tub: Tub):
         self.tub = tub
         super().__init__(from_currency='SAI',

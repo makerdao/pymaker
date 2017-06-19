@@ -24,7 +24,7 @@ from api.sai import Tub
 from keepers.arbitrage.Conversion import Conversion
 
 
-class JoinConversion(Conversion):
+class TubJoinConversion(Conversion):
     def __init__(self, tub: Tub):
         self.tub = tub
         super().__init__(from_currency='ETH',

@@ -36,11 +36,12 @@ from api.feed.DSValue import DSValue
 from keepers.Config import Config
 from keepers.Keeper import Keeper
 from keepers.arbitrage.OpportunityFinder import OpportunityFinder
-from keepers.arbitrage.conversions.BoomConversion import BoomConversion
-from keepers.arbitrage.conversions.BustConversion import BustConversion
-from keepers.arbitrage.conversions.ExitConversion import ExitConversion
-from keepers.arbitrage.conversions.JoinConversion import JoinConversion
-from keepers.arbitrage.conversions.OasisConversion import OasisConversion
+from keepers.arbitrage.conversions.LpcTakeEthConversion import LpcTakeEthConversion
+from keepers.arbitrage.conversions.LpcTakeSaiConversion import LpcTakeSaiConversion
+from keepers.arbitrage.conversions.OasisTakeConversion import OasisTakeConversion
+from keepers.arbitrage.conversions.TubBustConversion import TubBustConversion
+from keepers.arbitrage.conversions.TubExitConversion import TubExitConversion
+from keepers.arbitrage.conversions.TubJoinConversion import TubJoinConversion
 
 
 class SaiArbitrage(Keeper):
@@ -60,17 +61,20 @@ class SaiArbitrage(Keeper):
         self.setup_allowance(self.gem, 'ETH', self.lpc.address)
 
     def setup_allowance(self, token, token_name, address):
-        minimum_allowance = Wad(2**248-1)
+        minimum_allowance = Wad(2**128-1)
         target_allowance = Wad(2**256-1)
         if token.allowance_of(self.our_address, address) < minimum_allowance:
             print(f"Raising {token_name} allowance for {address}")
             token.approve(address, target_allowance)
 
     def available_conversions(self):
-        conversions = []
-        conversions.append(JoinConversion(self.tub))
-        conversions.append(ExitConversion(self.tub))
-        conversions.append(BustConversion(self.tub))
+        conversions = [
+            TubJoinConversion(self.tub),
+            TubExitConversion(self.tub),
+            TubBustConversion(self.tub),
+            LpcTakeEthConversion(self.tub, self.lpc),
+            LpcTakeSaiConversion(self.tub, self.lpc)
+        ]
 
         # We list all active orders on OasisDEX and filter on the SAI/SKR pair
         offers = self.all_offers(self.market)
@@ -81,7 +85,7 @@ class SaiArbitrage(Keeper):
                  + self.filter_by_token_pair(offers, self.gem, self.skr) \
                  + self.filter_by_token_pair(offers, self.skr, self.gem)
         for offer in offers:
-            conversions.append(OasisConversion(self.tub, self.market, offer))
+            conversions.append(OasisTakeConversion(self.tub, self.market, offer))
 
         return conversions
 
@@ -95,10 +99,13 @@ class SaiArbitrage(Keeper):
         print(f"Processing (@ {datetime.datetime.now()})")
         print(f"")
 
+        # We find all arbitrage opportunities, they can still not bring us the profit we expect them to
+        # but it is convenient to list them for monitoring purposes. So that we know the keeper actually
+        # found an arbitrage opportunity.
         conversions = self.available_conversions()
         opportunities = OpportunityFinder(conversions=conversions).find_opportunities('SAI', self.maximum_engagement)
         opportunities = filter(lambda opportunity: opportunity.total_rate() > Ray.from_number(1.000001), opportunities)
-        opportunities = list(sorted(opportunities, key=lambda opportunity: opportunity.gain(), reverse=True))
+        opportunities = list(sorted(opportunities, key=lambda opportunity: opportunity.profit(), reverse=True))
 
         if len(opportunities) == 0:
             print(f"No opportunities found. No worries, I will try again.")
@@ -108,8 +115,10 @@ class SaiArbitrage(Keeper):
             for opportunity in opportunities:
                 print(str(opportunity) + "\n")
 
-        profitable_opportunities = list(filter(lambda opportunity: opportunity.gain() > self.minimum_profit, opportunities))
-        best_opportunity = self.first_opportunity(profitable_opportunities)
+        # At this point we only leave out these opportunities, that bring us the desired profit.
+        # We pick the first of them, the one that brings us the best profit.
+        opportunities = list(filter(lambda opportunity: opportunity.profit() > self.minimum_profit, opportunities))
+        best_opportunity = self.first_opportunity(opportunities)
 
         if best_opportunity is None:
             print(f"No opportunity is profitable enough so none of them will get executed")
@@ -147,7 +156,6 @@ class SaiArbitrage(Keeper):
         print(f"  {sum_of_wads(transfer.value for transfer in skr_in) - sum_of_wads(transfer.value for transfer in skr_out)} SKR")
         print(f"  {sum_of_wads(transfer.value for transfer in sai_in) - sum_of_wads(transfer.value for transfer in sai_out)} SAI")
         print(f"  {sum_of_wads(transfer.value for transfer in eth_in) - sum_of_wads(transfer.value for transfer in eth_out)} ETH")
-
 
     def __init__(self):
         parser = argparse.ArgumentParser(description='SaiArbitrage keeper.')

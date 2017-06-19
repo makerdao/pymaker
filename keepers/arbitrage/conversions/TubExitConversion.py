@@ -23,7 +23,7 @@ from api.sai import Tub
 from keepers.arbitrage.Conversion import Conversion
 
 
-class ExitConversion(Conversion):
+class TubExitConversion(Conversion):
     def __init__(self, tub: Tub):
         self.tub = tub
         super().__init__(from_currency='SKR',

@@ -66,9 +66,9 @@ class Opportunity:
     def tx_costs(self) -> Wad:
         return Wad.from_number(0.3) * len(self.conversions)
 
-    def gain(self) -> Wad:
+    def profit(self) -> Wad:
         return self.income()-self.tx_costs()
 
     def __str__(self):
-        return f"  Opportunity with income={self.income()} SAI, tx_costs={self.tx_costs()} SAI, gain={self.gain()}" +\
+        return f"  Opportunity with income={self.income()} SAI, tx_costs={self.tx_costs()} SAI, profit={self.profit()} SAI" +\
                "".join(map(lambda conversion: "\n  " + str(conversion), self.conversions))

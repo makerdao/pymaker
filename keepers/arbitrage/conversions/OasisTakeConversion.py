@@ -25,7 +25,7 @@ from api.sai import Tub
 from keepers.arbitrage.Conversion import Conversion
 
 
-class OasisConversion(Conversion):
+class OasisTakeConversion(Conversion):
     def __init__(self, tub: Tub, market: SimpleMarket, offer: OfferInfo):
         self.tub = tub
         self.market = market
