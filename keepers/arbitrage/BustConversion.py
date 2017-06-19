@@ -17,21 +17,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
 from pprint import pformat
 
+from api.Ray import Ray
+from api.Wad import Wad
+from api.sai import Tub
+from keepers.arbitrage.Conversion import Conversion
 
-class Opportunity:
-    def __init__(self, conversions):
-        self.conversions = conversions
 
-    def total_rate(self):
-        output = float(1.0)
-        for conversion in self.conversions:
-            output = output * float(conversion.rate)
-        return output
+class BustConversion(Conversion):
+    def __init__(self, tub: Tub):
+        self.tub = tub
+        price_eth_skr = tub.per()
+        price_sai_eth = tub.tag()
+        price_sai_skr = price_eth_skr * price_sai_eth
+        how_much_sai_can_tub_buy = tub.woe() - tub.joy() - Wad.from_number(0.1) # to account for the joy surplus that is constantly increasing
+        super().__init__('SAI', 'SKR', (Ray.from_number(1) / price_sai_skr), how_much_sai_can_tub_buy, 0.6, 'tub-bust')
 
-    def __str__(self):
-        return pformat(vars(self))
-
-    def __repr__(self):
-        return f"Opportunity via <{str(self.conversions)}> with total_rate={self.total_rate()}"
+    def perform(self, from_amount):
+        raise Exception("BUST Not implemented")

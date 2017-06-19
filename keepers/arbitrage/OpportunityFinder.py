@@ -27,23 +27,28 @@ class OpportunityFinder:
         assert(isinstance(conversions, list))
         self.conversions = conversions
 
-    def opportunities(self, base_currency = 'SAI'):
+    @staticmethod
+    def _create_base_link(dod, link_from, link_to):
+        if link_from not in dod:
+            dod[link_from] = {}
+        dod[link_from][link_to] = {'weight': 1}
+
+    def opportunities(self, base_currency):
         dod = {}
         for conversion in self.conversions:
             # for each currency XXX we create an XXX-last node with linked to XXX
             # this is in order to simplify simple paths finding
-            if (conversion.from_currency + "-pre") not in dod:
-                dod[conversion.from_currency + "-pre"] = {conversion.from_currency: {'weight': 1}}
+            self._create_base_link(dod, conversion.from_currency + "-pre", conversion.from_currency)
 
             # now we create a link between our currency pairs
             if conversion.from_currency not in dod:
                 dod[conversion.from_currency] = {}
 
-            dod[conversion.from_currency][conversion.to_currency + "-pre"] = {'weight': 1, 'conversion': conversion}
+            dod[conversion.from_currency][conversion.to_currency + "-via-" + conversion.method] = {'weight': 1, 'conversion': conversion}
+            self._create_base_link(dod, conversion.to_currency + "-via-" + conversion.method, conversion.to_currency + "-pre")
 
         G=nx.DiGraph(dod)
         paths = list(nx.shortest_simple_paths(G, base_currency, base_currency + "-pre"))
-        print(paths)
 
         opportunities = []
         for path in paths:

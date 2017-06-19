@@ -22,17 +22,19 @@ from pprint import pformat
 
 
 class Conversion:
-    def __init__(self, from_currency, to_currency, rate, fee_in_usd=None, method=None):
+    def __init__(self, from_currency, to_currency, rate, limit, fee_in_usd, method):
         self.from_currency = from_currency
         self.to_currency = to_currency
         self.rate = rate
-        self.rate_for_graph = float(-math.log(float(rate)))
+        self.limit = limit #limit in `from_currency`
         self.fee_in_usd = fee_in_usd
         self.method = method
+
+    def perform(self, from_amount):
+        raise Exception("Not implemented")
 
     def __str__(self):
         return pformat(vars(self))
 
     def __repr__(self):
         return f"[{self.from_currency}->{self.to_currency} @{self.rate} by {self.method}]"
-        # return pformat(vars(self))
