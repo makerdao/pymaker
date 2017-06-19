@@ -38,6 +38,8 @@ from keepers.Keeper import Keeper
 from keepers.arbitrage.OpportunityFinder import OpportunityFinder
 from keepers.arbitrage.conversions.BoomConversion import BoomConversion
 from keepers.arbitrage.conversions.BustConversion import BustConversion
+from keepers.arbitrage.conversions.ExitConversion import ExitConversion
+from keepers.arbitrage.conversions.JoinConversion import JoinConversion
 from keepers.arbitrage.conversions.OasisConversion import OasisConversion
 
 
@@ -66,7 +68,8 @@ class SaiArbitrage(Keeper):
 
     def available_conversions(self):
         conversions = []
-        # conversions.append(BoomConversion(self.tub))
+        conversions.append(JoinConversion(self.tub))
+        conversions.append(ExitConversion(self.tub))
         conversions.append(BustConversion(self.tub))
 
         # We list all active orders on OasisDEX and filter on the SAI/SKR pair

@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+import networkx
 import networkx as nx
 
 from keepers.arbitrage.Opportunity import Opportunity
@@ -48,7 +48,10 @@ class OpportunityFinder:
             self._create_base_link(dod, conversion.to_currency + "-via-" + conversion.method, conversion.to_currency + "-pre")
 
         G=nx.DiGraph(dod)
-        paths = list(nx.shortest_simple_paths(G, base_currency, base_currency + "-pre"))
+        try:
+            paths = list(nx.shortest_simple_paths(G, base_currency, base_currency + "-pre"))
+        except networkx.exception.NetworkXNoPath:
+            return []
 
         opportunities = []
         for path in paths:
