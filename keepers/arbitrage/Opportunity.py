@@ -16,8 +16,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import copy
-from pprint import pformat
 from typing import List
 
 from api.Ray import Ray
@@ -29,12 +29,6 @@ class Opportunity:
     def __init__(self, conversions: List[Conversion]):
         assert(isinstance(conversions, list))
         self.conversions = copy.deepcopy(conversions)
-
-    def total_rate(self) -> Ray:
-        output = Ray.from_number(1.0)
-        for conversion in self.conversions:
-            output = output * conversion.rate
-        return output
 
     def discover_prices(self, our_max_engagement: Wad):
         def backcalculate_amounts(from_conversion_id: int):
@@ -54,23 +48,27 @@ class Opportunity:
                 backcalculate_amounts(i-1)
             self.conversions[i].to_amount = Wad(Ray(self.conversions[i].from_amount) * self.conversions[i].rate)
 
-    def profit(self, currency: str):
-        profit = Wad.from_number(0)
+    def total_rate(self) -> Ray:
+        output = Ray.from_number(1.0)
+        for conversion in self.conversions:
+            output = output * conversion.rate
+        return output
+
+    def income(self, currency: str = 'SAI') -> Wad:
+        result = Wad.from_number(0)
         for conversion in self.conversions:
             if conversion.from_currency == currency:
-                profit -= conversion.from_amount
+                result -= conversion.from_amount
             if conversion.to_currency == currency:
-                profit += conversion.to_amount
-        return profit
+                result += conversion.to_amount
+        return result
 
-    def tx_profit(self):
-        return self.profit('SAI')
-
-    def tx_costs(self):
+    def tx_costs(self) -> Wad:
         return Wad.from_number(0.3) * len(self.conversions)
 
-    def tx_total_profit(self):
-        return self.tx_profit()-self.tx_costs()
+    def gain(self) -> Wad:
+        return self.income()-self.tx_costs()
 
     def __str__(self):
-        return f"  Opportunity with tx_profit={self.tx_profit()} SAI, tx_costs={self.tx_costs()} SAI, tx_total_profit={self.tx_total_profit()}" + "".join(map(lambda conversion: "\n  " + repr(conversion), self.conversions))
+        return f"  Opportunity with income={self.income()} SAI, tx_costs={self.tx_costs()} SAI, gain={self.gain()}" +\
+               "".join(map(lambda conversion: "\n  " + str(conversion), self.conversions))

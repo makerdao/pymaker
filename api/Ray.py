@@ -69,7 +69,7 @@ class Ray:
 
     def __str__(self):
         tmp = str(self.value).zfill(28)
-        return tmp[0:len(tmp)-27] + "." + tmp[len(tmp)-27:len(tmp)]
+        return (tmp[0:len(tmp)-27] + "." + tmp[len(tmp)-27:len(tmp)]).replace("-.", "-0.")
 
     def __add__(self, other):
         return Ray(self.value + other.value)

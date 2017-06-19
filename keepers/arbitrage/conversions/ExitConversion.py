@@ -18,7 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from api.Address import Address
-from api.Ray import Ray
 from api.Wad import Wad
 from api.sai import Tub
 from keepers.arbitrage.Conversion import Conversion

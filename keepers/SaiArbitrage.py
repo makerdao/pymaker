@@ -92,26 +92,23 @@ class SaiArbitrage(Keeper):
     def process(self):
         print(f"")
         print(f"")
-        self.setup_allowances()
         print(f"Processing (@ {datetime.datetime.now()})")
         print(f"")
 
-        opportunities = OpportunityFinder(conversions=self.available_conversions()).opportunities('SAI')
-        opportunities = list(filter(lambda opportunity: opportunity.total_rate() > Ray.from_number(1.000001), opportunities))
-        for opportunity in opportunities:
-            opportunity.discover_prices(self.maximum_engagement)
-        opportunities = list(sorted(opportunities, key=lambda opportunity: opportunity.tx_total_profit(), reverse=True))
+        conversions = self.available_conversions()
+        opportunities = OpportunityFinder(conversions=conversions).find_opportunities('SAI', self.maximum_engagement)
+        opportunities = filter(lambda opportunity: opportunity.total_rate() > Ray.from_number(1.000001), opportunities)
+        opportunities = list(sorted(opportunities, key=lambda opportunity: opportunity.gain(), reverse=True))
 
         if len(opportunities) == 0:
             print(f"No opportunities found. No worries, I will try again.")
             return
         else:
             print(f"Found {len(opportunities)} profit opportunities, here they are:")
+            for opportunity in opportunities:
+                print(str(opportunity) + "\n")
 
-        for opportunity in opportunities:
-            print(str(opportunity) + "\n")
-
-        profitable_opportunities = list(filter(lambda opportunity: opportunity.tx_total_profit() > self.minimum_profit, opportunities))
+        profitable_opportunities = list(filter(lambda opportunity: opportunity.gain() > self.minimum_profit, opportunities))
         best_opportunity = self.first_opportunity(profitable_opportunities)
 
         if best_opportunity is None:
@@ -187,6 +184,8 @@ class SaiArbitrage(Keeper):
         print(f"")
         print(f"SaiArbitrage keeper")
         print(f"-------------------")
+
+        self.setup_allowances()
 
         while True:
             self.process()

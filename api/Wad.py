@@ -68,7 +68,7 @@ class Wad:
 
     def __str__(self):
         tmp = str(self.value).zfill(19)
-        return tmp[0:len(tmp)-18] + "." + tmp[len(tmp)-18:len(tmp)]
+        return (tmp[0:len(tmp)-18] + "." + tmp[len(tmp)-18:len(tmp)]).replace("-.", "-0.")
 
     def __add__(self, other):
         if isinstance(other, Wad):

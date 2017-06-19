@@ -16,9 +16,10 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import networkx
-import networkx as nx
 
+import networkx
+
+from api.Wad import Wad
 from keepers.arbitrage.Opportunity import Opportunity
 
 
@@ -27,38 +28,41 @@ class OpportunityFinder:
         assert(isinstance(conversions, list))
         self.conversions = conversions
 
-    @staticmethod
-    def _create_base_link(dod, link_from, link_to):
-        if link_from not in dod:
-            dod[link_from] = {}
-        dod[link_from][link_to] = {}
+    def find_opportunities(self, base_currency: str, our_max_engagement: Wad):
+        def empty_link(dod, link_from, link_to):
+            if link_from not in dod:
+                dod[link_from] = {}
+            dod[link_from][link_to] = {}
 
-    def opportunities(self, base_currency):
-        dod = {}
-        for conversion in self.conversions:
-            # for each currency XXX we create an XXX-pre node which is linked to XXX
-            # this is in order to simplify simple paths finding
-            self._create_base_link(dod, conversion.from_currency + "-pre", conversion.from_currency)
+        def conversion_link(dod, link_from, link_to, conversion):
+            if link_from not in dod:
+                dod[link_from] = {}
+            dod[link_from][link_to] = {'conversion': conversion}
 
-            # now we create a link between our currency pairs
-            if conversion.from_currency not in dod:
-                dod[conversion.from_currency] = {}
+        def graph_links():
+            dod = {}
+            for conversion in self.conversions:
+                empty_link(dod, conversion.from_currency + "-pre", conversion.from_currency)
+                conversion_link(dod, conversion.from_currency, conversion.to_currency + "-via-" + conversion.method, conversion)
+                empty_link(dod, conversion.to_currency + "-via-" + conversion.method, conversion.to_currency + "-pre")
+            return dod
 
-            dod[conversion.from_currency][conversion.to_currency + "-via-" + conversion.method] = {'conversion': conversion}
-            self._create_base_link(dod, conversion.to_currency + "-via-" + conversion.method, conversion.to_currency + "-pre")
-
-        G=nx.DiGraph(dod)
+        graph_links = graph_links()
+        graph = networkx.DiGraph(graph_links)
         try:
-            paths = list(nx.shortest_simple_paths(G, base_currency, base_currency + "-pre"))
+            paths = list(networkx.shortest_simple_paths(graph, base_currency, base_currency + "-pre"))
+
+            opportunities = []
+            for path in paths:
+                conversions = []
+                for i in range(0, len(path)-1):
+                    if 'conversion' in graph_links[path[i]][path[i+1]]:
+                        conversions.append(graph_links[path[i]][path[i+1]]['conversion'])
+
+                opportunity = Opportunity(conversions=conversions)
+                opportunity.discover_prices(our_max_engagement)
+                opportunities.append(opportunity)
+
+            return opportunities
         except networkx.exception.NetworkXNoPath:
             return []
-
-        opportunities = []
-        for path in paths:
-            conversions = []
-            for i in range(0, len(path)-1):
-                if 'conversion' in dod[path[i]][path[i+1]]:
-                    conversions.append(dod[path[i]][path[i+1]]['conversion'])
-            opportunities.append(Opportunity(conversions=conversions))
-
-        return opportunities

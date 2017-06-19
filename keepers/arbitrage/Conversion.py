@@ -17,8 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pprint import pformat
-
 from api.Ray import Ray
 from api.Wad import Wad
 
@@ -38,9 +36,6 @@ class Conversion:
         raise Exception("Not implemented")
 
     def __str__(self):
-        return pformat(vars(self))
-
-    def __repr__(self):
         def amt(amount: Wad) -> str:
             if amount is not None:
                 return f"{amount} "
