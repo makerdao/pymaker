@@ -17,17 +17,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import math
 from pprint import pformat
+
+from api.Ray import Ray
+from api.Wad import Wad
 
 
 class Conversion:
-    def __init__(self, from_currency, to_currency, rate, limit, fee_in_usd, method):
+    def __init__(self, from_currency: str, to_currency: str, rate: Ray, min_amount: Wad, max_amount: Wad, method: str):
         self.from_currency = from_currency
         self.to_currency = to_currency
         self.rate = rate
-        self.limit = limit #limit in `from_currency`
-        self.fee_in_usd = fee_in_usd
+        self.min_amount = min_amount #in `from_currency`
+        self.max_amount = max_amount #in `from_currency`
         self.method = method
 
     def perform(self, from_amount):

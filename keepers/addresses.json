@@ -9,6 +9,7 @@
     "contracts": {
       "otc": "0x45ab8d410049116c7a01f6edfc08d564475c08ed",
       "saiTub": "0x8738cc8ff5222744dde9626b5a20946968a9baef",
+      "saiLpc": "0x76b508ecbe7edf2141cff47d80e274ac919b310e",
       "auctionManager": "0xD0Abb0e61A905a50b21Bf4c74F39B9e101469365"
     }
   },

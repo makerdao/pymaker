@@ -29,11 +29,13 @@ from keepers.arbitrage.Conversion import Conversion
 class BustConversion(Conversion):
     def __init__(self, tub: Tub):
         self.tub = tub
-        price_eth_skr = tub.per()
-        price_sai_eth = tub.tag()
-        price_sai_skr = price_eth_skr * price_sai_eth
-        how_much_sai_can_tub_buy = tub.woe() - tub.joy() - Wad.from_number(0.1) # to account for the joy surplus that is constantly increasing
-        super().__init__('SAI', 'SKR', (Ray.from_number(1) / price_sai_skr), how_much_sai_can_tub_buy, 0.6, 'tub-bust')
+        how_much_sai_can_tub_buy = tub.woe() - tub.joy() #- Wad.from_number(0.1) # to account for the joy surplus that is constantly increasing
+        super().__init__(from_currency='SAI',
+                         to_currency='SKR',
+                         rate=(Ray.from_number(1) / (tub.per() * tub.tag())),
+                         min_amount=Wad.from_number(0),
+                         max_amount=how_much_sai_can_tub_buy,
+                         method="tub-bust")
 
     def perform(self, from_amount):
         raise Exception("BUST Not implemented")

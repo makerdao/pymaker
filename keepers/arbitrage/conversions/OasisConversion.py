@@ -18,31 +18,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from api.Ray import Ray
+from api.Wad import Wad
 from api.otc import SimpleMarket
+from api.otc.OfferInfo import OfferInfo
 from api.sai import Tub
 from keepers.arbitrage.Conversion import Conversion
 
 
 class OasisConversion(Conversion):
-    def __init__(self, tub: Tub, market: SimpleMarket, offer_id: int):
+    def __init__(self, tub: Tub, market: SimpleMarket, offer: OfferInfo):
         self.tub = tub
         self.market = market
-        self.offer_id = offer_id
+        self.offer_id = offer.offer_id
 
-        offer = market.get_offer(offer_id)
-
-        super().__init__(self._currency_symbol(offer.buy_which_token.address),
-                         self._currency_symbol(offer.sell_which_token.address),
-                         self.sell_to_buy_price(offer), #TODO don't know if this is the right price
-                         offer.buy_how_much,
-                         0.6,
-                         'oasis-take-' + str(self.offer_id))
-
-    def sell_to_buy_price(self, offer):
-        return Ray(offer.sell_how_much)/Ray(offer.buy_how_much)
-
-    def buy_to_sell_price(self, offer):
-        return Ray(offer.sell_how_much)/Ray(offer.buy_how_much)
+        super().__init__(from_currency=self._currency_symbol(offer.buy_which_token.address),
+                         to_currency=self._currency_symbol(offer.sell_which_token.address),
+                         rate=Ray(offer.sell_how_much)/Ray(offer.buy_how_much),
+                         min_amount=Wad.from_number(0), #TODO will probably change after dust order limitation gets introduced
+                         max_amount=offer.buy_how_much,
+                         method=f"oasis-take-{self.offer_id}")
 
     def _currency_symbol(self, address):
         if address == self.tub.sai():

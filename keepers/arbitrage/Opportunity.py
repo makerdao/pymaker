@@ -19,15 +19,17 @@
 
 from pprint import pformat
 
+from api.Ray import Ray
+
 
 class Opportunity:
     def __init__(self, conversions):
         self.conversions = conversions
 
     def total_rate(self):
-        output = float(1.0)
+        output = Ray.from_number(1.0)
         for conversion in self.conversions:
-            output = output * float(conversion.rate)
+            output = output * conversion.rate
         return output
 
     def __str__(self):
