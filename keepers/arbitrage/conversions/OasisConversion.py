@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+from api.Address import Address
 from api.Ray import Ray
 from api.Wad import Wad
 from api.otc import SimpleMarket
@@ -29,14 +29,14 @@ class OasisConversion(Conversion):
     def __init__(self, tub: Tub, market: SimpleMarket, offer: OfferInfo):
         self.tub = tub
         self.market = market
-        self.offer_id = offer.offer_id
+        self.offer = offer
 
         super().__init__(from_currency=self._currency_symbol(offer.buy_which_token.address),
                          to_currency=self._currency_symbol(offer.sell_which_token.address),
                          rate=Ray(offer.sell_how_much)/Ray(offer.buy_how_much),
-                         min_amount=Wad.from_number(0), #TODO will probably change after dust order limitation gets introduced
-                         max_amount=offer.buy_how_much,
-                         method=f"oasis-take-{self.offer_id}")
+                         min_from_amount=Wad.from_number(0),  #TODO will probably change after dust order limitation gets introduced
+                         max_from_amount=offer.buy_how_much,
+                         method=f"oasis-take-{self.offer.offer_id}")
 
     def _currency_symbol(self, address):
         if address == self.tub.sai():
@@ -48,5 +48,18 @@ class OasisConversion(Conversion):
         else:
             return "___"
 
-    def perform(self, from_amount):
-        raise Exception("BUST Not implemented")
+    def perform(self):
+        quantity = self.to_amount
+        if quantity > self.offer.sell_how_much:
+            quantity = self.offer.sell_how_much
+        print(f"  Executing take({self.offer.offer_id}, '{quantity}') in order exchange {self.from_amount} {self.from_currency} to {self.to_amount} {self.to_currency}")
+        take_result = self.market.take(self.offer.offer_id, quantity)
+        if take_result:
+            our_address = Address(self.tub.web3.eth.defaultAccount)
+            incoming_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.sell_which_token.address and transfer.to_address == our_address, take_result.transfers))
+            outgoing_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.buy_which_token.address and transfer.from_address == our_address, take_result.transfers))
+            print(f"  Take was successful, exchanged {outgoing_transfer_on_take.value} {self.from_currency} to {incoming_transfer_on_take.value} {self.to_currency}")
+            return take_result
+        else:
+            print(f"  Take failed!")
+            return None

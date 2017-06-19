@@ -47,14 +47,14 @@ class Wad:
         elif isinstance(value, Ray):
             self.value = int((Decimal(value.value) / (Decimal(10)**Decimal(9))).quantize(1, rounding=ROUND_DOWN))
         elif isinstance(value, int):
-            assert(value >= 0)
+            # assert(value >= 0)
             self.value = value
         else:
             raise ArithmeticError
 
     @classmethod
     def from_number(cls, number):
-        assert(number >= 0)
+        # assert(number >= 0)
         pwr = Decimal(10) ** 18
         dec = Decimal(str(number)) * pwr
         return Wad(int(dec.quantize(1)))

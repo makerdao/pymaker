@@ -24,20 +24,28 @@ from api.Wad import Wad
 
 
 class Conversion:
-    def __init__(self, from_currency: str, to_currency: str, rate: Ray, min_amount: Wad, max_amount: Wad, method: str):
+    def __init__(self, from_currency: str, to_currency: str, rate: Ray, min_from_amount: Wad, max_from_amount: Wad, method: str):
+        self.from_amount = None
         self.from_currency = from_currency
+        self.to_amount = None
         self.to_currency = to_currency
         self.rate = rate
-        self.min_amount = min_amount
-        self.max_amount = max_amount
+        self.min_from_amount = min_from_amount
+        self.max_from_amount = max_from_amount
         self.method = method
 
-    def perform(self, from_amount):
+    def perform(self):
         raise Exception("Not implemented")
 
     def __str__(self):
         return pformat(vars(self))
 
     def __repr__(self):
-        return f"[{self.from_currency}->{self.to_currency} @{self.rate} by {self.method} " \
-               f"(min={self.min_amount} {self.from_currency}, max={self.max_amount} {self.from_currency})]"
+        def amt(amount: Wad) -> str:
+            if amount is not None:
+                return f"{amount} "
+            else:
+                return ""
+
+        return f"[{amt(self.from_amount)}{self.from_currency} -> {amt(self.to_amount)}{self.to_currency} @{self.rate} " \
+               f"by {self.method} (min={self.min_from_amount} {self.from_currency}, max={self.max_from_amount} {self.from_currency})]"

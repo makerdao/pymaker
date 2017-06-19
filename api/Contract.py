@@ -55,7 +55,7 @@ class Contract:
                                               from_address=Address(event_data['args']['from']),
                                               to_address=Address(event_data['args']['to']),
                                               value=Wad(event_data['args']['value'])))
-            return Receipt(transfers=transfers)
+            return Receipt(transaction_hash=transaction_hash, transfers=transfers)
         else:
             return False
 

@@ -17,9 +17,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import math
-from pprint import pformat
-
+from api.Address import Address
 from api.Ray import Ray
 from api.Wad import Wad
 from api.sai import Tub
@@ -32,12 +30,26 @@ class BustConversion(Conversion):
         super().__init__(from_currency='SAI',
                          to_currency='SKR',
                          rate=(Ray.from_number(1) / (tub.per() * tub.tag())),
-                         min_amount=Wad.from_number(0),
-                         max_amount=self.bustable_amount_in_sai(tub),
+                         min_from_amount=Wad.from_number(0),
+                         max_from_amount=self.bustable_amount_in_sai(tub),
                          method="tub-bust")
 
     def bustable_amount_in_sai(self, tub: Tub):
-        return tub.woe() - tub.joy() #- Wad.from_number(0.1) # to account for the joy surplus that is constantly increasing
+        #TODO we always try to bust 10 SAI less than what the Tub reports
+        #in order to discount the growth of `joy()` that might've have happened since the last drip
+        #of course this is not the right solution and it won't even work properly if the last
+        #drip happened enough time ago
+        return Wad.max(tub.woe() - tub.joy() - Wad.from_number(10), Wad.from_number(0))
 
-    def perform(self, from_amount):
-        raise Exception("BUST Not implemented")
+    def perform(self):
+        print(f"  Executing bust('{self.to_amount}') in order to exchange {self.from_amount} SAI to {self.to_amount} SKR")
+        bust_result = self.tub.bust(self.to_amount)
+        if bust_result:
+            our_address = Address(self.tub.web3.eth.defaultAccount)
+            skr_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.tub.skr() and transfer.to_address == our_address, bust_result.transfers))
+            sai_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.tub.sai() and transfer.from_address == our_address, bust_result.transfers))
+            print(f"  Bust was successful, exchanged {sai_transfer_on_bust.value} SAI to {skr_transfer_on_bust.value} SKR")
+            return bust_result
+        else:
+            print(f"  Bust failed!")
+            return None

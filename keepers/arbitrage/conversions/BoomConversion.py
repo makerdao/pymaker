@@ -32,12 +32,12 @@ class BoomConversion(Conversion):
         super().__init__(from_currency='SKR',
                          to_currency='SAI',
                          rate=(tub.per() * tub.tag()),
-                         min_amount=Wad.from_number(0),
-                         max_amount=self.boomable_amount_in_skr(tub),
+                         min_from_amount=Wad.from_number(0),
+                         max_from_amount=self.boomable_amount_in_skr(tub),
                          method="tub-boom")
 
     def boomable_amount_in_skr(self, tub: Tub):
         return Wad(Ray(tub.joy()) / (tub.per() * tub.tag()))
 
-    def perform(self, from_amount):
-        raise Exception("BUST Not implemented")
+    def perform(self):
+        raise Exception("BOOM Not implemented")

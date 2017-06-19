@@ -20,6 +20,7 @@
 import argparse
 import datetime
 import time
+from functools import reduce
 
 from web3 import HTTPProvider
 from web3 import Web3
@@ -48,16 +49,6 @@ class SaiArbitrage(Keeper):
     def filter_by_token_pair(self, offers, sell_which_token, buy_which_token):
         return [offer for offer in offers if offer.sell_which_token == sell_which_token and offer.buy_which_token == buy_which_token]
 
-    def sell_to_buy_price(self, offer):
-        return Ray(offer.sell_how_much)/Ray(offer.buy_how_much)
-
-    def buy_to_sell_price(self, offer):
-        return Ray(offer.sell_how_much)/Ray(offer.buy_how_much)
-
-    def first_offer(self, offers):
-        if len(offers) > 0: return offers[0]
-        return None
-
     def setup_allowances(self):
         for address in [self.market.address, self.tub.address]:
             self.setup_allowance(self.skr, 'SKR', address)
@@ -73,35 +64,9 @@ class SaiArbitrage(Keeper):
             print(f"Raising {token_name} allowance for {address}")
             token.approve(address, target_allowance)
 
-
     def available_conversions(self):
-        conversions = [
-            # join/exit on the Tub
-            # unlimited, the only limit is the amount of tokens we have
-            # rate is Tub.per()
-            # Conversion("ETH", "SKR", Ray.from_number(1), 100, "tub-join"),
-            # Conversion("SKR", "ETH", Ray.from_number(1), 100, "tub-exit"),
-
-            # take on the Lpc
-            # limited, depends on how many tokens in the pool, but we can check it
-            # rate is Lpc.tag() or 1/Lpc.tag(), depending on the direction
-            # Conversion("ETH", "SAI", Ray.from_number(362.830), 100, "lpc-take-SAI"),
-            # Conversion("SAI", "ETH", Ray.from_number(1/float("362.830")), 100, "lpc-take-ETH"),
-
-            # woe in the Tub
-            # limited, depends on how much woe in the Tub (after "mending")
-            # rate is 1/Tub.tag()
-            # Conversion("SAI", "SKR", Ray.from_number(1/float("362.830")), 100, "tub-bust"), #real data ["0.002756111677645"] []
-
-            # joy in the Tub
-            # limited, depends on how much joy in the Tub (after "mending")
-            # rate is Tub.tag()
-            # Conversion("SKR", "SAI", "362.830", 0.6, "tub-boom"),
-
-            # plus all the orders from Oasis
-            # Conversion("SKR", "SAI", Ray.from_number(363.830), 100, "oasis-takeOrder-121"), #real data
-        ]
-        conversions.append(BoomConversion(self.tub))
+        conversions = []
+        # conversions.append(BoomConversion(self.tub))
         conversions.append(BustConversion(self.tub))
 
         # We list all active orders on OasisDEX and filter on the SAI/SKR pair
@@ -117,16 +82,72 @@ class SaiArbitrage(Keeper):
 
         return conversions
 
+    def first_opportunity(self, opportunities):
+        if len(opportunities) > 0: return opportunities[0]
+        return None
 
     def process(self):
         print(f"")
+        print(f"")
         self.setup_allowances()
         print(f"Processing (@ {datetime.datetime.now()})")
+        print(f"")
 
         opportunities = OpportunityFinder(conversions=self.available_conversions()).opportunities('SAI')
-        opportunities = filter(lambda opportunity: opportunity.total_rate() > Ray.from_number(1.0), opportunities)
+        opportunities = list(filter(lambda opportunity: opportunity.total_rate() > Ray.from_number(1.000001), opportunities))
         for opportunity in opportunities:
-            print(repr(opportunity))
+            opportunity.discover_prices(self.maximum_engagement)
+        opportunities = list(sorted(opportunities, key=lambda opportunity: opportunity.tx_total_profit(), reverse=True))
+
+        if len(opportunities) == 0:
+            print(f"No opportunities found. No worries, I will try again.")
+            return
+        else:
+            print(f"Found {len(opportunities)} profit opportunities, here they are:")
+
+        for opportunity in opportunities:
+            print(str(opportunity) + "\n")
+
+        profitable_opportunities = list(filter(lambda opportunity: opportunity.tx_total_profit() > self.minimum_profit, opportunities))
+        best_opportunity = self.first_opportunity(profitable_opportunities)
+
+        if best_opportunity is None:
+            print(f"No opportunity is profitable enough so none of them will get executed")
+            return
+
+        print("This opportunity will bring us the best profit and will get executed:")
+        print(str(best_opportunity))
+        print("")
+
+        all_transfers = []
+
+        for index, conversion in enumerate(best_opportunity.conversions, start=1):
+            print(f"Step {index}/{len(best_opportunity.conversions)}:")
+            receipt = conversion.perform()
+            if receipt is None:
+                print(f"")
+                print(f"Interrupting the process...")
+                print(f"Will start over from scratch in the next round.")
+                return
+            else:
+                print(f"  TxHash: {receipt.transaction_hash}")
+                all_transfers += receipt.transfers
+
+        def sum_of_wads(list_of_wads):
+            return reduce(Wad.__add__, list_of_wads, Wad.from_number(0))
+
+        print(f"")
+        print(f"All steps executed successfully. The profit we made on this opportunity is:")
+        skr_in = filter(lambda transfer: transfer.token_address == self.tub.skr() and transfer.to_address == self.our_address, all_transfers)
+        skr_out = filter(lambda transfer: transfer.token_address == self.tub.skr() and transfer.from_address == self.our_address, all_transfers)
+        sai_in = filter(lambda transfer: transfer.token_address == self.tub.sai() and transfer.to_address == self.our_address, all_transfers)
+        sai_out = filter(lambda transfer: transfer.token_address == self.tub.sai() and transfer.from_address == self.our_address, all_transfers)
+        eth_in = filter(lambda transfer: transfer.token_address == self.tub.gem() and transfer.to_address == self.our_address, all_transfers)
+        eth_out = filter(lambda transfer: transfer.token_address == self.tub.gem() and transfer.from_address == self.our_address, all_transfers)
+        print(f"  {sum_of_wads(transfer.value for transfer in skr_in) - sum_of_wads(transfer.value for transfer in skr_out)} SKR")
+        print(f"  {sum_of_wads(transfer.value for transfer in sai_in) - sum_of_wads(transfer.value for transfer in sai_out)} SAI")
+        print(f"  {sum_of_wads(transfer.value for transfer in eth_in) - sum_of_wads(transfer.value for transfer in eth_out)} ETH")
+
 
     def __init__(self):
         parser = argparse.ArgumentParser(description='SaiArbitrage keeper.')
@@ -134,8 +155,8 @@ class SaiArbitrage(Keeper):
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
         parser.add_argument("--frequency", help="Frequency of checking for arbitrage opportunities (default: 5)", default=5, type=float)
-        parser.add_argument("--minimum-order-size", help="Minimum order size in SAI (default: 50)", default=50, type=float)
-        parser.add_argument("--minimum-profit", help="Minimum profit in SAI (default: 1)", default=1, type=float)
+        parser.add_argument("--minimum-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.5)", default=0.5, type=float)
+        parser.add_argument("--maximum-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
         args = parser.parse_args()
 
         config = Config()
@@ -157,12 +178,12 @@ class SaiArbitrage(Keeper):
         self.market_address = Address(config.get_contract_address("otc"))
         self.market = SimpleMarket(web3=web3, address=self.market_address)
 
-        self.minimum_order_size = args.minimum_order_size
-        self.minimum_profit = args.minimum_profit
+        self.minimum_profit = Wad.from_number(args.minimum_profit)
+        self.maximum_engagement = Wad.from_number(args.maximum_engagement)
 
         print(f"")
         print(f"SaiArbitrage keeper")
-        print(f"--------------------")
+        print(f"-------------------")
 
         while True:
             self.process()
@@ -171,8 +192,3 @@ class SaiArbitrage(Keeper):
 
 if __name__ == '__main__':
     SaiArbitrage()
-
-
-
-
-
