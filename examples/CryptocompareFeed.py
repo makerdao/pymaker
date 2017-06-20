@@ -47,7 +47,7 @@ dsvalue_address = Address('0xcf67cb2669e61c7fa54243aa98b50947bceabb98')
 dsvalue = DSValue(web3=web3, address=dsvalue_address)
 
 dsvalue_value = Wad.from_uint(dsvalue.read_as_int())
-cryptocompare_value = Wad.from_number(250) #cryptocompare_rate()
+cryptocompare_value = cryptocompare_rate()
 threshold = Wad.from_number(0.25)
 
 print(f"Value in DSValue is   : {dsvalue_value} USD/ETH")
