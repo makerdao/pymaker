@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 # This file is part of "maker.py".
 #
 # Copyright (C) 2017 reverendus
