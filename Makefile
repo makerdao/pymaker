@@ -7,5 +7,8 @@ doc-clean:      ## Clean the documentation output directory
 doc-build: doc-clean        ## Build the documentation
 	sphinx-build . _doc
 
+doc-open: doc-build         ## Open the documentation
+	open _doc/index.html
+
 doc-deploy: doc-build       ## Deploy the documentation at http://maker-py-docs.surge.sh
 	surge --project _doc --domain maker-py-docs.surge.sh
