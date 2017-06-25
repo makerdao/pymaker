@@ -21,7 +21,7 @@ also for `SimpleMarket` (OasisDEX/OTC). There is also a working API around `Auct
 and `SplittingAuctionManager`, but they will be used in _DAI Stablecoin System_, not in
 _SAI Stablecoin System_.
 
-You can find the full documentation here: http://maker-py-docs.surge.sh.
+You can find the full documentation here: http://maker-keeper-docs.surge.sh.
 The documentation covers also examples and sample keepers provided.
 
 **Beware!** This is the first version of the APIs and they will definitely change and/or evolve
