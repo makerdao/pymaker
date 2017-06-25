@@ -1,7 +1,5 @@
-maker.py
-========
-
-`maker.py` provides a simple way of interacting with a set of smart contracts that create the `SAI Stablecoin System`.
+Maker Keeper Framework
+======================
 
 This projects consists of three parts:
 

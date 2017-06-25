@@ -1,4 +1,4 @@
-# maker.py
+# Maker Keeper Framework
 
 ## Rationale
 
@@ -8,7 +8,7 @@ around the Ethereum blockchain.
 
 ## Scope
 
-_Maker.py_ covers three areas:
+This project covers three areas:
 1. Provides a set of Python APIs to enable easy interaction with _SAI Stablecoin System_
    smart contracts and some other smart contracts surrounding it.
 2. Provides some examples showing how to use these APIs.
@@ -29,7 +29,7 @@ in the future.
 
 ### Installation
 
-_Maker.py_ uses Python 3.6.1.
+The API and the keepers both use Python 3.6.1.
 
 In order to install required third-party packages please execute:
 ```
