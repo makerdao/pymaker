@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# This file is part of "maker.py".
+# This file is part of Maker Keeper Framework.
 #
 # Copyright (C) 2017 reverendus
 #
