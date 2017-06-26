@@ -89,7 +89,7 @@ class Lpc(Contract):
         """Get the spread, charged on `take()`.
 
         Returns:
-            The current value of the spread.
+            The current value of the spread. `1.0` means no spread. `1.02` means 2% spread.
         """
         return Wad(self._contract.call().gap())
 
@@ -105,7 +105,7 @@ class Lpc(Contract):
         """Update the spread.
 
         Args:
-            new_gap: The new value of the spread (`gap`).
+            new_gap: The new value of the spread (`gap`). `1.0` means no spread. `1.02` means 2% spread.
 
         Returns:
             A `Receipt` if the Ethereum transaction was successful.
