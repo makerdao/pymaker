@@ -228,7 +228,7 @@ class Tub(Contract):
     def chi(self) -> Ray:
         """Get the internal debt price.
 
-        Every invocation of this method calls `drip()` internally, so the value we receive is always up-to-date.
+        Every invocation of this method calls `drip()` internally, so the value you receive is always up-to-date.
         But as calling it doesn't result in an Ethereum transaction, the actual `_chi` value in the smart
         contract storage does not get updated.
 
@@ -412,6 +412,10 @@ class Tub(Contract):
 
     def par(self) -> Wad:
         """Get the accrued holder fee.
+
+        Every invocation of this method calls `prod()` internally, so the value you receive is always up-to-date.
+        But as calling it doesn't result in an Ethereum transaction, the actual `_pars` value in the smart
+        contract storage does not get updated.
 
         Returns:
             The accrued holder fee.
