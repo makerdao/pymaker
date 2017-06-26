@@ -77,6 +77,14 @@ class Lpc(Contract):
         """
         return Address(self._contract.call().pip())
 
+    def tip(self) -> Address:
+        """Get the target price engine.
+
+        Returns:
+            The address of the target price engine. It is an internal component of Sai.
+        """
+        return Address(self._contract.call().tip())
+
     def gap(self) -> Wad:
         """Get the spread, charged on `take()`.
 
