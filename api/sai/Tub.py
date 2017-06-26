@@ -423,7 +423,10 @@ class Tub(Contract):
         return Wad(self._contractTip.call().par())
 
     def per(self) -> Ray:
-        """Get the current entry price (GEM per SKR).
+        """Get the current averag entry/exit price (GEM per SKR).
+
+        In order to get the price that will be actually used on `join()` or `exit()`, see
+        `jar_ask()` and `jar_bid()` respectively.
 
         Returns:
             The current GEM per SKR price.
@@ -438,6 +441,7 @@ class Tub(Contract):
         """
         return Wad(self._contractTap.call().s2s())
 
+    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
     def tap_gap(self) -> Wad:
         """Get the current spread for `boom` and `bust`.
 
@@ -446,6 +450,7 @@ class Tub(Contract):
         """
         return Wad(self._contractTap.call().gap())
 
+    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
     def tap_jump(self, new_gap: Wad) -> Optional[Receipt]:
         """Update the current spread (`gap`) for `boom` and `bust`.
 
@@ -463,6 +468,7 @@ class Tub(Contract):
         except:
             return None
 
+    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
     def tap_bid(self, amount_in_skr: Wad) -> Wad:
         """Get the current price of SKR in SAI for `boom`.
 
@@ -477,6 +483,7 @@ class Tub(Contract):
         """
         return Wad(self._contractTap.call().bid(amount_in_skr.value))
 
+    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
     def tap_ask(self, amount_in_skr: Wad) -> Wad:
         """Get the current price of SKR in SAI for `bust`.
 
@@ -490,6 +497,51 @@ class Tub(Contract):
             The corresponding amount of SAI that would be taken by `bust`.
         """
         return Wad(self._contractTap.call().ask(amount_in_skr.value))
+
+    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
+    def jar_gap(self) -> Wad:
+        """Get the current spread for `join` and `exit`.
+
+        Returns:
+            The current spread for `join` and `exit`. `0.0` means no spread, `0.01` means 1% spread.
+        """
+        return Wad(self._contractJar.call().gap())
+
+    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
+    def jar_jump(self, new_gap: Wad) -> Optional[Receipt]:
+        """Update the current spread (`gap`) for `join` and `exit`.
+
+        Args:
+            new_tax: The new value of the spread (`gap`). `0.0` means no spread, `0.01` means 1% spread.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(new_gap, Wad)
+        try:
+            tx_hash = self._contractJar.transact().jump(new_gap.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
+    def jar_bid(self) -> Ray:
+        """Get the current `exit()` price (GEM per SKR).
+
+        Returns:
+            The GEM per SKR price that will be used on `exit()`.
+        """
+        return Ray(self._contractJar.call().bid())
+
+    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
+    def jar_ask(self) -> Ray:
+        """Get the current `join()` price (GEM per SKR).
+
+        Returns:
+            The GEM per SKR price that will be used on `join()`.
+        """
+        return Ray(self._contractJar.call().ask())
 
     def cupi(self) -> int:
         """Get the last cup id
