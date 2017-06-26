@@ -211,6 +211,14 @@ class Tub(Contract):
         """
         return self._contract.call().rho()
 
+    def tau(self) -> int:
+        """Get the time of the last prod.
+
+        Returns:
+            The time of the last prod as a unix timestamp.
+        """
+        return self._contractTip.call().tau()
+
     def chi(self) -> Ray:
         """Get the internal debt price.
 
