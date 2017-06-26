@@ -27,7 +27,7 @@ class TubJoinConversion(Conversion):
         self.tub = tub
         super().__init__(from_currency='ETH',
                          to_currency='SKR',
-                         rate=(Ray.from_number(1) / tub.per()),
+                         rate=(Ray.from_number(1) / tub.jar_ask()),
                          min_from_amount=Wad.from_number(0),
                          max_from_amount=Wad.from_number(1000000), #1 mio ETH = infinity ;)
                          method="tub-join")
