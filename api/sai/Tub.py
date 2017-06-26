@@ -105,6 +105,14 @@ class Tub(Contract):
         """
         return Address(self._contract.call().pot())
 
+    def dev(self) -> Address:
+        """Get the jug-like sin tracker (DSDevil).
+
+        Returns:
+            The address of the jug-like sin tracker (DSDevil). It is an internal component of Sai.
+        """
+        return Address(self._contract.call().dev())
+
     def skr(self) -> Address:
         """Get the SKR token.
 
