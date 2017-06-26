@@ -356,7 +356,7 @@ class Tub(Contract):
         Returns:
             The amount of bad debt in SAI.
         """
-        return Wad(self._contract.call().woe())
+        return Wad(self._contractTap.call().woe())
 
     def pie(self) -> Wad:
         """Get the amount of raw collateral.
@@ -380,7 +380,7 @@ class Tub(Contract):
         Returns:
             The amount of SKR pending liquidation, in SKR.
         """
-        return Wad(self._contract.call().fog())
+        return Wad(self._contractTap.call().fog())
 
     #TODO beware that it doesn't call drip() underneath so if `tax`>1.0 we won't get an up-to-date value of joy()
     def joy(self) -> Wad:
@@ -391,7 +391,7 @@ class Tub(Contract):
         Returns:
             The amount of surplus SAI accumulated in the Tub.
         """
-        return Wad(self._contract.call().joy())
+        return Wad(self._contractTap.call().joy())
 
     def tag(self) -> Wad:
         """Get the reference price (REF per SKR).
