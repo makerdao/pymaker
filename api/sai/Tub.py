@@ -71,6 +71,14 @@ class Tub(Contract):
         """
         return Address(self._contract.call().sin())
 
+    def pit(self) -> Address:
+        """Get the liquidator vault.
+
+        Returns:
+            The address of the `DSVault` holding the bad debt.
+        """
+        return Address(self._contract.call().pit())
+
     def pot(self) -> Address:
         """Get the good debt vault.
 
