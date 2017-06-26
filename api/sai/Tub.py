@@ -681,7 +681,7 @@ class Tub(Contract):
         """
         assert isinstance(amount_in_skr, Wad)
         try:
-            tx_hash = self._contract.transact().boom(amount_in_skr.value)
+            tx_hash = self._contractTap.transact().boom(amount_in_skr.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -698,7 +698,7 @@ class Tub(Contract):
         """
         assert isinstance(amount_in_skr, Wad)
         try:
-            tx_hash = self._contract.transact().bust(amount_in_skr.value)
+            tx_hash = self._contractTap.transact().bust(amount_in_skr.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
