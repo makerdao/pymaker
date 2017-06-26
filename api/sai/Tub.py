@@ -51,17 +51,17 @@ class Tub(Contract):
     abiTip = Contract._load_abi(__name__, 'abi/Tip.abi')
     abiJar = Contract._load_abi(__name__, 'abi/SaiJar.abi')
 
-    def __init__(self, web3: Web3, addressTub: Address, addressTap: Address, addressTop: Address):
+    def __init__(self, web3: Web3, address_tub: Address, address_tap: Address, address_top: Address):
         self.web3 = web3
-        self.addressTub = addressTub
-        self.addressTap = addressTap
-        self.addressTop = addressTop
-        self._assert_contract_exists(web3, addressTub)
-        self._assert_contract_exists(web3, addressTap)
-        self._assert_contract_exists(web3, addressTop)
-        self._contract = web3.eth.contract(abi=self.abiTub)(address=addressTub.address)
-        self._contractTap = web3.eth.contract(abi=self.abiTap)(address=addressTap.address)
-        self._contractTop = web3.eth.contract(abi=self.abiTop)(address=addressTop.address)
+        self.addressTub = address_tub
+        self.addressTap = address_tap
+        self.addressTop = address_top
+        self._assert_contract_exists(web3, address_tub)
+        self._assert_contract_exists(web3, address_tap)
+        self._assert_contract_exists(web3, address_top)
+        self._contract = web3.eth.contract(abi=self.abiTub)(address=address_tub.address)
+        self._contractTap = web3.eth.contract(abi=self.abiTap)(address=address_tap.address)
+        self._contractTop = web3.eth.contract(abi=self.abiTop)(address=address_top.address)
         self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contract.call().tip())
         self._contractJar = web3.eth.contract(abi=self.abiJar)(address=self._contract.call().jar())
 

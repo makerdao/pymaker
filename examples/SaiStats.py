@@ -28,9 +28,9 @@ from api.token.ERC20Token import ERC20Token
 
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
 tub = Tub(web3=web3,
-          addressTub=Address('0x15a106e4767c8725182a3151311d6f7ff753ab5b'),
-          addressTap=Address('0x4194db843e095f7302da21b50f74629db788f4dd'),
-          addressTop=Address('0xa75727ef1ae5bf29f11bbd8fec0bca4b9dd54203'))
+          address_tub=Address('0x15a106e4767c8725182a3151311d6f7ff753ab5b'),
+          address_tap=Address('0x4194db843e095f7302da21b50f74629db788f4dd'),
+          address_top=Address('0xa75727ef1ae5bf29f11bbd8fec0bca4b9dd54203'))
 sai = ERC20Token(web3=web3, address=tub.sai())
 skr = ERC20Token(web3=web3, address=tub.skr())
 gem = ERC20Token(web3=web3, address=tub.gem())

@@ -178,7 +178,7 @@ class SaiArbitrage(Keeper):
         self.tub_address = Address(config.get_contract_address("saiTub"))
         self.tap_address = Address(config.get_contract_address("saiTap"))
         self.top_address = Address(config.get_contract_address("saiTop"))
-        self.tub = Tub(web3=web3, addressTub=self.tub_address, addressTap=self.tap_address, addressTop=self.top_address)
+        self.tub = Tub(web3=web3, address_tub=self.tub_address, address_tap=self.tap_address, address_top=self.top_address)
         self.skr = ERC20Token(web3=web3, address=self.tub.skr())
         self.sai = ERC20Token(web3=web3, address=self.tub.sai())
         self.gem = ERC20Token(web3=web3, address=self.tub.gem())

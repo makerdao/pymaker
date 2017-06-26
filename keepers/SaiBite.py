@@ -42,7 +42,7 @@ web3.eth.defaultAccount = args.eth_from #TODO allow to use ETH_FROM env variable
 tub_address = Address(config.get_contract_address("saiTub"))
 tap_address = Address(config.get_contract_address("saiTap"))
 top_address = Address(config.get_contract_address("saiTop"))
-tub = Tub(web3=web3, addressTub=tub_address, addressTap=tap_address, addressTop=top_address)
+tub = Tub(web3=web3, address_tub=tub_address, address_tap=tap_address, address_top=top_address)
 
 print(f"")
 print(f"SaiBite keeper")
