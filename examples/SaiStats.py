@@ -22,6 +22,7 @@ from web3 import Web3
 
 from api.Address import Address
 from api.Ray import Ray
+from api.sai.Lpc import Lpc
 from api.sai.Tub import Tub
 from api.token.ERC20Token import ERC20Token
 
@@ -33,6 +34,7 @@ tub = Tub(web3=web3,
 sai = ERC20Token(web3=web3, address=tub.sai())
 skr = ERC20Token(web3=web3, address=tub.skr())
 gem = ERC20Token(web3=web3, address=tub.gem())
+lpc = Lpc(web3=web3, address=Address('0x6ab21a6a985947e6143ec8b90ed17e4586846d2c'))
 
 print(f"")
 print(f"Token summary")

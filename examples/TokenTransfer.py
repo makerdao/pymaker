@@ -30,7 +30,10 @@ web3.eth.defaultAccount = "0x002ca7F9b416B2304cDd20c26882d1EF5c53F611"
 
 our_address = Address(web3.eth.defaultAccount)
 destination_address = Address("0x0061f1dbAf1e1B2E412A75D3eD6B48c3D7412D35")
-tub = Tub(web3=web3, address=Address('0x97bf1ff371ceabbb9e821480d31dd743c4b71e0e'))
+tub = Tub(web3=web3,
+          addressTub=Address('0x15a106e4767c8725182a3151311d6f7ff753ab5b'),
+          addressTap=Address('0x4194db843e095f7302da21b50f74629db788f4dd'),
+          addressTop=Address('0xa75727ef1ae5bf29f11bbd8fec0bca4b9dd54203'))
 sai = ERC20Token(web3=web3, address=tub.sai())
 
 print(f"Source balance before the transfer is {sai.balance_of(our_address)} SAI")

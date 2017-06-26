@@ -30,7 +30,10 @@ web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
 web3.eth.defaultAccount = "0x002ca7F9b416B2304cDd20c26882d1EF5c53F611"
 
 our_address = Address(web3.eth.defaultAccount)
-tub = Tub(web3=web3, address=Address('0x97bf1ff371ceabbb9e821480d31dd743c4b71e0e'))
+tub = Tub(web3=web3,
+          addressTub=Address('0x15a106e4767c8725182a3151311d6f7ff753ab5b'),
+          addressTap=Address('0x4194db843e095f7302da21b50f74629db788f4dd'),
+          addressTop=Address('0xa75727ef1ae5bf29f11bbd8fec0bca4b9dd54203'))
 lpc = Lpc(web3=web3, address=Address('0x3bd1eeeffcbd8c922cadd5d76b2182debb3ca5af'))
 sai = ERC20Token(web3=web3, address=tub.sai())
 gem = ERC20Token(web3=web3, address=tub.gem())

@@ -43,7 +43,7 @@ def difference(wad1: Wad, wad2: Wad) -> Wad:
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
 web3.eth.defaultAccount = "0x002ca7F9b416B2304cDd20c26882d1EF5c53F611"
 
-dsvalue_address = Address('0xcf67cb2669e61c7fa54243aa98b50947bceabb98')
+dsvalue_address = Address('0x038b3d8288df582d57db9be2106a27be796b0daf')
 dsvalue = DSValue(web3=web3, address=dsvalue_address)
 
 dsvalue_value = Wad.from_uint(dsvalue.read_as_int())

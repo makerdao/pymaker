@@ -25,6 +25,17 @@ From `examples/LpcExchange.py`:
     :language: python
     :linenos:
 
+SaiStats.py
+-----------
+
+This example demonstrates how to read configuration and the current state of the Sai contracts.
+
+From `examples/SaiStats.py`:
+
+.. literalinclude:: ../examples/SaiStats.py
+    :language: python
+    :linenos:
+
 TokenTransfer.py
 ----------------
 
@@ -34,16 +45,5 @@ can be transferred this way.
 From `examples/TokenTransfer.py`:
 
 .. literalinclude:: ../examples/TokenTransfer.py
-    :language: python
-    :linenos:
-
-TubStats.py
------------
-
-This example demonstrates how to read configuration and the current state of the `Tub`.
-
-From `examples/TubStats.py`:
-
-.. literalinclude:: ../examples/TubStats.py
     :language: python
     :linenos:
