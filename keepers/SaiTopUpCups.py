@@ -47,7 +47,9 @@ web3.eth.defaultAccount = args.eth_from #TODO allow to use ETH_FROM env variable
 
 our_address = Address(args.eth_from)
 tub_address = Address(config.get_contract_address("saiTub"))
-tub = Tub(web3=web3, address=tub_address)
+tap_address = Address(config.get_contract_address("saiTap"))
+top_address = Address(config.get_contract_address("saiTop"))
+tub = Tub(web3=web3, addressTub=tub_address, addressTap=tap_address, addressTop=top_address)
 tip = DSValue(web3=web3, address=tub.tip())
 skr = ERC20Token(web3=web3, address=tub.skr())
 

@@ -40,7 +40,9 @@ web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}")
 web3.eth.defaultAccount = args.eth_from #TODO allow to use ETH_FROM env variable
 
 tub_address = Address(config.get_contract_address("saiTub"))
-tub = Tub(web3=web3, address=tub_address)
+tap_address = Address(config.get_contract_address("saiTap"))
+top_address = Address(config.get_contract_address("saiTop"))
+tub = Tub(web3=web3, addressTub=tub_address, addressTap=tap_address, addressTop=top_address)
 
 print(f"")
 print(f"SaiBite keeper")

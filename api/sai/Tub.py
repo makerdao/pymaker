@@ -46,13 +46,23 @@ class Tub(Contract):
     """
 
     abiTub = Contract._load_abi(__name__, 'abi/Tub.abi')
+    abiTap = Contract._load_abi(__name__, 'abi/Tap.abi')
+    abiTop = Contract._load_abi(__name__, 'abi/Top.abi')
+    abiTip = Contract._load_abi(__name__, 'abi/Tip.abi')
     abiJar = Contract._load_abi(__name__, 'abi/SaiJar.abi')
 
-    def __init__(self, web3: Web3, address: Address):
+    def __init__(self, web3: Web3, addressTub: Address, addressTap: Address, addressTop: Address):
         self.web3 = web3
-        self.address = address
-        self._assert_contract_exists(web3, address)
-        self._contract = web3.eth.contract(abi=self.abiTub)(address=address.address)
+        self.addressTub = addressTub
+        self.addressTap = addressTap
+        self.addressTop = addressTop
+        self._assert_contract_exists(web3, addressTub)
+        self._assert_contract_exists(web3, addressTap)
+        self._assert_contract_exists(web3, addressTop)
+        self._contract = web3.eth.contract(abi=self.abiTub)(address=addressTub.address)
+        self._contractTap = web3.eth.contract(abi=self.abiTap)(address=addressTap.address)
+        self._contractTop = web3.eth.contract(abi=self.abiTop)(address=addressTop.address)
+        self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contract.call().tip())
         self._contractJar = web3.eth.contract(abi=self.abiJar)(address=self._contract.call().jar())
 
     def sai(self) -> Address:
@@ -169,13 +179,21 @@ class Tub(Contract):
         """
         return self._contract.call().reg()
 
-    def fix(self) -> Wad:
-        """Get the SAI settlement price.
+    def fit(self) -> Ray:
+        """Get the GEM per SKR settlement price.
         
         Returns:
-            The SAI settlement (kill) price (in GEM per SAI).
+            The GEM per SKR settlement (kill) price.
         """
-        return Wad(self._contract.call().fix())
+        return Ray(self._contract.call().fit())
+
+    def fix(self) -> Ray:
+        """Get the GEM per SAI settlement price.
+
+        Returns:
+            The GEM per SAI settlement (kill) price.
+        """
+        return Ray(self._contractTop.call().fix())
 
     def par(self) -> Ray:
         """Get the GEM per SKR price just before settlement.
