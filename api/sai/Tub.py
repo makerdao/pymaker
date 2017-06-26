@@ -312,12 +312,13 @@ class Tub(Contract):
         return Wad(self._contract.call().joy())
 
     def tag(self) -> Wad:
-        """Get the reference price (REF per GEM).
+        """Get the reference price (REF per SKR).
 
         The price is read from the price feed (`tip()`) every time this method gets called.
+        It's value is actually the value from the feed (REF per GEM) multiplied by `per()` (GEM per SKR).
 
         Returns:
-            The reference price (REF per GEM).
+            The reference price (REF per SKR).
         """
         return Wad(self._contract.call().tag())
 

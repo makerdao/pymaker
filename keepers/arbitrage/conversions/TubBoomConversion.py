@@ -30,7 +30,7 @@ class TubBoomConversion(Conversion):
         self.tub = tub
         super().__init__(from_currency='SKR',
                          to_currency='SAI',
-                         rate=(tub.per() * tub.tag()),
+                         rate=Ray(tub.tag()),
                          min_from_amount=Wad.from_number(0),
                          max_from_amount=self.boomable_amount_in_skr(tub),
                          method="tub-boom")
@@ -41,7 +41,7 @@ class TubBoomConversion(Conversion):
         return Wad.max(tub.joy() - tub.woe(), Wad.from_number(0))
 
     def boomable_amount_in_skr(self, tub: Tub):
-        return Wad(Ray(self.boomable_amount_in_sai(tub)) / (tub.per() * tub.tag()))
+        return Wad(self.boomable_amount_in_sai(tub) / (tub.tag()))
 
     #TODO at some point a concept of spread on boom()/bust() will be introduced in the Tub
     #then this concept has to be moved here so the keeper understand the actual price

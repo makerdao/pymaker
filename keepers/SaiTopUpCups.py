@@ -69,7 +69,7 @@ while True:
         #TODO evaulated on two different blocks, which will make the collateralization ratio calculation wrong
         cup = tub.cups(cup_id)
         if cup.lad == our_address:
-            pro = cup.ink*tub.per()*tub.tag()
+            pro = cup.ink*tub.tag()
             tab = tub.tab(cup_id)
             if tab == Wad(0):
                 print(f"Cup {cup_id} has no debt (SAI) drawn from it, definitely no need for top-up")
@@ -78,7 +78,7 @@ while True:
             current_ratio = Ray(pro / tab)
 
             if current_ratio < minimum_ratio:
-                top_up_amount = tab * ((target_ratio - current_ratio) / (tub.per() * tub.tag()))
+                top_up_amount = tab * ((target_ratio - current_ratio) / tub.tag())
                 print(f"Cup {cup_id} has collateralization ratio {current_ratio}, below {minimum_ratio}")
                 print(f"Cup {cup_id} needs top-up with {top_up_amount} SKR so the collateralization ratio reaches {target_ratio}")
 
