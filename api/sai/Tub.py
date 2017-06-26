@@ -191,7 +191,7 @@ class Tub(Contract):
         """Get the Tub stage ('register').
 
         Returns:
-            The current Tub stage (0=Usual, 1=Caged, 2=Empty).
+            The current Tub stage (0=Usual, 1=Caged).
         """
         return self._contract.call().reg()
 
