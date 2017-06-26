@@ -405,7 +405,7 @@ class Tub(Contract):
         """Get the reference price (REF per SKR).
 
         The price is read from the price feed (`tip()`) every time this method gets called.
-        It's value is actually the value from the feed (REF per GEM) multiplied by `per()` (GEM per SKR).
+        Its value is actually the value from the feed (REF per GEM) multiplied by `per()` (GEM per SKR).
 
         Returns:
             The reference price (REF per SKR).
