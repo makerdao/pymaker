@@ -71,6 +71,14 @@ class Tub(Contract):
         """
         return Address(self._contract.call().sin())
 
+    def jar(self) -> Address:
+        """Get the collateral vault.
+
+        Returns:
+            The address of the `SaiJar` vault. It is an internal component of Sai.
+        """
+        return Address(self._contract.call().jar())
+
     def pit(self) -> Address:
         """Get the liquidator vault.
 
