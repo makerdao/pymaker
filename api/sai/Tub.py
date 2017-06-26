@@ -59,11 +59,11 @@ class Tub(Contract):
         self._assert_contract_exists(web3, address_tub)
         self._assert_contract_exists(web3, address_tap)
         self._assert_contract_exists(web3, address_top)
-        self._contract = web3.eth.contract(abi=self.abiTub)(address=address_tub.address)
+        self._contractTub = web3.eth.contract(abi=self.abiTub)(address=address_tub.address)
         self._contractTap = web3.eth.contract(abi=self.abiTap)(address=address_tap.address)
         self._contractTop = web3.eth.contract(abi=self.abiTop)(address=address_top.address)
-        self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contract.call().tip())
-        self._contractJar = web3.eth.contract(abi=self.abiJar)(address=self._contract.call().jar())
+        self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contractTub.call().tip())
+        self._contractJar = web3.eth.contract(abi=self.abiJar)(address=self._contractTub.call().jar())
 
     def sai(self) -> Address:
         """Get the SAI token.
@@ -71,7 +71,7 @@ class Tub(Contract):
         Returns:
             The address of the SAI token.
         """
-        return Address(self._contract.call().sai())
+        return Address(self._contractTub.call().sai())
 
     def sin(self) -> Address:
         """Get the SIN token.
@@ -79,7 +79,7 @@ class Tub(Contract):
         Returns:
             The address of the SIN token.
         """
-        return Address(self._contract.call().sin())
+        return Address(self._contractTub.call().sin())
 
     def jar(self) -> Address:
         """Get the collateral vault.
@@ -87,7 +87,7 @@ class Tub(Contract):
         Returns:
             The address of the `SaiJar` vault. It is an internal component of Sai.
         """
-        return Address(self._contract.call().jar())
+        return Address(self._contractTub.call().jar())
 
     def pit(self) -> Address:
         """Get the liquidator vault.
@@ -95,7 +95,7 @@ class Tub(Contract):
         Returns:
             The address of the `DSVault` holding the bad debt.
         """
-        return Address(self._contract.call().pit())
+        return Address(self._contractTub.call().pit())
 
     def pot(self) -> Address:
         """Get the good debt vault.
@@ -103,7 +103,7 @@ class Tub(Contract):
         Returns:
             The address of the `DSVault` holding the good debt.
         """
-        return Address(self._contract.call().pot())
+        return Address(self._contractTub.call().pot())
 
     def dev(self) -> Address:
         """Get the jug-like sin tracker (DSDevil).
@@ -111,7 +111,7 @@ class Tub(Contract):
         Returns:
             The address of the jug-like sin tracker (DSDevil). It is an internal component of Sai.
         """
-        return Address(self._contract.call().dev())
+        return Address(self._contractTub.call().dev())
 
     def skr(self) -> Address:
         """Get the SKR token.
@@ -119,7 +119,7 @@ class Tub(Contract):
         Returns:
             The address of the SKR token.
         """
-        return Address(self._contract.call().skr())
+        return Address(self._contractTub.call().skr())
 
     def gem(self) -> Address:
         """Get the collateral token (eg. W-ETH).
@@ -127,7 +127,7 @@ class Tub(Contract):
         Returns:
             The address of the collateral token.
         """
-        return Address(self._contract.call().gem())
+        return Address(self._contractTub.call().gem())
 
     def pip(self) -> Address:
         """Get the GEM price feed.
@@ -143,7 +143,7 @@ class Tub(Contract):
         Returns:
             The address of the target price engine. It is an internal component of Sai.
         """
-        return Address(self._contract.call().tip())
+        return Address(self._contractTub.call().tip())
 
     def axe(self) -> Ray:
         """Get the liquidation penalty.
@@ -151,7 +151,7 @@ class Tub(Contract):
         Returns:
             The liquidation penalty. `1.0` means no penalty. `1.2` means 20% penalty.
         """
-        return Ray(self._contract.call().axe())
+        return Ray(self._contractTub.call().axe())
 
     def hat(self) -> Wad:
         """Get the debt ceiling.
@@ -159,7 +159,7 @@ class Tub(Contract):
         Returns:
             The debt ceiling in SAI.
         """
-        return Wad(self._contract.call().hat())
+        return Wad(self._contractTub.call().hat())
 
     def mat(self) -> Ray:
         """Get the liquidation ratio.
@@ -167,7 +167,7 @@ class Tub(Contract):
         Returns:
             The liquidation ratio. `1.5` means the liquidation ratio is 150%.
         """
-        return Ray(self._contract.call().mat())
+        return Ray(self._contractTub.call().mat())
 
     def tax(self) -> Ray:
         """Get the stability fee.
@@ -175,7 +175,7 @@ class Tub(Contract):
         Returns:
             Per-second value of the stability fee. `1.0` means no stability fee.
         """
-        return Ray(self._contract.call().tax())
+        return Ray(self._contractTub.call().tax())
 
     def way(self) -> Ray:
         """Get the holder fee (interest rate).
@@ -191,7 +191,7 @@ class Tub(Contract):
         Returns:
             The current Tub stage (0=Usual, 1=Caged).
         """
-        return self._contract.call().reg()
+        return self._contractTub.call().reg()
 
     def fit(self) -> Ray:
         """Get the GEM per SKR settlement price.
@@ -199,7 +199,7 @@ class Tub(Contract):
         Returns:
             The GEM per SKR settlement (kill) price.
         """
-        return Ray(self._contract.call().fit())
+        return Ray(self._contractTub.call().fit())
 
     def fix(self) -> Ray:
         """Get the GEM per SAI settlement price.
@@ -215,7 +215,7 @@ class Tub(Contract):
         Returns:
             The time of the last drip as a unix timestamp.
         """
-        return self._contract.call().rho()
+        return self._contractTub.call().rho()
 
     def tau(self) -> int:
         """Get the time of the last prod.
@@ -235,7 +235,7 @@ class Tub(Contract):
         Returns:
             The internal debt price in SAI.
         """
-        return Ray(self._contract.call().chi())
+        return Ray(self._contractTub.call().chi())
 
     def chop(self, new_axe: Ray) -> Optional[Receipt]:
         """Update the liquidation penalty.
@@ -249,7 +249,7 @@ class Tub(Contract):
         """
         assert isinstance(new_axe, Ray)
         try:
-            tx_hash = self._contract.transact().chop(new_axe.value)
+            tx_hash = self._contractTub.transact().chop(new_axe.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -266,7 +266,7 @@ class Tub(Contract):
         """
         assert isinstance(new_hat, Wad)
         try:
-            tx_hash = self._contract.transact().cork(new_hat.value)
+            tx_hash = self._contractTub.transact().cork(new_hat.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -283,7 +283,7 @@ class Tub(Contract):
         """
         assert isinstance(new_mat, Ray)
         try:
-            tx_hash = self._contract.transact().cuff(new_mat.value)
+            tx_hash = self._contractTub.transact().cuff(new_mat.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -300,7 +300,7 @@ class Tub(Contract):
         """
         assert isinstance(new_tax, Ray)
         try:
-            tx_hash = self._contract.transact().crop(new_tax.value)
+            tx_hash = self._contractTub.transact().crop(new_tax.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -330,7 +330,7 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         try:
-            tx_hash = self._contract.transact().drip()
+            tx_hash = self._contractTub.transact().drip()
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -354,7 +354,7 @@ class Tub(Contract):
         Returns:
             The amount of good debt in SAI.
         """
-        return Wad(self._contract.call().ice())
+        return Wad(self._contractTub.call().ice())
 
     def woe(self) -> Wad:
         """Get the amount of bad debt.
@@ -370,7 +370,7 @@ class Tub(Contract):
         Returns:
             The amount of raw collateral in GEM.
         """
-        return Wad(self._contract.call().pie())
+        return Wad(self._contractTub.call().pie())
 
     def air(self) -> Wad:
         """Get the amount of backing collateral.
@@ -378,7 +378,7 @@ class Tub(Contract):
         Returns:
             The amount of backing collateral in SKR.
         """
-        return Wad(self._contract.call().air())
+        return Wad(self._contractTub.call().air())
 
     def fog(self) -> Wad:
         """Get the amount of SKR pending liquidation.
@@ -497,7 +497,7 @@ class Tub(Contract):
         Returns:
             The id of the last cup created. Zero if no cups have been created so far.
         """
-        return self._contract.call().cupi()
+        return self._contractTub.call().cupi()
 
     def cups(self, cup_id: int) -> Cup:
         """Get the cup details.
@@ -509,7 +509,7 @@ class Tub(Contract):
             Class encapsulating cup details.
         """
         assert isinstance(cup_id, int)
-        array = self._contract.call().cups(self._to_bytes32(cup_id))
+        array = self._contractTub.call().cups(self._to_bytes32(cup_id))
         return Cup(Address(array[0]), Wad(array[1]), Wad(array[2]))
 
     def tab(self, cup_id: int) -> Wad:
@@ -522,7 +522,7 @@ class Tub(Contract):
             Amount of debt in the cup, in SAI.
         """
         assert isinstance(cup_id, int)
-        return Wad(self._contract.call().tab(self._to_bytes32(cup_id)))
+        return Wad(self._contractTub.call().tab(self._to_bytes32(cup_id)))
 
     def ink(self, cup_id: int) -> Wad:
         """Get the amount of SKR collateral locked in a cup.
@@ -534,7 +534,7 @@ class Tub(Contract):
             Amount of SKR collateral locked in the cup, in SKR.
         """
         assert isinstance(cup_id, int)
-        return Wad(self._contract.call().ink(self._to_bytes32(cup_id)))
+        return Wad(self._contractTub.call().ink(self._to_bytes32(cup_id)))
 
     def lad(self, cup_id: int) -> Address:
         """Get the owner of a cup.
@@ -546,7 +546,7 @@ class Tub(Contract):
             Address of the owner of the cup.
         """
         assert isinstance(cup_id, int)
-        return Address(self._contract.call().lad(self._to_bytes32(cup_id)))
+        return Address(self._contractTub.call().lad(self._to_bytes32(cup_id)))
 
     def safe(self, cup_id: int) -> bool:
         """Determine if a cup is safe.
@@ -558,7 +558,7 @@ class Tub(Contract):
             `True` if the cup is safe. `False` otherwise.
         """
         assert isinstance(cup_id, int)
-        return self._contract.call().safe(self._to_bytes32(cup_id))
+        return self._contractTub.call().safe(self._to_bytes32(cup_id))
 
     def join(self, amount_in_gem: Wad) -> Optional[Receipt]:
         """Buy SKR for GEMs.
@@ -572,7 +572,7 @@ class Tub(Contract):
         """
         assert isinstance(amount_in_gem, Wad)
         try:
-            tx_hash = self._contract.transact().join(amount_in_gem.value)
+            tx_hash = self._contractTub.transact().join(amount_in_gem.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -589,7 +589,7 @@ class Tub(Contract):
         """
         assert isinstance(amount_in_skr, Wad)
         try:
-            tx_hash = self._contract.transact().exit(amount_in_skr.value)
+            tx_hash = self._contractTub.transact().exit(amount_in_skr.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -603,7 +603,7 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         try:
-            tx_hash = self._contract.transact().open()
+            tx_hash = self._contractTub.transact().open()
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -623,7 +623,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         try:
-            tx_hash = self._contract.transact().shut(self._to_bytes32(cup_id))
+            tx_hash = self._contractTub.transact().shut(self._to_bytes32(cup_id))
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -642,7 +642,7 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
         try:
-            tx_hash = self._contract.transact().lock(self._to_bytes32(cup_id), amount_in_skr.value)
+            tx_hash = self._contractTub.transact().lock(self._to_bytes32(cup_id), amount_in_skr.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -661,7 +661,7 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
         try:
-            tx_hash = self._contract.transact().free(self._to_bytes32(cup_id), amount_in_skr.value)
+            tx_hash = self._contractTub.transact().free(self._to_bytes32(cup_id), amount_in_skr.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -680,7 +680,7 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
         try:
-            tx_hash = self._contract.transact().draw(self._to_bytes32(cup_id), amount_in_sai.value)
+            tx_hash = self._contractTub.transact().draw(self._to_bytes32(cup_id), amount_in_sai.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -699,7 +699,7 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
         try:
-            tx_hash = self._contract.transact().wipe(self._to_bytes32(cup_id), amount_in_sai.value)
+            tx_hash = self._contractTub.transact().wipe(self._to_bytes32(cup_id), amount_in_sai.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -718,7 +718,7 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         assert isinstance(new_lad, Address)
         try:
-            tx_hash = self._contract.transact().give(self._to_bytes32(cup_id), new_lad.address)
+            tx_hash = self._contractTub.transact().give(self._to_bytes32(cup_id), new_lad.address)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -735,7 +735,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         try:
-            tx_hash = self._contract.transact().bite(self._to_bytes32(cup_id))
+            tx_hash = self._contractTub.transact().bite(self._to_bytes32(cup_id))
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
