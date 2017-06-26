@@ -67,7 +67,7 @@ class Lpc(Contract):
         """
         return Address(self._contract.call().alt())
 
-    def tip(self) -> Address:
+    def pip(self) -> Address:
         """Get the price feed (giving refs per alt).
 
         You can get the current feed value by calling `tag()`.
@@ -75,7 +75,7 @@ class Lpc(Contract):
         Returns:
             The address of the price feed, which could be a `DSValue`, a `DSCache`, a `Mednianizer` etc.
         """
-        return Address(self._contract.call().tip())
+        return Address(self._contract.call().pip())
 
     def gap(self) -> Wad:
         """Get the spread, charged on `take()`.
