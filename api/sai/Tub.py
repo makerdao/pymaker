@@ -423,7 +423,7 @@ class Tub(Contract):
         return Wad(self._contractTip.call().par())
 
     def per(self) -> Ray:
-        """Get the current averag entry/exit price (GEM per SKR).
+        """Get the current average entry/exit price (GEM per SKR).
 
         In order to get the price that will be actually used on `join()` or `exit()`, see
         `jar_ask()` and `jar_bid()` respectively.
