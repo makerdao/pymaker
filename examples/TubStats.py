@@ -26,7 +26,7 @@ from api.sai.Tub import Tub
 from api.token.ERC20Token import ERC20Token
 
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
-tub = Tub(web3=web3, address=Address('0xe238191d9fa52d3327182814fb67238033edc959'))
+tub = Tub(web3=web3, address=Address('0xcaab309b205b38830ce0b54b557ac80125447c25'))
 sai = ERC20Token(web3=web3, address=tub.sai())
 skr = ERC20Token(web3=web3, address=tub.skr())
 gem = ERC20Token(web3=web3, address=tub.gem())
@@ -53,7 +53,7 @@ print(f"Surplus                : {tub.joy()} SAI")
 print(f"")
 print(f"Feed summary")
 print(f"------------")
-print(f"REF per GEM feed       : {tub.tip()}")
+print(f"REF per GEM feed       : {tub.pip()}")
 print(f"REF per SKR price      : {tub.tag()}")
 print(f"GEM per SKR price      : {tub.per()}")
 print(f"")

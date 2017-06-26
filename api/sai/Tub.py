@@ -45,13 +45,15 @@ class Tub(Contract):
         address: Ethereum address of the `Tub` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'Tub.abi')
+    abiTub = Contract._load_abi(__name__, 'abi/Tub.abi')
+    abiJar = Contract._load_abi(__name__, 'abi/SaiJar.abi')
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
         self.address = address
         self._assert_contract_exists(web3, address)
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contract = web3.eth.contract(abi=self.abiTub)(address=address.address)
+        self._contractJar = web3.eth.contract(abi=self.abiJar)(address=self._contract.call().jar())
 
     def sai(self) -> Address:
         """Get the SAI token.
@@ -93,13 +95,21 @@ class Tub(Contract):
         """
         return Address(self._contract.call().gem())
 
-    def tip(self) -> Address:
+    def pip(self) -> Address:
         """Get the GEM price feed.
 
         You can get the current feed value by calling `tag()`.
 
         Returns:
             The address of the GEM price feed, which could be a `DSValue`, a `DSCache`, a `Mednianizer` etc.
+        """
+        return Address(self._contractJar.call().pip())
+
+    def tip(self) -> Address:
+        """Get the target price engine.
+
+        Returns:
+            The address of the target price engine. It is an internal component of Sai.
         """
         return Address(self._contract.call().tip())
 
