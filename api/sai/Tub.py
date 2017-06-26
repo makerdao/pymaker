@@ -338,7 +338,7 @@ class Tub(Contract):
         Returns:
             The reference price (REF per SKR).
         """
-        return Wad(self._contract.call().tag())
+        return Wad(self._contractJar.call().tag())
 
     def per(self) -> Ray:
         """Get the current entry price (GEM per SKR).
