@@ -317,7 +317,7 @@ class Tub(Contract):
             return None
 
     def drip(self) -> Optional[Receipt]:
-        """Recalculate the internal debt price.
+        """Recalculate the internal debt price (`chi`).
 
         Returns:
             A `Receipt` if the Ethereum transaction was successful.
