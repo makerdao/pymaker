@@ -171,6 +171,14 @@ class Tub(Contract):
         """
         return Ray(self._contract.call().tax())
 
+    def way(self) -> Ray:
+        """Get the holder fee (interest rate).
+
+        Returns:
+            Per-second value of the holder fee. `1.0` means no holder fee.
+        """
+        return Ray(self._contractTip.call().way())
+
     def reg(self) -> int:
         """Get the Tub stage ('register').
 
@@ -287,6 +295,23 @@ class Tub(Contract):
         assert isinstance(new_tax, Ray)
         try:
             tx_hash = self._contract.transact().crop(new_tax.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def coax(self, new_way: Ray) -> Optional[Receipt]:
+        """Update the holder fee.
+
+        Args:
+            new_tax: The new per-second value of the holder fee (`way`). `1.0` means no holder fee.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(new_way, Ray)
+        try:
+            tx_hash = self._contractTip.transact().coax(new_way.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
