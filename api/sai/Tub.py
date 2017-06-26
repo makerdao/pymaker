@@ -329,6 +329,19 @@ class Tub(Contract):
         except:
             return None
 
+    def prod(self) -> Optional[Receipt]:
+        """Recalculate the accrued holder fee (`par`).
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        try:
+            tx_hash = self._contractTip.transact().prod()
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
     def ice(self) -> Wad:
         """Get the amount of good debt.
 
