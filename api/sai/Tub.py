@@ -132,8 +132,6 @@ class Tub(Contract):
     def pip(self) -> Address:
         """Get the GEM price feed.
 
-        You can get the current feed value by calling `tag()`.
-
         Returns:
             The address of the GEM price feed, which could be a `DSValue`, a `DSCache`, a `Mednianizer` etc.
         """
