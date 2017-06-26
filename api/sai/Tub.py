@@ -614,7 +614,6 @@ class Tub(Contract):
         
     # TODO cage
     # TODO cash
-    # TODO bail
     # TODO vent
 
     def __eq__(self, other):
