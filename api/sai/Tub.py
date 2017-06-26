@@ -346,7 +346,7 @@ class Tub(Contract):
         Returns:
             The current GEM per SKR price.
         """
-        return Ray(self._contract.call().per())
+        return Ray(self._contractJar.call().per())
 
     def cupi(self) -> int:
         """Get the last cup id
