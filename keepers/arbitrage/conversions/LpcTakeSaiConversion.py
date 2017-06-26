@@ -25,12 +25,11 @@ from keepers.arbitrage.Conversion import Conversion
 
 
 class LpcTakeSaiConversion(Conversion):
-    # TODO we make an assumption that the same feed is used for Tub and Lpc
-    # as we don't check which token is ref and which is alt here
     def __init__(self, tub: Tub, lpc: Lpc):
         self.tub = tub
         self.lpc = lpc
-        self.lpc.alt()
+        assert(self.lpc.ref() == self.tub.sai())
+        assert(self.lpc.alt() == self.tub.gem())
         rate = Ray(lpc.tag()) / Ray(lpc.gap())
         #TODO we always leave 0.001 in the liquidity pool, in case of some rounding errors
         max_entry_eth = Wad.max((ERC20Token(web3=tub.web3, address=tub.sai()).balance_of(lpc.address) / Wad(rate)) - Wad.from_number(0.001), Wad.from_number(0))
