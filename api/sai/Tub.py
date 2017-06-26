@@ -203,14 +203,6 @@ class Tub(Contract):
         """
         return Ray(self._contractTop.call().fix())
 
-    def par(self) -> Ray:
-        """Get the GEM per SKR price just before settlement.
-
-        Returns:
-            The GEM per SKR price saved just before settlement.
-        """
-        return Ray(self._contract.call().par())
-
     def rho(self) -> int:
         """Get the time of the last drip.
 
@@ -390,6 +382,14 @@ class Tub(Contract):
             The reference price (REF per SKR).
         """
         return Wad(self._contractJar.call().tag())
+
+    def par(self) -> Wad:
+        """Get the accrued holder fee.
+
+        Returns:
+            The accrued holder fee.
+        """
+        return Wad(self._contractTip.call().par())
 
     def per(self) -> Ray:
         """Get the current entry price (GEM per SKR).
