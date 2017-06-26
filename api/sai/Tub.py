@@ -436,6 +436,59 @@ class Tub(Contract):
         """
         return Wad(self._contractTap.call().s2s())
 
+    def tap_gap(self) -> Wad:
+        """Get the current spread for `boom` and `bust`.
+
+        Returns:
+            The current spread for `boom` and `bust`. `0.0` means no spread, `0.01` means 1% spread.
+        """
+        return Wad(self._contractTap.call().gap())
+
+    def tap_jump(self, new_gap: Wad) -> Optional[Receipt]:
+        """Update the current spread (`gap`) for `boom` and `bust`.
+
+        Args:
+            new_tax: The new value of the spread (`gap`). `0.0` means no spread, `0.01` means 1% spread.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(new_gap, Wad)
+        try:
+            tx_hash = self._contractTap.transact().jump(new_gap.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def tap_bid(self, amount_in_skr: Wad) -> Wad:
+        """Get the current price of SKR in SAI for `boom`.
+
+        This method returns the amount of SAI that would be returned for `amount_in_skr` SKR
+        sent to the `boom` function.
+
+        Args:
+            amount_in_skr: The amount of SKR.
+
+        Returns:
+            The corresponding amount of SAI that would be returned from `boom`.
+        """
+        return Wad(self._contractTap.call().bid(amount_in_skr.value))
+
+    def tap_ask(self, amount_in_skr: Wad) -> Wad:
+        """Get the current price of SKR in SAI for `bust`.
+
+        This method returns the amount of SAI that would be taken from the sender by the `Tap`
+        if he decides to receive `amount_in_skr` SKR by invoking the `bust` function.
+
+        Args:
+            amount_in_skr: The amount of SKR.
+
+        Returns:
+            The corresponding amount of SAI that would be taken by `bust`.
+        """
+        return Wad(self._contractTap.call().ask(amount_in_skr.value))
+
     def cupi(self) -> int:
         """Get the last cup id
 
