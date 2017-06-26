@@ -420,6 +420,14 @@ class Tub(Contract):
         """
         return Ray(self._contractJar.call().per())
 
+    def s2s(self) -> Wad:
+        """Get the current SKR per SAI rate (for `boom` and `bust`).
+
+        Returns:
+            The current SKR per SAI rate.
+        """
+        return Wad(self._contractTap.call().s2s())
+
     def cupi(self) -> int:
         """Get the last cup id
 
