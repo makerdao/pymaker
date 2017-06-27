@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import operator
+from functools import reduce
 from typing import List
 
 from api.Ray import Ray
@@ -47,10 +49,7 @@ class Opportunity:
             self.conversions[i].to_amount = Wad(Ray(self.conversions[i].from_amount) * self.conversions[i].rate)
 
     def total_rate(self) -> Ray:
-        output = Ray.from_number(1.0)
-        for conversion in self.conversions:
-            output = output * conversion.rate
-        return output
+        return reduce(operator.mul, map(lambda conversion: conversion.rate, self.conversions), Ray.from_number(1.0))
 
     def income(self, currency: str = 'SAI') -> Wad:
         result = Wad.from_number(0)
