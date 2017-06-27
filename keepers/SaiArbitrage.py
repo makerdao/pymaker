@@ -121,8 +121,8 @@ class SaiArbitrage(Keeper):
         conversions = self.available_conversions()
         opportunities = OpportunityFinder(conversions=conversions).find_opportunities('SAI', self.maximum_engagement)
         opportunities = filter(lambda opportunity: opportunity.total_rate() > Ray.from_number(1.000001), opportunities)
-        opportunities = filter(lambda opportunity: opportunity.income() > Wad.from_number(0), opportunities)
-        opportunities = list(sorted(opportunities, key=lambda opportunity: opportunity.profit(), reverse=True))
+        opportunities = filter(lambda opportunity: opportunity.profit() > Wad.from_number(0), opportunities)
+        opportunities = list(sorted(opportunities, key=lambda opportunity: opportunity.net_profit(), reverse=True))
 
         if len(opportunities) == 0:
             print(f"No opportunities found. No worries, I will try again.")
@@ -134,7 +134,7 @@ class SaiArbitrage(Keeper):
 
         # At this point we only leave out these opportunities, that bring us the desired profit.
         # We pick the first of them, the one that brings us the best profit.
-        opportunities = list(filter(lambda opportunity: opportunity.profit() > self.minimum_profit, opportunities))
+        opportunities = list(filter(lambda opportunity: opportunity.net_profit() > self.minimum_profit, opportunities))
         best_opportunity = self.first_opportunity(opportunities)
 
         if best_opportunity is None:

@@ -51,7 +51,7 @@ class Opportunity:
     def total_rate(self) -> Ray:
         return reduce(operator.mul, map(lambda conversion: conversion.rate, self.conversions), Ray.from_number(1.0))
 
-    def income(self, currency: str = 'SAI') -> Wad:
+    def profit(self, currency: str = 'SAI') -> Wad:
         result = Wad.from_number(0)
         for conversion in self.conversions:
             if conversion.from_currency == currency:
@@ -63,9 +63,9 @@ class Opportunity:
     def tx_costs(self) -> Wad:
         return Wad.from_number(0.3) * len(self.conversions)
 
-    def profit(self) -> Wad:
-        return self.income()-self.tx_costs()
+    def net_profit(self) -> Wad:
+        return self.profit() - self.tx_costs()
 
     def __str__(self):
-        return f"  Opportunity with income={self.income()} SAI, tx_costs={self.tx_costs()} SAI, profit={self.profit()} SAI" +\
+        return f"  Opportunity with profit={self.profit()} SAI, tx_costs={self.tx_costs()} SAI, net_profit={self.net_profit()} SAI" +\
                "".join(map(lambda conversion: "\n  " + str(conversion), self.conversions))
