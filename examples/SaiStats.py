@@ -22,19 +22,20 @@ from web3 import Web3
 
 from api.Address import Address
 from api.Ray import Ray
+from api.Wad import Wad
 from api.sai.Lpc import Lpc
 from api.sai.Tub import Tub
 from api.token.ERC20Token import ERC20Token
 
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
 tub = Tub(web3=web3,
-          address_tub=Address('0x15a106e4767c8725182a3151311d6f7ff753ab5b'),
-          address_tap=Address('0x4194db843e095f7302da21b50f74629db788f4dd'),
-          address_top=Address('0xa75727ef1ae5bf29f11bbd8fec0bca4b9dd54203'))
+          address_tub=Address('0xbf93464240ff340549c7fad048bce1b36133bed5'),
+          address_tap=Address('0x9e87e4c08e124abd738c8993996acfef9c013160'),
+          address_top=Address('0xe6460161bf6c351f480b78b4838cc7a1b886c51a'))
 sai = ERC20Token(web3=web3, address=tub.sai())
 skr = ERC20Token(web3=web3, address=tub.skr())
 gem = ERC20Token(web3=web3, address=tub.gem())
-lpc = Lpc(web3=web3, address=Address('0x6ab21a6a985947e6143ec8b90ed17e4586846d2c'))
+lpc = Lpc(web3=web3, address=Address('0xda01871b887016f39d8bae50595b697e0074a75c'))
 
 print(f"")
 print(f"Token summary")

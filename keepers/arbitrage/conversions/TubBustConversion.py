@@ -27,7 +27,7 @@ class TubBustConversion(Conversion):
         self.tub = tub
         super().__init__(from_currency='SAI',
                          to_currency='SKR',
-                         rate=(Ray.from_number(1) / Ray(tub.tag())),
+                         rate=(Ray.from_number(1) / Ray(tub.tag())) / Ray(tub.tap_gap()),
                          min_from_amount=Wad.from_number(0),
                          max_from_amount=self.bustable_amount_in_sai(tub),
                          method="tub-bust")
