@@ -214,6 +214,7 @@ class Lpc(Contract):
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
+
     def __eq__(self, other):
         return self.address == other.address
 
