@@ -469,34 +469,22 @@ class Tub(Contract):
             return None
 
     # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
-    def tap_bid(self, amount_in_skr: Wad) -> Wad:
+    def tap_bid(self) -> Wad:
         """Get the current price of SKR in SAI for `boom`.
 
-        This method returns the amount of SAI that would be returned for `amount_in_skr` SKR
-        sent to the `boom` function.
-
-        Args:
-            amount_in_skr: The amount of SKR.
-
         Returns:
-            The corresponding amount of SAI that would be returned from `boom`.
+            The SKR in SAI price that will be used on `boom()`.
         """
-        return Wad(self._contractTap.call().bid(amount_in_skr.value))
+        return Wad(self._contractTap.call().bid())
 
     # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
-    def tap_ask(self, amount_in_skr: Wad) -> Wad:
+    def tap_ask(self) -> Wad:
         """Get the current price of SKR in SAI for `bust`.
 
-        This method returns the amount of SAI that would be taken from the sender by the `Tap`
-        if he decides to receive `amount_in_skr` SKR by invoking the `bust` function.
-
-        Args:
-            amount_in_skr: The amount of SKR.
-
         Returns:
-            The corresponding amount of SAI that would be taken by `bust`.
+            The SKR in SAI price that will be used on `bust()`.
         """
-        return Wad(self._contractTap.call().ask(amount_in_skr.value))
+        return Wad(self._contractTap.call().ask())
 
     # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
     def jar_gap(self) -> Wad:

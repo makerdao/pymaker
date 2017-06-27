@@ -43,7 +43,7 @@ class Lpc(Contract):
         address: Ethereum address of the `SaiLPC` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/Lpc.abi')
+    abi = Contract._load_abi(__name__, 'abi/SaiLPC.abi')
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
