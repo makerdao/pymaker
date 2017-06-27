@@ -446,7 +446,7 @@ class Tub(Contract):
         """Get the current spread for `boom` and `bust`.
 
         Returns:
-            The current spread for `boom` and `bust`. `0.0` means no spread, `0.01` means 1% spread.
+            The current spread for `boom` and `bust`. `1.0` means no spread, `1.01` means 1% spread.
         """
         return Wad(self._contractTap.call().gap())
 
@@ -455,7 +455,7 @@ class Tub(Contract):
         """Update the current spread (`gap`) for `boom` and `bust`.
 
         Args:
-            new_tax: The new value of the spread (`gap`). `0.0` means no spread, `0.01` means 1% spread.
+            new_tax: The new value of the spread (`gap`). `1.0` means no spread, `1.01` means 1% spread.
 
         Returns:
             A `Receipt` if the Ethereum transaction was successful.
@@ -503,7 +503,7 @@ class Tub(Contract):
         """Get the current spread for `join` and `exit`.
 
         Returns:
-            The current spread for `join` and `exit`. `0.0` means no spread, `0.01` means 1% spread.
+            The current spread for `join` and `exit`. `1.0` means no spread, `1.01` means 1% spread.
         """
         return Wad(self._contractJar.call().gap())
 
@@ -512,7 +512,7 @@ class Tub(Contract):
         """Update the current spread (`gap`) for `join` and `exit`.
 
         Args:
-            new_tax: The new value of the spread (`gap`). `0.0` means no spread, `0.01` means 1% spread.
+            new_tax: The new value of the spread (`gap`). `1.0` means no spread, `1.01` means 1% spread.
 
         Returns:
             A `Receipt` if the Ethereum transaction was successful.
