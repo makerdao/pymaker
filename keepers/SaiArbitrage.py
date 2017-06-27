@@ -53,19 +53,26 @@ class SaiArbitrage(Keeper):
     def filter_by_token_pair(self, offers, sell_which_token, buy_which_token):
         return [offer for offer in offers if offer.sell_which_token == sell_which_token and offer.buy_which_token == buy_which_token]
 
+    def print_introduction(self):
+        print(f"Trading as {self.our_address}")
+
     def setup_allowances(self):
-        for address in [self.market.address, self.tub.address]:
-            self.setup_allowance(self.skr, 'SKR', address)
-            self.setup_allowance(self.sai, 'SAI', address)
-            self.setup_allowance(self.gem, 'ETH', address)
-        self.setup_allowance(self.sai, 'SAI', self.lpc.address)
-        self.setup_allowance(self.gem, 'ETH', self.lpc.address)
+        print(f"Verifying allowances...")
+        self.setup_allowance(self.gem, 'W-ETH', self.tub.jar())       # so we can join() and exit()
+        self.setup_allowance(self.skr, 'SKR', self.tub.jar())
+        self.setup_allowance(self.skr, 'SKR', self.tub.pit())         # so we can boom() and bust()
+        self.setup_allowance(self.sai, 'SAI', self.tub.pit())
+        self.setup_allowance(self.sai, 'SAI', self.lpc.address)       # so we can take() W-ETH and SAI from Lpc
+        self.setup_allowance(self.gem, 'W-ETH', self.lpc.address)
+        self.setup_allowance(self.gem, 'W-ETH', self.market.address)  # so we can take orders on OasisDEX
+        self.setup_allowance(self.skr, 'SKR', self.market.address)
+        self.setup_allowance(self.sai, 'SAI', self.market.address)
 
     def setup_allowance(self, token, token_name, address):
         minimum_allowance = Wad(2**128-1)
         target_allowance = Wad(2**256-1)
         if token.allowance_of(self.our_address, address) < minimum_allowance:
-            print(f"Raising {token_name} allowance for {address}")
+            print(f"  Raising {token_name} allowance for {address}")
             token.approve(address, target_allowance)
 
     def available_conversions(self):
@@ -95,10 +102,17 @@ class SaiArbitrage(Keeper):
         if len(opportunities) > 0: return opportunities[0]
         return None
 
+    def print_balances(self):
+        print(f"Keeper token balances are: {str(self.gem.balance_of(self.our_address)).rjust(26)} W-ETH")
+        print(f"                           {str(self.skr.balance_of(self.our_address)).rjust(26)} SKR")
+        print(f"                           {str(self.sai.balance_of(self.our_address)).rjust(26)} SAI")
+
     def process(self):
         print(f"")
         print(f"")
         print(f"Processing (@ {datetime.datetime.now()})")
+        print(f"")
+        self.print_balances()
         print(f"")
 
         # We find all arbitrage opportunities, they can still not bring us the profit we expect them to
@@ -107,6 +121,7 @@ class SaiArbitrage(Keeper):
         conversions = self.available_conversions()
         opportunities = OpportunityFinder(conversions=conversions).find_opportunities('SAI', self.maximum_engagement)
         opportunities = filter(lambda opportunity: opportunity.total_rate() > Ray.from_number(1.000001), opportunities)
+        opportunities = filter(lambda opportunity: opportunity.income() > Wad.from_number(0), opportunities)
         opportunities = list(sorted(opportunities, key=lambda opportunity: opportunity.profit(), reverse=True))
 
         if len(opportunities) == 0:
@@ -195,7 +210,9 @@ class SaiArbitrage(Keeper):
         print(f"")
         print(f"SaiArbitrage keeper")
         print(f"-------------------")
+        print(f"")
 
+        self.print_introduction()
         self.setup_allowances()
 
         while True:

@@ -27,7 +27,7 @@ class TubBustConversion(Conversion):
         self.tub = tub
         super().__init__(from_currency='SAI',
                          to_currency='SKR',
-                         rate=(Ray.from_number(1) / Ray(tub.tag())) / Ray(tub.tap_gap()),
+                         rate=(Ray.from_number(1) / Ray(tub.tap_ask())),
                          min_from_amount=Wad.from_number(0),
                          max_from_amount=self.bustable_amount_in_sai(tub),
                          method="tub-bust")
@@ -39,9 +39,6 @@ class TubBustConversion(Conversion):
         #drip happened enough time ago
         return Wad.max(tub.woe() - tub.joy() - Wad.from_number(10), Wad.from_number(0))
 
-    #TODO at some point a concept of spread on boom()/bust() will be introduced in the Tub
-    #then this concept has to be moved here so the keeper understand the actual price
-    #he can get on bust(), and on boom() as well
     def perform(self):
         print(f"  Executing bust('{self.to_amount}') in order to exchange {self.from_amount} SAI to {self.to_amount} SKR")
         bust_result = self.tub.bust(self.to_amount)
