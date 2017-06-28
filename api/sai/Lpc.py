@@ -44,12 +44,14 @@ class Lpc(Contract):
     """
 
     abi = Contract._load_abi(__name__, 'abi/SaiLPC.abi')
+    abiTip = Contract._load_abi(__name__, 'abi/Tip.abi')
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
         self.address = address
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contract.call().tip())
 
     def ref(self) -> Address:
         """Get the ref token.
@@ -135,6 +137,18 @@ class Lpc(Contract):
             The the total pool value (in ref).
         """
         return Wad(self._contract.call().pie())
+
+    def par(self) -> Wad:
+        """Get the accrued holder fee.
+
+        Every invocation of this method calls `prod()` internally, so the value you receive is always up-to-date.
+        But as calling it doesn't result in an Ethereum transaction, the actual `_par` value in the smart
+        contract storage does not get updated.
+
+        Returns:
+            The accrued holder fee.
+        """
+        return Wad(self._contractTip.call().par())
 
     def per(self) -> Ray:
         """Get the lps per ref ratio.

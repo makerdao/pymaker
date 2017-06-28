@@ -414,7 +414,7 @@ class Tub(Contract):
         """Get the accrued holder fee.
 
         Every invocation of this method calls `prod()` internally, so the value you receive is always up-to-date.
-        But as calling it doesn't result in an Ethereum transaction, the actual `_pars` value in the smart
+        But as calling it doesn't result in an Ethereum transaction, the actual `_par` value in the smart
         contract storage does not get updated.
 
         Returns:
