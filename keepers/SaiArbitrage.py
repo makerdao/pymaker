@@ -19,7 +19,9 @@
 
 import argparse
 import datetime
+import functools
 import time
+from _ast import List
 from functools import reduce
 
 from web3 import HTTPProvider
@@ -35,6 +37,7 @@ from api.token.ERC20Token import ERC20Token
 from api.feed.DSValue import DSValue
 from keepers.Config import Config
 from keepers.Keeper import Keeper
+from keepers.arbitrage.Conversion import Conversion
 from keepers.arbitrage.OpportunityFinder import OpportunityFinder
 from keepers.arbitrage.conversions.LpcTakeEthConversion import LpcTakeEthConversion
 from keepers.arbitrage.conversions.LpcTakeSaiConversion import LpcTakeSaiConversion
@@ -75,17 +78,18 @@ class SaiArbitrage(Keeper):
             print(f"  Raising {token_name} allowance for {address}")
             token.approve(address, target_allowance)
 
-    def available_conversions(self):
-        conversions = [
-            TubJoinConversion(self.tub),
-            TubExitConversion(self.tub),
-            TubBoomConversion(self.tub),
-            TubBustConversion(self.tub),
-            LpcTakeEthConversion(self.tub, self.lpc),
-            LpcTakeSaiConversion(self.tub, self.lpc)
-        ]
+    def tub_conversions(self):
+        return [TubJoinConversion(self.tub),
+                TubExitConversion(self.tub),
+                TubBoomConversion(self.tub),
+                TubBustConversion(self.tub)]
 
-        # We list all active orders on OasisDEX and filter on the SAI/SKR pair
+    def lpc_conversions(self):
+        return [LpcTakeEthConversion(self.tub, self.lpc),
+                LpcTakeSaiConversion(self.tub, self.lpc)]
+
+    def otc_conversions(self):
+        # We list all active orders on OasisDEX and filter on the interesting pairs
         offers = self.all_offers(self.market)
         offers = self.filter_by_token_pair(offers, self.sai, self.skr)\
                  + self.filter_by_token_pair(offers, self.skr, self.sai) \
@@ -93,10 +97,11 @@ class SaiArbitrage(Keeper):
                  + self.filter_by_token_pair(offers, self.sai, self.gem) \
                  + self.filter_by_token_pair(offers, self.gem, self.skr) \
                  + self.filter_by_token_pair(offers, self.skr, self.gem)
-        for offer in offers:
-            conversions.append(OasisTakeConversion(self.tub, self.market, offer))
 
-        return conversions
+        return list(map(lambda offer: OasisTakeConversion(self.tub, self.market, offer), offers))
+
+    def all_conversions(self):
+        return self.tub_conversions() + self.lpc_conversions() + self.otc_conversions()
 
     def first_opportunity(self, opportunities):
         if len(opportunities) > 0: return opportunities[0]
@@ -118,7 +123,7 @@ class SaiArbitrage(Keeper):
         # We find all arbitrage opportunities, they can still not bring us the profit we expect them to
         # but it is convenient to list them for monitoring purposes. So that we know the keeper actually
         # found an arbitrage opportunity.
-        conversions = self.available_conversions()
+        conversions = self.all_conversions()
         opportunities = OpportunityFinder(conversions=conversions).find_opportunities('SAI', self.maximum_engagement)
         opportunities = filter(lambda opportunity: opportunity.total_rate() > Ray.from_number(1.000001), opportunities)
         opportunities = filter(lambda opportunity: opportunity.profit() > Wad.from_number(0), opportunities)
@@ -149,7 +154,7 @@ class SaiArbitrage(Keeper):
 
         for index, conversion in enumerate(best_opportunity.conversions, start=1):
             print(f"Step {index}/{len(best_opportunity.conversions)}:")
-            receipt = conversion.perform()
+            receipt = conversion.execute()
             if receipt is None:
                 print(f"")
                 print(f"Interrupting the process...")

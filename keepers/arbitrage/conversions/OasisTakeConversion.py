@@ -47,7 +47,7 @@ class OasisTakeConversion(Conversion):
         else:
             return "___"
 
-    def perform(self):
+    def execute(self):
         quantity = self.to_amount
 
         # if by any chance rounding makes us want to buy more quantity than is available,

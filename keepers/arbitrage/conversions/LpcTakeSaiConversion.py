@@ -40,7 +40,7 @@ class LpcTakeSaiConversion(Conversion):
                          max_from_amount=max_entry_eth,
                          method="lpc-take-sai")
 
-    def perform(self):
+    def execute(self):
         print(f"  Executing take(SAI, '{self.to_amount}') on SaiLPC in order to exchange {self.from_amount} ETH to {self.to_amount} SAI")
         take_result = self.lpc.take(self.tub.sai(), self.to_amount)
         if take_result:

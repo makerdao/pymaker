@@ -30,7 +30,7 @@ class Conversion:
         self.max_from_amount = max_from_amount
         self.method = method
 
-    def perform(self):
+    def execute(self):
         raise Exception("Not implemented")
 
     def __str__(self):

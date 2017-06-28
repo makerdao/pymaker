@@ -44,7 +44,7 @@ class TubBoomConversion(Conversion):
         # we deduct 0.000001 in order to avoid rounding errors
         return Wad.max(Wad(self.boomable_amount_in_sai(tub) / (tub.tap_bid())) - Wad.from_number(0.000001), Wad.from_number(0))
 
-    def perform(self):
+    def execute(self):
         print(f"  Executing boom('{self.from_amount}') in order to exchange {self.from_amount} SKR to {self.to_amount} SAI")
         boom_result = self.tub.boom(self.from_amount)
         if boom_result:

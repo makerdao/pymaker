@@ -32,7 +32,7 @@ class TubJoinConversion(Conversion):
                          max_from_amount=Wad.from_number(1000000), #1 mio ETH = infinity ;)
                          method="tub-join")
 
-    def perform(self):
+    def execute(self):
         print(f"  Executing join('{self.from_amount}') in order to exchange {self.from_amount} ETH to {self.to_amount} SKR")
         join_result = self.tub.join(self.from_amount)
         if join_result:
