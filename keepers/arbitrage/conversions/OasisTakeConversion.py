@@ -25,8 +25,7 @@ from keepers.arbitrage.Conversion import Conversion
 
 
 class OasisTakeConversion(Conversion):
-    def __init__(self, tub: Tub, otc: SimpleMarket, offer: OfferInfo):
-        self.tub = tub
+    def __init__(self, otc: SimpleMarket, offer: OfferInfo):
         self.otc = otc
         self.offer = offer
 
@@ -54,7 +53,7 @@ class OasisTakeConversion(Conversion):
             f"  Executing take({self.offer.offer_id}, '{quantity}') on OasisDEX in order to exchange {self.from_amount} {self.source_token} to {self.to_amount} {self.target_token}")
         take_result = self.otc.take(self.offer.offer_id, quantity)
         if take_result:
-            our_address = Address(self.tub.web3.eth.defaultAccount)
+            our_address = Address(self.otc.web3.eth.defaultAccount)
             incoming_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.sell_which_token and transfer.to_address == our_address, take_result.transfers))
             outgoing_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.buy_which_token and transfer.from_address == our_address, take_result.transfers))
             print(

@@ -88,7 +88,7 @@ class SaiArbitrage(Keeper):
         return [offer for offer in offers if offer.sell_which_token in tokens and offer.buy_which_token in tokens]
 
     def otc_conversions(self, tokens):
-        return list(map(lambda offer: OasisTakeConversion(self.tub, self.otc, offer), self.otc_offers(tokens)))
+        return list(map(lambda offer: OasisTakeConversion(self.otc, offer), self.otc_offers(tokens)))
 
     def all_conversions(self):
         return self.tub_conversions() + self.lpc_conversions() + self.otc_conversions([self.sai.address, self.skr.address, self.gem.address])
