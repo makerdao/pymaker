@@ -37,6 +37,20 @@ class OasisTakeConversion(Conversion):
                          method=f"oasis-take-{self.offer.offer_id}")
 
     def execute(self):
+        print(f"  Executing take({self.offer.offer_id}, '{self.quantity()}') on OasisDEX in order to exchange {self.from_amount} {self.source_token} to {self.to_amount} {self.target_token}")
+        take_result = self.otc.take(self.offer.offer_id, self.quantity())
+        if take_result:
+            our_address = Address(self.otc.web3.eth.defaultAccount)
+            incoming_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.sell_which_token and transfer.to_address == our_address, take_result.transfers))
+            outgoing_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.buy_which_token and transfer.from_address == our_address, take_result.transfers))
+            print(
+                f"  Take was successful, exchanged {outgoing_transfer_on_take.value} {self.source_token} to {incoming_transfer_on_take.value} {self.target_token}")
+            return take_result
+        else:
+            print(f"  Take failed!")
+            return None
+
+    def quantity(self):
         quantity = self.to_amount
 
         # if by any chance rounding makes us want to buy more quantity than is available,
@@ -49,16 +63,4 @@ class OasisTakeConversion(Conversion):
         if self.offer.sell_how_much - quantity < Wad.from_number(0.0000000001):
             quantity = self.offer.sell_how_much
 
-        print(
-            f"  Executing take({self.offer.offer_id}, '{quantity}') on OasisDEX in order to exchange {self.from_amount} {self.source_token} to {self.to_amount} {self.target_token}")
-        take_result = self.otc.take(self.offer.offer_id, quantity)
-        if take_result:
-            our_address = Address(self.otc.web3.eth.defaultAccount)
-            incoming_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.sell_which_token and transfer.to_address == our_address, take_result.transfers))
-            outgoing_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.buy_which_token and transfer.from_address == our_address, take_result.transfers))
-            print(
-                f"  Take was successful, exchanged {outgoing_transfer_on_take.value} {self.source_token} to {incoming_transfer_on_take.value} {self.target_token}")
-            return take_result
-        else:
-            print(f"  Take failed!")
-            return None
+        return quantity
