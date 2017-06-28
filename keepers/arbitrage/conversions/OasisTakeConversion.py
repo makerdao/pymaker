@@ -33,8 +33,8 @@ class OasisTakeConversion(Conversion):
         super().__init__(source_token=offer.buy_which_token,
                          target_token=offer.sell_which_token,
                          rate=Ray(offer.sell_how_much)/Ray(offer.buy_how_much),
-                         min_from_amount=Wad.from_number(0),  #TODO will probably change after dust order limitation gets introduced
-                         max_from_amount=offer.buy_how_much,
+                         min_source_amount=Wad.from_number(0),  #TODO will probably change after dust order limitation gets introduced
+                         max_source_amount=offer.buy_how_much,
                          method=f"oasis-take-{self.offer.offer_id}")
 
     def name(self):
@@ -44,7 +44,7 @@ class OasisTakeConversion(Conversion):
         return self.otc.take(self.offer.offer_id, self.quantity())
 
     def quantity(self):
-        quantity = self.to_amount
+        quantity = self.target_amount
 
         # if by any chance rounding makes us want to buy more quantity than is available,
         # we just buy the whole lot

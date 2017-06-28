@@ -31,8 +31,8 @@ class TubBoomConversion(Conversion):
         super().__init__(source_token=self.tub.skr(),
                          target_token=self.tub.sai(),
                          rate=Ray(tub.tap_bid()),
-                         min_from_amount=Wad.from_number(0),
-                         max_from_amount=self.boomable_amount_in_skr(tub),
+                         min_source_amount=Wad.from_number(0),
+                         max_source_amount=self.boomable_amount_in_skr(tub),
                          method="tub-boom")
 
     #TODO currently the keeper doesn't see `joy` changing unless `drip` gets called
@@ -45,7 +45,7 @@ class TubBoomConversion(Conversion):
         return Wad.max(Wad(self.boomable_amount_in_sai(tub) / (tub.tap_bid())) - Wad.from_number(0.000001), Wad.from_number(0))
 
     def name(self):
-        return f"tub.boom('{self.from_amount}')"
+        return f"tub.boom('{self.source_amount}')"
 
     def execute(self):
-        return self.tub.boom(self.from_amount)
+        return self.tub.boom(self.source_amount)

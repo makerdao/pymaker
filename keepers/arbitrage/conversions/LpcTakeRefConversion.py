@@ -33,12 +33,12 @@ class LpcTakeRefConversion(Conversion):
         super().__init__(source_token=self.lpc.alt(),
                          target_token=self.lpc.ref(),
                          rate=rate,
-                         min_from_amount=Wad.from_number(0),
-                         max_from_amount=max_entry_alt,
+                         min_source_amount=Wad.from_number(0),
+                         max_source_amount=max_entry_alt,
                          method="lpc-take-ref")
 
     def name(self):
-        return f"lpc.take(ref, '{self.to_amount}')"
+        return f"lpc.take(ref, '{self.target_amount}')"
 
     def execute(self):
-        return self.lpc.take(self.lpc.ref(), self.to_amount)
+        return self.lpc.take(self.lpc.ref(), self.target_amount)

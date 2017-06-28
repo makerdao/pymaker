@@ -28,12 +28,12 @@ class TubJoinConversion(Conversion):
         super().__init__(source_token=self.tub.gem(),
                          target_token=self.tub.skr(),
                          rate=(Ray.from_number(1) / tub.jar_ask()),
-                         min_from_amount=Wad.from_number(0),
-                         max_from_amount=Wad.from_number(1000000),  #1 mio ETH = infinity ;)
+                         min_source_amount=Wad.from_number(0),
+                         max_source_amount=Wad.from_number(1000000),  #1 mio ETH = infinity ;)
                          method="tub-join")
 
     def name(self):
-        return f"tub.join('{self.from_amount}')"
+        return f"tub.join('{self.source_amount}')"
 
     def execute(self):
-        return self.tub.join(self.from_amount)
+        return self.tub.join(self.source_amount)

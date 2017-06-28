@@ -22,14 +22,14 @@ from api.token.ERC20Token import ERC20Token
 
 
 class Conversion:
-    def __init__(self, source_token: Address, target_token: Address, rate: Ray, min_from_amount: Wad, max_from_amount: Wad, method: str):
-        self.from_amount = None
+    def __init__(self, source_token: Address, target_token: Address, rate: Ray, min_source_amount: Wad, max_source_amount: Wad, method: str):
+        self.source_amount = None
         self.source_token = source_token
-        self.to_amount = None
+        self.target_amount = None
         self.target_token = target_token
         self.rate = rate
-        self.min_from_amount = min_from_amount
-        self.max_from_amount = max_from_amount
+        self.min_source_amount = min_source_amount
+        self.max_source_amount = max_source_amount
         self.method = method
 
     def name(self):
@@ -45,5 +45,5 @@ class Conversion:
             else:
                 return ""
 
-        return f"[{amt(self.from_amount)}{ERC20Token.token_name_by_address(self.source_token)} -> {amt(self.to_amount)}{ERC20Token.token_name_by_address(self.target_token)} @{self.rate} " \
-               f"by {self.method} (min={self.min_from_amount} {ERC20Token.token_name_by_address(self.source_token)}, max={self.max_from_amount} {ERC20Token.token_name_by_address(self.source_token)})]"
+        return f"[{amt(self.source_amount)}{ERC20Token.token_name_by_address(self.source_token)} -> {amt(self.target_amount)}{ERC20Token.token_name_by_address(self.target_token)} @{self.rate} " \
+               f"by {self.method} (min={self.min_source_amount} {ERC20Token.token_name_by_address(self.source_token)}, max={self.max_source_amount} {ERC20Token.token_name_by_address(self.source_token)})]"

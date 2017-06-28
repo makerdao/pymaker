@@ -34,20 +34,20 @@ class Opportunity:
     def discover_prices(self, our_max_engagement: Wad):
         def backcalculate_amounts(from_conversion_id: int):
             for id in range(from_conversion_id, -1, -1):
-                self.conversions[id].to_amount = self.conversions[id+1].from_amount
-                self.conversions[id].from_amount = Wad(Ray(self.conversions[id].to_amount) / self.conversions[id].rate)
+                self.conversions[id].target_amount = self.conversions[id+1].source_amount
+                self.conversions[id].source_amount = Wad(Ray(self.conversions[id].target_amount) / self.conversions[id].rate)
 
         assert(isinstance(our_max_engagement, Wad))
-        self.conversions[0].from_amount = Wad.min(our_max_engagement, self.conversions[0].max_from_amount)
-        self.conversions[0].to_amount = self.conversions[0].from_amount * self.conversions[0].rate
+        self.conversions[0].source_amount = Wad.min(our_max_engagement, self.conversions[0].max_source_amount)
+        self.conversions[0].target_amount = self.conversions[0].source_amount * self.conversions[0].rate
 
         for i in range(1, len(self.conversions)):
             assert(self.conversions[i-1].target_token == self.conversions[i].source_token)
-            self.conversions[i].from_amount = self.conversions[i-1].to_amount
-            if self.conversions[i].from_amount > self.conversions[i].max_from_amount:
-                self.conversions[i].from_amount = self.conversions[i].max_from_amount
+            self.conversions[i].source_amount = self.conversions[i-1].target_amount
+            if self.conversions[i].source_amount > self.conversions[i].max_source_amount:
+                self.conversions[i].source_amount = self.conversions[i].max_source_amount
                 backcalculate_amounts(i-1)
-            self.conversions[i].to_amount = Wad(Ray(self.conversions[i].from_amount) * self.conversions[i].rate)
+            self.conversions[i].target_amount = Wad(Ray(self.conversions[i].source_amount) * self.conversions[i].rate)
 
     def total_rate(self) -> Ray:
         return reduce(operator.mul, map(lambda conversion: conversion.rate, self.conversions), Ray.from_number(1.0))
@@ -56,9 +56,9 @@ class Opportunity:
         result = Wad.from_number(0)
         for conversion in self.conversions:
             if conversion.source_token == currency:
-                result -= conversion.from_amount
+                result -= conversion.source_amount
             if conversion.target_token == currency:
-                result += conversion.to_amount
+                result += conversion.target_amount
         return result
 
     def tx_costs(self) -> Wad:

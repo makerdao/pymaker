@@ -28,8 +28,8 @@ class TubBustConversion(Conversion):
         super().__init__(source_token=self.tub.sai(),
                          target_token=self.tub.skr(),
                          rate=(Ray.from_number(1) / Ray(tub.tap_ask())),
-                         min_from_amount=Wad.from_number(0),
-                         max_from_amount=self.bustable_amount_in_sai(tub),
+                         min_source_amount=Wad.from_number(0),
+                         max_source_amount=self.bustable_amount_in_sai(tub),
                          method="tub-bust")
 
     def bustable_amount_in_sai(self, tub: Tub):
@@ -40,7 +40,7 @@ class TubBustConversion(Conversion):
         return Wad.max(tub.woe() - tub.joy() - Wad.from_number(10), Wad.from_number(0))
 
     def name(self):
-        return f"tub.bust('{self.to_amount}')"
+        return f"tub.bust('{self.target_amount}')"
 
     def execute(self):
-        return self.tub.bust(self.to_amount)
+        return self.tub.bust(self.target_amount)

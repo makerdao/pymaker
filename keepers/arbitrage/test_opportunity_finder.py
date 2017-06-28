@@ -152,17 +152,17 @@ def test_should_calculate_amounts_based_on_rates(token1, token2, token3, token4)
     assert len(opportunities) == 1
     assert len(opportunities[0].conversions) == 4
     assert opportunities[0].conversions[0].method == "met1"
-    assert opportunities[0].conversions[0].from_amount == Wad.from_number(100)
-    assert opportunities[0].conversions[0].to_amount == Wad.from_number(200)
+    assert opportunities[0].conversions[0].source_amount == Wad.from_number(100)
+    assert opportunities[0].conversions[0].target_amount == Wad.from_number(200)
     assert opportunities[0].conversions[1].method == "met2"
-    assert opportunities[0].conversions[1].from_amount == Wad.from_number(200)
-    assert opportunities[0].conversions[1].to_amount == Wad.from_number(320)
+    assert opportunities[0].conversions[1].source_amount == Wad.from_number(200)
+    assert opportunities[0].conversions[1].target_amount == Wad.from_number(320)
     assert opportunities[0].conversions[2].method == "met3"
-    assert opportunities[0].conversions[2].from_amount == Wad.from_number(320)
-    assert opportunities[0].conversions[2].to_amount == Wad.from_number(384)
+    assert opportunities[0].conversions[2].source_amount == Wad.from_number(320)
+    assert opportunities[0].conversions[2].target_amount == Wad.from_number(384)
     assert opportunities[0].conversions[3].method == "met4"
-    assert opportunities[0].conversions[3].from_amount == Wad.from_number(384)
-    assert opportunities[0].conversions[3].to_amount == Wad.from_number(422.4)
+    assert opportunities[0].conversions[3].source_amount == Wad.from_number(384)
+    assert opportunities[0].conversions[3].target_amount == Wad.from_number(422.4)
 
 
 def test_should_adjust_amounts_based_on_max_source_amount(token1, token2, token3, token4):
@@ -181,17 +181,17 @@ def test_should_adjust_amounts_based_on_max_source_amount(token1, token2, token3
     assert len(opportunities) == 1
     assert len(opportunities[0].conversions) == 4
     assert opportunities[0].conversions[0].method == "met1"
-    assert opportunities[0].conversions[0].from_amount == Wad.from_number(31.25)
-    assert opportunities[0].conversions[0].to_amount == Wad.from_number(62.5)
+    assert opportunities[0].conversions[0].source_amount == Wad.from_number(31.25)
+    assert opportunities[0].conversions[0].target_amount == Wad.from_number(62.5)
     assert opportunities[0].conversions[1].method == "met2"
-    assert opportunities[0].conversions[1].from_amount == Wad.from_number(62.5)
-    assert opportunities[0].conversions[1].to_amount == Wad.from_number(100)
+    assert opportunities[0].conversions[1].source_amount == Wad.from_number(62.5)
+    assert opportunities[0].conversions[1].target_amount == Wad.from_number(100)
     assert opportunities[0].conversions[2].method == "met3"
-    assert opportunities[0].conversions[2].from_amount == Wad.from_number(100)
-    assert opportunities[0].conversions[2].to_amount == Wad.from_number(120)
+    assert opportunities[0].conversions[2].source_amount == Wad.from_number(100)
+    assert opportunities[0].conversions[2].target_amount == Wad.from_number(120)
     assert opportunities[0].conversions[3].method == "met4"
-    assert opportunities[0].conversions[3].from_amount == Wad.from_number(120)
-    assert opportunities[0].conversions[3].to_amount == Wad.from_number(132)
+    assert opportunities[0].conversions[3].source_amount == Wad.from_number(120)
+    assert opportunities[0].conversions[3].target_amount == Wad.from_number(132)
 
 
 #TODO min_source_amount is currently not respected!
