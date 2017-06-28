@@ -40,3 +40,11 @@ class Transfer:
         self.from_address = from_address
         self.to_address = to_address
         self.value = value
+
+    @staticmethod
+    def incoming(our_address: Address):
+        return lambda transfer: transfer.to_address == our_address
+
+    @staticmethod
+    def outgoing(our_address: Address):
+        return lambda transfer: transfer.from_address == our_address

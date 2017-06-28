@@ -15,9 +15,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from functools import total_ordering
+
 import eth_utils
 
 
+@total_ordering
 class Address:
     """Represents an Ethereum address.
 
@@ -48,3 +51,7 @@ class Address:
     def __eq__(self, other):
         assert(isinstance(other, Address))
         return self.address == other.address
+
+    def __lt__(self, other):
+        assert(isinstance(other, Address))
+        return self.address < other.address

@@ -48,13 +48,4 @@ class TubBoomConversion(Conversion):
         return f"tub.boom('{self.from_amount}')"
 
     def execute(self):
-        boom_result = self.tub.boom(self.from_amount)
-        if boom_result:
-            our_address = Address(self.tub.web3.eth.defaultAccount)
-            skr_transfer_on_boom = next(filter(lambda transfer: transfer.token_address == self.tub.skr() and transfer.from_address == our_address, boom_result.transfers))
-            sai_transfer_on_boom = next(filter(lambda transfer: transfer.token_address == self.tub.sai() and transfer.to_address == our_address, boom_result.transfers))
-            print(f"  Boom was successful, exchanged {skr_transfer_on_boom.value} SKR to {sai_transfer_on_boom.value} SAI")
-            return boom_result
-        else:
-            print(f"  Boom failed!")
-            return None
+        return self.tub.boom(self.from_amount)

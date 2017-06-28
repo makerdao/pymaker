@@ -17,6 +17,7 @@
 
 from api.Address import Address
 from api.Ray import Ray
+from api.Transfer import Transfer
 from api.Wad import Wad
 from api.otc import SimpleMarket
 from api.otc.OfferInfo import OfferInfo
@@ -40,17 +41,7 @@ class OasisTakeConversion(Conversion):
         return f"otc.take({self.offer.offer_id}, '{self.quantity()}')"
 
     def execute(self):
-        take_result = self.otc.take(self.offer.offer_id, self.quantity())
-        if take_result:
-            our_address = Address(self.otc.web3.eth.defaultAccount)
-            incoming_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.sell_which_token and transfer.to_address == our_address, take_result.transfers))
-            outgoing_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.buy_which_token and transfer.from_address == our_address, take_result.transfers))
-            print(
-                f"  Take was successful, exchanged {outgoing_transfer_on_take.value} {self.source_token} to {incoming_transfer_on_take.value} {self.target_token}")
-            return take_result
-        else:
-            print(f"  Take failed!")
-            return None
+        return self.otc.take(self.offer.offer_id, self.quantity())
 
     def quantity(self):
         quantity = self.to_amount

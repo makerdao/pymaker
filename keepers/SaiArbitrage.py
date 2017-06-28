@@ -24,11 +24,13 @@ import time
 from _ast import List
 from functools import reduce
 
+import itertools
 from web3 import HTTPProvider
 from web3 import Web3
 
 from api.Address import Address
 from api.Ray import Ray
+from api.Transfer import Transfer
 from api.Wad import Wad
 from api.otc.SimpleMarket import SimpleMarket
 from api.sai.Lpc import Lpc
@@ -47,6 +49,7 @@ from keepers.arbitrage.conversions.TubBoomConversion import TubBoomConversion
 from keepers.arbitrage.conversions.TubBustConversion import TubBustConversion
 from keepers.arbitrage.conversions.TubExitConversion import TubExitConversion
 from keepers.arbitrage.conversions.TubJoinConversion import TubJoinConversion
+from keepers.arbitrage.transfer_formatter import TransferFormatter
 
 
 class SaiArbitrage(Keeper):
@@ -149,13 +152,17 @@ class SaiArbitrage(Keeper):
             print(f"  Executing {conversion.name()} in order to exchange {conversion.from_amount} {conversion.source_token} to {conversion.to_amount} {conversion.target_token}")
             receipt = conversion.execute()
             if receipt is None:
+                print(f"Execution failed")
                 print(f"")
                 print(f"Interrupting the process...")
                 print(f"Will start over from scratch in the next round.")
                 return
             else:
-                print(f"  TxHash: {receipt.transaction_hash}")
                 all_transfers += receipt.transfers
+                outgoing = TransferFormatter().format(filter(Transfer.outgoing(self.our_address), receipt.transfers))
+                incoming = TransferFormatter().format(filter(Transfer.incoming(self.our_address), receipt.transfers))
+                print(f"  Execution successful, tx_hash={receipt.transaction_hash}")
+                print(f"  Exchanged {outgoing} to {incoming}")
 
         def sum_of_wads(list_of_wads):
             return reduce(Wad.__add__, list_of_wads, Wad.from_number(0))

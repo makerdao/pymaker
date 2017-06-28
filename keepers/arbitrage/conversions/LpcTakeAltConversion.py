@@ -40,13 +40,4 @@ class LpcTakeAltConversion(Conversion):
         return f"lpc.take(alt, '{self.to_amount}')"
 
     def execute(self):
-        take_result = self.lpc.take(self.lpc.alt(), self.to_amount)
-        if take_result:
-            our_address = Address(self.lpc.web3.eth.defaultAccount)
-            ref_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.lpc.ref() and transfer.from_address == our_address, take_result.transfers))
-            alt_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.lpc.alt() and transfer.to_address == our_address, take_result.transfers))
-            print(f"  Take was successful, exchanged {ref_transfer_on_take.value} {self.lpc.ref()} to {alt_transfer_on_take.value} {self.lpc.alt()}")
-            return take_result
-        else:
-            print(f"  Take failed!")
-            return None
+        return self.lpc.take(self.lpc.alt(), self.to_amount)

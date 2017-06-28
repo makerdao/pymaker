@@ -35,13 +35,4 @@ class TubExitConversion(Conversion):
         return f"tub.exit('{self.from_amount}')"
 
     def execute(self):
-        join_result = self.tub.exit(self.from_amount)
-        if join_result:
-            our_address = Address(self.tub.web3.eth.defaultAccount)
-            skr_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.tub.skr() and transfer.from_address == our_address, join_result.transfers))
-            eth_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.tub.gem() and transfer.to_address == our_address, join_result.transfers))
-            print(f"  Exit was successful, exchanged {skr_transfer_on_bust.value} SKR to {eth_transfer_on_bust.value} ETH")
-            return join_result
-        else:
-            print(f"  Exit failed!")
-            return None
+        return self.tub.exit(self.from_amount)

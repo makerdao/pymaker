@@ -43,13 +43,4 @@ class TubBustConversion(Conversion):
         return f"tub.bust('{self.to_amount}')"
 
     def execute(self):
-        bust_result = self.tub.bust(self.to_amount)
-        if bust_result:
-            our_address = Address(self.tub.web3.eth.defaultAccount)
-            sai_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.tub.sai() and transfer.from_address == our_address, bust_result.transfers))
-            skr_transfer_on_bust = next(filter(lambda transfer: transfer.token_address == self.tub.skr() and transfer.to_address == our_address, bust_result.transfers))
-            print(f"  Bust was successful, exchanged {sai_transfer_on_bust.value} SAI to {skr_transfer_on_bust.value} SKR")
-            return bust_result
-        else:
-            print(f"  Bust failed!")
-            return None
+        return self.tub.bust(self.to_amount)

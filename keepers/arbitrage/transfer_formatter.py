@@ -15,25 +15,30 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
+import operator
+from functools import reduce
+from typing import List
+
+import itertools
+
 from api.Address import Address
 from api.Ray import Ray
 from api.Wad import Wad
-from api.sai import Tub
+from api.token.ERC20Token import ERC20Token
 from keepers.arbitrage.Conversion import Conversion
 
 
-class TubJoinConversion(Conversion):
-    def __init__(self, tub: Tub):
-        self.tub = tub
-        super().__init__(source_token=self.tub.gem(),
-                         target_token=self.tub.skr(),
-                         rate=(Ray.from_number(1) / tub.jar_ask()),
-                         min_from_amount=Wad.from_number(0),
-                         max_from_amount=Wad.from_number(1000000),  #1 mio ETH = infinity ;)
-                         method="tub-join")
+class TransferFormatter:
+    def _sum_of_wads(self, list_of_wads):
+        return reduce(Wad.__add__, list_of_wads, Wad.from_number(0))
 
-    def name(self):
-        return f"tub.join('{self.from_amount}')"
+    def _grouped_by_token(self, transfers):
+        transfers.sort(key=lambda transfer: transfer.token_address, reverse=False)
+        for token_address, transfers in itertools.groupby(transfers, lambda transfer: transfer.token_address):
+            values = map(lambda transfer: transfer.value, transfers)
+            sum_of_values = self._sum_of_wads(values)
+            yield f"{sum_of_values} {ERC20Token.token_name_by_address(token_address)}"
 
-    def execute(self):
-        return self.tub.join(self.from_amount)
+    def format(self, transfers):
+        return " and ".join(self._grouped_by_token(list(transfers)))
