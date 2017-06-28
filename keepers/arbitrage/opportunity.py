@@ -31,24 +31,6 @@ class Opportunity:
         assert(isinstance(conversions, list))
         self.conversions = copy.deepcopy(conversions)
 
-    def discover_prices(self, our_max_engagement: Wad):
-        def backcalculate_amounts(from_conversion_id: int):
-            for id in range(from_conversion_id, -1, -1):
-                self.conversions[id].target_amount = self.conversions[id+1].source_amount
-                self.conversions[id].source_amount = Wad(Ray(self.conversions[id].target_amount) / self.conversions[id].rate)
-
-        assert(isinstance(our_max_engagement, Wad))
-        self.conversions[0].source_amount = Wad.min(our_max_engagement, self.conversions[0].max_source_amount)
-        self.conversions[0].target_amount = self.conversions[0].source_amount * self.conversions[0].rate
-
-        for i in range(1, len(self.conversions)):
-            assert(self.conversions[i-1].target_token == self.conversions[i].source_token)
-            self.conversions[i].source_amount = self.conversions[i-1].target_amount
-            if self.conversions[i].source_amount > self.conversions[i].max_source_amount:
-                self.conversions[i].source_amount = self.conversions[i].max_source_amount
-                backcalculate_amounts(i-1)
-            self.conversions[i].target_amount = Wad(Ray(self.conversions[i].source_amount) * self.conversions[i].rate)
-
     def total_rate(self) -> Ray:
         return reduce(operator.mul, map(lambda conversion: conversion.rate, self.conversions), Ray.from_number(1.0))
 
