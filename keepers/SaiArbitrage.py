@@ -39,8 +39,9 @@ from keepers.Config import Config
 from keepers.Keeper import Keeper
 from keepers.arbitrage.Conversion import Conversion
 from keepers.arbitrage.OpportunityFinder import OpportunityFinder
-from keepers.arbitrage.conversions.LpcTakeEthConversion import LpcTakeEthConversion
-from keepers.arbitrage.conversions.LpcTakeSaiConversion import LpcTakeSaiConversion
+
+from keepers.arbitrage.conversions.LpcTakeAltConversion import LpcTakeAltConversion
+from keepers.arbitrage.conversions.LpcTakeRefConversion import LpcTakeRefConversion
 from keepers.arbitrage.conversions.OasisTakeConversion import OasisTakeConversion
 from keepers.arbitrage.conversions.TubBoomConversion import TubBoomConversion
 from keepers.arbitrage.conversions.TubBustConversion import TubBustConversion
@@ -78,8 +79,8 @@ class SaiArbitrage(Keeper):
                 TubBustConversion(self.tub)]
 
     def lpc_conversions(self):
-        return [LpcTakeEthConversion(self.tub, self.lpc),
-                LpcTakeSaiConversion(self.tub, self.lpc)]
+        return [LpcTakeRefConversion(self.lpc),
+                LpcTakeAltConversion(self.lpc)]
 
     def otc_offers(self, tokens):
         offers = [self.otc.get_offer(offer_id + 1) for offer_id in range(self.otc.get_last_offer_id())]
