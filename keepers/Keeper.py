@@ -17,4 +17,8 @@
 
 
 class Keeper:
-    pass
+    # def __init__(self):
+    #     self.run()
+
+    def run(self):
+        raise NotImplementedError("Please implement this method")

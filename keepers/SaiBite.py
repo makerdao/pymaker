@@ -54,20 +54,22 @@ class SaiBite(Keeper):
         print(f"")
         print(f"SaiBite keeper")
         print(f"--------------")
+        print(f"")
 
         while True:
-            print(f"")
-            for cup_id in range(1, self.tub.cupi()+1):
-                if not self.tub.safe(cup_id):
-                    print(f"Cup {cup_id} is not safe, biting it")
-                    if self.tub.bite(cup_id):
-                        print(f"Cup {cup_id} has been successfully bitten")
-                    else:
-                        print(f"*** FAILED to bite cup {cup_id}")
-                else:
-                    print(f"Cup {cup_id} is safe")
-
+            self.check_all_cups()
             time.sleep(self.args.frequency)
+
+    def check_all_cups(self):
+        for cup_id in range(self.tub.cupi()):
+            self.check_cup(cup_id+1)
+
+    def check_cup(self, cup_id):
+        if not self.tub.safe(cup_id):
+            if self.tub.bite(cup_id):
+                print(f"Cup {cup_id} has been bitten")
+            else:
+                print(f"Failed to bite cup {cup_id}")
 
 
 if __name__ == '__main__':
