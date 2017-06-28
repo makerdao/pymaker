@@ -29,7 +29,7 @@ from keepers.arbitrage.conversion import Conversion
 class Opportunity:
     def __init__(self, conversions: List[Conversion]):
         assert(isinstance(conversions, list))
-        self.conversions = copy.deepcopy(conversions)
+        self.conversions = conversions
 
     def total_rate(self) -> Ray:
         return reduce(operator.mul, map(lambda conversion: conversion.rate, self.conversions), Ray.from_number(1.0))

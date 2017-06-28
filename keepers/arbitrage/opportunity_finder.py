@@ -30,7 +30,7 @@ class OpportunityFinder:
         self.conversions = conversions
 
     def find_opportunities(self, base_token: Address, max_engagement: Wad):
-        graph_links = self.prepare_graph_links()
+        graph_links = self._prepare_graph_links()
         graph = networkx.DiGraph(graph_links)
         try:
             paths = list(networkx.shortest_simple_paths(graph, base_token.address, base_token.address + "-pre"))
@@ -43,15 +43,15 @@ class OpportunityFinder:
                         conversions.append(graph_links[path[i]][path[i+1]]['conversion'])
 
                 chain_of_conversions = copy.deepcopy(conversions)
+                self._validate_token_chain(chain_of_conversions)
                 self._discover_prices(chain_of_conversions, max_engagement)
-
                 opportunities.append(Opportunity(conversions=chain_of_conversions))
 
             return opportunities
         except networkx.exception.NetworkXNoPath:
             return []
 
-    def prepare_graph_links(self):
+    def _prepare_graph_links(self):
         def add_empty_link(dod, link_from, link_to):
             if link_from not in dod:
                 dod[link_from] = {}
@@ -71,20 +71,23 @@ class OpportunityFinder:
             add_empty_link(links, dst + "-via-" + conversion.method, dst + "-pre")
         return links
 
-    def _backcalculate_amounts(self, chain_of_conversions, from_conversion_id: int):
+    def _backcalculate_amounts(self, chain_of_conversions: list, from_conversion_id: int):
         for id in range(from_conversion_id, -1, -1):
             chain_of_conversions[id].target_amount = chain_of_conversions[id + 1].source_amount
             chain_of_conversions[id].source_amount = Wad(Ray(chain_of_conversions[id].target_amount) / chain_of_conversions[id].rate)
 
-    def _discover_prices(self, chain_of_conversions, max_engagement: Wad):
-        assert(isinstance(chain_of_conversions, list))
-        assert(isinstance(max_engagement, Wad))
-        chain_of_conversions[0].source_amount = Wad.min(max_engagement, chain_of_conversions[0].max_source_amount)
-        chain_of_conversions[0].target_amount = chain_of_conversions[0].source_amount * chain_of_conversions[0].rate
-
+    def _validate_token_chain(self, chain_of_conversions: list):
         for i in range(1, len(chain_of_conversions)):
             assert(chain_of_conversions[i - 1].target_token == chain_of_conversions[i].source_token)
-            chain_of_conversions[i].source_amount = chain_of_conversions[i - 1].target_amount
+
+    def _discover_prices(self, chain_of_conversions: list, max_engagement: Wad):
+        assert(isinstance(chain_of_conversions, list))
+        assert(isinstance(max_engagement, Wad))
+        for i in range(len(chain_of_conversions)):
+            if i == 0:
+                chain_of_conversions[0].source_amount = max_engagement
+            else:
+                chain_of_conversions[i].source_amount = chain_of_conversions[i - 1].target_amount
             if chain_of_conversions[i].source_amount > chain_of_conversions[i].max_source_amount:
                 chain_of_conversions[i].source_amount = chain_of_conversions[i].max_source_amount
                 self._backcalculate_amounts(chain_of_conversions, i - 1)
