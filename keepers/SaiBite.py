@@ -26,38 +26,49 @@ from web3 import Web3
 from api.Address import Address
 from api.sai.Tub import Tub
 from keepers.Config import Config
+from keepers.Keeper import Keeper
 
-parser = argparse.ArgumentParser(description='SaiBite keeper. Bites unsafe cups.')
-parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
-parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
-parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
-parser.add_argument("--frequency", help="Frequency of checking for unsafe cups (in seconds) (default: 5)", default=5, type=int)
-args = parser.parse_args()
 
-config = Config()
+class SaiBite(Keeper):
+    def __init__(self):
+        parser = argparse.ArgumentParser(description='SaiBite keeper. Bites unsafe cups.')
+        parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
+        parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
+        parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
+        parser.add_argument("--frequency", help="Frequency of checking for unsafe cups (in seconds) (default: 5)", default=5, type=int)
+        self.args = parser.parse_args()
 
-web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}"))
-web3.eth.defaultAccount = args.eth_from #TODO allow to use ETH_FROM env variable
+        config = Config()
 
-tub_address = Address(config.get_contract_address("saiTub"))
-tap_address = Address(config.get_contract_address("saiTap"))
-top_address = Address(config.get_contract_address("saiTop"))
-tub = Tub(web3=web3, address_tub=tub_address, address_tap=tap_address, address_top=top_address)
+        self.web3 = Web3(HTTPProvider(endpoint_uri=f"http://{self.args.rpc_host}:{self.args.rpc_port}"))
+        self.web3.eth.defaultAccount = self.args.eth_from #TODO allow to use ETH_FROM env variable
 
-print(f"")
-print(f"SaiBite keeper")
-print(f"--------------")
+        self.tub_address = Address(config.get_contract_address("saiTub"))
+        self.tap_address = Address(config.get_contract_address("saiTap"))
+        self.top_address = Address(config.get_contract_address("saiTop"))
+        self.tub = Tub(web3=self.web3, address_tub=self.tub_address, address_tap=self.tap_address, address_top=self.top_address)
 
-while True:
-    print(f"")
-    for cup_id in range(1, tub.cupi()+1):
-        if not tub.safe(cup_id):
-            print(f"Cup {cup_id} is not safe, biting it")
-            if tub.bite(cup_id):
-                print(f"Cup {cup_id} has been successfully bitten")
-            else:
-                print(f"*** FAILED to bite cup {cup_id}")
-        else:
-            print(f"Cup {cup_id} is safe")
+        self.run()
 
-    time.sleep(args.frequency)
+    def run(self):
+        print(f"")
+        print(f"SaiBite keeper")
+        print(f"--------------")
+
+        while True:
+            print(f"")
+            for cup_id in range(1, self.tub.cupi()+1):
+                if not self.tub.safe(cup_id):
+                    print(f"Cup {cup_id} is not safe, biting it")
+                    if self.tub.bite(cup_id):
+                        print(f"Cup {cup_id} has been successfully bitten")
+                    else:
+                        print(f"*** FAILED to bite cup {cup_id}")
+                else:
+                    print(f"Cup {cup_id} is safe")
+
+            time.sleep(self.args.frequency)
+
+
+if __name__ == '__main__':
+    SaiBite()
