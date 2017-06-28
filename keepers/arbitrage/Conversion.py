@@ -14,9 +14,11 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from api.Address import Address
 from api.Ray import Ray
 from api.Wad import Wad
+from api.token.ERC20Token import ERC20Token
 
 
 class Conversion:
@@ -34,7 +36,7 @@ class Conversion:
         raise NotImplementedError("name() not implemented")
 
     def execute(self):
-        raise NotImplementedError("excecute() not implemented")
+        raise NotImplementedError("execute() not implemented")
 
     def __str__(self):
         def amt(amount: Wad) -> str:
@@ -43,5 +45,5 @@ class Conversion:
             else:
                 return ""
 
-        return f"[{amt(self.from_amount)}{self.source_token} -> {amt(self.to_amount)}{self.target_token} @{self.rate} " \
-               f"by {self.method} (min={self.min_from_amount} {self.source_token}, max={self.max_from_amount} {self.source_token})]"
+        return f"[{amt(self.from_amount)}{ERC20Token.token_name_by_address(self.source_token)} -> {amt(self.to_amount)}{ERC20Token.token_name_by_address(self.target_token)} @{self.rate} " \
+               f"by {self.method} (min={self.min_from_amount} {ERC20Token.token_name_by_address(self.source_token)}, max={self.max_from_amount} {ERC20Token.token_name_by_address(self.source_token)})]"

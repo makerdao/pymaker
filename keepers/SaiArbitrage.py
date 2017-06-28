@@ -151,13 +151,12 @@ class SaiArbitrage(Keeper):
 
         for index, conversion in enumerate(best_opportunity.conversions, start=1):
             print(f"Step {index}/{len(best_opportunity.conversions)}:")
-            print(f"  Executing {conversion.name()} in order to exchange {conversion.from_amount} {conversion.source_token} to {conversion.to_amount} {conversion.target_token}")
+            print(f"  Executing {conversion.name()}")
             receipt = conversion.execute()
             if receipt is None:
                 print(f"Execution failed")
                 print(f"")
-                print(f"Interrupting the process...")
-                print(f"Will start over from scratch in the next round.")
+                print(f"Interrupting the process... Will start over from scratch in the next iteration.")
                 return
             else:
                 all_transfers += receipt.transfers
