@@ -36,9 +36,42 @@ def token2():
 
 def test_should_calculate_total_rate(token1, token2):
     # given
-    conversion1 = Conversion('ABC', 'DEF', Ray.from_number(1.01), Wad.from_number(1), Wad.from_number(100), 'met')
-    conversion2 = Conversion('DEF', 'ABC', Ray.from_number(1.02), Wad.from_number(1), Wad.from_number(100), 'met')
+    conversion1 = Conversion(token1, token2, Ray.from_number(1.01), Wad.from_number(1), Wad.from_number(100), 'met1')
+    conversion2 = Conversion(token2, token1, Ray.from_number(1.02), Wad.from_number(1), Wad.from_number(100), 'met2')
+    
+    # when
     opportunity = Opportunity([conversion1, conversion2])
 
-    # except
+    # then
     assert opportunity.total_rate() == Ray.from_number(1.0302)
+
+
+def test_should_calculate_profit_and_net_profit(token1, token2):
+    # given
+    conversion1 = Conversion(token1, token2, Ray.from_number(1.01), Wad.from_number(1), Wad.from_number(100), 'met1')
+    conversion1.source_amount = Wad.from_number(100)
+    conversion1.target_amount = Wad.from_number(101)
+    conversion2 = Conversion(token2, token1, Ray.from_number(1.02), Wad.from_number(1), Wad.from_number(100), 'met2')
+    conversion2.source_amount = Wad.from_number(101)
+    conversion2.target_amount = Wad.from_number(103.02)
+    
+    # when
+    opportunity = Opportunity([conversion1, conversion2])
+
+    # then
+    assert opportunity.profit(token1) == Wad.from_number(3.02)
+    assert opportunity.profit(token2) == Wad.from_number(0)
+    assert opportunity.net_profit(token1) == opportunity.profit(token1) - opportunity.tx_costs()
+    assert opportunity.net_profit(token2) == opportunity.profit(token2) - opportunity.tx_costs()
+
+
+def test_should_calculate_tx_costs(token1, token2):
+    # expect the tx_costs to be non negative and to increase with the number of conversions
+    conversions = []
+    prev_tx_costs = Wad.from_number(0)
+    for i in range(10):
+        conversions.append(Conversion(token1, token2, Ray(0), Wad(0), Wad(0), 'met'))
+        opportunity = Opportunity(conversions)
+        tx_costs = opportunity.tx_costs()
+        assert(tx_costs > prev_tx_costs)
+        prev_tx_costs = tx_costs
