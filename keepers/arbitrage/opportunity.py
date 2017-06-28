@@ -58,8 +58,3 @@ class Opportunity:
         net_profit = profit - tx_costs
         """
         return self.profit(token) - self.tx_costs()
-
-    def __str__(self):
-        sai = Address('0x224c2202792b11c5ac5baaaa8284e6edb60f7174')
-        return f"  Opportunity with profit={self.profit(sai)} SAI, tx_costs={self.tx_costs()} SAI, net_profit={self.net_profit(sai)} SAI" +\
-               "".join(map(lambda conversion: "\n  " + str(conversion), self.conversions))
