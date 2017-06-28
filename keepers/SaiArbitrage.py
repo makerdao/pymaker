@@ -18,7 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
-import datetime
 import time
 
 from web3 import HTTPProvider
@@ -48,6 +47,12 @@ from keepers.arbitrage.transfer_formatter import TransferFormatter
 class SaiArbitrage(Keeper):
     def print_introduction(self):
         print(f"Operating as {self.our_address}")
+
+    def print_balances(self):
+        def balances():
+            for token in [self.sai, self.skr, self.gem]:
+                yield f"{token.balance_of(self.our_address)} {token.name()}"
+        print(f"Keeper balances are {', '.join(balances())}.")
 
     def setup_allowances(self):
         self.setup_tub_allowances()
@@ -99,51 +104,27 @@ class SaiArbitrage(Keeper):
         return self.tub_conversions() + self.lpc_conversions() + \
                self.otc_conversions([self.sai.address, self.skr.address, self.gem.address])
 
-    def first_opportunity(self, opportunities):
-        if len(opportunities) > 0: return opportunities[0]
-        return None
-
-    def get_balances(self):
-        for token in [self.sai, self.skr, self.gem]:
-            yield f"{token.balance_of(self.our_address)} {token.name()}"
-
-    def print_balances(self):
-        print(f"Keeper token balances are {', '.join(self.get_balances())}.")
-
     def process(self):
-        print(f"")
-        print(f"")
-        print(f"Processing (@ {datetime.datetime.now()})")
-        print(f"")
-        self.print_balances()
-
-        investment_token = self.sai.address
-
-        # We find all arbitrage opportunities, they can still not bring us the profit we expect them to
-        # but it is convenient to list them for monitoring purposes. So that we know the keeper actually
-        # found an arbitrage opportunity.
+        entry_amount = Wad.min(self.base_token.balance_of(self.our_address), self.maximum_engagement)
         opportunity_finder = OpportunityFinder(conversions=self.all_conversions())
-        opportunities = opportunity_finder.find_opportunities(investment_token, self.maximum_engagement)
-        opportunities = filter(lambda oppo: oppo.total_rate() > Ray.from_number(1.000001), opportunities)
-        opportunities = filter(lambda oppo: oppo.net_profit(investment_token) > self.minimum_profit, opportunities)
-        opportunities = sorted(opportunities, key=lambda oppo: oppo.net_profit(investment_token), reverse=True)
-        best_opportunity = self.first_opportunity(opportunities)
+        opportunities = opportunity_finder.find_opportunities(self.base_token.address, entry_amount)
+        opportunities = filter(lambda op: op.total_rate() > Ray.from_number(1.000001), opportunities)
+        opportunities = filter(lambda op: op.net_profit(self.base_token.address) > self.minimum_profit, opportunities)
+        opportunities = sorted(opportunities, key=lambda op: op.net_profit(self.base_token.address), reverse=True)
 
-        if best_opportunity is None:
+        opportunity = opportunities[0] if len(opportunities) > 0 else None
+        if opportunity is None:
             return
 
-        # At this point we only leave out these opportunities, that bring us the desired profit.
-        # We pick the first of them, the one that brings us the best profit.
-
-        print("This opportunity will bring us the best profit and will get executed:")
-        print(f"  Opportunity with profit={best_opportunity.profit(investment_token)} {ERC20Token.token_name_by_address(investment_token)}, tx_costs={best_opportunity.tx_costs()} {ERC20Token.token_name_by_address(investment_token)}, net_profit={best_opportunity.net_profit(investment_token)} {ERC20Token.token_name_by_address(investment_token)}" + \
-               "".join(map(lambda conversion: "\n  " + str(conversion), best_opportunity.conversions)))
-        print("")
+        print(f"")
+        print(f"Opportunity with net_profit={opportunity.net_profit(self.base_token.address)} {self.base_token.name()}")
+        for conversion in opportunity.conversions:
+            print(f"  {conversion}")
 
         all_transfers = []
 
-        for index, conversion in enumerate(best_opportunity.conversions, start=1):
-            print(f"Step {index}/{len(best_opportunity.conversions)}:")
+        for index, conversion in enumerate(opportunity.conversions, start=1):
+            print(f"Step {index}/{len(opportunity.conversions)}:")
             print(f"  Executing {conversion.name()}")
             receipt = conversion.execute()
             if receipt is None:
@@ -158,7 +139,6 @@ class SaiArbitrage(Keeper):
                 print(f"  Execution successful, tx_hash={receipt.transaction_hash}")
                 print(f"  Exchanged {outgoing} to {incoming}")
 
-        print(f"")
         print(f"All steps executed successfully.")
         print(f"The profit we made is {TransferFormatter().format_net(all_transfers, self.our_address)}.")
         self.print_balances()
@@ -169,7 +149,7 @@ class SaiArbitrage(Keeper):
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
         parser.add_argument("--frequency", help="Frequency of checking for arbitrage opportunities (default: 5)", default=5, type=float)
-        parser.add_argument("--minimum-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.5)", default=0.01, type=float)
+        parser.add_argument("--minimum-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.01)", default=0.01, type=float)
         parser.add_argument("--maximum-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
         args = parser.parse_args()
 
@@ -183,20 +163,19 @@ class SaiArbitrage(Keeper):
         self.tap_address = Address(config.get_contract_address("saiTap"))
         self.top_address = Address(config.get_contract_address("saiTop"))
         self.tub = Tub(web3=web3, address_tub=self.tub_address, address_tap=self.tap_address, address_top=self.top_address)
+        self.lpc_address = Address(config.get_contract_address("saiLpc"))
+        self.lpc = Lpc(web3=web3, address=self.lpc_address)
+        self.otc_address = Address(config.get_contract_address("otc"))
+        self.otc = SimpleMarket(web3=web3, address=self.otc_address)
+
         self.skr = ERC20Token(web3=web3, address=self.tub.skr())
         self.sai = ERC20Token(web3=web3, address=self.tub.sai())
         self.gem = ERC20Token(web3=web3, address=self.tub.gem())
-
         ERC20Token.register_token(self.tub.skr(), 'SKR')
         ERC20Token.register_token(self.tub.sai(), 'SAI')
         ERC20Token.register_token(self.tub.gem(), 'WETH')
 
-        self.lpc_address = Address(config.get_contract_address("saiLpc"))
-        self.lpc = Lpc(web3=web3, address=self.lpc_address)
-
-        self.otc_address = Address(config.get_contract_address("otc"))
-        self.otc = SimpleMarket(web3=web3, address=self.otc_address)
-
+        self.base_token = self.sai
         self.minimum_profit = Wad.from_number(args.minimum_profit)
         self.maximum_engagement = Wad.from_number(args.maximum_engagement)
 
@@ -206,6 +185,7 @@ class SaiArbitrage(Keeper):
         print(f"")
 
         self.print_introduction()
+        self.print_balances()
         self.setup_allowances()
 
         while True:
