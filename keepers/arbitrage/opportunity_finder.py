@@ -91,4 +91,4 @@ class OpportunityFinder:
             if chain_of_conversions[i].source_amount > chain_of_conversions[i].max_source_amount:
                 chain_of_conversions[i].source_amount = chain_of_conversions[i].max_source_amount
                 self._backcalculate_amounts(chain_of_conversions, i - 1)
-            chain_of_conversions[i].target_amount = Wad(Ray(chain_of_conversions[i].source_amount) * self.conversions[i].rate)
+            chain_of_conversions[i].target_amount = Wad(Ray(chain_of_conversions[i].source_amount) * chain_of_conversions[i].rate)

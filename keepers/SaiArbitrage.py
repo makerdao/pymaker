@@ -96,17 +96,19 @@ class SaiArbitrage(Keeper):
         return list(map(lambda offer: OasisTakeConversion(self.otc, offer), self.otc_offers(tokens)))
 
     def all_conversions(self):
-        return self.tub_conversions() + self.lpc_conversions() + self.otc_conversions([self.sai.address, self.skr.address, self.gem.address])
+        return self.tub_conversions() + self.lpc_conversions() + \
+               self.otc_conversions([self.sai.address, self.skr.address, self.gem.address])
 
     def first_opportunity(self, opportunities):
         if len(opportunities) > 0: return opportunities[0]
         return None
 
+    def get_balances(self):
+        for token in [self.sai, self.skr, self.gem]:
+            yield f"{token.balance_of(self.our_address)} {token.name()}"
+
     def print_balances(self):
-        print(f"Keeper token balances are: {str(self.gem.balance_of(self.our_address)).rjust(26)} W-ETH")
-        print(f"                           {str(self.skr.balance_of(self.our_address)).rjust(26)} SKR")
-        print(f"                           {str(self.sai.balance_of(self.our_address)).rjust(26)} SAI")
-        print(f"")
+        print(f"Keeper token balances are {', '.join(self.get_balances())}.")
 
     def process(self):
         print(f"")
@@ -115,36 +117,27 @@ class SaiArbitrage(Keeper):
         print(f"")
         self.print_balances()
 
-        investment_token = self.tub.sai()
+        investment_token = self.sai.address
 
         # We find all arbitrage opportunities, they can still not bring us the profit we expect them to
         # but it is convenient to list them for monitoring purposes. So that we know the keeper actually
         # found an arbitrage opportunity.
-        conversions = self.all_conversions()
-        opportunities = OpportunityFinder(conversions=conversions).find_opportunities(investment_token, self.maximum_engagement)
-        opportunities = filter(lambda opportunity: opportunity.total_rate() > Ray.from_number(1.000001), opportunities)
-        opportunities = filter(lambda opportunity: opportunity.profit(investment_token) > Wad.from_number(0), opportunities)
-        opportunities = list(sorted(opportunities, key=lambda opportunity: opportunity.net_profit(investment_token), reverse=True))
-
-        if len(opportunities) == 0:
-            print(f"No opportunities found. No worries, I will try again.")
-            return
-        else:
-            print(f"Found {len(opportunities)} profit opportunities, here they are:")
-            for opportunity in opportunities:
-                print(str(opportunity) + "\n")
-
-        # At this point we only leave out these opportunities, that bring us the desired profit.
-        # We pick the first of them, the one that brings us the best profit.
-        opportunities = list(filter(lambda opportunity: opportunity.net_profit(investment_token) > self.minimum_profit, opportunities))
+        opportunity_finder = OpportunityFinder(conversions=self.all_conversions())
+        opportunities = opportunity_finder.find_opportunities(investment_token, self.maximum_engagement)
+        opportunities = filter(lambda oppo: oppo.total_rate() > Ray.from_number(1.000001), opportunities)
+        opportunities = filter(lambda oppo: oppo.net_profit(investment_token) > self.minimum_profit, opportunities)
+        opportunities = sorted(opportunities, key=lambda oppo: oppo.net_profit(investment_token), reverse=True)
         best_opportunity = self.first_opportunity(opportunities)
 
         if best_opportunity is None:
-            print(f"No opportunity is profitable enough so none of them will get executed")
             return
 
+        # At this point we only leave out these opportunities, that bring us the desired profit.
+        # We pick the first of them, the one that brings us the best profit.
+
         print("This opportunity will bring us the best profit and will get executed:")
-        print(str(best_opportunity))
+        print(f"  Opportunity with profit={best_opportunity.profit(investment_token)} {ERC20Token.token_name_by_address(investment_token)}, tx_costs={best_opportunity.tx_costs()} {ERC20Token.token_name_by_address(investment_token)}, net_profit={best_opportunity.net_profit(investment_token)} {ERC20Token.token_name_by_address(investment_token)}" + \
+               "".join(map(lambda conversion: "\n  " + str(conversion), best_opportunity.conversions)))
         print("")
 
         all_transfers = []
@@ -168,6 +161,7 @@ class SaiArbitrage(Keeper):
         print(f"")
         print(f"All steps executed successfully.")
         print(f"The profit we made is {TransferFormatter().format_net(all_transfers, self.our_address)}.")
+        self.print_balances()
 
     def __init__(self):
         parser = argparse.ArgumentParser(description='SaiArbitrage keeper.')

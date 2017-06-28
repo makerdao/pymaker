@@ -185,7 +185,7 @@ def test_should_adjust_amounts_based_on_max_source_amount(token1, token2, token3
     conversion2 = Conversion(token2, token3, Ray.from_number(1.6), Wad.from_number(10000), 'met2')
     conversion3 = Conversion(token3, token4, Ray.from_number(1.2), Wad.from_number(100), 'met3')
     conversion4 = Conversion(token4, token1, Ray.from_number(1.1), Wad.from_number(10000), 'met4')
-    conversions = [conversion1, conversion2, conversion3, conversion4]
+    conversions = [conversion1, conversion4, conversion3, conversion2]
     base_token = token1
 
     # when

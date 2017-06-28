@@ -22,7 +22,6 @@ from api.Ray import Ray
 from api.Wad import Wad
 from api.token.ERC20Token import ERC20Token
 from keepers.arbitrage.conversion import Conversion
-from keepers.arbitrage.opportunity import Opportunity
 
 
 @pytest.fixture(autouse=True)
@@ -58,4 +57,3 @@ def test_nicely_convert_to_string_with_amounts(token1, token2):
     # expect
     assert str(conversion) == "[50.000000000000000000 TK1 -> 50.500000000000000000 TK2 @1.010000000000000000000000000" \
                               " by met() (max=1000.000000000000000000 TK1)]"
-
