@@ -119,6 +119,23 @@ def test_should_ignore_irrelevant_conversions(token1, token2, token3, token4):
     assert opportunities[0].conversions[1].method == "met2"
 
 
+def test_should_identify_all_opportunities_regardless_whether_they_are_profitable(token1, token2):
+    # given
+    conversion1 = Conversion(token1, token2, Ray.from_number(1.1), Wad.from_number(1), Wad.from_number(10000), 'met1')
+    conversion2 = Conversion(token2, token1, Ray.from_number(0.6), Wad.from_number(1), Wad.from_number(10000), 'met2')
+    conversions = [conversion1, conversion2]
+    base_token = token1
+
+    # when
+    opportunities = OpportunityFinder(conversions).find_opportunities(base_token, Wad.from_number(100))
+
+    # then
+    assert len(opportunities) == 1
+    assert len(opportunities[0].conversions) == 2
+    assert opportunities[0].conversions[0].method == "met1"
+    assert opportunities[0].conversions[1].method == "met2"
+
+
 def test_should_calculate_amounts_based_on_rates(token1, token2, token3, token4):
     # given
     conversion1 = Conversion(token1, token2, Ray.from_number(2.0), Wad.from_number(1), Wad.from_number(10000), 'met1')
