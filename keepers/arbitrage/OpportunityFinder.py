@@ -17,6 +17,7 @@
 
 import networkx
 
+from api.Address import Address
 from api.Wad import Wad
 from keepers.arbitrage.Opportunity import Opportunity
 
@@ -26,29 +27,31 @@ class OpportunityFinder:
         assert(isinstance(conversions, list))
         self.conversions = conversions
 
-    def find_opportunities(self, base_currency: str, our_max_engagement: Wad):
-        def empty_link(dod, link_from, link_to):
+    def find_opportunities(self, base_token: Address, max_engagement: Wad):
+        def add_empty_link(dod, link_from, link_to):
             if link_from not in dod:
                 dod[link_from] = {}
             dod[link_from][link_to] = {}
 
-        def conversion_link(dod, link_from, link_to, conversion):
+        def add_conversion_link(dod, link_from, link_to, conversion):
             if link_from not in dod:
                 dod[link_from] = {}
             dod[link_from][link_to] = {'conversion': conversion}
 
         def graph_links():
-            dod = {}
+            links = {}
             for conversion in self.conversions:
-                empty_link(dod, conversion.from_currency + "-pre", conversion.from_currency)
-                conversion_link(dod, conversion.from_currency, conversion.to_currency + "-via-" + conversion.method, conversion)
-                empty_link(dod, conversion.to_currency + "-via-" + conversion.method, conversion.to_currency + "-pre")
-            return dod
+                src = conversion.source_token.address
+                dst = conversion.target_token.address
+                add_empty_link(links, src + "-pre", src)
+                add_conversion_link(links, src, dst + "-via-" + conversion.method, conversion)
+                add_empty_link(links, dst + "-via-" + conversion.method, dst + "-pre")
+            return links
 
         graph_links = graph_links()
         graph = networkx.DiGraph(graph_links)
         try:
-            paths = list(networkx.shortest_simple_paths(graph, base_currency, base_currency + "-pre"))
+            paths = list(networkx.shortest_simple_paths(graph, base_token.address, base_token.address + "-pre"))
 
             opportunities = []
             for path in paths:
@@ -58,7 +61,7 @@ class OpportunityFinder:
                         conversions.append(graph_links[path[i]][path[i+1]]['conversion'])
 
                 opportunity = Opportunity(conversions=conversions)
-                opportunity.discover_prices(our_max_engagement)
+                opportunity.discover_prices(max_engagement)
                 opportunities.append(opportunity)
 
             return opportunities

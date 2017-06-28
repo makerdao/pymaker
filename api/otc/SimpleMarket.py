@@ -76,9 +76,9 @@ class SimpleMarket(Contract):
         else:
             return OfferInfo(offer_id=offer_id,
                              sell_how_much=Wad(array[0]),
-                             sell_which_token=ERC20Token(web3=self.web3, address=Address(array[1])),
+                             sell_which_token=Address(array[1]),
                              buy_how_much=Wad(array[2]),
-                             buy_which_token=ERC20Token(web3=self.web3, address=Address(array[3])),
+                             buy_which_token=Address(array[3]),
                              owner=Address(array[4]),
                              active=array[5],
                              timestamp=array[6])

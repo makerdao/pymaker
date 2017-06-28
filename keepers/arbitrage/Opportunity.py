@@ -20,6 +20,7 @@ import operator
 from functools import reduce
 from typing import List
 
+from api.Address import Address
 from api.Ray import Ray
 from api.Wad import Wad
 from keepers.arbitrage.Conversion import Conversion
@@ -41,7 +42,7 @@ class Opportunity:
         self.conversions[0].to_amount = self.conversions[0].from_amount * self.conversions[0].rate
 
         for i in range(1, len(self.conversions)):
-            assert(self.conversions[i-1].to_currency == self.conversions[i].from_currency)
+            assert(self.conversions[i-1].target_token == self.conversions[i].source_token)
             self.conversions[i].from_amount = self.conversions[i-1].to_amount
             if self.conversions[i].from_amount > self.conversions[i].max_from_amount:
                 self.conversions[i].from_amount = self.conversions[i].max_from_amount
@@ -51,12 +52,12 @@ class Opportunity:
     def total_rate(self) -> Ray:
         return reduce(operator.mul, map(lambda conversion: conversion.rate, self.conversions), Ray.from_number(1.0))
 
-    def profit(self, currency: str = 'SAI') -> Wad:
+    def profit(self, currency: Address) -> Wad:
         result = Wad.from_number(0)
         for conversion in self.conversions:
-            if conversion.from_currency == currency:
+            if conversion.source_token == currency:
                 result -= conversion.from_amount
-            if conversion.to_currency == currency:
+            if conversion.target_token == currency:
                 result += conversion.to_amount
         return result
 
@@ -64,9 +65,10 @@ class Opportunity:
         #TODO lowered the transaction costs so the keeper is more aggressive, for testing purposes
         return Wad.from_number(0.0003) * len(self.conversions)
 
-    def net_profit(self) -> Wad:
-        return self.profit() - self.tx_costs()
+    def net_profit(self, currency: Address) -> Wad:
+        return self.profit(currency) - self.tx_costs()
 
     def __str__(self):
-        return f"  Opportunity with profit={self.profit()} SAI, tx_costs={self.tx_costs()} SAI, net_profit={self.net_profit()} SAI" +\
+        sai = Address('0x224c2202792b11c5ac5baaaa8284e6edb60f7174')
+        return f"  Opportunity with profit={self.profit(sai)} SAI, tx_costs={self.tx_costs()} SAI, net_profit={self.net_profit(sai)} SAI" +\
                "".join(map(lambda conversion: "\n  " + str(conversion), self.conversions))

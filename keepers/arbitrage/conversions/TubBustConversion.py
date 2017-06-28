@@ -25,8 +25,8 @@ from keepers.arbitrage.Conversion import Conversion
 class TubBustConversion(Conversion):
     def __init__(self, tub: Tub):
         self.tub = tub
-        super().__init__(from_currency='SAI',
-                         to_currency='SKR',
+        super().__init__(source_token=self.tub.sai(),
+                         target_token=self.tub.skr(),
                          rate=(Ray.from_number(1) / Ray(tub.tap_ask())),
                          min_from_amount=Wad.from_number(0),
                          max_from_amount=self.bustable_amount_in_sai(tub),

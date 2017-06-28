@@ -24,11 +24,11 @@ from keepers.arbitrage.Conversion import Conversion
 class TubExitConversion(Conversion):
     def __init__(self, tub: Tub):
         self.tub = tub
-        super().__init__(from_currency='SKR',
-                         to_currency='ETH',
+        super().__init__(source_token=self.tub.skr(),
+                         target_token=self.tub.gem(),
                          rate=tub.jar_bid(),
                          min_from_amount=Wad.from_number(0),
-                         max_from_amount=Wad.from_number(1000000), #1 mio SKR = infinity ;)
+                         max_from_amount=Wad.from_number(1000000),  #1 mio SKR = infinity ;)
                          method="tub-exit")
 
     def execute(self):

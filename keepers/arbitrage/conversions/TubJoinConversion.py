@@ -25,11 +25,11 @@ from keepers.arbitrage.Conversion import Conversion
 class TubJoinConversion(Conversion):
     def __init__(self, tub: Tub):
         self.tub = tub
-        super().__init__(from_currency='ETH',
-                         to_currency='SKR',
+        super().__init__(source_token=self.tub.gem(),
+                         target_token=self.tub.skr(),
                          rate=(Ray.from_number(1) / tub.jar_ask()),
                          min_from_amount=Wad.from_number(0),
-                         max_from_amount=Wad.from_number(1000000), #1 mio ETH = infinity ;)
+                         max_from_amount=Wad.from_number(1000000),  #1 mio ETH = infinity ;)
                          method="tub-join")
 
     def execute(self):

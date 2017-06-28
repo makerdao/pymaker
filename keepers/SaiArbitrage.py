@@ -60,9 +60,9 @@ class SaiArbitrage(Keeper):
         self.setup_allowance(self.sai, 'SAI', self.tub.pit())
         self.setup_allowance(self.sai, 'SAI', self.lpc.address)       # so we can take() W-ETH and SAI from Lpc
         self.setup_allowance(self.gem, 'W-ETH', self.lpc.address)
-        self.setup_allowance(self.gem, 'W-ETH', self.market.address)  # so we can take orders on OasisDEX
-        self.setup_allowance(self.skr, 'SKR', self.market.address)
-        self.setup_allowance(self.sai, 'SAI', self.market.address)
+        self.setup_allowance(self.gem, 'W-ETH', self.otc.address)  # so we can take orders on OasisDEX
+        self.setup_allowance(self.skr, 'SKR', self.otc.address)
+        self.setup_allowance(self.sai, 'SAI', self.otc.address)
 
     def setup_allowance(self, token, token_name, address):
         minimum_allowance = Wad(2**128-1)
@@ -82,15 +82,15 @@ class SaiArbitrage(Keeper):
                 LpcTakeSaiConversion(self.tub, self.lpc)]
 
     def otc_offers(self, tokens):
-        offers = [self.market.get_offer(offer_id + 1) for offer_id in range(self.market.get_last_offer_id())]
+        offers = [self.otc.get_offer(offer_id + 1) for offer_id in range(self.otc.get_last_offer_id())]
         offers = [offer for offer in offers if offer is not None]
         return [offer for offer in offers if offer.sell_which_token in tokens and offer.buy_which_token in tokens]
 
     def otc_conversions(self, tokens):
-        return list(map(lambda offer: OasisTakeConversion(self.tub, self.market, offer), self.otc_offers(tokens)))
+        return list(map(lambda offer: OasisTakeConversion(self.tub, self.otc, offer), self.otc_offers(tokens)))
 
     def all_conversions(self):
-        return self.tub_conversions() + self.lpc_conversions() + self.otc_conversions([self.sai, self.skr, self.gem])
+        return self.tub_conversions() + self.lpc_conversions() + self.otc_conversions([self.sai.address, self.skr.address, self.gem.address])
 
     def first_opportunity(self, opportunities):
         if len(opportunities) > 0: return opportunities[0]
@@ -109,14 +109,16 @@ class SaiArbitrage(Keeper):
         self.print_balances()
         print(f"")
 
+        investment_token = self.tub.sai()
+
         # We find all arbitrage opportunities, they can still not bring us the profit we expect them to
         # but it is convenient to list them for monitoring purposes. So that we know the keeper actually
         # found an arbitrage opportunity.
         conversions = self.all_conversions()
-        opportunities = OpportunityFinder(conversions=conversions).find_opportunities('SAI', self.maximum_engagement)
+        opportunities = OpportunityFinder(conversions=conversions).find_opportunities(investment_token, self.maximum_engagement)
         opportunities = filter(lambda opportunity: opportunity.total_rate() > Ray.from_number(1.000001), opportunities)
-        opportunities = filter(lambda opportunity: opportunity.profit() > Wad.from_number(0), opportunities)
-        opportunities = list(sorted(opportunities, key=lambda opportunity: opportunity.net_profit(), reverse=True))
+        opportunities = filter(lambda opportunity: opportunity.profit(investment_token) > Wad.from_number(0), opportunities)
+        opportunities = list(sorted(opportunities, key=lambda opportunity: opportunity.net_profit(investment_token), reverse=True))
 
         if len(opportunities) == 0:
             print(f"No opportunities found. No worries, I will try again.")
@@ -128,7 +130,7 @@ class SaiArbitrage(Keeper):
 
         # At this point we only leave out these opportunities, that bring us the desired profit.
         # We pick the first of them, the one that brings us the best profit.
-        opportunities = list(filter(lambda opportunity: opportunity.net_profit() > self.minimum_profit, opportunities))
+        opportunities = list(filter(lambda opportunity: opportunity.net_profit(investment_token) > self.minimum_profit, opportunities))
         best_opportunity = self.first_opportunity(opportunities)
 
         if best_opportunity is None:
@@ -192,11 +194,15 @@ class SaiArbitrage(Keeper):
         self.sai = ERC20Token(web3=web3, address=self.tub.sai())
         self.gem = ERC20Token(web3=web3, address=self.tub.gem())
 
+        ERC20Token.register_token(self.tub.skr(), 'SKR')
+        ERC20Token.register_token(self.tub.sai(), 'SAI')
+        ERC20Token.register_token(self.tub.gem(), 'WETH')
+
         self.lpc_address = Address(config.get_contract_address("saiLpc"))
         self.lpc = Lpc(web3=web3, address=self.lpc_address)
 
-        self.market_address = Address(config.get_contract_address("otc"))
-        self.market = SimpleMarket(web3=web3, address=self.market_address)
+        self.otc_address = Address(config.get_contract_address("otc"))
+        self.otc = SimpleMarket(web3=web3, address=self.otc_address)
 
         self.minimum_profit = Wad.from_number(args.minimum_profit)
         self.maximum_engagement = Wad.from_number(args.maximum_engagement)

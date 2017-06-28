@@ -130,3 +130,7 @@ class ERC20Token(Contract):
             if name == token_name:
                 return address
         raise Exception(f"Token {token_name} not found")
+
+    @staticmethod
+    def token_name_by_address(token_address):
+        return ERC20Token.registry[token_address]

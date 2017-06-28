@@ -14,17 +14,17 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+from api.Address import Address
 from api.Ray import Ray
 from api.Wad import Wad
 
 
 class Conversion:
-    def __init__(self, from_currency: str, to_currency: str, rate: Ray, min_from_amount: Wad, max_from_amount: Wad, method: str):
+    def __init__(self, source_token: Address, target_token: Address, rate: Ray, min_from_amount: Wad, max_from_amount: Wad, method: str):
         self.from_amount = None
-        self.from_currency = from_currency
+        self.source_token = source_token
         self.to_amount = None
-        self.to_currency = to_currency
+        self.target_token = target_token
         self.rate = rate
         self.min_from_amount = min_from_amount
         self.max_from_amount = max_from_amount
@@ -40,5 +40,5 @@ class Conversion:
             else:
                 return ""
 
-        return f"[{amt(self.from_amount)}{self.from_currency} -> {amt(self.to_amount)}{self.to_currency} @{self.rate} " \
-               f"by {self.method} (min={self.min_from_amount} {self.from_currency}, max={self.max_from_amount} {self.from_currency})]"
+        return f"[{amt(self.from_amount)}{self.source_token} -> {amt(self.to_amount)}{self.target_token} @{self.rate} " \
+               f"by {self.method} (min={self.min_from_amount} {self.source_token}, max={self.max_from_amount} {self.source_token})]"

@@ -25,27 +25,17 @@ from keepers.arbitrage.Conversion import Conversion
 
 
 class OasisTakeConversion(Conversion):
-    def __init__(self, tub: Tub, market: SimpleMarket, offer: OfferInfo):
+    def __init__(self, tub: Tub, otc: SimpleMarket, offer: OfferInfo):
         self.tub = tub
-        self.market = market
+        self.otc = otc
         self.offer = offer
 
-        super().__init__(from_currency=self._currency_symbol(offer.buy_which_token.address),
-                         to_currency=self._currency_symbol(offer.sell_which_token.address),
+        super().__init__(source_token=offer.buy_which_token,
+                         target_token=offer.sell_which_token,
                          rate=Ray(offer.sell_how_much)/Ray(offer.buy_how_much),
                          min_from_amount=Wad.from_number(0),  #TODO will probably change after dust order limitation gets introduced
                          max_from_amount=offer.buy_how_much,
                          method=f"oasis-take-{self.offer.offer_id}")
-
-    def _currency_symbol(self, address):
-        if address == self.tub.sai():
-            return "SAI"
-        elif address == self.tub.skr():
-            return "SKR"
-        elif address == self.tub.gem():
-            return "ETH"
-        else:
-            return "___"
 
     def execute(self):
         quantity = self.to_amount
@@ -60,13 +50,15 @@ class OasisTakeConversion(Conversion):
         if self.offer.sell_how_much - quantity < Wad.from_number(0.0000000001):
             quantity = self.offer.sell_how_much
 
-        print(f"  Executing take({self.offer.offer_id}, '{quantity}') on OasisDEX in order to exchange {self.from_amount} {self.from_currency} to {self.to_amount} {self.to_currency}")
-        take_result = self.market.take(self.offer.offer_id, quantity)
+        print(
+            f"  Executing take({self.offer.offer_id}, '{quantity}') on OasisDEX in order to exchange {self.from_amount} {self.source_token} to {self.to_amount} {self.target_token}")
+        take_result = self.otc.take(self.offer.offer_id, quantity)
         if take_result:
             our_address = Address(self.tub.web3.eth.defaultAccount)
-            incoming_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.sell_which_token.address and transfer.to_address == our_address, take_result.transfers))
-            outgoing_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.buy_which_token.address and transfer.from_address == our_address, take_result.transfers))
-            print(f"  Take was successful, exchanged {outgoing_transfer_on_take.value} {self.from_currency} to {incoming_transfer_on_take.value} {self.to_currency}")
+            incoming_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.sell_which_token and transfer.to_address == our_address, take_result.transfers))
+            outgoing_transfer_on_take = next(filter(lambda transfer: transfer.token_address == self.offer.buy_which_token and transfer.from_address == our_address, take_result.transfers))
+            print(
+                f"  Take was successful, exchanged {outgoing_transfer_on_take.value} {self.source_token} to {incoming_transfer_on_take.value} {self.target_token}")
             return take_result
         else:
             print(f"  Take failed!")

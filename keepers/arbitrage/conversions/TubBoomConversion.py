@@ -28,8 +28,8 @@ from keepers.arbitrage.Conversion import Conversion
 class TubBoomConversion(Conversion):
     def __init__(self, tub: Tub):
         self.tub = tub
-        super().__init__(from_currency='SKR',
-                         to_currency='SAI',
+        super().__init__(source_token=self.tub.skr(),
+                         target_token=self.tub.sai(),
                          rate=Ray(tub.tap_bid()),
                          min_from_amount=Wad.from_number(0),
                          max_from_amount=self.boomable_amount_in_skr(tub),
