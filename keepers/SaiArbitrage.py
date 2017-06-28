@@ -57,23 +57,32 @@ class SaiArbitrage(Keeper):
         print(f"Operating as {self.our_address}")
 
     def setup_allowances(self):
-        print(f"Verifying allowances...")
-        self.setup_allowance(self.gem, 'W-ETH', self.tub.jar())       # so we can join() and exit()
-        self.setup_allowance(self.skr, 'SKR', self.tub.jar())
-        self.setup_allowance(self.skr, 'SKR', self.tub.pit())         # so we can boom() and bust()
-        self.setup_allowance(self.sai, 'SAI', self.tub.pit())
-        self.setup_allowance(self.sai, 'SAI', self.lpc.address)       # so we can take() W-ETH and SAI from Lpc
-        self.setup_allowance(self.gem, 'W-ETH', self.lpc.address)
-        self.setup_allowance(self.gem, 'W-ETH', self.otc.address)  # so we can take orders on OasisDEX
-        self.setup_allowance(self.skr, 'SKR', self.otc.address)
-        self.setup_allowance(self.sai, 'SAI', self.otc.address)
+        self.setup_tub_allowances()
+        self.setup_lpc_allowances()
+        self.setup_otc_allowances()
 
-    def setup_allowance(self, token, token_name, address):
-        minimum_allowance = Wad(2**128-1)
-        target_allowance = Wad(2**256-1)
-        if token.allowance_of(self.our_address, address) < minimum_allowance:
-            print(f"  Raising {token_name} allowance for {address}")
-            token.approve(address, target_allowance)
+    def setup_tub_allowances(self):
+        """Approves Tub components so we can call join()/exit() and boom()/bust()"""
+        self.setup_allowance(self.gem, self.tub.jar(), 'Tub.jar')
+        self.setup_allowance(self.skr, self.tub.jar(), 'Tub.jar')
+        self.setup_allowance(self.skr, self.tub.pit(), 'Tub.pit')
+        self.setup_allowance(self.sai, self.tub.pit(), 'Tub.pit')
+
+    def setup_lpc_allowances(self):
+        """Approves the Lpc so we can exchange WETH and SAI using it"""
+        self.setup_allowance(self.gem, self.lpc.address, 'Lpc')
+        self.setup_allowance(self.sai, self.lpc.address, 'Lpc')
+
+    def setup_otc_allowances(self):
+        """Approves OasisDEX so we can exchange all three tokens (WETH, SAI and SKR)"""
+        self.setup_allowance(self.gem, self.otc.address, 'OasisDEX')
+        self.setup_allowance(self.sai, self.otc.address, 'OasisDEX')
+        self.setup_allowance(self.skr, self.otc.address, 'OasisDEX')
+
+    def setup_allowance(self, token: ERC20Token, spender_address: Address, spender_name: str):
+        if token.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
+            print(f"  Approving {spender_name} ({spender_address}) to access our {token.name()} balance...")
+            token.approve(spender_address, Wad(2 ** 256 - 1))
 
     def tub_conversions(self):
         return [TubJoinConversion(self.tub),
