@@ -15,19 +15,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import copy
-import operator
 from functools import reduce
-from typing import List, Iterable
+from typing import Iterable
 
 import itertools
 
 from api.Address import Address
-from api.Ray import Ray
 from api.Transfer import Transfer
 from api.Wad import Wad
 from api.token.ERC20Token import ERC20Token
-from keepers.arbitrage.conversion import Conversion
 
 
 class TransferFormatter:
@@ -37,8 +33,8 @@ class TransferFormatter:
     def _sum_by_token(self, transfers: list):
         transfers.sort(key=lambda transfer: transfer.token_address, reverse=False)
         for token_address, transfers in itertools.groupby(transfers, lambda transfer: transfer.token_address):
-            sum = self._sum(map(lambda transfer: transfer.value, transfers))
-            yield f"{sum} {ERC20Token.token_name_by_address(token_address)}"
+            total = self._sum(map(lambda transfer: transfer.value, transfers))
+            yield f"{total} {ERC20Token.token_name_by_address(token_address)}"
 
     def _net_value(self, transfer: Transfer, our_address: Address):
         if transfer.from_address == our_address and transfer.to_address == our_address:
@@ -53,8 +49,8 @@ class TransferFormatter:
     def _net_by_token(self, transfers: list, our_address: Address):
         transfers.sort(key=lambda transfer: transfer.token_address, reverse=False)
         for token_address, transfers in itertools.groupby(transfers, lambda transfer: transfer.token_address):
-            sum = self._sum(map(lambda transfer: self._net_value(transfer, our_address), transfers))
-            yield f"{sum} {ERC20Token.token_name_by_address(token_address)}"
+            total = self._sum(map(lambda transfer: self._net_value(transfer, our_address), transfers))
+            yield f"{total} {ERC20Token.token_name_by_address(token_address)}"
 
     def _join_with_and(self, iterable: Iterable):
         return " and ".join(iterable)
