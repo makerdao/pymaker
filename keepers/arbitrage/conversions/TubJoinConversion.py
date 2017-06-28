@@ -32,8 +32,10 @@ class TubJoinConversion(Conversion):
                          max_from_amount=Wad.from_number(1000000),  #1 mio ETH = infinity ;)
                          method="tub-join")
 
+    def name(self):
+        return f"tub.join('{self.from_amount}')"
+
     def execute(self):
-        print(f"  Executing join('{self.from_amount}') in order to exchange {self.from_amount} ETH to {self.to_amount} SKR")
         join_result = self.tub.join(self.from_amount)
         if join_result:
             our_address = Address(self.tub.web3.eth.defaultAccount)

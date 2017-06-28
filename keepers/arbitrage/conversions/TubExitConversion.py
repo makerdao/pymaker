@@ -31,8 +31,10 @@ class TubExitConversion(Conversion):
                          max_from_amount=Wad.from_number(1000000),  #1 mio SKR = infinity ;)
                          method="tub-exit")
 
+    def name(self):
+        return f"tub.exit('{self.from_amount}')"
+
     def execute(self):
-        print(f"  Executing exit('{self.from_amount}') in order to exchange {self.from_amount} SKR to {self.to_amount} ETH")
         join_result = self.tub.exit(self.from_amount)
         if join_result:
             our_address = Address(self.tub.web3.eth.defaultAccount)

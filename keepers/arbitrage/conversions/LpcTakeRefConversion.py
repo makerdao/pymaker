@@ -37,8 +37,10 @@ class LpcTakeRefConversion(Conversion):
                          max_from_amount=max_entry_alt,
                          method="lpc-take-ref")
 
+    def name(self):
+        return f"lpc.take(ref, '{self.to_amount}')"
+
     def execute(self):
-        print(f"  Executing take(ref, '{self.to_amount}') on Lpc in order to exchange {self.from_amount} {self.lpc.alt()} to {self.to_amount} {self.lpc.ref()}")
         take_result = self.lpc.take(self.lpc.ref(), self.to_amount)
         if take_result:
             our_address = Address(self.lpc.web3.eth.defaultAccount)

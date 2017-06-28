@@ -30,8 +30,11 @@ class Conversion:
         self.max_from_amount = max_from_amount
         self.method = method
 
+    def name(self):
+        raise NotImplementedError("name() not implemented")
+
     def execute(self):
-        raise Exception("Not implemented")
+        raise NotImplementedError("excecute() not implemented")
 
     def __str__(self):
         def amt(amount: Wad) -> str:

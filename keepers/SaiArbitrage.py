@@ -146,6 +146,7 @@ class SaiArbitrage(Keeper):
 
         for index, conversion in enumerate(best_opportunity.conversions, start=1):
             print(f"Step {index}/{len(best_opportunity.conversions)}:")
+            print(f"  Executing {conversion.name()} in order to exchange {conversion.from_amount} {conversion.source_token} to {conversion.to_amount} {conversion.target_token}")
             receipt = conversion.execute()
             if receipt is None:
                 print(f"")

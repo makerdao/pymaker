@@ -18,7 +18,6 @@
 from api.Address import Address
 from api.Ray import Ray
 from api.Wad import Wad
-from api.sai import Tub
 from api.sai.Lpc import Lpc
 from api.token.ERC20Token import ERC20Token
 from keepers.arbitrage.Conversion import Conversion
@@ -37,8 +36,10 @@ class LpcTakeAltConversion(Conversion):
                          max_from_amount=max_entry_ref,
                          method="lpc-take-alt")
 
+    def name(self):
+        return f"lpc.take(alt, '{self.to_amount}')"
+
     def execute(self):
-        print(f"  Executing take(alt, '{self.to_amount}') on Lpc in order to exchange {self.from_amount} {self.lpc.ref()} to {self.to_amount} {self.lpc.alt()}")
         take_result = self.lpc.take(self.lpc.alt(), self.to_amount)
         if take_result:
             our_address = Address(self.lpc.web3.eth.defaultAccount)

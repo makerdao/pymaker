@@ -36,8 +36,10 @@ class OasisTakeConversion(Conversion):
                          max_from_amount=offer.buy_how_much,
                          method=f"oasis-take-{self.offer.offer_id}")
 
+    def name(self):
+        return f"otc.take({self.offer.offer_id}, '{self.quantity()}')"
+
     def execute(self):
-        print(f"  Executing take({self.offer.offer_id}, '{self.quantity()}') on OasisDEX in order to exchange {self.from_amount} {self.source_token} to {self.to_amount} {self.target_token}")
         take_result = self.otc.take(self.offer.offer_id, self.quantity())
         if take_result:
             our_address = Address(self.otc.web3.eth.defaultAccount)
