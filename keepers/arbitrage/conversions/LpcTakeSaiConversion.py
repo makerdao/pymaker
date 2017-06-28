@@ -41,7 +41,7 @@ class LpcTakeSaiConversion(Conversion):
                          method="lpc-take-sai")
 
     def perform(self):
-        print(f"  Executing take(SAI, '{self.to_amount}') in order to exchange {self.from_amount} ETH to {self.to_amount} SAI")
+        print(f"  Executing take(SAI, '{self.to_amount}') on SaiLPC in order to exchange {self.from_amount} ETH to {self.to_amount} SAI")
         take_result = self.lpc.take(self.tub.sai(), self.to_amount)
         if take_result:
             our_address = Address(self.tub.web3.eth.defaultAccount)

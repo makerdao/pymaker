@@ -60,7 +60,7 @@ class OasisTakeConversion(Conversion):
         if self.offer.sell_how_much - quantity < Wad.from_number(0.0000000001):
             quantity = self.offer.sell_how_much
 
-        print(f"  Executing take({self.offer.offer_id}, '{quantity}') in order to exchange {self.from_amount} {self.from_currency} to {self.to_amount} {self.to_currency}")
+        print(f"  Executing take({self.offer.offer_id}, '{quantity}') on OasisDEX in order to exchange {self.from_amount} {self.from_currency} to {self.to_amount} {self.to_currency}")
         take_result = self.market.take(self.offer.offer_id, quantity)
         if take_result:
             our_address = Address(self.tub.web3.eth.defaultAccount)
