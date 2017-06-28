@@ -19,7 +19,7 @@ import networkx
 
 from api.Address import Address
 from api.Wad import Wad
-from keepers.arbitrage.Opportunity import Opportunity
+from keepers.arbitrage.opportunity import Opportunity
 
 
 class OpportunityFinder:

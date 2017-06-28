@@ -21,7 +21,7 @@ from api.Wad import Wad
 from api.sai import Tub
 from api.sai.Lpc import Lpc
 from api.token.ERC20Token import ERC20Token
-from keepers.arbitrage.Conversion import Conversion
+from keepers.arbitrage.conversion import Conversion
 
 
 class LpcTakeRefConversion(Conversion):

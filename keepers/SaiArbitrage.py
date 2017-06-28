@@ -34,7 +34,7 @@ from api.sai.Tub import Tub
 from api.token.ERC20Token import ERC20Token
 from keepers.Config import Config
 from keepers.Keeper import Keeper
-from keepers.arbitrage.OpportunityFinder import OpportunityFinder
+from keepers.arbitrage.opportunity_finder import OpportunityFinder
 from keepers.arbitrage.conversions.LpcTakeAltConversion import LpcTakeAltConversion
 from keepers.arbitrage.conversions.LpcTakeRefConversion import LpcTakeRefConversion
 from keepers.arbitrage.conversions.OasisTakeConversion import OasisTakeConversion

@@ -27,7 +27,7 @@ from api.Ray import Ray
 from api.Transfer import Transfer
 from api.Wad import Wad
 from api.token.ERC20Token import ERC20Token
-from keepers.arbitrage.Conversion import Conversion
+from keepers.arbitrage.conversion import Conversion
 
 
 class TransferFormatter:

@@ -22,7 +22,7 @@ from api.Address import Address
 from api.Ray import Ray
 from api.Wad import Wad
 from api.sai import Tub
-from keepers.arbitrage.Conversion import Conversion
+from keepers.arbitrage.conversion import Conversion
 
 
 class TubBoomConversion(Conversion):
