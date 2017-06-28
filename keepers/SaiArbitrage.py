@@ -49,13 +49,6 @@ from keepers.arbitrage.conversions.TubJoinConversion import TubJoinConversion
 
 
 class SaiArbitrage(Keeper):
-    def all_offers(self, market):
-        all_offers = [market.get_offer(offer_id) for offer_id in range(1, market.get_last_offer_id()+1)]
-        return [offer for offer in all_offers if offer is not None]
-
-    def filter_by_token_pair(self, offers, sell_which_token, buy_which_token):
-        return [offer for offer in offers if offer.sell_which_token == sell_which_token and offer.buy_which_token == buy_which_token]
-
     def print_introduction(self):
         print(f"Operating as {self.our_address}")
 
@@ -88,20 +81,16 @@ class SaiArbitrage(Keeper):
         return [LpcTakeEthConversion(self.tub, self.lpc),
                 LpcTakeSaiConversion(self.tub, self.lpc)]
 
-    def otc_conversions(self):
-        # We list all active orders on OasisDEX and filter on the interesting pairs
-        offers = self.all_offers(self.market)
-        offers = self.filter_by_token_pair(offers, self.sai, self.skr)\
-                 + self.filter_by_token_pair(offers, self.skr, self.sai) \
-                 + self.filter_by_token_pair(offers, self.gem, self.sai) \
-                 + self.filter_by_token_pair(offers, self.sai, self.gem) \
-                 + self.filter_by_token_pair(offers, self.gem, self.skr) \
-                 + self.filter_by_token_pair(offers, self.skr, self.gem)
+    def otc_offers(self, tokens):
+        offers = [self.market.get_offer(offer_id + 1) for offer_id in range(self.market.get_last_offer_id())]
+        offers = [offer for offer in offers if offer is not None]
+        return [offer for offer in offers if offer.sell_which_token in tokens and offer.buy_which_token in tokens]
 
-        return list(map(lambda offer: OasisTakeConversion(self.tub, self.market, offer), offers))
+    def otc_conversions(self, tokens):
+        return list(map(lambda offer: OasisTakeConversion(self.tub, self.market, offer), self.otc_offers(tokens)))
 
     def all_conversions(self):
-        return self.tub_conversions() + self.lpc_conversions() + self.otc_conversions()
+        return self.tub_conversions() + self.lpc_conversions() + self.otc_conversions([self.sai, self.skr, self.gem])
 
     def first_opportunity(self, opportunities):
         if len(opportunities) > 0: return opportunities[0]
