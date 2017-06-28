@@ -54,7 +54,7 @@ class SaiArbitrage(Keeper):
         return [offer for offer in offers if offer.sell_which_token == sell_which_token and offer.buy_which_token == buy_which_token]
 
     def print_introduction(self):
-        print(f"Trading as {self.our_address}")
+        print(f"Operating as {self.our_address}")
 
     def setup_allowances(self):
         print(f"Verifying allowances...")
@@ -180,7 +180,7 @@ class SaiArbitrage(Keeper):
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
         parser.add_argument("--frequency", help="Frequency of checking for arbitrage opportunities (default: 5)", default=5, type=float)
-        parser.add_argument("--minimum-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.5)", default=0.5, type=float)
+        parser.add_argument("--minimum-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.5)", default=0.01, type=float)
         parser.add_argument("--maximum-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
         args = parser.parse_args()
 

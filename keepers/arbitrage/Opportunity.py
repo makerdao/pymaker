@@ -61,7 +61,8 @@ class Opportunity:
         return result
 
     def tx_costs(self) -> Wad:
-        return Wad.from_number(0.3) * len(self.conversions)
+        #TODO lowered the transaction costs so the keeper is more aggressive, for testing purposes
+        return Wad.from_number(0.0003) * len(self.conversions)
 
     def net_profit(self) -> Wad:
         return self.profit() - self.tx_costs()
