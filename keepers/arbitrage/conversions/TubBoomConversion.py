@@ -31,9 +31,8 @@ class TubBoomConversion(Conversion):
         super().__init__(source_token=self.tub.skr(),
                          target_token=self.tub.sai(),
                          rate=Ray(tub.tap_bid()),
-                         min_source_amount=Wad.from_number(0),
                          max_source_amount=self.boomable_amount_in_skr(tub),
-                         method="tub-boom")
+                         method="tub.boom()")
 
     #TODO currently the keeper doesn't see `joy` changing unless `drip` gets called
     #this is the thing `sai-explorer` is trying to calculate on his own

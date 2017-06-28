@@ -28,9 +28,8 @@ class TubBustConversion(Conversion):
         super().__init__(source_token=self.tub.sai(),
                          target_token=self.tub.skr(),
                          rate=(Ray.from_number(1) / Ray(tub.tap_ask())),
-                         min_source_amount=Wad.from_number(0),
                          max_source_amount=self.bustable_amount_in_sai(tub),
-                         method="tub-bust")
+                         method="tub.bust()")
 
     def bustable_amount_in_sai(self, tub: Tub):
         #TODO we always try to bust 10 SAI less than what the Tub reports

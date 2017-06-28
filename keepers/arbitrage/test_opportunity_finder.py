@@ -46,8 +46,8 @@ def token4():
 
 def test_should_identify_opportunity(token1, token2):
     # given
-    conversion1 = Conversion(token1, token2, Ray.from_number(1.02), Wad.from_number(1), Wad.from_number(10000), 'met1')
-    conversion2 = Conversion(token2, token1, Ray.from_number(1.03), Wad.from_number(1), Wad.from_number(10000), 'met2')
+    conversion1 = Conversion(token1, token2, Ray.from_number(1.02), Wad.from_number(10000), 'met1')
+    conversion2 = Conversion(token2, token1, Ray.from_number(1.03), Wad.from_number(10000), 'met2')
     conversions = [conversion1, conversion2]
     base_token = token1
 
@@ -63,8 +63,8 @@ def test_should_identify_opportunity(token1, token2):
 
 def test_opportunities_found_should_start_with_the_base_token(token1, token2):
     # given
-    conversion1 = Conversion(token1, token2, Ray.from_number(1.02), Wad.from_number(1), Wad.from_number(10000), 'met1')
-    conversion2 = Conversion(token2, token1, Ray.from_number(1.03), Wad.from_number(1), Wad.from_number(10000), 'met2')
+    conversion1 = Conversion(token1, token2, Ray.from_number(1.02), Wad.from_number(10000), 'met1')
+    conversion2 = Conversion(token2, token1, Ray.from_number(1.03), Wad.from_number(10000), 'met2')
     conversions = [conversion1, conversion2]
     base_token = token2
 
@@ -80,10 +80,10 @@ def test_opportunities_found_should_start_with_the_base_token(token1, token2):
 
 def test_should_identify_multi_step_opportunities(token1, token2, token3, token4):
     # given
-    conversion1 = Conversion(token1, token2, Ray.from_number(1.02), Wad.from_number(1), Wad.from_number(10000), 'met1')
-    conversion2 = Conversion(token2, token3, Ray.from_number(1.03), Wad.from_number(1), Wad.from_number(10000), 'met2')
-    conversion3 = Conversion(token3, token4, Ray.from_number(1.05), Wad.from_number(1), Wad.from_number(10000), 'met3')
-    conversion4 = Conversion(token4, token1, Ray.from_number(1.07), Wad.from_number(1), Wad.from_number(10000), 'met4')
+    conversion1 = Conversion(token1, token2, Ray.from_number(1.02), Wad.from_number(10000), 'met1')
+    conversion2 = Conversion(token2, token3, Ray.from_number(1.03), Wad.from_number(10000), 'met2')
+    conversion3 = Conversion(token3, token4, Ray.from_number(1.05), Wad.from_number(10000), 'met3')
+    conversion4 = Conversion(token4, token1, Ray.from_number(1.07), Wad.from_number(10000), 'met4')
     conversions = [conversion1, conversion2, conversion3, conversion4]
     base_token = token1
 
@@ -101,11 +101,11 @@ def test_should_identify_multi_step_opportunities(token1, token2, token3, token4
 
 def test_should_ignore_irrelevant_conversions(token1, token2, token3, token4):
     # given
-    conversion1 = Conversion(token1, token2, Ray.from_number(1.02), Wad.from_number(1), Wad.from_number(10000), 'met1')
-    conversion2 = Conversion(token2, token1, Ray.from_number(1.03), Wad.from_number(1), Wad.from_number(10000), 'met2')
-    conversion3 = Conversion(token1, token3, Ray.from_number(1.04), Wad.from_number(1), Wad.from_number(10000), 'met3')
-    conversion4 = Conversion(token1, token4, Ray.from_number(1.07), Wad.from_number(1), Wad.from_number(10000), 'met4')
-    conversion5 = Conversion(token2, token4, Ray.from_number(1.08), Wad.from_number(1), Wad.from_number(10000), 'met5')
+    conversion1 = Conversion(token1, token2, Ray.from_number(1.02), Wad.from_number(10000), 'met1')
+    conversion2 = Conversion(token2, token1, Ray.from_number(1.03), Wad.from_number(10000), 'met2')
+    conversion3 = Conversion(token1, token3, Ray.from_number(1.04), Wad.from_number(10000), 'met3')
+    conversion4 = Conversion(token1, token4, Ray.from_number(1.07), Wad.from_number(10000), 'met4')
+    conversion5 = Conversion(token2, token4, Ray.from_number(1.08), Wad.from_number(10000), 'met5')
     conversions = [conversion1, conversion2, conversion3, conversion4, conversion5]
     base_token = token1
 
@@ -121,8 +121,8 @@ def test_should_ignore_irrelevant_conversions(token1, token2, token3, token4):
 
 def test_should_identify_all_opportunities_regardless_whether_they_are_profitable(token1, token2):
     # given
-    conversion1 = Conversion(token1, token2, Ray.from_number(1.1), Wad.from_number(1), Wad.from_number(10000), 'met1')
-    conversion2 = Conversion(token2, token1, Ray.from_number(0.6), Wad.from_number(1), Wad.from_number(10000), 'met2')
+    conversion1 = Conversion(token1, token2, Ray.from_number(1.1), Wad.from_number(10000), 'met1')
+    conversion2 = Conversion(token2, token1, Ray.from_number(0.6), Wad.from_number(10000), 'met2')
     conversions = [conversion1, conversion2]
     base_token = token1
 
@@ -138,8 +138,8 @@ def test_should_identify_all_opportunities_regardless_whether_they_are_profitabl
 
 def test_should_recognize_if_there_are_no_opportunities(token1, token2, token3):
     # given
-    conversion1 = Conversion(token1, token2, Ray.from_number(1.02), Wad.from_number(1), Wad.from_number(10000), 'met1')
-    conversion2 = Conversion(token2, token3, Ray.from_number(1.03), Wad.from_number(1), Wad.from_number(10000), 'met2')
+    conversion1 = Conversion(token1, token2, Ray.from_number(1.02), Wad.from_number(10000), 'met1')
+    conversion2 = Conversion(token2, token3, Ray.from_number(1.03), Wad.from_number(10000), 'met2')
     conversions = [conversion1, conversion2]
     base_token = token1
 
@@ -152,10 +152,10 @@ def test_should_recognize_if_there_are_no_opportunities(token1, token2, token3):
 
 def test_should_calculate_amounts_based_on_rates(token1, token2, token3, token4):
     # given
-    conversion1 = Conversion(token1, token2, Ray.from_number(2.0), Wad.from_number(1), Wad.from_number(10000), 'met1')
-    conversion2 = Conversion(token2, token3, Ray.from_number(1.6), Wad.from_number(1), Wad.from_number(10000), 'met2')
-    conversion3 = Conversion(token3, token4, Ray.from_number(1.2), Wad.from_number(1), Wad.from_number(10000), 'met3')
-    conversion4 = Conversion(token4, token1, Ray.from_number(1.1), Wad.from_number(1), Wad.from_number(10000), 'met4')
+    conversion1 = Conversion(token1, token2, Ray.from_number(2.0), Wad.from_number(10000), 'met1')
+    conversion2 = Conversion(token2, token3, Ray.from_number(1.6), Wad.from_number(10000), 'met2')
+    conversion3 = Conversion(token3, token4, Ray.from_number(1.2), Wad.from_number(10000), 'met3')
+    conversion4 = Conversion(token4, token1, Ray.from_number(1.1), Wad.from_number(10000), 'met4')
     conversions = [conversion1, conversion2, conversion3, conversion4]
     base_token = token1
 
@@ -181,10 +181,10 @@ def test_should_calculate_amounts_based_on_rates(token1, token2, token3, token4)
 
 def test_should_adjust_amounts_based_on_max_source_amount(token1, token2, token3, token4):
     # given
-    conversion1 = Conversion(token1, token2, Ray.from_number(2.0), Wad.from_number(1), Wad.from_number(10000), 'met1')
-    conversion2 = Conversion(token2, token3, Ray.from_number(1.6), Wad.from_number(1), Wad.from_number(10000), 'met2')
-    conversion3 = Conversion(token3, token4, Ray.from_number(1.2), Wad.from_number(1), Wad.from_number(100), 'met3')
-    conversion4 = Conversion(token4, token1, Ray.from_number(1.1), Wad.from_number(1), Wad.from_number(10000), 'met4')
+    conversion1 = Conversion(token1, token2, Ray.from_number(2.0), Wad.from_number(10000), 'met1')
+    conversion2 = Conversion(token2, token3, Ray.from_number(1.6), Wad.from_number(10000), 'met2')
+    conversion3 = Conversion(token3, token4, Ray.from_number(1.2), Wad.from_number(100), 'met3')
+    conversion4 = Conversion(token4, token1, Ray.from_number(1.1), Wad.from_number(10000), 'met4')
     conversions = [conversion1, conversion2, conversion3, conversion4]
     base_token = token1
 
@@ -206,8 +206,3 @@ def test_should_adjust_amounts_based_on_max_source_amount(token1, token2, token3
     assert opportunities[0].conversions[3].method == "met4"
     assert opportunities[0].conversions[3].source_amount == Wad.from_number(120)
     assert opportunities[0].conversions[3].target_amount == Wad.from_number(132)
-
-
-#TODO min_source_amount is currently not respected!
-def test_should_adjust_amounts_based_on_min_source_amount():
-    pass

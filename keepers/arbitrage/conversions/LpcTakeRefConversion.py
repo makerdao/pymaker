@@ -15,10 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from api.Address import Address
 from api.Ray import Ray
 from api.Wad import Wad
-from api.sai import Tub
 from api.sai.Lpc import Lpc
 from api.token.ERC20Token import ERC20Token
 from keepers.arbitrage.conversion import Conversion
@@ -33,9 +31,8 @@ class LpcTakeRefConversion(Conversion):
         super().__init__(source_token=self.lpc.alt(),
                          target_token=self.lpc.ref(),
                          rate=rate,
-                         min_source_amount=Wad.from_number(0),
                          max_source_amount=max_entry_alt,
-                         method="lpc-take-ref")
+                         method="lpc.take(ref)")
 
     def name(self):
         return f"lpc.take(ref, '{self.target_amount}')"

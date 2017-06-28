@@ -36,8 +36,8 @@ def token2():
 
 def test_should_calculate_total_rate(token1, token2):
     # given
-    conversion1 = Conversion(token1, token2, Ray.from_number(1.01), Wad.from_number(1), Wad.from_number(100), 'met1')
-    conversion2 = Conversion(token2, token1, Ray.from_number(1.02), Wad.from_number(1), Wad.from_number(100), 'met2')
+    conversion1 = Conversion(token1, token2, Ray.from_number(1.01), Wad.from_number(1000), 'met1')
+    conversion2 = Conversion(token2, token1, Ray.from_number(1.02), Wad.from_number(1000), 'met2')
     
     # when
     opportunity = Opportunity([conversion1, conversion2])
@@ -48,10 +48,10 @@ def test_should_calculate_total_rate(token1, token2):
 
 def test_should_calculate_profit_and_net_profit(token1, token2):
     # given
-    conversion1 = Conversion(token1, token2, Ray.from_number(1.01), Wad.from_number(1), Wad.from_number(100), 'met1')
+    conversion1 = Conversion(token1, token2, Ray.from_number(1.01), Wad.from_number(1000), 'met1')
     conversion1.source_amount = Wad.from_number(100)
     conversion1.target_amount = Wad.from_number(101)
-    conversion2 = Conversion(token2, token1, Ray.from_number(1.02), Wad.from_number(1), Wad.from_number(100), 'met2')
+    conversion2 = Conversion(token2, token1, Ray.from_number(1.02), Wad.from_number(1000), 'met2')
     conversion2.source_amount = Wad.from_number(101)
     conversion2.target_amount = Wad.from_number(103.02)
     
@@ -70,7 +70,7 @@ def test_should_calculate_tx_costs(token1, token2):
     conversions = []
     prev_tx_costs = Wad.from_number(0)
     for i in range(10):
-        conversions.append(Conversion(token1, token2, Ray(0), Wad(0), Wad(0), 'met'))
+        conversions.append(Conversion(token1, token2, Ray(0), Wad(0), 'met'))
         opportunity = Opportunity(conversions)
         tx_costs = opportunity.tx_costs()
         assert(tx_costs > prev_tx_costs)

@@ -27,9 +27,8 @@ class TubExitConversion(Conversion):
         super().__init__(source_token=self.tub.skr(),
                          target_token=self.tub.gem(),
                          rate=tub.jar_bid(),
-                         min_source_amount=Wad.from_number(0),
                          max_source_amount=Wad.from_number(1000000),  #1 mio SKR = infinity ;)
-                         method="tub-exit")
+                         method="tub.exit()")
 
     def name(self):
         return f"tub.exit('{self.source_amount}')"

@@ -29,13 +29,11 @@ class OasisTakeConversion(Conversion):
     def __init__(self, otc: SimpleMarket, offer: OfferInfo):
         self.otc = otc
         self.offer = offer
-
         super().__init__(source_token=offer.buy_which_token,
                          target_token=offer.sell_which_token,
                          rate=Ray(offer.sell_how_much)/Ray(offer.buy_how_much),
-                         min_source_amount=Wad.from_number(0),  #TODO will probably change after dust order limitation gets introduced
                          max_source_amount=offer.buy_how_much,
-                         method=f"oasis-take-{self.offer.offer_id}")
+                         method=f"opc.take({self.offer.offer_id})")
 
     def name(self):
         return f"otc.take({self.offer.offer_id}, '{self.quantity()}')"
@@ -45,6 +43,9 @@ class OasisTakeConversion(Conversion):
 
     def quantity(self):
         quantity = self.target_amount
+
+        #TODO probably at some point dust order limitation will get introuced at the contract level
+        #if that happens, a concept of `min_source_amount` will be needed
 
         # if by any chance rounding makes us want to buy more quantity than is available,
         # we just buy the whole lot
