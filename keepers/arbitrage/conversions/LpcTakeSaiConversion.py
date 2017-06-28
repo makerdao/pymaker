@@ -30,7 +30,7 @@ class LpcTakeSaiConversion(Conversion):
         self.lpc = lpc
         assert(self.lpc.ref() == self.tub.sai())
         assert(self.lpc.alt() == self.tub.gem())
-        rate = (Ray(lpc.tag()) / Ray(self.tub.par())) / Ray(lpc.gap())
+        rate = Ray(self.lpc.tag() / (self.tub.par() *  self.lpc.gap()))
         #TODO we always leave 0.000001 in the liquidity pool, in case of some rounding errors
         max_entry_eth = Wad.max((ERC20Token(web3=tub.web3, address=tub.sai()).balance_of(lpc.address) / Wad(rate)) - Wad.from_number(0.000001), Wad.from_number(0))
         super().__init__(from_currency='ETH',
