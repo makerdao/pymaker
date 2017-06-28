@@ -8,10 +8,10 @@
     },
     "contracts": {
       "otc": "0x45ab8d410049116c7a01f6edfc08d564475c08ed",
-      "saiTub": "0x850e57e33b36b6952457eae77a349d42ec15be22",
-      "saiTap": "0x49d2689980a91697e5a5e49a8d3e3f50f5f9b07a",
-      "saiTop": "0xc46c6036069cab397f501c1c3b66fa2fb1d8be59",
-      "saiLpc": "0x119d222b22862d5737df66b25db330b204ea12c5",
+      "saiTub": "0xc349a197c9c3200411094adec82972a2b921c6e2",
+      "saiTap": "0x3d9a8aa3753bab869b1cc58063063773da54bd66",
+      "saiTop": "0x66174cf99acdb1a5568186a55827b2aac56275e1",
+      "saiLpc": "0x421943ce89b6d0daf0128aafc679079050aa0c1e",
       "auctionManager": "0xD0Abb0e61A905a50b21Bf4c74F39B9e101469365"
     }
   },
