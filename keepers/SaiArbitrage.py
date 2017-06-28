@@ -19,12 +19,8 @@
 
 import argparse
 import datetime
-import functools
 import time
-from _ast import List
-from functools import reduce
 
-import itertools
 from web3 import HTTPProvider
 from web3 import Web3
 
@@ -36,12 +32,9 @@ from api.otc.SimpleMarket import SimpleMarket
 from api.sai.Lpc import Lpc
 from api.sai.Tub import Tub
 from api.token.ERC20Token import ERC20Token
-from api.feed.DSValue import DSValue
 from keepers.Config import Config
 from keepers.Keeper import Keeper
-from keepers.arbitrage.Conversion import Conversion
 from keepers.arbitrage.OpportunityFinder import OpportunityFinder
-
 from keepers.arbitrage.conversions.LpcTakeAltConversion import LpcTakeAltConversion
 from keepers.arbitrage.conversions.LpcTakeRefConversion import LpcTakeRefConversion
 from keepers.arbitrage.conversions.OasisTakeConversion import OasisTakeConversion
@@ -113,6 +106,7 @@ class SaiArbitrage(Keeper):
         print(f"Keeper token balances are: {str(self.gem.balance_of(self.our_address)).rjust(26)} W-ETH")
         print(f"                           {str(self.skr.balance_of(self.our_address)).rjust(26)} SKR")
         print(f"                           {str(self.sai.balance_of(self.our_address)).rjust(26)} SAI")
+        print(f"")
 
     def process(self):
         print(f"")
@@ -120,7 +114,6 @@ class SaiArbitrage(Keeper):
         print(f"Processing (@ {datetime.datetime.now()})")
         print(f"")
         self.print_balances()
-        print(f"")
 
         investment_token = self.tub.sai()
 
@@ -173,20 +166,9 @@ class SaiArbitrage(Keeper):
                 print(f"  Execution successful, tx_hash={receipt.transaction_hash}")
                 print(f"  Exchanged {outgoing} to {incoming}")
 
-        def sum_of_wads(list_of_wads):
-            return reduce(Wad.__add__, list_of_wads, Wad.from_number(0))
-
         print(f"")
-        print(f"All steps executed successfully. The profit we made on this opportunity is:")
-        skr_in = filter(lambda transfer: transfer.token_address == self.tub.skr() and transfer.to_address == self.our_address, all_transfers)
-        skr_out = filter(lambda transfer: transfer.token_address == self.tub.skr() and transfer.from_address == self.our_address, all_transfers)
-        sai_in = filter(lambda transfer: transfer.token_address == self.tub.sai() and transfer.to_address == self.our_address, all_transfers)
-        sai_out = filter(lambda transfer: transfer.token_address == self.tub.sai() and transfer.from_address == self.our_address, all_transfers)
-        eth_in = filter(lambda transfer: transfer.token_address == self.tub.gem() and transfer.to_address == self.our_address, all_transfers)
-        eth_out = filter(lambda transfer: transfer.token_address == self.tub.gem() and transfer.from_address == self.our_address, all_transfers)
-        print(f"  {sum_of_wads(transfer.value for transfer in skr_in) - sum_of_wads(transfer.value for transfer in skr_out)} SKR")
-        print(f"  {sum_of_wads(transfer.value for transfer in sai_in) - sum_of_wads(transfer.value for transfer in sai_out)} SAI")
-        print(f"  {sum_of_wads(transfer.value for transfer in eth_in) - sum_of_wads(transfer.value for transfer in eth_out)} ETH")
+        print(f"All steps executed successfully.")
+        print(f"The profit we made is {TransferFormatter().format_net(all_transfers, self.our_address)}.")
 
     def __init__(self):
         parser = argparse.ArgumentParser(description='SaiArbitrage keeper.')

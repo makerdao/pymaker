@@ -45,6 +45,11 @@ def some_address():
     return Address('0x1234512345123451234512345123451234512345')
 
 
+@pytest.fixture
+def our_address():
+    return Address('0x5432154321543215432154321543215432154321')
+
+
 def test_should_return_empty_string_when_no_transfers():
     # expect
     assert TransferFormatter().format([]) == ""
@@ -66,6 +71,61 @@ def test_should_format_two_different_tokens(token1, token2, some_address):
     # expect
     assert TransferFormatter().format([transfer1, transfer2]) \
         == "105.000000000000000000 TK1 and 17.000000000000000000 TK2"
+
+
+def test_should_format_net_balances(token1, our_address, some_address):
+    # given
+    transfer1 = Transfer(token1, our_address, some_address, Wad.from_number(15))
+    transfer2 = Transfer(token1, some_address, our_address, Wad.from_number(17))
+
+    # expect
+    assert TransferFormatter().format_net([transfer1, transfer2], our_address) \
+        == "2.000000000000000000 TK1"
+
+
+def test_should_format_net_balances_if_multiple_transfers(token1, our_address, some_address):
+    # given
+    transfer1 = Transfer(token1, our_address, some_address, Wad.from_number(15))
+    transfer2 = Transfer(token1, some_address, our_address, Wad.from_number(17))
+    transfer3 = Transfer(token1, some_address, our_address, Wad.from_number(3.5))
+
+    # expect
+    assert TransferFormatter().format_net([transfer1, transfer2, transfer3], our_address) \
+        == "5.500000000000000000 TK1"
+
+
+def test_should_format_net_balances_excluding_alien_transfers(token1, our_address, some_address):
+    # given
+    transfer1 = Transfer(token1, some_address, our_address, Wad.from_number(4))
+    transfer2 = Transfer(token1, our_address, some_address, Wad.from_number(1.5))
+    transfer3 = Transfer(token1, some_address, some_address, Wad.from_number(100))
+
+    # expect
+    assert TransferFormatter().format_net([transfer1, transfer2, transfer3], our_address) \
+        == "2.500000000000000000 TK1"
+
+
+def test_should_format_net_balances_excluding_transfers_between_us(token1, our_address, some_address):
+    # given
+    transfer1 = Transfer(token1, some_address, our_address, Wad.from_number(4))
+    transfer2 = Transfer(token1, our_address, some_address, Wad.from_number(1.5))
+    transfer3 = Transfer(token1, our_address, our_address, Wad.from_number(50))
+
+    # expect
+    assert TransferFormatter().format_net([transfer1, transfer2, transfer3], our_address) \
+        == "2.500000000000000000 TK1"
+
+
+def test_should_format_net_balances_for_more_than_one_token(token1, token2, our_address, some_address):
+    # given
+    transfer1 = Transfer(token1, our_address, some_address, Wad.from_number(15))
+    transfer2 = Transfer(token1, some_address, our_address, Wad.from_number(17))
+    transfer3 = Transfer(token2, our_address, some_address, Wad.from_number(2.5))
+    transfer4 = Transfer(token2, some_address, our_address, Wad.from_number(100))
+
+    # expect
+    assert TransferFormatter().format_net([transfer1, transfer2, transfer3, transfer4], our_address) \
+        == "2.000000000000000000 TK1 and 97.500000000000000000 TK2"
 
 
 def test_support_iterators(token1, some_address):

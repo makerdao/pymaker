@@ -18,27 +18,49 @@
 import copy
 import operator
 from functools import reduce
-from typing import List
+from typing import List, Iterable
 
 import itertools
 
 from api.Address import Address
 from api.Ray import Ray
+from api.Transfer import Transfer
 from api.Wad import Wad
 from api.token.ERC20Token import ERC20Token
 from keepers.arbitrage.Conversion import Conversion
 
 
 class TransferFormatter:
-    def _sum_of_wads(self, list_of_wads):
-        return reduce(Wad.__add__, list_of_wads, Wad.from_number(0))
+    def _sum(self, wads):
+        return reduce(Wad.__add__, wads, Wad.from_number(0))
 
-    def _grouped_by_token(self, transfers):
+    def _sum_by_token(self, transfers: list):
         transfers.sort(key=lambda transfer: transfer.token_address, reverse=False)
         for token_address, transfers in itertools.groupby(transfers, lambda transfer: transfer.token_address):
-            values = map(lambda transfer: transfer.value, transfers)
-            sum_of_values = self._sum_of_wads(values)
-            yield f"{sum_of_values} {ERC20Token.token_name_by_address(token_address)}"
+            sum = self._sum(map(lambda transfer: transfer.value, transfers))
+            yield f"{sum} {ERC20Token.token_name_by_address(token_address)}"
 
-    def format(self, transfers):
-        return " and ".join(self._grouped_by_token(list(transfers)))
+    def _net_value(self, transfer: Transfer, our_address: Address):
+        if transfer.from_address == our_address and transfer.to_address == our_address:
+            return Wad(0)
+        elif transfer.from_address == our_address:
+            return Wad(0) - transfer.value
+        elif transfer.to_address == our_address:
+            return transfer.value
+        else:
+            return Wad(0)
+
+    def _net_by_token(self, transfers: list, our_address: Address):
+        transfers.sort(key=lambda transfer: transfer.token_address, reverse=False)
+        for token_address, transfers in itertools.groupby(transfers, lambda transfer: transfer.token_address):
+            sum = self._sum(map(lambda transfer: self._net_value(transfer, our_address), transfers))
+            yield f"{sum} {ERC20Token.token_name_by_address(token_address)}"
+
+    def _join_with_and(self, iterable: Iterable):
+        return " and ".join(iterable)
+
+    def format(self, transfers: Iterable):
+        return self._join_with_and(self._sum_by_token(list(transfers)))
+
+    def format_net(self, transfers: Iterable, our_address: Address):
+        return self._join_with_and(self._net_by_token(list(transfers), our_address))
