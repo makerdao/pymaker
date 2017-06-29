@@ -22,7 +22,7 @@ from typing import Iterable
 from api.Address import Address
 from api.token import ERC20Token
 from api.Transfer import Transfer
-from api.Wad import Wad
+from api.numeric import Wad
 
 
 class TransferFormatter:

@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from api.Address import Address
-from api.Wad import Wad
+from api.numeric import Wad
 
 
 class Transfer:

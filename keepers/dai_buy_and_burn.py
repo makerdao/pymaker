@@ -19,15 +19,15 @@
 
 import argparse
 
-from api.DSToken import DSToken
-from auctions.AuctionEngine import AuctionEngine
-from keepers.Config import Config
+from api.token import DSToken
+from keepers.auctions.AuctionEngine import AuctionEngine
+from keepers import Config
 from web3 import HTTPProvider
 from web3 import Web3
 
 from api.Address import Address
-from api.ERC20Token import ERC20Token
-from api.Wad import Wad
+from api.token import ERC20Token
+from api.numeric import Wad
 from api.auctions.AuctionManager import AuctionManager
 from keepers.auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
 
@@ -41,10 +41,10 @@ parser.add_argument("--minimal-mkr-bid", help="Minimal amount of MKR you want to
 parser.add_argument("--step", help="Incremental step towards the maximum price (value between 0 and 1)", required=True, type=float)
 args = parser.parse_args()
 
-config = Config()
-
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}"))
 web3.eth.defaultAccount = args.eth_from #TODO allow to use ETH_FROM env variable
+
+config = Config(web3)
 
 auction_manager_address = Address(config.get_contract_address("auctionManager"))
 auction_manager = AuctionManager(web3=web3, address=auction_manager_address, is_splitting=True)

@@ -18,9 +18,9 @@
 import pytest
 
 from api.Address import Address
-from api.ERC20Token import ERC20Token
-from api.Ray import Ray
-from api.Wad import Wad
+from api.token import ERC20Token
+from api.numeric import Ray
+from api.numeric import Wad
 from keepers.arbitrage.conversion import Conversion
 
 

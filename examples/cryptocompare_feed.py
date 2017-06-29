@@ -23,7 +23,7 @@ from web3 import HTTPProvider
 from web3 import Web3
 
 from api.Address import Address
-from api.Wad import Wad
+from api.numeric import Wad
 from api.feed.DSValue import DSValue
 
 

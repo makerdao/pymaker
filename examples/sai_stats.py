@@ -22,7 +22,7 @@ from web3 import Web3
 
 from api.Address import Address
 from api.token import ERC20Token
-from api.Ray import Ray
+from api.numeric import Ray
 from api.sai.Lpc import Lpc
 from api.sai.Tub import Tub
 

@@ -18,9 +18,9 @@
 import pytest
 
 from api.Address import Address
-from api.ERC20Token import ERC20Token
+from api.token import ERC20Token
 from api.Transfer import Transfer
-from api.Wad import Wad
+from api.numeric import Wad
 from keepers.arbitrage.transfer_formatter import TransferFormatter
 
 

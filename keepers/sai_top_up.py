@@ -22,8 +22,8 @@ import time
 
 from api.Address import Address
 from api.token import ERC20Token
-from api.Ray import Ray
-from api.Wad import Wad
+from api.numeric import Ray
+from api.numeric import Wad
 from api.sai.Tub import Tub
 from keepers import Keeper
 

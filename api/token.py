@@ -20,7 +20,7 @@ from typing import Optional
 from api.Address import Address
 from api.Contract import Contract
 from api.Receipt import Receipt
-from api.Wad import Wad
+from api.numeric import Wad
 
 
 class ERC20Token(Contract):

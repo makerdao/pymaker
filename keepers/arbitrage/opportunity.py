@@ -23,8 +23,8 @@ from typing import List
 import networkx
 
 from api.Address import Address
-from api.Ray import Ray
-from api.Wad import Wad
+from api.numeric import Ray
+from api.numeric import Wad
 from keepers.arbitrage.conversion import Conversion
 
 

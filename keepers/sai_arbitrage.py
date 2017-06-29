@@ -22,9 +22,9 @@ import time
 
 from api.Address import Address
 from api.token import ERC20Token
-from api.Ray import Ray
+from api.numeric import Ray
 from api.Transfer import Transfer
-from api.Wad import Wad
+from api.numeric import Wad
 from api.otc.SimpleMarket import SimpleMarket
 from api.sai.Lpc import Lpc
 from api.sai.Tub import Tub

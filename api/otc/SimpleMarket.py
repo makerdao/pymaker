@@ -22,7 +22,7 @@ from web3 import Web3
 from api.Address import Address
 from api.Contract import Contract
 from api.Receipt import Receipt
-from api.Wad import Wad
+from api.numeric import Wad
 from api.otc.OfferInfo import OfferInfo
 
 

@@ -21,9 +21,9 @@ from web3 import Web3
 
 from api.Address import Address
 from api.Contract import Contract
-from api.Ray import Ray
 from api.Receipt import Receipt
-from api.Wad import Wad
+from api.numeric import Ray
+from api.numeric import Wad
 
 
 class Lpc(Contract):

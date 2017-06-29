@@ -18,7 +18,7 @@
 from pprint import pformat
 
 from api.Address import Address
-from api.Wad import Wad
+from api.numeric import Wad
 
 
 class OfferInfo:

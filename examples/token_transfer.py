@@ -21,8 +21,8 @@ from web3 import HTTPProvider
 from web3 import Web3
 
 from api.Address import Address
-from api.ERC20Token import ERC20Token
-from api.Wad import Wad
+from api.token import ERC20Token
+from api.numeric import Wad
 from api.sai.Tub import Tub
 
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))

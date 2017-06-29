@@ -24,7 +24,7 @@ from web3.utils.events import get_event_data
 from api.Address import Address
 from api.Receipt import Receipt
 from api.Transfer import Transfer
-from api.Wad import Wad
+from api.numeric import Wad
 
 
 class Contract:
