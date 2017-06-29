@@ -15,15 +15,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import itertools
 from functools import reduce
 from typing import Iterable
 
-import itertools
-
 from api.Address import Address
+from api.token import ERC20Token
 from api.Transfer import Transfer
 from api.Wad import Wad
-from api.token.ERC20Token import ERC20Token
 
 
 class TransferFormatter:

@@ -21,10 +21,10 @@ import argparse
 import time
 
 from api.Address import Address
+from api.token import ERC20Token
 from api.Ray import Ray
 from api.Wad import Wad
 from api.sai.Tub import Tub
-from api.token.ERC20Token import ERC20Token
 from keepers import Keeper
 
 

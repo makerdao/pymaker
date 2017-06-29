@@ -21,7 +21,7 @@ import json
 from web3 import Web3, HTTPProvider
 
 from api.Address import Address
-from api.token.ERC20Token import ERC20Token
+from api.token import ERC20Token
 
 
 class Keeper:

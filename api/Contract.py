@@ -48,7 +48,7 @@ class Contract:
             transfers = []
             for receipt_log in receipt_logs:
                 if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
-                    from api.token.ERC20Token import ERC20Token
+                    from api.token import ERC20Token
                     transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
                     event_data = get_event_data(transfer_abi, receipt_log)
                     transfers.append(Transfer(token_address=Address(event_data['address']),

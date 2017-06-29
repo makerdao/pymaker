@@ -20,8 +20,8 @@ from pprint import pformat
 
 from api.Address import Address
 from api.Contract import Contract
+from api.ERC20Token import ERC20Token
 from api.Wad import Wad
-from api.token.ERC20Token import ERC20Token
 
 
 class AuctionManager(Contract):

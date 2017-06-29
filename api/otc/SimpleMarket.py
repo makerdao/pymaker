@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import datetime
 from typing import Optional
 
 from web3 import Web3
@@ -25,7 +24,6 @@ from api.Contract import Contract
 from api.Receipt import Receipt
 from api.Wad import Wad
 from api.otc.OfferInfo import OfferInfo
-from api.token.ERC20Token import ERC20Token
 
 
 class SimpleMarket(Contract):
