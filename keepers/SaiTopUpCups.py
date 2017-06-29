@@ -55,7 +55,7 @@ class SaiTopUpCups(Keeper):
         if self.skr.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
             print(f"Approving {spender_name} ({spender_address}) to access our SKR balance...")
             print(f"")
-            self.skr.approve(spender_address, Wad(2 ** 256 - 1))
+            self.skr.approve(spender_address)
 
     def check_all_cups(self):
         for cup in self.our_cups():

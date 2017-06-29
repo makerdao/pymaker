@@ -93,11 +93,13 @@ class ERC20Token(Contract):
         except:
             return None
 
-    def approve(self, payee: Address, limit: Wad) -> Optional[Receipt]:
+    def approve(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Optional[Receipt]:
         """Modifies the current allowance of a specified `payee` (delegate account).
 
         Allowance is an ERC20 concept allowing the `payee` (delegate account) to spend a fixed amount of tokens
         (`limit`) on behalf of the token owner.
+
+        If `limit` is omitted, a maximum possible value is granted.
 
         Args:
             payee: The address of the delegate account (it's the address that can spend the tokens).

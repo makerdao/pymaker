@@ -107,7 +107,7 @@ class SaiArbitrage(Keeper):
     def setup_allowance(self, token: ERC20Token, spender_address: Address, spender_name: str):
         if token.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
             print(f"  Approving {spender_name} ({spender_address}) to access our {token.name()} balance...")
-            token.approve(spender_address, Wad(2 ** 256 - 1))
+            token.approve(spender_address)
 
     def tub_conversions(self):
         return [TubJoinConversion(self.tub),
