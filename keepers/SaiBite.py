@@ -17,48 +17,27 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import argparse
 import time
-
-from web3 import HTTPProvider
-from web3 import Web3
 
 from api.Address import Address
 from api.sai.Tub import Tub
-from keepers.Config import Config
 from keepers.Keeper import Keeper
 
 
 class SaiBite(Keeper):
-    def __init__(self):
-        parser = argparse.ArgumentParser(description='SaiBite keeper. Bites unsafe cups.')
-        parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
-        parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
-        parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
-        parser.add_argument("--frequency", help="Frequency of checking for unsafe cups (in seconds) (default: 5)", default=5, type=int)
-        self.args = parser.parse_args()
+    def args(self, parser):
+        parser.add_argument("--frequency", help="Monitoring frequency in seconds (default: 5)", default=5, type=int)
 
-        config = Config()
-
-        self.web3 = Web3(HTTPProvider(endpoint_uri=f"http://{self.args.rpc_host}:{self.args.rpc_port}"))
-        self.web3.eth.defaultAccount = self.args.eth_from #TODO allow to use ETH_FROM env variable
-
-        self.tub_address = Address(config.get_contract_address("saiTub"))
-        self.tap_address = Address(config.get_contract_address("saiTap"))
-        self.top_address = Address(config.get_contract_address("saiTop"))
+    def init(self):
+        self.tub_address = Address(self.config.get_contract_address("saiTub"))
+        self.tap_address = Address(self.config.get_contract_address("saiTap"))
+        self.top_address = Address(self.config.get_contract_address("saiTop"))
         self.tub = Tub(web3=self.web3, address_tub=self.tub_address, address_tap=self.tap_address, address_top=self.top_address)
 
-        self.run()
-
     def run(self):
-        print(f"")
-        print(f"SaiBite keeper")
-        print(f"--------------")
-        print(f"")
-
         while True:
             self.check_all_cups()
-            time.sleep(self.args.frequency)
+            time.sleep(self.arguments.frequency)
 
     def check_all_cups(self):
         for cup_id in range(self.tub.cupi()):
@@ -73,4 +52,4 @@ class SaiBite(Keeper):
 
 
 if __name__ == '__main__':
-    SaiBite()
+    SaiBite().start()
