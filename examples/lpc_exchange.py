@@ -43,7 +43,6 @@ print(f"Our balance before the exchange is: {sai.balance_of(our_address)} SAI")
 print(f"                                    {gem.balance_of(our_address)} W-ETH")
 print(f"")
 print(f"Attempting to get 10 SAI in exchange for W-ETH...")
-print(f"The rate used will be {lpc.tag()}")
 print(f"")
 
 # Perform the exchange (`take()`) via LPC
