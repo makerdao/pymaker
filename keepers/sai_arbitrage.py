@@ -28,7 +28,7 @@ from api.otc.SimpleMarket import SimpleMarket
 from api.sai.Lpc import Lpc
 from api.sai.Tub import Tub
 from api.token.ERC20Token import ERC20Token
-from keepers.Keeper import Keeper
+from keepers import Keeper
 from keepers.arbitrage.opportunity_finder import OpportunityFinder
 from keepers.arbitrage.conversions.LpcTakeAltConversion import LpcTakeAltConversion
 from keepers.arbitrage.conversions.LpcTakeRefConversion import LpcTakeRefConversion

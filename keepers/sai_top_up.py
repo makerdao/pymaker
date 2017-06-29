@@ -25,10 +25,10 @@ from api.Ray import Ray
 from api.Wad import Wad
 from api.sai.Tub import Tub
 from api.token.ERC20Token import ERC20Token
-from keepers.Keeper import Keeper
+from keepers import Keeper
 
 
-class SaiTopUpCups(Keeper):
+class SaiTopUp(Keeper):
     def args(self, parser: argparse.ArgumentParser):
         parser.add_argument("--frequency", help="Monitoring frequency in seconds (default: 5)", default=5, type=int)
         parser.add_argument("--minimum-margin", help="Margin between the liquidation ratio and the top-up threshold (default: 0.1)", default=0.1, type=float)
@@ -89,4 +89,4 @@ class SaiTopUpCups(Keeper):
 
 
 if __name__ == '__main__':
-    SaiTopUpCups().start()
+    SaiTopUp().start()
