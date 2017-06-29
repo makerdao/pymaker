@@ -81,25 +81,25 @@ class SaiArbitrage(Keeper):
         print(f"Keeper balances are {', '.join(balances())}.")
 
     def setup_allowances(self):
-        """Approves all components that need to access our balances"""
+        """Approve all components that need to access our balances"""
         self.setup_tub_allowances()
         self.setup_lpc_allowances()
         self.setup_otc_allowances()
 
     def setup_tub_allowances(self):
-        """Approves Tub components so we can call join()/exit() and boom()/bust()"""
+        """Approve Tub components so we can call join()/exit() and boom()/bust()"""
         self.setup_allowance(self.gem, self.tub.jar(), 'Tub.jar')
         self.setup_allowance(self.skr, self.tub.jar(), 'Tub.jar')
         self.setup_allowance(self.skr, self.tub.pit(), 'Tub.pit')
         self.setup_allowance(self.sai, self.tub.pit(), 'Tub.pit')
 
     def setup_lpc_allowances(self):
-        """Approves the Lpc so we can exchange WETH and SAI using it"""
+        """Approve the Lpc so we can exchange WETH and SAI using it"""
         self.setup_allowance(self.gem, self.lpc.address, 'Lpc')
         self.setup_allowance(self.sai, self.lpc.address, 'Lpc')
 
     def setup_otc_allowances(self):
-        """Approves OasisDEX so we can exchange all three tokens (WETH, SAI and SKR)"""
+        """Approve OasisDEX so we can exchange all three tokens (WETH, SAI and SKR)"""
         self.setup_allowance(self.gem, self.otc.address, 'OasisDEX')
         self.setup_allowance(self.sai, self.otc.address, 'OasisDEX')
         self.setup_allowance(self.skr, self.otc.address, 'OasisDEX')
@@ -132,33 +132,42 @@ class SaiArbitrage(Keeper):
                self.otc_conversions([self.sai.address, self.skr.address, self.gem.address])
 
     def execute_best_arbitrage_available(self):
-        # Identify all profitable arbitrage opportunities within given limits
+        """Find the best arbitrage opportunity present and execute it."""
+        opportunity = self.best_opportunity(self.profitable_opportunities())
+        if opportunity:
+            self.print_opportunity(opportunity)
+            self.execute_opportunity(opportunity)
+
+    def profitable_opportunities(self):
+        """Identify all profitable arbitrage opportunities within given limits."""
         entry_amount = Wad.min(self.base_token.balance_of(self.our_address), self.maximum_engagement)
         opportunity_finder = OpportunityFinder(conversions=self.all_conversions())
         opportunities = opportunity_finder.find_opportunities(self.base_token.address, entry_amount)
         opportunities = filter(lambda op: op.total_rate() > Ray.from_number(1.000001), opportunities)
         opportunities = filter(lambda op: op.net_profit(self.base_token.address) > self.minimum_profit, opportunities)
         opportunities = sorted(opportunities, key=lambda op: op.net_profit(self.base_token.address), reverse=True)
+        return opportunities
 
-        # Pick the best opportunity, or return if none
-        opportunity = opportunities[0] if len(opportunities) > 0 else None
-        if opportunity is None:
-            return
+    def best_opportunity(self, opportunities):
+        """Pick the best opportunity, or return None if no profitable opportunities."""
+        return opportunities[0] if len(opportunities) > 0 else None
 
-        # Print the details of the opportunity found
+    def print_opportunity(self, opportunity):
+        """Print the details of the opportunity."""
         print(f"")
         print(f"Opportunity with net_profit={opportunity.net_profit(self.base_token.address)} {self.base_token.name()}")
         for conversion in opportunity.conversions:
             print(f"  {conversion}")
 
-        # Execute the opportunity step-by-step
+    def execute_opportunity(self, opportunity):
+        """Execute the opportunity step-by-step."""
         all_transfers = []
         for index, conversion in enumerate(opportunity.conversions, start=1):
             print(f"Step {index}/{len(opportunity.conversions)}:")
             print(f"  Executing {conversion.name()}")
             receipt = conversion.execute()
             if receipt is None:
-                print(f"Execution failed")
+                print(f"  Execution failed")
                 print(f"")
                 print(f"Interrupting the process... Will start over from scratch in the next iteration.")
                 return
@@ -168,8 +177,6 @@ class SaiArbitrage(Keeper):
                 incoming = TransferFormatter().format(filter(Transfer.incoming(self.our_address), receipt.transfers))
                 print(f"  Execution successful, tx_hash={receipt.transaction_hash}")
                 print(f"  Exchanged {outgoing} to {incoming}")
-
-        # Print the summary i.e. the profit made and the keeper balances after the execution
         print(f"All steps executed successfully.")
         print(f"The profit we made is {TransferFormatter().format_net(all_transfers, self.our_address)}.")
         self.print_balances()
