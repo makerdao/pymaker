@@ -15,7 +15,7 @@
       "auctionManager": "0xD0Abb0e61A905a50b21Bf4c74F39B9e101469365"
     }
   },
-  "live": {
+  "ethlive": {
     "tokens": {
       "WETH": "0xecf8f87f810ecf450940c9f60066b4a7a501d6a7",
       "DAI": "0x0000000000000000000000000000000000000000",
