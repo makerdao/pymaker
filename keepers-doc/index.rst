@@ -1,41 +1,41 @@
-Sample keepers
-==============
+Reference keepers
+=================
 
-A few sample keepers have been created to demonstrate how the `maker.py` API can be used:
+A few reference keepers have been created:
 
 - a keeper to initiate liquidation (`bite`) of unsafe cups,
 - a keeper to automatically top-up cups before they get too close to the liquidation threshold,
 - a keeper to use arbitrage opportunities to earn money around `Maker` contracts.
 
-SaiBite.py
-----------
+sai_bite.py
+-----------
 
 A keeper to initiate liquidation (`bite`) of unsafe cups.
 
-From `keepers/SaiBite.py`:
+From `keepers/sai_bite.py`:
 
-.. literalinclude:: ../keepers/SaiBite.py
+.. literalinclude:: ../keepers/sai_bite.py
     :language: python
 
-SaiTopUpCups.py
----------------
+sai_top_up.py
+-------------
 
 A keeper to automatically top-up cups before they get too close to the liquidation threshold.
 
-From `keepers/SaiTopUpCups.py`:
+From `keepers/sai_top_up.py`:
 
-.. literalinclude:: ../keepers/SaiTopUpCups.py
+.. literalinclude:: ../keepers/sai_top_up.py
     :language: python
     :linenos:
 
-SaiArbitrage.py
+sai_abitrage.py
 ---------------
 
 A keeper to use arbitrage opportunities to earn money executing transactions between `Tub`, `Lpc` and OasisDEX.
 
-From `keepers/SaiArbitrage.py`:
+From `keepers/sai_arbitrage.py`:
 
-.. literalinclude:: ../keepers/SaiArbitrage.py
+.. literalinclude:: ../keepers/sai_arbitrage.py
     :language: python
     :linenos:
 

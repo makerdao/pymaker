@@ -29,14 +29,14 @@ from api.sai.Lpc import Lpc
 from api.sai.Tub import Tub
 from api.token.ERC20Token import ERC20Token
 from keepers import Keeper
-from keepers.arbitrage.opportunity_finder import OpportunityFinder
-from keepers.arbitrage.conversions.LpcTakeAltConversion import LpcTakeAltConversion
-from keepers.arbitrage.conversions.LpcTakeRefConversion import LpcTakeRefConversion
-from keepers.arbitrage.conversions.OasisTakeConversion import OasisTakeConversion
-from keepers.arbitrage.conversions.TubBoomConversion import TubBoomConversion
-from keepers.arbitrage.conversions.TubBustConversion import TubBustConversion
-from keepers.arbitrage.conversions.TubExitConversion import TubExitConversion
-from keepers.arbitrage.conversions.TubJoinConversion import TubJoinConversion
+from keepers.arbitrage.conversion import LpcTakeAltConversion
+from keepers.arbitrage.conversion import LpcTakeRefConversion
+from keepers.arbitrage.conversion import OasisTakeConversion
+from keepers.arbitrage.conversion import TubBoomConversion
+from keepers.arbitrage.conversion import TubBustConversion
+from keepers.arbitrage.conversion import TubExitConversion
+from keepers.arbitrage.conversion import TubJoinConversion
+from keepers.arbitrage.opportunity import OpportunityFinder
 from keepers.arbitrage.transfer_formatter import TransferFormatter
 
 
@@ -71,7 +71,7 @@ class SaiArbitrage(Keeper):
         self.print_balances()
         self.setup_allowances()
         while True:
-            self.execute_best_arbitrage_available()
+            self.execute_best_opportunity_available()
             time.sleep(self.arguments.frequency)
 
     def print_balances(self):
@@ -131,7 +131,7 @@ class SaiArbitrage(Keeper):
         return self.tub_conversions() + self.lpc_conversions() + \
                self.otc_conversions([self.sai.address, self.skr.address, self.gem.address])
 
-    def execute_best_arbitrage_available(self):
+    def execute_best_opportunity_available(self):
         """Find the best arbitrage opportunity present and execute it."""
         opportunity = self.best_opportunity(self.profitable_opportunities())
         if opportunity:

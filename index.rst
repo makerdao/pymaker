@@ -26,8 +26,8 @@ Basic examples
 
    examples-doc/index
 
-Sample keepers
---------------
+Reference keepers
+-----------------
 
 .. toctree::
    :maxdepth: 4
