@@ -36,7 +36,7 @@ class AuctionManager(Contract):
       and for non-splitting auctions it stays like that throughout the entire duration of the auction.
       Auctionlets are the objects on which bidders place bids.
 
-    For now, only forward auctions are supported.
+    Only forward and reverse auctions are supported. No two-way auctions support yet.
     """
     def __init__(self, web3, address, is_splitting):
         self.web3 = web3
