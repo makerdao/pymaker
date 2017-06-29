@@ -1,18 +1,11 @@
 Data feeds API
 ==============
 
-DSValue
--------
+DSValue and DSCache
+-------------------
 
-.. automodule:: api.feed.DSValue
+.. automodule:: api.feed
     :members:
-
-DSCache
--------
-
-.. automodule:: api.feed.DSCache
-    :members:
-    :show-inheritance:
 
 Medianizer
 ----------

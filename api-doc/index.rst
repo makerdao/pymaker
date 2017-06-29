@@ -52,33 +52,12 @@ Numeric types
 Most of the numeric data throughout the entire platform is kept as either `Wad` (18-digit precision type) or `Ray`
 (27-digit precision type).
 
-Wad
-~~~
-
-.. automodule:: api.Wad
-    :members:
-
-Ray
-~~~
-
-.. automodule:: api.Ray
+.. automodule:: api.numeric
     :members:
 
 
 Other classes
 -------------
 
-Address
-~~~~~~~
-
-.. automodule:: api.Address
-    :members:
-
-Receipt, Transfer
-~~~~~~~~~~~~~~~~~
-
-.. automodule:: api.Receipt
-    :members:
-
-.. automodule:: api.Transfer
+.. automodule:: api
     :members:

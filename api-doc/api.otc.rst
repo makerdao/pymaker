@@ -1,8 +1,5 @@
 OasisDEX/OTC API
 ================
 
-.. automodule:: api.otc.SimpleMarket
-    :members:
-
-.. automodule:: api.otc.OfferInfo
+.. automodule:: api.otc
     :members:
