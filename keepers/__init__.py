@@ -20,7 +20,7 @@ import json
 
 from web3 import Web3, HTTPProvider
 
-from api.Address import Address
+from api import Address
 from api.token import ERC20Token
 
 

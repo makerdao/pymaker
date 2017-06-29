@@ -20,7 +20,7 @@
 from web3 import HTTPProvider
 from web3 import Web3
 
-from api.Address import Address
+from api import Address
 from api.token import ERC20Token
 from api.numeric import Wad
 from api.sai.Tub import Tub

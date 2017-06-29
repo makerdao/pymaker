@@ -19,9 +19,8 @@ import itertools
 from functools import reduce
 from typing import Iterable
 
-from api.Address import Address
+from api import Address, Transfer
 from api.token import ERC20Token
-from api.Transfer import Transfer
 from api.numeric import Wad
 
 

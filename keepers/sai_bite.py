@@ -19,7 +19,7 @@
 
 import time
 
-from api.Address import Address
+from api import Address
 from api.sai.Tub import Tub
 from keepers import Keeper
 

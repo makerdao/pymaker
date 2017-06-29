@@ -22,7 +22,7 @@ from typing import List
 
 import networkx
 
-from api.Address import Address
+from api import Address
 from api.numeric import Ray
 from api.numeric import Wad
 from keepers.arbitrage.conversion import Conversion

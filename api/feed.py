@@ -20,9 +20,7 @@ from typing import Optional
 import array
 from web3 import Web3
 
-from api.Address import Address
-from api.Contract import Contract
-from api.Receipt import Receipt
+from api import Contract, Address, Receipt
 
 
 class DSValue(Contract):

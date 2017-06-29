@@ -17,9 +17,7 @@
 
 from typing import Optional
 
-from api.Address import Address
-from api.Contract import Contract
-from api.Receipt import Receipt
+from api import Contract, Address, Receipt
 from api.numeric import Wad
 
 

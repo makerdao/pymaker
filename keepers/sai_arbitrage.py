@@ -20,9 +20,8 @@
 import argparse
 import time
 
-from api.Address import Address
+from api import Address, Transfer
 from api.otc import SimpleMarket
-from api.Transfer import Transfer
 from api.numeric import Ray
 from api.numeric import Wad
 from api.sai.Lpc import Lpc

@@ -18,8 +18,7 @@
 import datetime
 from pprint import pformat
 
-from api.Address import Address
-from api.Contract import Contract
+from api import Contract, Address
 from api.token import ERC20Token
 from api.numeric import Wad
 

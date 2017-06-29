@@ -19,7 +19,7 @@ import math
 import unittest
 from unittest.mock import MagicMock
 
-from api.Address import Address
+from api import Address
 from api.token import ERC20Token
 from api.numeric import Wad
 from api.auctions.AuctionManager import Auctionlet, Auction

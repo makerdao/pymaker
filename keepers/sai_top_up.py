@@ -20,7 +20,7 @@
 import argparse
 import time
 
-from api.Address import Address
+from api import Address
 from api.token import ERC20Token
 from api.numeric import Ray
 from api.numeric import Wad
