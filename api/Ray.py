@@ -22,12 +22,13 @@ from decimal import *
 
 @total_ordering
 class Ray:
-    """Represents a number with 27 decimal places. `Ray`, along with `Wad`, are the two basic numeric types
-    used by Maker contracts.
+    """Represents a number with 27 decimal places.
 
     `Ray` implements comparison, addition, subtraction, multiplication and division operators. Comparison, addition,
     subtraction and division only work with other instances of `Ray`. Multiplication works with instances
     of `Ray` and `And` and also with `int` numbers. The result of multiplication is always a `Ray`.
+
+    `Ray`, along with `Wad`, are the two basic numeric types used by Maker contracts.
 
     Notes:
         The internal representation of `Ray` is an unbounded integer, the last 27 digits of it being treated

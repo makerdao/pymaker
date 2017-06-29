@@ -21,12 +21,13 @@ from decimal import Decimal, ROUND_DOWN
 
 @total_ordering
 class Wad:
-    """Represents a number with 18 decimal places. `Wad`, along with `Ray`, are the two basic numeric types
-    used by Maker contracts.
+    """Represents a number with 18 decimal places.
 
     `Wad` implements comparison, addition, subtraction, multiplication and division operators. Comparison, addition,
     subtraction and division only work with other instances of `Wad`. Multiplication works with instances
     of `Wad` and `Ray` and also with `int` numbers. The result of multiplication is always a `Wad`.
+
+    `Wad`, along with `Ray`, are the two basic numeric types used by Maker contracts.
 
     Notes:
         The internal representation of `Wad` is an unbounded integer, the last 18 digits of it being treated
