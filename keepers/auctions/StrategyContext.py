@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
 class StrategyContext:
     def __init__(self, auction_manager_address, trader_address):
         self.auction_manager_address = auction_manager_address
