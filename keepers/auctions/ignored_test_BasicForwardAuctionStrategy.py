@@ -20,9 +20,9 @@ import unittest
 from unittest.mock import MagicMock
 
 from api import Address
-from api.token import ERC20Token
+from api.auction import Auctionlet, Auction
 from api.numeric import Wad
-from api.auctions.AuctionManager import Auctionlet, Auction
+from api.token import ERC20Token
 from keepers.auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
 from keepers.auctions.StrategyContext import StrategyContext
 

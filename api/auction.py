@@ -24,7 +24,7 @@ from api.numeric import Wad
 
 
 class AuctionManager(Contract):
-    """Nice wrapper around AuctionManager and SplittingAuctionManager
+    """Wrapper around `AuctionManager` and `SplittingAuctionManager` contracts.
 
     Wrapper around AuctionManager and SplittingAuctionManager, Ethereum contracts that provide a set of auctions
     for use with standard tokens (https://github.com/makerdao/token-auction).
@@ -41,7 +41,7 @@ class AuctionManager(Contract):
         self.web3 = web3
         self.address = address
         self.is_splitting = is_splitting
-        abi_name = 'SplittingAuctionManager.abi' if is_splitting else 'AuctionManager.abi'
+        abi_name = 'abi/SplittingAuctionManager.abi' if is_splitting else 'abi/AuctionManager.abi'
         self._contract = web3.eth.contract(abi=self._load_abi(__name__, abi_name))(address=address.address)
         self._our_tx_hashes = set()
 

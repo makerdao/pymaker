@@ -19,16 +19,16 @@
 
 import argparse
 
-from api.token import DSToken
-from keepers.auctions.AuctionEngine import AuctionEngine
-from keepers import Config
 from web3 import HTTPProvider
 from web3 import Web3
 
 from api import Address
-from api.token import ERC20Token
+from api.AuctionManager import AuctionManager
 from api.numeric import Wad
-from api.auctions.AuctionManager import AuctionManager
+from api.token import DSToken
+from api.token import ERC20Token
+from keepers import Config
+from keepers.auctions.AuctionEngine import AuctionEngine
 from keepers.auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
 
 parser = argparse.ArgumentParser(description='Dai Buy&Burn keeper. Buys DAI for MKR on forward auctions.')
