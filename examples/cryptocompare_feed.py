@@ -17,14 +17,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib.request, json
+import json
+import urllib.request
 
 from web3 import HTTPProvider
 from web3 import Web3
 
 from api.Address import Address
+from api.feed import DSValue
 from api.numeric import Wad
-from api.feed.DSValue import DSValue
 
 
 def cryptocompare_rate() -> Wad:
