@@ -29,7 +29,7 @@ class ERC20Token(Contract):
         address: Ethereum address of the ERC20 token.
     """
 
-    abi = Contract._load_abi(__name__, 'token-abi/ERC20Token.abi')
+    abi = Contract._load_abi(__name__, 'abi/ERC20Token.abi')
     registry = {}
 
     def __init__(self, web3, address):
@@ -137,7 +137,7 @@ class ERC20Token(Contract):
 
 
 class DSToken(ERC20Token):
-    abi = Contract._load_abi(__name__, 'token-abi/DSToken.abi')
+    abi = Contract._load_abi(__name__, 'abi/DSToken.abi')
 
     def is_stopped(self):
         raise NotImplementedError
@@ -165,4 +165,3 @@ class DSEthToken(ERC20Token):
     abi = None #TODO implement the WETH wrapper contract
 
     pass
-

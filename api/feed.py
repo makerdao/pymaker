@@ -47,7 +47,7 @@ class DSValue(Contract):
         address: Ethereum address of the `DSValue` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'feed-abi/DSValue.abi')
+    abi = Contract._load_abi(__name__, 'abi/DSValue.abi')
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3

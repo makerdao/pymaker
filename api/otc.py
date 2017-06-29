@@ -69,7 +69,7 @@ class SimpleMarket(Contract):
         address: Ethereum address of the `SimpleMarket` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'otc-abi/SimpleMarket.abi')
+    abi = Contract._load_abi(__name__, 'abi/SimpleMarket.abi')
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
