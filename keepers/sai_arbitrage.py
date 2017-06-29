@@ -21,13 +21,13 @@ import argparse
 import time
 
 from api.Address import Address
-from api.token import ERC20Token
-from api.numeric import Ray
+from api.otc import SimpleMarket
 from api.Transfer import Transfer
+from api.numeric import Ray
 from api.numeric import Wad
-from api.otc.SimpleMarket import SimpleMarket
 from api.sai.Lpc import Lpc
 from api.sai.Tub import Tub
+from api.token import ERC20Token
 from keepers import Keeper
 from keepers.arbitrage.conversion import LpcTakeAltConversion
 from keepers.arbitrage.conversion import LpcTakeRefConversion

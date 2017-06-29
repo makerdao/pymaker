@@ -16,13 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from api.Address import Address
-from api.token import ERC20Token
+from api.otc import SimpleMarket
 from api.numeric import Ray
 from api.numeric import Wad
-from api.otc.OfferInfo import OfferInfo
-from api.otc.SimpleMarket import SimpleMarket
+from api.otc import OfferInfo
 from api.sai.Lpc import Lpc
 from api.sai.Tub import Tub
+from api.token import ERC20Token
 
 
 class Conversion:
