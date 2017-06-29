@@ -1,49 +1,49 @@
 Basic examples
 ==============
 
-These examples are meant to demonstrate how to use the `maker.py` APIs.
+These examples are meant to demonstrate how to use the APIs.
 
-CryptocompareFeed.py
---------------------
+cryptocompare_feed.py
+---------------------
 
 This example demonstrates how to populate a `DSValue` feed with price data from the `cryptocompare.com` API.
 
-From `examples/CryptocompareFeed.py`:
+From `examples/cryptocompare_feed.py`:
 
-.. literalinclude:: ../examples/CryptocompareFeed.py
+.. literalinclude:: ../examples/cryptocompare_feed.py
     :language: python
     :linenos:
 
-LpcExchange.py
---------------
+lpc_exchange.py
+---------------
 
 This example demonstrates how to easily exchange `W-ETH` for `SAI`.
 
-From `examples/LpcExchange.py`:
+From `examples/lpc_exchange.py`:
 
-.. literalinclude:: ../examples/LpcExchange.py
+.. literalinclude:: ../examples/lpc_exchange.py
     :language: python
     :linenos:
 
-SaiStats.py
------------
+sai_stats.py
+------------
 
 This example demonstrates how to read configuration and the current state of the Sai contracts.
 
-From `examples/SaiStats.py`:
+From `examples/sai_stats.py`:
 
-.. literalinclude:: ../examples/SaiStats.py
+.. literalinclude:: ../examples/sai_stats.py
     :language: python
     :linenos:
 
-TokenTransfer.py
-----------------
+token_transfer.py
+-----------------
 
 This example demonstrates transfer some SAI to another Ethereum address. Basically any other ERC20 token
 can be transferred this way.
 
-From `examples/TokenTransfer.py`:
+From `examples/token_transfer.py`:
 
-.. literalinclude:: ../examples/TokenTransfer.py
+.. literalinclude:: ../examples/token_transfer.py
     :language: python
     :linenos:
