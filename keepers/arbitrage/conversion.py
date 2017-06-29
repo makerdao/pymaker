@@ -20,8 +20,7 @@ from api.otc import SimpleMarket
 from api.numeric import Ray
 from api.numeric import Wad
 from api.otc import OfferInfo
-from api.sai.Lpc import Lpc
-from api.sai.Tub import Tub
+from api.sai import Tub, Lpc
 from api.token import ERC20Token
 
 

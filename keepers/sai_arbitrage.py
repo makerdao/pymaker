@@ -24,8 +24,7 @@ from api import Address, Transfer
 from api.otc import SimpleMarket
 from api.numeric import Ray
 from api.numeric import Wad
-from api.sai.Lpc import Lpc
-from api.sai.Tub import Tub
+from api.sai import Tub, Lpc
 from api.token import ERC20Token
 from keepers import Keeper
 from keepers.arbitrage.conversion import LpcTakeAltConversion

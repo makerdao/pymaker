@@ -173,7 +173,7 @@ class DSCache(DSValue):
         address: Ethereum address of the `DSCache` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'feed-abi/DSCache.abi')
+    abi = Contract._load_abi(__name__, 'abi/DSCache.abi')
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3

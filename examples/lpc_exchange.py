@@ -23,8 +23,8 @@ from web3 import Web3
 from api import Address
 from api.token import ERC20Token
 from api.numeric import Wad
-from api.sai.Lpc import Lpc
-from api.sai.Tub import Tub
+from api.sai import Tub, Lpc
+
 
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
 web3.eth.defaultAccount = "0x002ca7F9b416B2304cDd20c26882d1EF5c53F611"

@@ -19,10 +19,35 @@ from typing import Optional
 
 from web3 import Web3
 
-from api import Contract, Address, Receipt
+from api import Address, Wad, Contract, Receipt
 from api.numeric import Ray
-from api.numeric import Wad
-from api.sai.Cup import Cup
+
+
+class Cup:
+    """Represents details of a single cup managed by a `Tub`.
+
+    Notes:
+        `art` is denominated in internal debt units and should not be used directly, unless you really
+        know what you're doing and you know what `chi()` and `rho()` are.
+
+    Attributes:
+        cup_id: The identifier of the cup.
+        lad: Address of the owner of the cup.
+        art: The amount of outstanding debt (denominated in internal debt units).
+        ink: The amount of SKR collateral locked in the cup.
+    """
+    def __init__(self, cup_id: int, lad: Address, art: Wad, ink: Wad):
+        assert(isinstance(cup_id, int))
+        assert(isinstance(lad, Address))
+        assert(isinstance(art, Wad))
+        assert(isinstance(ink, Wad))
+        self.cup_id = cup_id
+        self.lad = lad
+        self.art = art
+        self.ink = ink
+
+    def __repr__(self):
+        return f"Cup(cup_id={self.cup_id}, lad={repr(self.lad)}, art={self.art}, ink={self.ink})"
 
 
 class Tub(Contract):
@@ -193,7 +218,7 @@ class Tub(Contract):
 
     def fit(self) -> Ray:
         """Get the GEM per SKR settlement price.
-        
+
         Returns:
             The GEM per SKR settlement (kill) price.
         """
@@ -539,10 +564,10 @@ class Tub(Contract):
 
     def cups(self, cup_id: int) -> Cup:
         """Get the cup details.
-        
+
         Args:
             cup_id: Id of the cup to get the details of.
-            
+
         Returns:
             Class encapsulating cup details.
         """
@@ -811,10 +836,220 @@ class Tub(Contract):
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
-        
+
     # TODO cage
     # TODO cash
     # TODO vent
+
+    def __eq__(self, other):
+        return self.address == other.address
+
+    def __repr__(self):
+        return f"Tub(address='{self.address}')"
+
+
+class Lpc(Contract):
+    """A client for the `SaiLPC` contract, a simple two-token liquidity pool created together for Sai.
+
+    `SaiLPC` relies on an external price feed (the `tip`).
+
+    Makers
+    - `pool()` their gems and receive LPS tokens, which are a claim on the pool.
+    - `exit()` and trade their LPS tokens for a share of the gems in the pool.
+
+    Takers
+    - `take()` and exchange one gem for another, whilst paying a fee (the `gap`). The collected fee goes into the pool.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `SaiLPC` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/SaiLPC.abi')
+    abiTip = Contract._load_abi(__name__, 'abi/Tip.abi')
+
+    def __init__(self, web3: Web3, address: Address):
+        self.web3 = web3
+        self.address = address
+        self._assert_contract_exists(web3, address)
+        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contract.call().tip())
+
+    def ref(self) -> Address:
+        """Get the ref token.
+
+        Returns:
+            The address of the ref token.
+        """
+        return Address(self._contract.call().ref())
+
+    def alt(self) -> Address:
+        """Get the alt token.
+
+        Returns:
+            The address of the alt token.
+        """
+        return Address(self._contract.call().alt())
+
+    def pip(self) -> Address:
+        """Get the price feed (giving refs per alt).
+
+        You can get the current feed value by calling `tag()`.
+
+        Returns:
+            The address of the price feed, which could be a `DSValue`, a `DSCache`, a `Mednianizer` etc.
+        """
+        return Address(self._contract.call().pip())
+
+    def tip(self) -> Address:
+        """Get the target price engine.
+
+        Returns:
+            The address of the target price engine. It is an internal component of Sai.
+        """
+        return Address(self._contract.call().tip())
+
+    def gap(self) -> Wad:
+        """Get the spread, charged on `take()`.
+
+        Returns:
+            The current value of the spread. `1.0` means no spread. `1.02` means 2% spread.
+        """
+        return Wad(self._contract.call().gap())
+
+    def lps(self) -> Address:
+        """Get the LPS token (liquidity provider shares).
+
+        Returns:
+            The address of the LPS token.
+        """
+        return Address(self._contract.call().lps())
+
+    def jump(self, new_gap: Wad) -> Optional[Receipt]:
+        """Update the spread.
+
+        Args:
+            new_gap: The new value of the spread (`gap`). `1.0` means no spread. `1.02` means 2% spread.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(new_gap, Wad)
+        try:
+            tx_hash = self._contract.transact().jump(new_gap.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def tag(self) -> Wad:
+        """Get the current price (refs per alt).
+
+        The price is read from the price feed (`tip()`) every time this method gets called.
+
+        Returns:
+            The current price (refs per alt).
+        """
+        return Wad(self._contract.call().tag())
+
+    def pie(self) -> Wad:
+        """Get the total pool value (in ref).
+
+        Returns:
+            The the total pool value (in ref).
+        """
+        return Wad(self._contract.call().pie())
+
+    def par(self) -> Wad:
+        """Get the accrued holder fee.
+
+        Every invocation of this method calls `prod()` internally, so the value you receive is always up-to-date.
+        But as calling it doesn't result in an Ethereum transaction, the actual `_par` value in the smart
+        contract storage does not get updated.
+
+        Returns:
+            The accrued holder fee.
+        """
+        return Wad(self._contractTip.call().par())
+
+    def per(self) -> Ray:
+        """Get the lps per ref ratio.
+
+        Returns:
+            The current lps per ref ratio.
+        """
+        return Ray(self._contract.call().per())
+
+    def pool(self, token: Address, amount: Wad) -> Optional[Receipt]:
+        """Enter the pool, get LPS for ref or alt.
+
+        The `amount` of token `token` will be transferred from your account to the pool.
+        In return you will receive some number of LPS tokens, calculated accordingly to `per()`.
+
+        LPS tokens are needed to claim the tokens back (either refs or alts) with `exit()`.
+
+        Args:
+            token: The token to enter the pool with (either ref or alt).
+            amount: The value (in `token`) to enter the pool with.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(token, Address)
+        assert isinstance(amount, Wad)
+        try:
+            tx_hash = self._contract.transact().pool(token.address, amount.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def exit(self, token: Address, amount: Wad) -> Optional[Receipt]:
+        """Exit the pool, exchange LPS for ref or alt.
+
+        The `amount` of token `token` will be credited to your account, as long as there are tokens in the
+        pool available. The corresponding number of LPS tokens, calculated accordingly to `per()`, will be
+        taken from your account.
+
+        Args:
+            token: The token you want to receive from the pool (either ref or alt).
+            amount: The value (in `token`) you want to receive from the pool.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(token, Address)
+        assert isinstance(amount, Wad)
+        try:
+            tx_hash = self._contract.transact().exit(token.address, amount.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
+
+    def take(self, token: Address, amount: Wad) -> Optional[Receipt]:
+        """Perform an exchange.
+
+        If `token` is ref, credits `amount` of ref to your account, taking the equivalent amount of alts from you.
+        If `token` is alt, credits `amount` of alt to your account, taking the equivalent amount of refs from you.
+
+        The current price (`tag`) is used as the exchange rate.
+
+        Args:
+            token: The token you want to get from the pool (either ref or alt).
+            amount: The value (in `token`) you want to get from the pool.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(token, Address)
+        assert isinstance(amount, Wad)
+        try:
+            tx_hash = self._contract.transact().take(token.address, amount.value)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
 
     def __eq__(self, other):
         return self.address == other.address
