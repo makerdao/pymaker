@@ -45,6 +45,7 @@ class Keeper:
         print(f"{'-' * len(label)}")
         print(f"")
         print(f"Keeper operating as {self.our_address}")
+        print(f"")
 
         self.run()
 

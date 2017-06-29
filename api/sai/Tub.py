@@ -550,7 +550,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         array = self._contractTub.call().cups(self._to_bytes32(cup_id))
-        return Cup(Address(array[0]), Wad(array[1]), Wad(array[2]))
+        return Cup(cup_id, Address(array[0]), Wad(array[1]), Wad(array[2]))
 
     def tab(self, cup_id: int) -> Wad:
         """Get the amount of debt in a cup.
