@@ -21,6 +21,41 @@ from api.numeric import Wad, Ray
 
 
 class TestWad:
+    def test_should_support_negative_values(self):
+        Wad(-1)
+
+    def test_should_support_values_greater_than_uint256(self):
+        Wad(2**256)
+        Wad(2**256 + 1)
+        Wad(2**512)
+
+    def test_should_format_to_string_nicely(self):
+        assert str(Wad(1)) == "0.000000000000000001"
+        assert str(Wad(500000000000000000)) == "0.500000000000000000"
+        assert str(Wad(1500000000000000000)) == "1.500000000000000000"
+        assert str(Wad(-1500000000000000000)) == "-1.500000000000000000"
+        assert str(Wad(-500000000000000000)) == "-0.500000000000000000"
+        assert str(Wad(-1)) == "-0.000000000000000001"
+
+    def test_add(self):
+        assert Wad(1) + Wad(2) == Wad(3)
+
+    def test_add_should_not_work_with_rays(self):
+        with pytest.raises(ArithmeticError):
+            Wad(1) + Ray(2)
+
+    def test_add_should_not_work_with_ints(self):
+        with pytest.raises(ArithmeticError):
+            Wad(1) + 2
+
+    def test_subtract(self):
+        assert Wad(10) - Wad(2) == Wad(8)
+        assert Wad(1) - Wad(2) == Wad(-1)
+
+    def test_subtract_should_not_work_with_rays(self):
+        with pytest.raises(ArithmeticError):
+            Wad(10) - Ray(2)
+
     def test_should_compare_wads_with_each_other(self):
         assert Wad(1000) == Wad(1000)
         assert Wad(1000) != Wad(999)
