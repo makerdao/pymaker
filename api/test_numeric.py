@@ -66,3 +66,38 @@ class TestWad:
             assert Wad(1000) >= 1000
         with pytest.raises(ArithmeticError):
             assert Wad(1000) >= 999
+
+    def test_min_value(self):
+        assert Wad.min(Wad(10), Wad(20)) == Wad(10)
+        assert Wad.min(Wad(25), Wad(15)) == Wad(15)
+        assert Wad.min(Wad(25), Wad(15), Wad(5)) == Wad(5)
+
+    def test_min_value_should_reject_comparison_with_rays(self):
+        with pytest.raises(ArithmeticError):
+            Wad.min(Wad(10), Ray(20))
+        with pytest.raises(ArithmeticError):
+            Wad.min(Ray(25), Wad(15))
+
+    def test_min_value_should_reject_comparison_with_ints(self):
+        with pytest.raises(ArithmeticError):
+            Wad.min(Wad(10), 20)
+        with pytest.raises(ArithmeticError):
+            Wad.min(20, Wad(10))
+
+    def test_max_value(self):
+        assert Wad.max(Wad(10), Wad(20)) == Wad(20)
+        assert Wad.max(Wad(25), Wad(15)) == Wad(25)
+        assert Wad.max(Wad(25), Wad(15), Wad(40)) == Wad(40)
+
+    def test_max_value_should_reject_comparison_with_rays(self):
+        with pytest.raises(ArithmeticError):
+            Wad.max(Wad(10), Ray(20))
+        with pytest.raises(ArithmeticError):
+            Wad.max(Wad(25), Ray(15))
+
+    def test_max_value_should_reject_comparison_with_ints(self):
+        with pytest.raises(ArithmeticError):
+            Wad.max(Wad(10), 20)
+        with pytest.raises(ArithmeticError):
+            Wad.max(15, Wad(25))
+
