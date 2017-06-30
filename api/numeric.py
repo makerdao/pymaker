@@ -114,17 +114,6 @@ class Wad:
         else:
             raise ArithmeticError
 
-    def __cmp__(self, other):
-        if isinstance(other, Wad):
-            if self.value < other.value:
-                return -1
-            elif self.value > other.value:
-                return 1
-            else:
-                return 0
-        else:
-            raise ArithmeticError
-
     @staticmethod
     # TODO try to implement a variable argument min()
     def min(first, second):
@@ -226,17 +215,6 @@ class Ray:
     def __lt__(self, other):
         if isinstance(other, Ray):
             return self.value < other.value
-        else:
-            raise ArithmeticError
-
-    def __cmp__(self, other):
-        if isinstance(other, Ray):
-            if self.value < other.value:
-                return -1
-            elif self.value > other.value:
-                return 1
-            else:
-                return 0
         else:
             raise ArithmeticError
 
