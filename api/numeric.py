@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
-from functools import total_ordering
+from functools import total_ordering, reduce
 from decimal import *
 
 
@@ -115,20 +115,14 @@ class Wad:
             raise ArithmeticError
 
     @staticmethod
-    # TODO try to implement a variable argument min()
-    def min(first, second):
-        """Returns the lower of the two Wad values"""
-        if not isinstance(first, Wad) or not isinstance(second, Wad):
-            raise ArithmeticError
-        return Wad(min(first.value, second.value))
+    def min(*args):
+        """Returns the lower of the Wad values"""
+        return reduce(lambda x, y: x if x < y else y, args[1:], args[0])
 
     @staticmethod
-    # TODO try to implement a variable argument max()
-    def max(first, second):
-        """Returns the higher of the two Wad values"""
-        if not isinstance(first, Wad) or not isinstance(second, Wad):
-            raise ArithmeticError
-        return Wad(max(first.value, second.value))
+    def max(*args):
+        """Returns the higher of the Wad values"""
+        return reduce(lambda x, y: x if x > y else y, args[1:], args[0])
 
 
 @total_ordering
