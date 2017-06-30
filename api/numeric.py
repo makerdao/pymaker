@@ -125,10 +125,6 @@ class Wad:
         else:
             raise ArithmeticError
 
-    #TODO remove this method from the API
-    def percentage_change(self, change):
-        return Wad((self.value * (100 + change)) // 100)
-
     @staticmethod
     # TODO try to implement a variable argument min()
     def min(first, second):

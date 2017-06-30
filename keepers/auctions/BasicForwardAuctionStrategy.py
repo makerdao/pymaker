@@ -66,7 +66,7 @@ class BasicForwardAuctionStrategy(Strategy):
 
         # get the current buy amount and the minimum possible increase
         auction_current_bid = auctionlet.buy_amount
-        auction_min_next_bid = auction_current_bid.percentage_change(auction.min_increase)
+        auction_min_next_bid = auction_current_bid * Wad.from_number((100 + auction.min_increase) / 100)
         assert (auction_min_next_bid >= auction_current_bid)
 
         # calculate our maximum bid
