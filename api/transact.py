@@ -48,7 +48,7 @@ class TransactionManager(Contract):
             return reduce(operator.add, map(lambda invocation: script_entry(invocation), invocations), bytes())
 
         def script_entry(invocation: dict) -> bytes:
-            body = bytes.fromhex(invocation['address'].address.replace('0x', '')) + bytes.fromhex(invocation['calldata'].replace('0x', ''))
+            body = invocation['address'].as_bytes() + invocation['calldata'].as_bytes()
             header = len(body).to_bytes(32, byteorder='big')
             return header + body
 

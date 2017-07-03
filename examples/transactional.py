@@ -20,9 +20,8 @@
 from web3 import HTTPProvider
 from web3 import Web3
 
-from api import Address
+from api import Address, Calldata
 from api.token import ERC20Token
-from api.numeric import Wad
 from api.sai import Tub
 from api.transact import TransactionManager
 
@@ -41,11 +40,11 @@ gem = ERC20Token(web3=web3, address=tub.gem())
 invocations = [
     {
         'address': Address("0xdf3893359182f55b5f225e427c93ab3fcd48e967"),
-        'calldata': '0x812600df0000000000000000000000000000000000000000000000000000000000000002'
+        'calldata': Calldata('0x812600df0000000000000000000000000000000000000000000000000000000000000002')
     },
     {
         'address': Address("0x89d88bf5cef2deac81b50b4c99f86c9437dce28f"),
-        'calldata': '0x812600df0000000000000000000000000000000000000000000000000000000000000008'
+        'calldata': Calldata('0x812600df0000000000000000000000000000000000000000000000000000000000000008')
     }
 ]
 

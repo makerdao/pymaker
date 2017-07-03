@@ -86,6 +86,10 @@ class Address:
         else:
             self.address = eth_utils.to_normalized_address(address)
 
+    def as_bytes(self) -> bytes:
+        """Return the address as a 20-byte bytes array."""
+        return bytes.fromhex(self.address.replace('0x', ''))
+
     def __str__(self):
         return f"{self.address}"
 
@@ -102,6 +106,30 @@ class Address:
     def __lt__(self, other):
         assert(isinstance(other, Address))
         return self.address < other.address
+
+
+class Calldata:
+    """Represents Ethereum calldata."""
+    def __init__(self, value):
+        assert(isinstance(value, str))
+        self.str = value
+
+    def as_bytes(self) -> bytes:
+        """Return the calldata as a byte array."""
+        return bytes.fromhex(self.str.replace('0x', ''))
+
+    def __str__(self):
+        return f"{self.str}"
+
+    def __repr__(self):
+        return f"Calldata('{self.str}')"
+
+    def __hash__(self):
+        return self.str.__hash__()
+
+    def __eq__(self, other):
+        assert(isinstance(other, Calldata))
+        return self.str == other.str
 
 
 class Receipt:
