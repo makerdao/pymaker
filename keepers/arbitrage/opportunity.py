@@ -53,7 +53,7 @@ class Opportunity:
     def tx_costs(self) -> Wad:
         """Calculates the transaction costs that this opportunity will take to execute."""
         #TODO lowered the transaction costs so the keeper is more aggressive, for testing purposes
-        return Wad.from_number(0.0003) * len(self.conversions)
+        return Wad.from_number(0.0003) * Wad.from_number(len(self.conversions))
 
     def net_profit(self, token: Address) -> Wad:
         """Calculates the expected net profit brought by this opportunity (in token `token`).
