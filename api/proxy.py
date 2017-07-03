@@ -17,7 +17,6 @@
 
 from typing import Optional
 
-import array
 from web3 import Web3
 
 from api import Contract, Address, Receipt
@@ -42,3 +41,9 @@ class DSProxy(Contract):
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
+    def execute(self, contract: bytes, calldata: bytes) -> Optional[Receipt]:
+        try:
+            tx_hash = self._contract.transact().execute(contract, calldata)
+            return self._prepare_receipt(self.web3, tx_hash)
+        except:
+            return None
