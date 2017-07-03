@@ -40,6 +40,12 @@ class Conversion:
     def execute(self):
         raise NotImplementedError("execute() not implemented")
 
+    def address(self) -> Address:
+        raise NotImplementedError("address() not implemented")
+
+    def calldata(self) -> str:
+        raise NotImplementedError("calldata() not implemented")
+
     def __str__(self):
         def amt(amount: Wad) -> str:
             return f"{amount} " if amount is not None else ""
@@ -66,6 +72,12 @@ class TubJoinConversion(Conversion):
     def execute(self):
         return self.tub.join(self.source_amount)
 
+    def address(self) -> Address:
+        return self.tub.addressTub
+
+    def calldata(self):
+        return self.tub.join_abi(self.source_amount)
+
 
 class TubExitConversion(Conversion):
     def __init__(self, tub: Tub):
@@ -81,6 +93,12 @@ class TubExitConversion(Conversion):
 
     def execute(self):
         return self.tub.exit(self.source_amount)
+
+    def address(self) -> Address:
+        return self.tub.addressTub
+
+    def calldata(self):
+        return self.tub.exit_abi(self.source_amount)
 
 
 class TubBoomConversion(Conversion):
@@ -107,6 +125,12 @@ class TubBoomConversion(Conversion):
     def execute(self):
         return self.tub.boom(self.source_amount)
 
+    def address(self) -> Address:
+        return self.tub.addressTap
+
+    def calldata(self):
+        return self.tub.boom_abi(self.source_amount)
+
 
 class TubBustConversion(Conversion):
     def __init__(self, tub: Tub):
@@ -130,6 +154,12 @@ class TubBustConversion(Conversion):
     def execute(self):
         return self.tub.bust(self.target_amount)
 
+    def address(self) -> Address:
+        return self.tub.addressTap
+
+    def calldata(self):
+        return self.tub.bust_abi(self.target_amount)
+
 
 class LpcTakeRefConversion(Conversion):
     def __init__(self, lpc: Lpc):
@@ -148,6 +178,12 @@ class LpcTakeRefConversion(Conversion):
 
     def execute(self):
         return self.lpc.take(self.lpc.ref(), self.target_amount)
+
+    def address(self) -> Address:
+        return self.lpc.address
+
+    def calldata(self):
+        return self.lpc.take_abi(self.lpc.ref(), self.target_amount)
 
 
 class LpcTakeAltConversion(Conversion):
@@ -168,6 +204,12 @@ class LpcTakeAltConversion(Conversion):
     def execute(self):
         return self.lpc.take(self.lpc.alt(), self.target_amount)
 
+    def address(self) -> Address:
+        return self.lpc.address
+
+    def calldata(self):
+        return self.lpc.take_abi(self.lpc.ref(), self.target_amount)
+
 
 class OasisTakeConversion(Conversion):
     def __init__(self, otc: SimpleMarket, offer: OfferInfo):
@@ -184,6 +226,12 @@ class OasisTakeConversion(Conversion):
 
     def execute(self):
         return self.otc.take(self.offer.offer_id, self.quantity())
+
+    def address(self) -> Address:
+        return self.otc.address
+
+    def calldata(self):
+        return self.otc.take_abi(self.offer.offer_id, self.quantity())
 
     def quantity(self):
         quantity = self.target_amount

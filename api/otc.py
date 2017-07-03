@@ -156,6 +156,9 @@ class SimpleMarket(Contract):
         except:
             return None
 
+    def take_abi(self, offer_id: int, quantity: Wad) -> str:
+        return self.web3.eth.contract(abi=self.abi).encodeABI('take', [self._to_bytes32(offer_id), quantity.value])
+
     def kill(self, offer_id: int) -> Optional[Receipt]:
         """Cancels an existing offer.
 

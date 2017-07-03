@@ -179,6 +179,18 @@ class SaiArbitrage(Keeper):
         print(f"The profit we made is {TransferFormatter().format_net(all_transfers, self.our_address)}.")
         self.print_balances()
 
+    def execute_opportunity_in_batch(self, opportunity):
+        """Execute the opportunity in one transaction."""
+        all_transfers = []
+        for index, conversion in enumerate(opportunity.conversions, start=1):
+            address = conversion.address()
+            calldata = conversion.calldata()
+            print(f"Step {index}/{len(opportunity.conversions)}:")
+            print(f"  Will be {conversion.name()}")
+            print(f"  Using calldata {calldata}")
+            print(f"  To address {address}")
+
+
 
 if __name__ == '__main__':
     SaiArbitrage().start()
