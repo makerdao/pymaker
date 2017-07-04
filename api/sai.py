@@ -19,7 +19,7 @@ from typing import Optional
 
 from web3 import Web3
 
-from api import Address, Wad, Contract, Receipt
+from api import Address, Wad, Contract, Receipt, Calldata
 from api.numeric import Ray
 
 
@@ -640,8 +640,8 @@ class Tub(Contract):
         except:
             return None
 
-    def join_abi(self, amount_in_gem: Wad) -> str:
-        return self.web3.eth.contract(abi=self.abiTub).encodeABI('join', [amount_in_gem])
+    def join_abi(self, amount_in_gem: Wad) -> Calldata:
+        return Calldata(self.web3.eth.contract(abi=self.abiTub).encodeABI('join', [amount_in_gem]))
 
     def exit(self, amount_in_skr: Wad) -> Optional[Receipt]:
         """Sell SKR for GEMs.
@@ -660,8 +660,8 @@ class Tub(Contract):
         except:
             return None
 
-    def exit_abi(self, amount_in_skr: Wad) -> str:
-        return self.web3.eth.contract(abi=self.abiTub).encodeABI('exit', [amount_in_skr])
+    def exit_abi(self, amount_in_skr: Wad) -> Calldata:
+        return Calldata(self.web3.eth.contract(abi=self.abiTub).encodeABI('exit', [amount_in_skr]))
 
     #TODO make it return the id of the newly created cup
     def open(self) -> Optional[Receipt]:
@@ -826,8 +826,8 @@ class Tub(Contract):
         except:
             return None
 
-    def boom_abi(self, amount_in_skr: Wad) -> str:
-        return self.web3.eth.contract(abi=self.abiTap).encodeABI('boom', [amount_in_skr])
+    def boom_abi(self, amount_in_skr: Wad) -> Calldata:
+        return Calldata(self.web3.eth.contract(abi=self.abiTap).encodeABI('boom', [amount_in_skr]))
 
     def bust(self, amount_in_skr: Wad) -> Optional[Receipt]:
         """Sell some amount of SAI to process `woe` (bad debt).
@@ -846,8 +846,8 @@ class Tub(Contract):
         except:
             return None
 
-    def bust_abi(self, amount_in_skr: Wad) -> str:
-        return self.web3.eth.contract(abi=self.abiTap).encodeABI('bust', [amount_in_skr])
+    def bust_abi(self, amount_in_skr: Wad) -> Calldata:
+        return Calldata(self.web3.eth.contract(abi=self.abiTap).encodeABI('bust', [amount_in_skr]))
 
     # TODO cage
     # TODO cash
@@ -1063,8 +1063,8 @@ class Lpc(Contract):
         except:
             return None
 
-    def take_abi(self, token: Address, amount: Wad) -> str:
-        return self.web3.eth.contract(abi=self.abi).encodeABI('take', [token.address, amount.value])
+    def take_abi(self, token: Address, amount: Wad) -> Calldata:
+        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('take', [token.address, amount.value]))
 
     def __eq__(self, other):
         return self.address == other.address

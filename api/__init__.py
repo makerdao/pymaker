@@ -112,6 +112,7 @@ class Calldata:
     """Represents Ethereum calldata."""
     def __init__(self, value):
         assert(isinstance(value, str))
+        assert(value.startswith('0x'))
         self.str = value
 
     def as_bytes(self) -> bytes:
