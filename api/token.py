@@ -17,7 +17,7 @@
 
 from typing import Optional
 
-from api import Contract, Address, Receipt
+from api import Contract, Address, Receipt, Calldata
 from api.numeric import Wad
 
 
@@ -113,6 +113,9 @@ class ERC20Token(Contract):
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
+
+    def approve_calldata(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Calldata:
+        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('approve', [payee.address, limit.value]))
 
     def __eq__(self, other):
         return self.address == other.address

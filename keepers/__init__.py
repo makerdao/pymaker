@@ -69,7 +69,7 @@ class Config:
             ERC20Token.register_token(Address(value), key)
 
     def get_contract_address(self, name):
-        return self.addresses[self.network]["contracts"][name]
+        return self.addresses[self.network]["contracts"].get(name, None)
 
     @staticmethod
     def _network_name(web3: Web3) -> str:
