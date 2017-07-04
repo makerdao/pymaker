@@ -48,7 +48,8 @@ class TransferFormatter:
         transfers.sort(key=lambda transfer: transfer.token_address, reverse=False)
         for token_address, transfers in itertools.groupby(transfers, lambda transfer: transfer.token_address):
             total = self._sum(map(lambda transfer: self._net_value(transfer, our_address), transfers))
-            yield f"{total} {ERC20Token.token_name_by_address(token_address)}"
+            if total != Wad(0):
+                yield f"{total} {ERC20Token.token_name_by_address(token_address)}"
 
     def _join_with_and(self, iterable: Iterable):
         return " and ".join(iterable)

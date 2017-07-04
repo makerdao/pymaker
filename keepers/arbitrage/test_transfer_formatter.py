@@ -127,6 +127,18 @@ def test_should_format_net_balances_for_more_than_one_token(token1, token2, our_
         == "2.000000000000000000 TK1 and 97.500000000000000000 TK2"
 
 
+def test_should_not_include_zeros_in_net_balances(token1, token2, our_address, some_address):
+    # given
+    transfer1 = Transfer(token1, our_address, some_address, Wad.from_number(15))
+    transfer2 = Transfer(token1, some_address, our_address, Wad.from_number(17))
+    transfer3 = Transfer(token2, our_address, some_address, Wad.from_number(22.5))
+    transfer4 = Transfer(token2, some_address, our_address, Wad.from_number(22.5))
+
+    # expect
+    assert TransferFormatter().format_net([transfer1, transfer2, transfer3, transfer4], our_address) \
+        == "2.000000000000000000 TK1"
+
+
 def test_support_iterators(token1, some_address):
     # given
     transfer = Transfer(token1, some_address, some_address, Wad.from_number(11.5))
