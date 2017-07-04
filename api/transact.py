@@ -17,11 +17,19 @@
 
 import operator
 from functools import reduce
-from typing import Optional
+from typing import Optional, List
 
 from web3 import Web3
 
-from api import Contract, Address, Receipt
+from api import Contract, Address, Receipt, Calldata
+
+
+class Invocation(object):
+    def __init__(self, address: Address, calldata: Calldata):
+        assert(isinstance(address, Address))
+        assert(isinstance(calldata, Calldata))
+        self.address = address
+        self.calldata = calldata
 
 
 class TransactionManager(Contract):
@@ -40,18 +48,20 @@ class TransactionManager(Contract):
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
-    def execute(self, tokens: list, invocations: list) -> Optional[Receipt]:
+    def execute(self, tokens: List[Address], invocations: List[Invocation]) -> Optional[Receipt]:
         def token_addresses() -> list:
             return list(map(lambda address: address.address, tokens))
 
         def script() -> bytes:
             return reduce(operator.add, map(lambda invocation: script_entry(invocation), invocations), bytes())
 
-        def script_entry(invocation: dict) -> bytes:
-            body = invocation['address'].as_bytes() + invocation['calldata'].as_bytes()
+        def script_entry(invocation: Invocation) -> bytes:
+            body = invocation.address.as_bytes() + invocation.calldata.as_bytes()
             header = len(body).to_bytes(32, byteorder='big')
             return header + body
 
+        assert(isinstance(tokens, list))
+        assert(isinstance(invocations, list))
         try:
             tx_hash = self._contract.transact().execute(token_addresses(), script())
             return self._prepare_receipt(self.web3, tx_hash)
