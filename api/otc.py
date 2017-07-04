@@ -156,7 +156,7 @@ class SimpleMarket(Contract):
         except:
             return None
 
-    def take_abi(self, offer_id: int, quantity: Wad) -> Calldata:
+    def take_calldata(self, offer_id: int, quantity: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('take', [self._to_bytes32(offer_id), quantity.value]))
 
     def kill(self, offer_id: int) -> Optional[Receipt]:

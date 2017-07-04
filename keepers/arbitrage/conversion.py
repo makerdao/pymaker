@@ -76,7 +76,7 @@ class TubJoinConversion(Conversion):
         return self.tub.addressTub
 
     def calldata(self):
-        return self.tub.join_abi(self.source_amount)
+        return self.tub.join_calldata(self.source_amount)
 
 
 class TubExitConversion(Conversion):
@@ -98,7 +98,7 @@ class TubExitConversion(Conversion):
         return self.tub.addressTub
 
     def calldata(self):
-        return self.tub.exit_abi(self.source_amount)
+        return self.tub.exit_calldata(self.source_amount)
 
 
 class TubBoomConversion(Conversion):
@@ -129,7 +129,7 @@ class TubBoomConversion(Conversion):
         return self.tub.addressTap
 
     def calldata(self):
-        return self.tub.boom_abi(self.source_amount)
+        return self.tub.boom_calldata(self.source_amount)
 
 
 class TubBustConversion(Conversion):
@@ -158,7 +158,7 @@ class TubBustConversion(Conversion):
         return self.tub.addressTap
 
     def calldata(self):
-        return self.tub.bust_abi(self.target_amount)
+        return self.tub.bust_calldata(self.target_amount)
 
 
 class LpcTakeRefConversion(Conversion):
@@ -183,7 +183,7 @@ class LpcTakeRefConversion(Conversion):
         return self.lpc.address
 
     def calldata(self):
-        return self.lpc.take_abi(self.lpc.ref(), self.target_amount)
+        return self.lpc.take_calldata(self.lpc.ref(), self.target_amount)
 
 
 class LpcTakeAltConversion(Conversion):
@@ -208,7 +208,7 @@ class LpcTakeAltConversion(Conversion):
         return self.lpc.address
 
     def calldata(self):
-        return self.lpc.take_abi(self.lpc.ref(), self.target_amount)
+        return self.lpc.take_calldata(self.lpc.ref(), self.target_amount)
 
 
 class OasisTakeConversion(Conversion):
@@ -231,7 +231,7 @@ class OasisTakeConversion(Conversion):
         return self.otc.address
 
     def calldata(self):
-        return self.otc.take_abi(self.offer.offer_id, self.quantity())
+        return self.otc.take_calldata(self.offer.offer_id, self.quantity())
 
     def quantity(self):
         quantity = self.target_amount
