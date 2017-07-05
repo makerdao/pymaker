@@ -61,3 +61,6 @@ Other classes
 
 .. automodule:: api
     :members:
+
+.. automodule:: api.transact
+    :members:

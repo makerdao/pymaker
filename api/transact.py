@@ -25,6 +25,12 @@ from api import Contract, Address, Receipt, Calldata
 
 
 class Invocation(object):
+    """Single smart contract method invocation, to be used together with `TxManager`.
+
+    Attributes:
+        address: Smart contract address.
+        calldata: The calldata of the invocation.
+    """
     def __init__(self, address: Address, calldata: Calldata):
         assert(isinstance(address, Address))
         assert(isinstance(calldata, Calldata))
@@ -34,6 +40,16 @@ class Invocation(object):
 
 class TxManager(Contract):
     """A client for the `TxManager` contract.
+
+    `TxManager` allows to invoke multiple smart contract methods in one Ethereum transaction.
+    Each invocation is represented as an instance of the `Invocation` class, containing a
+    contract address and a calldata.
+
+    In addition to that, these invocations can use ERC20 token balances. In order to do that,
+    the entire allowance of each token involved is transferred from the caller to the `TxManager`
+    contract at the beginning of the transaction and all the remaining balances are returned
+    to the caller at the end of it. In order to use this feature, ERC20 token allowances
+    have to be granted to the `TxManager`.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
@@ -49,6 +65,12 @@ class TxManager(Contract):
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
     def execute(self, tokens: List[Address], invocations: List[Invocation]) -> Optional[Receipt]:
+        """Executes multiple smart contract methods in one Ethereum transaction.
+
+        Args:
+            tokens: List of addresses of ERC20 token the invocations should be able to access.
+            invocations: A list of invocations (smart contract methods) to be executed.
+        """
         def token_addresses() -> list:
             return list(map(lambda address: address.address, tokens))
 
