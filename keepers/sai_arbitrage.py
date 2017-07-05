@@ -90,6 +90,7 @@ class SaiArbitrage(Keeper):
         self.setup_tub_allowances()
         self.setup_lpc_allowances()
         self.setup_otc_allowances()
+        self.setup_tx_manager_allowances()
 
     def setup_tub_allowances(self):
         """Approve Tub components so we can call join()/exit() and boom()/bust()"""
@@ -109,6 +110,13 @@ class SaiArbitrage(Keeper):
         self.setup_allowance(self.sai, self.otc.address, 'OasisDEX')
         self.setup_allowance(self.skr, self.otc.address, 'OasisDEX')
 
+    def setup_tx_manager_allowances(self):
+        """Approve the `TxManager` so it can pull all three tokens (WETH, SAI and SKR) from us"""
+        if self.tx_manager:
+            self.setup_allowance(self.gem, self.tx_manager.address, 'TxManager')
+            self.setup_allowance(self.sai, self.tx_manager.address, 'TxManager')
+            self.setup_allowance(self.skr, self.tx_manager.address, 'TxManager')
+
     def setup_allowance(self, token: ERC20Token, spender_address: Address, spender_name: str):
         if token.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
             print(f"Approving {spender_name} ({spender_address}) to access our {token.name()} balance directly...")
@@ -116,7 +124,8 @@ class SaiArbitrage(Keeper):
                 print(f"Approval failed!")
                 exit(-1)
 
-        if self.tx_manager and token.allowance_of(self.tx_manager.address, spender_address) < Wad(2 ** 128 - 1):
+        if self.tx_manager and spender_address != self.tx_manager.address and \
+                        token.allowance_of(self.tx_manager.address, spender_address) < Wad(2 ** 128 - 1):
             print(f"Approving {spender_name} ({spender_address}) to access our {token.name()} balance indirectly...")
             invocation = Invocation(address=token.address, calldata=token.approve_calldata(spender_address))
             if not self.tx_manager.execute([], [invocation]):
