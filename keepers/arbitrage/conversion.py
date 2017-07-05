@@ -146,7 +146,12 @@ class TubBustConversion(Conversion):
         #in order to discount the growth of `joy()` that might've have happened since the last drip
         #of course this is not the right solution and it won't even work properly if the last
         #drip happened enough time ago
-        return Wad.max(tub.woe() - tub.joy() - Wad.from_number(10), Wad.from_number(0))
+        bustable_woe = tub.woe() - tub.joy() - Wad.from_number(10)
+
+        # we deduct 0.000001 in order to avoid rounding errors
+        bustable_fog = tub.fog() * tub.tap_ask() - Wad.from_number(0.000001)
+
+        return Wad.max(bustable_woe, bustable_fog, Wad.from_number(0))
 
     def name(self):
         return f"tub.bust('{self.target_amount}')"
