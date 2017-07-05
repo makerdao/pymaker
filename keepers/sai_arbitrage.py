@@ -19,22 +19,20 @@
 
 import argparse
 import time
+from typing import List
 
 from api import Address, Transfer
-from api.otc import SimpleMarket
 from api.numeric import Ray
 from api.numeric import Wad
+from api.otc import SimpleMarket
 from api.sai import Tub, Lpc
 from api.token import ERC20Token
 from api.transact import Invocation, TxManager
 from keepers import Keeper
-from keepers.arbitrage.conversion import LpcTakeAltConversion
-from keepers.arbitrage.conversion import LpcTakeRefConversion
+from keepers.arbitrage.conversion import Conversion
+from keepers.arbitrage.conversion import LpcTakeAltConversion, LpcTakeRefConversion
 from keepers.arbitrage.conversion import OasisTakeConversion
-from keepers.arbitrage.conversion import TubBoomConversion
-from keepers.arbitrage.conversion import TubBustConversion
-from keepers.arbitrage.conversion import TubExitConversion
-from keepers.arbitrage.conversion import TubJoinConversion
+from keepers.arbitrage.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion
 from keepers.arbitrage.opportunity import OpportunityFinder
 from keepers.arbitrage.transfer_formatter import TransferFormatter
 
@@ -44,6 +42,7 @@ class SaiArbitrage(Keeper):
         parser.add_argument("--frequency", help="Monitoring frequency in seconds (default: 5)", default=5, type=float)
         parser.add_argument("--minimum-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.01)", default=0.01, type=float)
         parser.add_argument("--maximum-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
+        parser.add_argument("--tx-manager", help="Address of the TxManager to use for multi-step arbitrage", type=str)
 
     def init(self):
         self.tub_address = Address(self.config.get_contract_address("saiTub"))
@@ -62,19 +61,20 @@ class SaiArbitrage(Keeper):
         ERC20Token.register_token(self.tub.sai(), 'SAI')
         ERC20Token.register_token(self.tub.gem(), 'WETH')
 
-        self.tx_manager_address = Address(self.config.get_contract_address("txManager"))
-        if self.tx_manager_address:
-            self.tx_manager = TxManager(web3=self.web3, address=self.tx_manager_address)
-        else:
-            self.tx_manager = None
-
         self.base_token = self.sai
         self.minimum_profit = Wad.from_number(self.arguments.minimum_profit)
         self.maximum_engagement = Wad.from_number(self.arguments.maximum_engagement)
 
+        if self.arguments.tx_manager:
+            self.tx_manager_address = Address(self.arguments.tx_manager)
+            self.tx_manager = TxManager(web3=self.web3, address=self.tx_manager_address)
+        else:
+            self.tx_manager_address = None
+            self.tx_manager = None
+
     def run(self):
-        self.print_balances()
         self.setup_allowances()
+        self.print_balances()
         while True:
             self.execute_best_opportunity_available()
             time.sleep(self.arguments.frequency)
@@ -111,26 +111,25 @@ class SaiArbitrage(Keeper):
 
     def setup_allowance(self, token: ERC20Token, spender_address: Address, spender_name: str):
         if token.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
-            print(f"  Approving {spender_name} ({spender_address}) to access our {token.name()} balance directly...")
+            print(f"Approving {spender_name} ({spender_address}) to access our {token.name()} balance directly...")
             if not token.approve(spender_address):
-                print(f"  Approval failed!")
+                print(f"Approval failed!")
                 exit(-1)
 
-        if self.tx_manager:
-            if token.allowance_of(self.tx_manager.address, spender_address) < Wad(2 ** 128 - 1):
-                print(f"  Approving {spender_name} ({spender_address}) to access our {token.name()} balance via txManager...")
-                invocation = Invocation(address=token.address, calldata=token.approve_calldata(spender_address))
-                if not self.tx_manager.execute([], [invocation]):
-                    print(f"  Approval failed!")
-                    exit(-1)
+        if self.tx_manager and token.allowance_of(self.tx_manager.address, spender_address) < Wad(2 ** 128 - 1):
+            print(f"Approving {spender_name} ({spender_address}) to access our {token.name()} balance indirectly...")
+            invocation = Invocation(address=token.address, calldata=token.approve_calldata(spender_address))
+            if not self.tx_manager.execute([], [invocation]):
+                print(f"Approval failed!")
+                exit(-1)
 
-    def tub_conversions(self):
+    def tub_conversions(self) -> List[Conversion]:
         return [TubJoinConversion(self.tub),
                 TubExitConversion(self.tub),
                 TubBoomConversion(self.tub),
                 TubBustConversion(self.tub)]
 
-    def lpc_conversions(self):
+    def lpc_conversions(self) -> List[Conversion]:
         return [LpcTakeRefConversion(self.lpc),
                 LpcTakeAltConversion(self.lpc)]
 
@@ -139,7 +138,7 @@ class SaiArbitrage(Keeper):
         offers = [offer for offer in offers if offer is not None]
         return [offer for offer in offers if offer.sell_which_token in tokens and offer.buy_which_token in tokens]
 
-    def otc_conversions(self, tokens):
+    def otc_conversions(self, tokens) -> List[Conversion]:
         return list(map(lambda offer: OasisTakeConversion(self.otc, offer), self.otc_offers(tokens)))
 
     def all_conversions(self):
@@ -151,10 +150,7 @@ class SaiArbitrage(Keeper):
         opportunity = self.best_opportunity(self.profitable_opportunities())
         if opportunity:
             self.print_opportunity(opportunity)
-            if self.tx_manager:
-                self.execute_opportunity_in_one_transaction(opportunity)
-            else:
-                self.execute_opportunity_step_by_step(opportunity)
+            self.execute_opportunity(opportunity)
 
     def profitable_opportunities(self):
         """Identify all profitable arbitrage opportunities within given limits."""
@@ -180,6 +176,14 @@ class SaiArbitrage(Keeper):
                   f"to {conversion.target_amount} {ERC20Token.token_name_by_address(conversion.target_token)}")
             print(f"  Using {conversion.name()}")
             print(f"  {conversion}")
+
+    def execute_opportunity(self, opportunity):
+        """Execute the opportunity either in one Ethereum transaction or step-by-step.
+        Depending on whether `tx_manager` is available."""
+        if self.tx_manager:
+            self.execute_opportunity_in_one_transaction(opportunity)
+        else:
+            self.execute_opportunity_step_by_step(opportunity)
 
     def execute_opportunity_step_by_step(self, opportunity):
         """Execute the opportunity step-by-step."""
