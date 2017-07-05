@@ -213,7 +213,7 @@ class LpcTakeAltConversion(Conversion):
         return self.lpc.address
 
     def calldata(self):
-        return self.lpc.take_calldata(self.lpc.ref(), self.target_amount)
+        return self.lpc.take_calldata(self.lpc.alt(), self.target_amount)
 
 
 class OasisTakeConversion(Conversion):
