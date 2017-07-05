@@ -68,6 +68,9 @@ class SaiArbitrage(Keeper):
         if self.arguments.tx_manager:
             self.tx_manager_address = Address(self.arguments.tx_manager)
             self.tx_manager = TxManager(web3=self.web3, address=self.tx_manager_address)
+            if self.tx_manager.owner() != self.our_address:
+                print(f"The TxManager has to be owned by the address the keeper is operating from.")
+                exit(-1)
         else:
             self.tx_manager_address = None
             self.tx_manager = None

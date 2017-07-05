@@ -64,6 +64,9 @@ class TxManager(Contract):
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
+    def owner(self) -> Address:
+        return Address(self._contract.call().owner())
+
     def execute(self, tokens: List[Address], invocations: List[Invocation]) -> Optional[Receipt]:
         """Executes multiple smart contract methods in one Ethereum transaction.
 
