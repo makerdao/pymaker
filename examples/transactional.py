@@ -23,7 +23,7 @@ from web3 import Web3
 from api import Address, Calldata
 from api.token import ERC20Token
 from api.sai import Tub
-from api.transact import TransactionManager, Invocation
+from api.transact import TxManager, Invocation
 
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
 web3.eth.defaultAccount = "0x002ca7F9b416B2304cDd20c26882d1EF5c53F611"
@@ -42,6 +42,6 @@ invocations = [Invocation(Address("0xdf3893359182f55b5f225e427c93ab3fcd48e967"),
                Invocation(Address("0x89d88bf5cef2deac81b50b4c99f86c9437dce28f"),
                           Calldata('0x812600df0000000000000000000000000000000000000000000000000000000000000008'))]
 
-tx = TransactionManager(web3=web3, address=Address("0x57bFE16ae8fcDbD46eDa9786B2eC1067cd7A8f48"))
+tx = TxManager(web3=web3, address=Address("0x57bFE16ae8fcDbD46eDa9786B2eC1067cd7A8f48"))
 receipt = tx.execute([sai.address, skr.address], invocations)
 print(receipt.transaction_hash)

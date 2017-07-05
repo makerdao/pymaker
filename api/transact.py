@@ -32,15 +32,15 @@ class Invocation(object):
         self.calldata = calldata
 
 
-class TransactionManager(Contract):
-    """A client for the `TransactionManager` contract.
+class TxManager(Contract):
+    """A client for the `TxManager` contract.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
-        address: Ethereum address of the `TransactionManager` contract.
+        address: Ethereum address of the `TxManager` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/TransactionManager.abi')
+    abi = Contract._load_abi(__name__, 'abi/TxManager.abi')
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3

@@ -26,7 +26,7 @@ from api.numeric import Ray
 from api.numeric import Wad
 from api.sai import Tub, Lpc
 from api.token import ERC20Token
-from api.transact import Invocation, TransactionManager
+from api.transact import Invocation, TxManager
 from keepers import Keeper
 from keepers.arbitrage.conversion import LpcTakeAltConversion
 from keepers.arbitrage.conversion import LpcTakeRefConversion
@@ -64,7 +64,7 @@ class SaiArbitrage(Keeper):
 
         self.tx_manager_address = Address(self.config.get_contract_address("txManager"))
         if self.tx_manager_address:
-            self.tx_manager = TransactionManager(web3=self.web3, address=self.tx_manager_address)
+            self.tx_manager = TxManager(web3=self.web3, address=self.tx_manager_address)
         else:
             self.tx_manager = None
 
