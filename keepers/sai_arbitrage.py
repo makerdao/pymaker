@@ -183,7 +183,8 @@ class SaiArbitrage(Keeper):
     def print_opportunity(self, opportunity):
         """Print the details of the opportunity."""
         print(f"")
-        print(f"Opportunity with net_profit={opportunity.net_profit(self.base_token.address)} {self.base_token.name()}")
+        print(f"Opportunity with profit={opportunity.net_profit(self.base_token.address)} {self.base_token.name()} "
+              f"net_profit={opportunity.net_profit(self.base_token.address)} {self.base_token.name()}")
         for index, conversion in enumerate(opportunity.conversions, start=1):
             print(f"Step {index}/{len(opportunity.conversions)}:")
             print(f"  Exchange {conversion.source_amount} {ERC20Token.token_name_by_address(conversion.source_token)} "
