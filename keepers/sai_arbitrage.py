@@ -121,6 +121,8 @@ class SaiArbitrage(Keeper):
             self.setup_allowance(self.skr, self.tx_manager.address, 'TxManager')
 
     def setup_allowance(self, token: ERC20Token, spender_address: Address, spender_name: str):
+        #TODO actually only one of these paths is needed, depending on whether we are using a
+        #TxManager or not
         if token.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
             print(f"Approving {spender_name} ({spender_address}) to access our {token.name()} balance directly...")
             if not token.approve(spender_address):
