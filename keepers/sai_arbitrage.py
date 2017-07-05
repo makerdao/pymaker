@@ -165,6 +165,7 @@ class SaiArbitrage(Keeper):
         if opportunity:
             self.print_opportunity(opportunity)
             self.execute_opportunity(opportunity)
+            self.print_balances()
 
     def profitable_opportunities(self):
         """Identify all profitable arbitrage opportunities within given limits."""
@@ -218,7 +219,6 @@ class SaiArbitrage(Keeper):
                 print(f"  Exchanged {outgoing} to {incoming}")
         print(f"All steps executed successfully.")
         print(f"The profit we made is {TransferFormatter().format_net(all_transfers, self.our_address)}.")
-        self.print_balances()
 
     def execute_opportunity_in_one_transaction(self, opportunity):
         """Execute the opportunity in one transaction, using the `tx_manager`."""
