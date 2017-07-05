@@ -189,7 +189,6 @@ class SaiArbitrage(Keeper):
             print(f"  Exchange {conversion.source_amount} {ERC20Token.token_name_by_address(conversion.source_token)} "
                   f"to {conversion.target_amount} {ERC20Token.token_name_by_address(conversion.target_token)}")
             print(f"  Using {conversion.name()}")
-            print(f"  {conversion}")
 
     def execute_opportunity(self, opportunity):
         """Execute the opportunity either in one Ethereum transaction or step-by-step.
