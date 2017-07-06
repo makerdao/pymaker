@@ -59,10 +59,6 @@ class Contract:
             return False
 
     @staticmethod
-    def _to_bytes32(value):
-        return value.to_bytes(32, byteorder='big')
-
-    @staticmethod
     def _load_abi(package, resource):
         return json.loads(pkg_resources.resource_string(package, resource))
 

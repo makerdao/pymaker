@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from pprint import pformat
 from typing import Optional
 
@@ -21,6 +22,7 @@ from web3 import Web3
 
 from api import Contract, Address, Receipt, Calldata
 from api.numeric import Wad
+from api.util import int_to_bytes32, bytes_to_int
 
 
 class OfferInfo:
@@ -57,7 +59,7 @@ class OfferInfo:
 
 class LogTake:
     def __init__(self, args):
-        self.id = args['id']
+        self.id = bytes_to_int(args['id'])
         self.maker = Address(args['maker'])
         self.have_token = Address(args['haveToken'])
         self.want_token = Address(args['wantToken'])
@@ -175,13 +177,13 @@ class SimpleMarket(Contract):
             `None` if the Ethereum transaction failed.
         """
         try:
-            tx_hash = self._contract.transact().take(self._to_bytes32(offer_id), quantity.value)
+            tx_hash = self._contract.transact().take(int_to_bytes32(offer_id), quantity.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
 
     def take_calldata(self, offer_id: int, quantity: Wad) -> Calldata:
-        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('take', [self._to_bytes32(offer_id), quantity.value]))
+        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('take', [int_to_bytes32(offer_id), quantity.value]))
 
     def kill(self, offer_id: int) -> Optional[Receipt]:
         """Cancels an existing offer.
@@ -197,7 +199,7 @@ class SimpleMarket(Contract):
             `None` if the Ethereum transaction failed.
         """
         try:
-            tx_hash = self._contract.transact().kill(self._to_bytes32(offer_id))
+            tx_hash = self._contract.transact().kill(int_to_bytes32(offer_id))
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None

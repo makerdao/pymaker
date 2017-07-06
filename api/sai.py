@@ -21,6 +21,7 @@ from web3 import Web3
 
 from api import Address, Wad, Contract, Receipt, Calldata
 from api.numeric import Ray
+from api.util import int_to_bytes32
 
 
 class Cup:
@@ -572,7 +573,7 @@ class Tub(Contract):
             Class encapsulating cup details.
         """
         assert isinstance(cup_id, int)
-        array = self._contractTub.call().cups(self._to_bytes32(cup_id))
+        array = self._contractTub.call().cups(int_to_bytes32(cup_id))
         return Cup(cup_id, Address(array[0]), Wad(array[1]), Wad(array[2]))
 
     def tab(self, cup_id: int) -> Wad:
@@ -585,7 +586,7 @@ class Tub(Contract):
             Amount of debt in the cup, in SAI.
         """
         assert isinstance(cup_id, int)
-        return Wad(self._contractTub.call().tab(self._to_bytes32(cup_id)))
+        return Wad(self._contractTub.call().tab(int_to_bytes32(cup_id)))
 
     def ink(self, cup_id: int) -> Wad:
         """Get the amount of SKR collateral locked in a cup.
@@ -597,7 +598,7 @@ class Tub(Contract):
             Amount of SKR collateral locked in the cup, in SKR.
         """
         assert isinstance(cup_id, int)
-        return Wad(self._contractTub.call().ink(self._to_bytes32(cup_id)))
+        return Wad(self._contractTub.call().ink(int_to_bytes32(cup_id)))
 
     def lad(self, cup_id: int) -> Address:
         """Get the owner of a cup.
@@ -609,7 +610,7 @@ class Tub(Contract):
             Address of the owner of the cup.
         """
         assert isinstance(cup_id, int)
-        return Address(self._contractTub.call().lad(self._to_bytes32(cup_id)))
+        return Address(self._contractTub.call().lad(int_to_bytes32(cup_id)))
 
     def safe(self, cup_id: int) -> bool:
         """Determine if a cup is safe.
@@ -621,7 +622,7 @@ class Tub(Contract):
             `True` if the cup is safe. `False` otherwise.
         """
         assert isinstance(cup_id, int)
-        return self._contractTub.call().safe(self._to_bytes32(cup_id))
+        return self._contractTub.call().safe(int_to_bytes32(cup_id))
 
     def join(self, amount_in_gem: Wad) -> Optional[Receipt]:
         """Buy SKR for GEMs.
@@ -692,7 +693,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         try:
-            tx_hash = self._contractTub.transact().shut(self._to_bytes32(cup_id))
+            tx_hash = self._contractTub.transact().shut(int_to_bytes32(cup_id))
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -711,7 +712,7 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
         try:
-            tx_hash = self._contractTub.transact().lock(self._to_bytes32(cup_id), amount_in_skr.value)
+            tx_hash = self._contractTub.transact().lock(int_to_bytes32(cup_id), amount_in_skr.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -730,7 +731,7 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
         try:
-            tx_hash = self._contractTub.transact().free(self._to_bytes32(cup_id), amount_in_skr.value)
+            tx_hash = self._contractTub.transact().free(int_to_bytes32(cup_id), amount_in_skr.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -749,7 +750,7 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
         try:
-            tx_hash = self._contractTub.transact().draw(self._to_bytes32(cup_id), amount_in_sai.value)
+            tx_hash = self._contractTub.transact().draw(int_to_bytes32(cup_id), amount_in_sai.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -768,7 +769,7 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
         try:
-            tx_hash = self._contractTub.transact().wipe(self._to_bytes32(cup_id), amount_in_sai.value)
+            tx_hash = self._contractTub.transact().wipe(int_to_bytes32(cup_id), amount_in_sai.value)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -787,7 +788,7 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         assert isinstance(new_lad, Address)
         try:
-            tx_hash = self._contractTub.transact().give(self._to_bytes32(cup_id), new_lad.address)
+            tx_hash = self._contractTub.transact().give(int_to_bytes32(cup_id), new_lad.address)
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
@@ -804,7 +805,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         try:
-            tx_hash = self._contractTub.transact().bite(self._to_bytes32(cup_id))
+            tx_hash = self._contractTub.transact().bite(int_to_bytes32(cup_id))
             return self._prepare_receipt(self.web3, tx_hash)
         except:
             return None
