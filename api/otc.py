@@ -55,6 +55,21 @@ class OfferInfo:
         return pformat(vars(self))
 
 
+class LogTake:
+    def __init__(self, args):
+        self.id = args['id']
+        self.maker = Address(args['maker'])
+        self.have_token = Address(args['haveToken'])
+        self.want_token = Address(args['wantToken'])
+        self.taker = Address(args['taker'])
+        self.takeAmount = Wad(args['takeAmount'])
+        self.giveAmount = Wad(args['giveAmount'])
+        self.timestamp = args['timestamp']
+
+    def __str__(self):
+        return pformat(vars(self))
+
+
 class SimpleMarket(Contract):
     """A client for a `SimpleMarket` contract.
 
@@ -76,6 +91,15 @@ class SimpleMarket(Contract):
         self.address = address
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contract.on('LogTake', None, self._on_take)
+        self._on_take_handler = None
+
+    def _on_take(self, log):
+        if self._on_take_handler is not None:
+            self._on_take_handler(LogTake(log['args']))
+
+    def on_take(self, handler):
+        self._on_take_handler = handler
 
     def get_last_offer_id(self) -> int:
         """Get the id of the last offer created on the market.
