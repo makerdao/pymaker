@@ -64,8 +64,8 @@ class LogTake:
         self.have_token = Address(args['haveToken'])
         self.want_token = Address(args['wantToken'])
         self.taker = Address(args['taker'])
-        self.takeAmount = Wad(args['takeAmount'])
-        self.giveAmount = Wad(args['giveAmount'])
+        self.take_amount = Wad(args['takeAmount'])
+        self.give_amount = Wad(args['giveAmount'])
         self.timestamp = args['timestamp']
 
     def __str__(self):
