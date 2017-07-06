@@ -18,6 +18,7 @@
 import argparse
 import json
 
+import logging
 from web3 import Web3, HTTPProvider
 
 from api import Address
@@ -26,6 +27,9 @@ from api.token import ERC20Token
 
 class Keeper:
     def start(self):
+        logging_format = '%(asctime)-15s %(levelname)-8s %(name)-6s %(message)s'
+        logging.basicConfig(format=logging_format, level=logging.INFO)
+
         parser = argparse.ArgumentParser(description=f"{type(self).__name__} keeper")
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)

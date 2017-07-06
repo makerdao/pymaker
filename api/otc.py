@@ -154,12 +154,9 @@ class SimpleMarket(Contract):
             A `Receipt` if the Ethereum transaction was successful and the offer has been created.
             `None` if the Ethereum transaction failed.
         """
-        try:
-            tx_hash = self._contract.transact().make(have_token.address, want_token.address,
-                                                     have_amount.value, want_amount.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"SimpleMarket.make('{have_token}', '{want_token}', '{have_amount}', '{want_amount}')",
+                              lambda: self._contract.transact().make(have_token.address, want_token.address,
+                                                                     have_amount.value, want_amount.value))
 
     def take(self, offer_id: int, quantity: Wad) -> Optional[Receipt]:
         """Takes (buys) an offer.
@@ -198,10 +195,5 @@ class SimpleMarket(Contract):
             A `Receipt` if the Ethereum transaction was successful and the offer has been cancelled.
             `None` if the Ethereum transaction failed.
         """
-        try:
-            tx_hash = self._contract.transact().kill(int_to_bytes32(offer_id))
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
-
-
+        return self._transact(self.web3, f"SimpleMarket.kill('{offer_id}')",
+                              lambda: self._contract.transact().kill(int_to_bytes32(offer_id)))

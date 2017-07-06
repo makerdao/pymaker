@@ -20,13 +20,16 @@ import time
 from functools import total_ordering
 
 import eth_utils
+import logging
 import pkg_resources
+import sys
 from web3.utils.events import get_event_data
 
 from api.numeric import Wad
 
 
 class Contract:
+    logger = logging.getLogger('api')
 
     def _assert_contract_exists(self, web3, address):
         code = web3.eth.getCode(address.address)
@@ -39,6 +42,20 @@ class Contract:
             if receipt is not None and receipt['blockNumber'] is not None:
                 return receipt
             time.sleep(0.25)
+
+    def _transact(self, web3, log_message, func):
+        try:
+            self.logger.info(f"{log_message} in progress...")
+            tx_hash = func()
+            receipt = self._prepare_receipt(web3, tx_hash)
+            if receipt:
+                self.logger.info(f"{log_message} was successful (tx_hash={receipt.transaction_hash})")
+            else:
+                self.logger.warning(f"{log_message} failed")
+            return receipt
+        except:
+            self.logger.warning(f"{log_message} failed ({sys.exc_info()[1]})")
+            return None
 
     def _prepare_receipt(self, web3, transaction_hash):
         receipt = self._wait_for_receipt(web3, transaction_hash)
@@ -56,7 +73,7 @@ class Contract:
                                               value=Wad(event_data['args']['value'])))
             return Receipt(transaction_hash=transaction_hash, transfers=transfers)
         else:
-            return False
+            return None
 
     @staticmethod
     def _load_abi(package, resource):
