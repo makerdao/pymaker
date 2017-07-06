@@ -45,16 +45,16 @@ class Contract:
 
     def _transact(self, web3, log_message, func):
         try:
-            self.logger.info(f"{log_message} in progress...")
+            self.logger.info(f"Transaction {log_message} in progress...")
             tx_hash = func()
             receipt = self._prepare_receipt(web3, tx_hash)
             if receipt:
-                self.logger.info(f"{log_message} was successful (tx_hash={receipt.transaction_hash})")
+                self.logger.info(f"Transaction {log_message} was successful (tx_hash={receipt.transaction_hash})")
             else:
-                self.logger.warning(f"{log_message} failed")
+                self.logger.warning(f"Transaction {log_message} failed")
             return receipt
         except:
-            self.logger.warning(f"{log_message} failed ({sys.exc_info()[1]})")
+            self.logger.warning(f"Transaction {log_message} failed ({sys.exc_info()[1]})")
             return None
 
     def _prepare_receipt(self, web3, transaction_hash):

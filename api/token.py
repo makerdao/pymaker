@@ -108,11 +108,8 @@ class ERC20Token(Contract):
             A `Receipt` if the Ethereum transaction (and thus the approval) was successful.
             `None` if the Ethereum transaction failed.
         """
-        try:
-            tx_hash = self._contract.transact().approve(payee.address, limit.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"ERC20Token('{self.address}').approve('{payee}', '{limit}')",
+                              lambda: self._contract.transact().approve(payee.address, limit.value))
 
     def approve_calldata(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('approve', [payee.address, limit.value]))
