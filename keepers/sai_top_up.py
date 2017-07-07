@@ -61,12 +61,15 @@ class SaiTopUp(Keeper):
 
     def check_all_cups(self):
         for cup in self.our_cups():
-            top_up_amount = self.required_top_up(cup)
-            if top_up_amount:
-                if self.skr.balance_of(self.our_address) < top_up_amount:
-                    logging.info(f"Cannot top-up as our balance is less than {top_up_amount} SKR.")
-                else:
-                    self.tub.lock(cup.cup_id, top_up_amount)
+            self.check_cup(cup)
+
+    def check_cup(self, cup):
+        top_up_amount = self.required_top_up(cup)
+        if top_up_amount:
+            if top_up_amount >= self.skr.balance_of(self.our_address):
+                self.tub.lock(cup.cup_id, top_up_amount)
+            else:
+                logging.info(f"Cannot top-up as our balance is less than {top_up_amount} SKR.")
 
     def our_cups(self):
         for cup_id in range(1, self.tub.cupi()+1):
