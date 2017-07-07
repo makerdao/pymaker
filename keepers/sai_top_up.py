@@ -20,6 +20,8 @@
 import argparse
 import time
 
+import logging
+
 from api import Address
 from api.token import ERC20Token
 from api.numeric import Ray
