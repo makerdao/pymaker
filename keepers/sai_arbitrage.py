@@ -29,38 +29,23 @@ from api.otc import SimpleMarket
 from api.sai import Tub, Lpc
 from api.token import ERC20Token
 from api.transact import Invocation, TxManager
-from keepers import Keeper
 from keepers.arbitrage.conversion import Conversion
 from keepers.arbitrage.conversion import LpcTakeAltConversion, LpcTakeRefConversion
 from keepers.arbitrage.conversion import OasisTakeConversion
 from keepers.arbitrage.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion
 from keepers.arbitrage.opportunity import OpportunityFinder
 from keepers.arbitrage.transfer_formatter import TransferFormatter
+from keepers.sai import SaiKeeper
 
 
-class SaiArbitrage(Keeper):
+class SaiArbitrage(SaiKeeper):
     def args(self, parser: argparse.ArgumentParser):
         parser.add_argument("--minimum-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.01)", default=0.01, type=float)
         parser.add_argument("--maximum-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
         parser.add_argument("--tx-manager", help="Address of the TxManager to use for multi-step arbitrage", type=str)
 
     def init(self):
-        self.tub_address = Address(self.config.get_contract_address("saiTub"))
-        self.tap_address = Address(self.config.get_contract_address("saiTap"))
-        self.top_address = Address(self.config.get_contract_address("saiTop"))
-        self.tub = Tub(web3=self.web3, address_tub=self.tub_address, address_tap=self.tap_address, address_top=self.top_address)
-        self.lpc_address = Address(self.config.get_contract_address("saiLpc"))
-        self.lpc = Lpc(web3=self.web3, address=self.lpc_address)
-        self.otc_address = Address(self.config.get_contract_address("otc"))
-        self.otc = SimpleMarket(web3=self.web3, address=self.otc_address)
-
-        self.skr = ERC20Token(web3=self.web3, address=self.tub.skr())
-        self.sai = ERC20Token(web3=self.web3, address=self.tub.sai())
-        self.gem = ERC20Token(web3=self.web3, address=self.tub.gem())
-        ERC20Token.register_token(self.tub.skr(), 'SKR')
-        ERC20Token.register_token(self.tub.sai(), 'SAI')
-        ERC20Token.register_token(self.tub.gem(), 'WETH')
-
+        super().init()
         self.base_token = self.sai
         self.minimum_profit = Wad.from_number(self.arguments.minimum_profit)
         self.maximum_engagement = Wad.from_number(self.arguments.maximum_engagement)

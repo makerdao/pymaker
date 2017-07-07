@@ -28,20 +28,16 @@ from api.numeric import Ray
 from api.numeric import Wad
 from api.sai import Tub
 from keepers import Keeper
+from keepers.sai import SaiKeeper
 
 
-class SaiTopUp(Keeper):
+class SaiTopUp(SaiKeeper):
     def args(self, parser: argparse.ArgumentParser):
         parser.add_argument("--minimum-margin", help="Margin between the liquidation ratio and the top-up threshold (default: 0.1)", default=0.1, type=float)
         parser.add_argument("--target-margin", help="Margin between the liquidation ratio and the top-up target (default: 0.25)", default=0.25, type=float)
 
     def init(self):
-        self.tub_address = Address(self.config.get_contract_address("saiTub"))
-        self.tap_address = Address(self.config.get_contract_address("saiTap"))
-        self.top_address = Address(self.config.get_contract_address("saiTop"))
-        self.tub = Tub(web3=self.web3, address_tub=self.tub_address, address_tap=self.tap_address, address_top=self.top_address)
-        self.skr = ERC20Token(web3=self.web3, address=self.tub.skr())
-
+        super().init()
         self.liquidation_ratio = self.tub.mat()
         self.minimum_ratio = self.liquidation_ratio + Ray.from_number(self.arguments.minimum_margin)
         self.target_ratio = self.liquidation_ratio + Ray.from_number(self.arguments.target_margin)

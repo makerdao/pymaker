@@ -17,18 +17,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from api import Address
-from api.sai import Tub
-from keepers import Keeper
+from keepers.sai import SaiKeeper
 
 
-class SaiBite(Keeper):
-    def init(self):
-        self.tub_address = Address(self.config.get_contract_address("saiTub"))
-        self.tap_address = Address(self.config.get_contract_address("saiTap"))
-        self.top_address = Address(self.config.get_contract_address("saiTop"))
-        self.tub = Tub(web3=self.web3, address_tub=self.tub_address, address_tap=self.tap_address, address_top=self.top_address)
-
+class SaiBite(SaiKeeper):
     def run(self):
         self.on_block(self.check_all_cups)
 
