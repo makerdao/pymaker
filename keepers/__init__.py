@@ -23,6 +23,7 @@ from web3 import Web3, HTTPProvider
 
 from api import Address
 from api.token import ERC20Token
+from keepers.monitor import check_account_unlocked
 
 
 class Keeper:
@@ -44,13 +45,11 @@ class Keeper:
         self.init()
 
         label = f"{type(self).__name__} keeper"
-
-        logging.info(f"")
         logging.info(f"{label}")
         logging.info(f"{'-' * len(label)}")
-        logging.info(f"")
         logging.info(f"Keeper operating as {self.our_address}")
-        logging.info(f"")
+
+        check_account_unlocked(self.web3)
 
         self.run()
 

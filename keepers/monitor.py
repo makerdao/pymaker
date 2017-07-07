@@ -19,8 +19,10 @@ import logging
 
 import time
 
+from web3 import Web3
 
-def for_each_block(web3, func):
+
+def for_each_block(web3: Web3, func):
     def new_block_callback(block_hash):
         if not web3.eth.syncing:
             block = web3.eth.getBlock(block_hash)
@@ -53,3 +55,12 @@ def for_each_block(web3, func):
     web3.eth.filter('latest').watch(new_block_callback)
     while True:
         time.sleep(60*60*24*365)
+
+
+def check_account_unlocked(web3: Web3):
+    try:
+        web3.eth.sign(web3.eth.defaultAccount, "test")
+    except:
+        logging.fatal(f"Account {web3.eth.defaultAccount} is not unlocked.")
+        logging.fatal(f"Unlocking the account is necessary for the keeper to operate.")
+        exit(-1)
