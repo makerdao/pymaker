@@ -19,6 +19,8 @@
 
 import time
 
+import logging
+
 from api import Address
 from api.sai import Tub
 from keepers import Keeper
@@ -45,10 +47,7 @@ class SaiBite(Keeper):
 
     def check_cup(self, cup_id):
         if not self.tub.safe(cup_id):
-            if self.tub.bite(cup_id):
-                logging.info(f"Cup {cup_id} has been bitten")
-            else:
-                logging.info(f"Failed to bite cup {cup_id}")
+            self.tub.bite(cup_id)
 
 
 if __name__ == '__main__':
