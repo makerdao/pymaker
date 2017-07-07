@@ -35,19 +35,17 @@ class OfferInfo:
         buy_how_much: The price the offer creator wants to be paid, denominated in the `buy_which_token` token.
         buy_which_token: The address of the token the offer creator wants to be paid with.
         owner: Ethereum address of the owner of this offer.
-        active: Flag whether this offer is active or not. Actually it is always `True`.
         timestamp: Date and time when this offer has been created, as a unix timestamp.
     """
 
     def __init__(self, offer_id: int, sell_how_much: Wad, sell_which_token: Address, buy_how_much: Wad,
-                 buy_which_token: Address, owner: Address, active: bool, timestamp: int):
+                 buy_which_token: Address, owner: Address, timestamp: int):
         self.offer_id = offer_id
         self.sell_how_much = sell_how_much
         self.sell_which_token = sell_which_token
         self.buy_how_much = buy_how_much
         self.buy_which_token = buy_which_token
         self.owner = owner
-        self.active = active
         self.timestamp = timestamp
 
     def __eq__(self, other):
@@ -133,7 +131,6 @@ class SimpleMarket(Contract):
                              buy_how_much=Wad(array[2]),
                              buy_which_token=Address(array[3]),
                              owner=Address(array[4]),
-                             active=array[5],
                              timestamp=array[6])
 
     #TODO make it return the id of the newly created offer
