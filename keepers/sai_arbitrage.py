@@ -18,7 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
-import time
 from typing import List
 
 import logging
@@ -37,11 +36,11 @@ from keepers.arbitrage.conversion import OasisTakeConversion
 from keepers.arbitrage.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion
 from keepers.arbitrage.opportunity import OpportunityFinder
 from keepers.arbitrage.transfer_formatter import TransferFormatter
+from keepers.monitor import for_each_block
 
 
 class SaiArbitrage(Keeper):
     def args(self, parser: argparse.ArgumentParser):
-        parser.add_argument("--frequency", help="Monitoring frequency in seconds (default: 5)", default=5, type=float)
         parser.add_argument("--minimum-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.01)", default=0.01, type=float)
         parser.add_argument("--maximum-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
         parser.add_argument("--tx-manager", help="Address of the TxManager to use for multi-step arbitrage", type=str)
@@ -80,9 +79,7 @@ class SaiArbitrage(Keeper):
     def run(self):
         self.setup_allowances()
         self.print_balances()
-        while True:
-            self.execute_best_opportunity_available()
-            time.sleep(self.arguments.frequency)
+        for_each_block(self.web3, self.execute_best_opportunity_available)
 
     def print_balances(self):
         def balances():
