@@ -128,16 +128,14 @@ class SaiArbitrage(Keeper):
         if token.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
             logging.info(f"Approving {spender_name} ({spender_address}) to access our {token.name()} balance directly...")
             if not token.approve(spender_address):
-                logging.info(f"Approval failed!")
-                exit(-1)
+                raise RuntimeError("Approval failed!")
 
         if self.tx_manager and spender_address != self.tx_manager.address and \
                         token.allowance_of(self.tx_manager.address, spender_address) < Wad(2 ** 128 - 1):
             logging.info(f"Approving {spender_name} ({spender_address}) to access our {token.name()} balance indirectly...")
             invocation = Invocation(address=token.address, calldata=token.approve_calldata(spender_address))
             if not self.tx_manager.execute([], [invocation]):
-                logging.info(f"Approval failed!")
-                exit(-1)
+                raise RuntimeError("Approval failed!")
 
     def tub_conversions(self) -> List[Conversion]:
         return [TubJoinConversion(self.tub),
@@ -185,14 +183,13 @@ class SaiArbitrage(Keeper):
 
     def print_opportunity(self, opportunity):
         """Print the details of the opportunity."""
-        logging.info(f"")
-        logging.info(f"Opportunity with profit={opportunity.net_profit(self.base_token.address)} {self.base_token.name()}, "
-              f"net_profit={opportunity.net_profit(self.base_token.address)} {self.base_token.name()}")
+        logging.info(f"Opportunity with profit={opportunity.profit(self.base_token.address)} {self.base_token.name()},"
+                     f" net_profit={opportunity.net_profit(self.base_token.address)} {self.base_token.name()}")
         for index, conversion in enumerate(opportunity.conversions, start=1):
-            logging.info(f"Step {index}/{len(opportunity.conversions)}:")
-            logging.info(f"  Exchange {conversion.source_amount} {ERC20Token.token_name_by_address(conversion.source_token)} "
-                  f"to {conversion.target_amount} {ERC20Token.token_name_by_address(conversion.target_token)}")
-            logging.info(f"  Using {conversion.name()}")
+            logging.info(f"Step {index}/{len(opportunity.conversions)}:"
+                         f" from {conversion.source_amount} {ERC20Token.token_name_by_address(conversion.source_token)}"
+                         f" to {conversion.target_amount} {ERC20Token.token_name_by_address(conversion.target_token)}"
+                         f" using {conversion.name()}")
 
     def execute_opportunity(self, opportunity):
         """Execute the opportunity either in one Ethereum transaction or step-by-step.
@@ -205,34 +202,24 @@ class SaiArbitrage(Keeper):
     def execute_opportunity_step_by_step(self, opportunity):
         """Execute the opportunity step-by-step."""
         all_transfers = []
-        for index, conversion in enumerate(opportunity.conversions, start=1):
-            logging.info(f"Executing step {index}/{len(opportunity.conversions)}... ")
+        for conversion in opportunity.conversions:
             receipt = conversion.execute()
-            if receipt is None:
-                logging.info(f"FAILED!")
-                logging.info(f"")
-                logging.info(f"Interrupting the process... Will start over from scratch in the next iteration.")
-                return
-            else:
-                logging.info(f"ok (tx_hash={receipt.transaction_hash})")
+            if receipt:
                 all_transfers += receipt.transfers
                 outgoing = TransferFormatter().format(filter(Transfer.outgoing(self.our_address), receipt.transfers))
                 incoming = TransferFormatter().format(filter(Transfer.incoming(self.our_address), receipt.transfers))
-                logging.info(f"  Exchanged {outgoing} to {incoming}")
-        logging.info(f"All steps executed successfully.")
+                logging.info(f"Exchanged {outgoing} to {incoming}")
+            else:
+                return
         logging.info(f"The profit we made is {TransferFormatter().format_net(all_transfers, self.our_address)}.")
 
     def execute_opportunity_in_one_transaction(self, opportunity):
         """Execute the opportunity in one transaction, using the `tx_manager`."""
-        logging.info(f"Executing all steps in one transaction... ")
-
         invocations = list(map(lambda conv: Invocation(conv.address(), conv.calldata()), opportunity.conversions))
         receipt = self.tx_manager.execute([self.sai.address, self.skr.address, self.gem.address], invocations)
         if receipt:
-            logging.info(f"ok (tx_hash={receipt.transaction_hash})")
             logging.info(f"The profit we made is {TransferFormatter().format_net(receipt.transfers, self.our_address)}.")
         else:
-            logging.info(f"FAILED!")
             exit(-1) #TODO while we debug
 
 
