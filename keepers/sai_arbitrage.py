@@ -39,13 +39,8 @@ from keepers.sai import SaiKeeper
 
 
 class SaiArbitrage(SaiKeeper):
-    def args(self, parser: argparse.ArgumentParser):
-        parser.add_argument("--minimum-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.01)", default=0.01, type=float)
-        parser.add_argument("--maximum-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
-        parser.add_argument("--tx-manager", help="Address of the TxManager to use for multi-step arbitrage", type=str)
-
-    def init(self):
-        super().init()
+    def __init__(self):
+        super().__init__()
         self.base_token = self.sai
         self.minimum_profit = Wad.from_number(self.arguments.minimum_profit)
         self.maximum_engagement = Wad.from_number(self.arguments.maximum_engagement)
@@ -59,6 +54,11 @@ class SaiArbitrage(SaiKeeper):
         else:
             self.tx_manager_address = None
             self.tx_manager = None
+
+    def args(self, parser: argparse.ArgumentParser):
+        parser.add_argument("--minimum-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.01)", default=0.01, type=float)
+        parser.add_argument("--maximum-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
+        parser.add_argument("--tx-manager", help="Address of the TxManager to use for multi-step arbitrage", type=str)
 
     def run(self):
         self.setup_allowances()

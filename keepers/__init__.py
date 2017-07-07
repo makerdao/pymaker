@@ -29,10 +29,9 @@ from api.token import ERC20Token
 
 
 class Keeper:
-    def start(self):
+    def __init__(self):
         logging_format = '%(asctime)-15s %(levelname)-8s %(name)-6s %(message)s'
         logging.basicConfig(format=logging_format, level=logging.INFO)
-
         parser = argparse.ArgumentParser(description=f"{type(self).__name__} keeper")
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
@@ -44,6 +43,7 @@ class Keeper:
         self.our_address = Address(self.arguments.eth_from)
         self.config = Config(self.web3)
 
+    def start(self):
         label = f"{type(self).__name__} keeper"
         logging.info(f"{label}")
         logging.info(f"{'-' * len(label)}")
@@ -51,8 +51,6 @@ class Keeper:
         logging.info(f"Keeper connected to {self.web3.currentProvider.endpoint_uri}")
         logging.info(f"Keeper operating as {self.our_address}")
         self._check_account_unlocked()
-
-        self.init()
         logging.info("Keeper started")
         self.run()
 
@@ -74,9 +72,6 @@ class Keeper:
 
     def args(self, parser: argparse.ArgumentParser):
         pass
-
-    def init(self):
-        raise NotImplementedError("Please implement the init() method")
 
     def run(self):
         raise NotImplementedError("Please implement the run() method")

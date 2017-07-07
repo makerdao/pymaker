@@ -23,7 +23,8 @@ from keepers import Keeper
 
 
 class SaiKeeper(Keeper):
-    def init(self):
+    def __init__(self):
+        super().__init__()
         self.tub_address = Address(self.config.get_contract_address("saiTub"))
         self.tap_address = Address(self.config.get_contract_address("saiTap"))
         self.top_address = Address(self.config.get_contract_address("saiTop"))
