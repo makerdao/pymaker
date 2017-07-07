@@ -792,10 +792,10 @@ class Tub(Contract):
     # TODO vent
 
     def __eq__(self, other):
-        return self.addressT == other.address
+        return self.addressTub == other.addressTub
 
     def __repr__(self):
-        return f"Tub(address='{self.address}')"
+        return f"Tub(addressTub='{self.addressTub}')"
 
 
 class Lpc(Contract):
