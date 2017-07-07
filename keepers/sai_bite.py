@@ -17,19 +17,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import time
-
-import logging
-
 from api import Address
 from api.sai import Tub
 from keepers import Keeper
+from keepers.monitor import for_each_block
 
 
 class SaiBite(Keeper):
-    def args(self, parser):
-        parser.add_argument("--frequency", help="Monitoring frequency in seconds (default: 5)", default=5, type=int)
-
     def init(self):
         self.tub_address = Address(self.config.get_contract_address("saiTub"))
         self.tap_address = Address(self.config.get_contract_address("saiTap"))
@@ -37,9 +31,7 @@ class SaiBite(Keeper):
         self.tub = Tub(web3=self.web3, address_tub=self.tub_address, address_tap=self.tap_address, address_top=self.top_address)
 
     def run(self):
-        while True:
-            self.check_all_cups()
-            time.sleep(self.arguments.frequency)
+        for_each_block(self.web3, self.check_all_cups)
 
     def check_all_cups(self):
         for cup_id in range(self.tub.cupi()):
