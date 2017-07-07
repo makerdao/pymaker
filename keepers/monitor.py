@@ -40,11 +40,10 @@ def for_each_block(web3: Web3, func):
         else:
             logging.info(f"Ignoring block {block_hash} as the client is syncing")
 
-    # wait for the client to have some peers
-    min_peers = 2
-    if web3.net.peerCount < min_peers:
-        logging.info(f"Waiting for the client to have at least {min_peers} peers...")
-        while web3.net.peerCount < min_peers:
+    # wait for the client to have at least one peer
+    if web3.net.peerCount == 0:
+        logging.info(f"Waiting for the client to have at least one peer...")
+        while web3.net.peerCount == 0:
             time.sleep(0.25)
 
     # wait for the client to sync completely,
