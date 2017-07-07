@@ -23,6 +23,7 @@ from web3 import Web3
 from api import Contract, Address, Receipt, Calldata
 from api.numeric import Wad
 from api.util import int_to_bytes32, bytes_to_int
+from keepers.monitor import register_filter_thread
 
 
 class OfferInfo:
@@ -136,16 +137,16 @@ class SimpleMarket(Contract):
         self._none_offers = set()
 
     def on_make(self, handler):
-        self._contract.on('LogMake', None, self._event_callback(LogMake, handler))
+        register_filter_thread(self._contract.on('LogMake', None, self._event_callback(LogMake, handler)))
 
     def on_bump(self, handler):
-        self._contract.on('LogBump', None, self._event_callback(LogBump, handler))
+        register_filter_thread(self._contract.on('LogBump', None, self._event_callback(LogBump, handler)))
 
     def on_take(self, handler):
-        self._contract.on('LogTake', None, self._event_callback(LogTake, handler))
+        register_filter_thread(self._contract.on('LogTake', None, self._event_callback(LogTake, handler)))
 
     def on_kill(self, handler):
-        self._contract.on('LogKill', None, self._event_callback(LogKill, handler))
+        register_filter_thread(self._contract.on('LogKill', None, self._event_callback(LogKill, handler)))
 
     def get_last_offer_id(self) -> int:
         """Get the id of the last offer created on the market.
