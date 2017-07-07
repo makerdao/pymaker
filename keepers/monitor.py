@@ -22,8 +22,7 @@ import time
 import sys
 from web3 import Web3
 
-
-filter_threads = []
+from api import register_filter_thread, all_filter_threads_alive
 
 
 def for_each_block(web3: Web3, func):
@@ -63,20 +62,6 @@ def for_each_block(web3: Web3, func):
             logging.fatal("One of filter threads is dead. Shutting down the keeper.")
             sys.exit(-1)
         time.sleep(1)
-
-
-def register_filter_thread(filter_thread):
-    filter_threads.append(filter_thread)
-
-
-def all_filter_threads_alive() -> bool:
-    return all(filter_thread_alive(filter_thread) for filter_thread in filter_threads)
-
-
-def filter_thread_alive(filter_thread) -> bool:
-    # it's a wicked way of detecting whether a web3.py filter is still working
-    # but unfortunately I wasn't able to find any other one
-    return hasattr(filter_thread, '_args') and hasattr(filter_thread, '_kwargs')
 
 
 def check_account_unlocked(web3: Web3):

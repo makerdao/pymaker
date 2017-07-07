@@ -136,17 +136,17 @@ class SimpleMarket(Contract):
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
         self._none_offers = set()
 
-    def on_make(self, handler):
-        register_filter_thread(self._contract.on('LogMake', None, self._event_callback(LogMake, handler)))
+    def on_make(self, handler, include_past_events=False):
+        self._on_event(self._contract, 'LogMake', LogMake, handler, include_past_events)
 
-    def on_bump(self, handler):
-        register_filter_thread(self._contract.on('LogBump', None, self._event_callback(LogBump, handler)))
+    def on_bump(self, handler, include_past_events=False):
+        self._on_event(self._contract, 'LogBump', LogBump, handler, include_past_events)
 
-    def on_take(self, handler):
-        register_filter_thread(self._contract.on('LogTake', None, self._event_callback(LogTake, handler)))
+    def on_take(self, handler, include_past_events=False):
+        self._on_event(self._contract, 'LogTake', LogTake, handler, include_past_events)
 
-    def on_kill(self, handler):
-        register_filter_thread(self._contract.on('LogKill', None, self._event_callback(LogKill, handler)))
+    def on_kill(self, handler, include_past_events=False):
+        self._on_event(self._contract, 'LogKill', LogKill, handler, include_past_events)
 
     def get_last_offer_id(self) -> int:
         """Get the id of the last offer created on the market.

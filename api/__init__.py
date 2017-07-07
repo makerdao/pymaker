@@ -28,6 +28,23 @@ from web3.utils.events import get_event_data
 from api.numeric import Wad
 
 
+filter_threads = []
+
+
+def register_filter_thread(filter_thread):
+    filter_threads.append(filter_thread)
+
+
+def all_filter_threads_alive() -> bool:
+    return all(filter_thread_alive(filter_thread) for filter_thread in filter_threads)
+
+
+def filter_thread_alive(filter_thread) -> bool:
+    # it's a wicked way of detecting whether a web3.py filter is still working
+    # but unfortunately I wasn't able to find any other one
+    return hasattr(filter_thread, '_args') and hasattr(filter_thread, '_kwargs') or not filter_thread.running
+
+
 class Contract:
     logger = logging.getLogger('api')
 
@@ -42,6 +59,13 @@ class Contract:
             if receipt is not None and receipt['blockNumber'] is not None:
                 return receipt
             time.sleep(0.25)
+
+    def _on_event(self, contract, event, cls, handler, include_past_events):
+        register_filter_thread(contract.on(event, None, self._event_callback(cls, handler, False)))
+        if include_past_events:
+            block_number = contract.web3.eth.blockNumber
+            filter_params = {'fromBlock': block_number-10000, 'toBlock': block_number-1}
+            register_filter_thread(contract.pastEvents(event, filter_params, self._event_callback(cls, handler, True)))
 
     def _transact(self, web3, log_message, func):
         try:
@@ -75,8 +99,14 @@ class Contract:
         else:
             return None
 
-    def _event_callback(self, cls, handler):
+    def _event_callback(self, cls, handler, past):
         def callback(log):
+            if past:
+                self.logger.info(f"Past event {log['event']} discovered, block_number={log['blockNumber']},"
+                                 f" tx_hash={log['transactionHash']}")
+            else:
+                self.logger.info(f"Event {log['event']} discovered, block_number={log['blockNumber']},"
+                                 f" tx_hash={log['transactionHash']}")
             handler(cls(log['args']))
         return callback
 
