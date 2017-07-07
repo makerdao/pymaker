@@ -53,8 +53,8 @@ class SaiTopUp(Keeper):
 
     def setup_allowance(self, spender_address: Address, spender_name: str):
         if self.skr.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
-            print(f"Approving {spender_name} ({spender_address}) to access our SKR balance...")
-            print(f"")
+            logging.info(f"Approving {spender_name} ({spender_address}) to access our SKR balance...")
+            logging.info(f"")
             self.skr.approve(spender_address)
 
     def check_all_cups(self):
@@ -62,12 +62,12 @@ class SaiTopUp(Keeper):
             top_up_amount = self.required_top_up(cup)
             if top_up_amount:
                 if self.skr.balance_of(self.our_address) < top_up_amount:
-                    print(f"Cannot top-up as our balance is less than {top_up_amount} SKR.")
+                    logging.info(f"Cannot top-up as our balance is less than {top_up_amount} SKR.")
                 else:
                     if self.tub.lock(cup.cup_id, top_up_amount):
-                        print(f"Cup {cup.cup_id} has been topped up with {top_up_amount} SKR.")
+                        logging.info(f"Cup {cup.cup_id} has been topped up with {top_up_amount} SKR.")
                     else:
-                        print(f"Failed to top-up cup {cup.cup_id}!")
+                        logging.info(f"Failed to top-up cup {cup.cup_id}!")
 
     def our_cups(self):
         for cup_id in range(1, self.tub.cupi()+1):

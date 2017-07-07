@@ -45,12 +45,12 @@ class Keeper:
 
         label = f"{type(self).__name__} keeper"
 
-        print(f"")
-        print(f"{label}")
-        print(f"{'-' * len(label)}")
-        print(f"")
-        print(f"Keeper operating as {self.our_address}")
-        print(f"")
+        logging.info(f"")
+        logging.info(f"{label}")
+        logging.info(f"{'-' * len(label)}")
+        logging.info(f"")
+        logging.info(f"Keeper operating as {self.our_address}")
+        logging.info(f"")
 
         self.run()
 
