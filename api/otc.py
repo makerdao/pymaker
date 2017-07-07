@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pprint import pformat
-from typing import Optional
+from typing import Optional, List
 
 from web3 import Web3
 
@@ -137,6 +137,10 @@ class SimpleMarket(Contract):
                              buy_which_token=Address(array[3]),
                              owner=Address(array[4]),
                              timestamp=array[6])
+
+    def active_offers(self) -> List[OfferInfo]:
+        offers = [self.get_offer(offer_id + 1) for offer_id in range(self.get_last_offer_id())]
+        return [offer for offer in offers if offer is not None]
 
     #TODO make it return the id of the newly created offer
     def make(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> Optional[Receipt]:

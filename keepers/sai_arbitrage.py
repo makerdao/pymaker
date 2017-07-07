@@ -145,9 +145,8 @@ class SaiArbitrage(Keeper):
                 LpcTakeAltConversion(self.lpc)]
 
     def otc_offers(self, tokens):
-        offers = [self.otc.get_offer(offer_id + 1) for offer_id in range(self.otc.get_last_offer_id())]
-        offers = [offer for offer in offers if offer is not None]
-        return [offer for offer in offers if offer.sell_which_token in tokens and offer.buy_which_token in tokens]
+        return [offer for offer in self.otc.active_offers()
+                if offer.sell_which_token in tokens and offer.buy_which_token in tokens]
 
     def otc_conversions(self, tokens) -> List[Conversion]:
         return list(map(lambda offer: OasisTakeConversion(self.otc, offer), self.otc_offers(tokens)))
