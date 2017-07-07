@@ -109,11 +109,8 @@ class DSValue(Contract):
         """
         assert(isinstance(new_value, bytes))
         assert(len(new_value) == 32)
-        try:
-            tx_hash = self._contract.transact().poke(new_value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"DSValue('{self.address}').poke('{new_value}')",
+                              lambda: self._contract.transact().poke(new_value))
 
     def poke_with_int(self, new_value: int) -> Optional[Receipt]:
         """Populates this instance with a new value.
@@ -141,11 +138,8 @@ class DSValue(Contract):
             A `Receipt` if the Ethereum transaction was successful and the value has been removed.
             `None` if the Ethereum transaction failed.
         """
-        try:
-            tx_hash = self._contract.transact().void()
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"DSValue('{self.address}').void()",
+                              lambda: self._contract.transact().void())
 
     #TODO as web3.py doesn't seem to support anonymous events, monitoring for LogNote events does not work
     # def watch(self):

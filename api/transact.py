@@ -87,8 +87,6 @@ class TxManager(Contract):
 
         assert(isinstance(tokens, list))
         assert(isinstance(invocations, list))
-        try:
-            tx_hash = self._contract.transact().execute(token_addresses(), script())
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+
+        return self._transact(self.web3, f"TxManager('{self.address}').execute('0x...', '0x....')",
+                              lambda: self._contract.transact().execute(token_addresses(), script()))

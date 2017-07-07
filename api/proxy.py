@@ -42,8 +42,5 @@ class DSProxy(Contract):
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
     def execute(self, contract: bytes, calldata: bytes) -> Optional[Receipt]:
-        try:
-            tx_hash = self._contract.transact().execute(contract, calldata)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"DSProxy('{self.address}').execute('0x...', '0x....')",
+                              lambda: self._contract.transact().execute(contract, calldata))

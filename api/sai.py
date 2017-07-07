@@ -272,11 +272,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_axe, Ray)
-        try:
-            tx_hash = self._contractTub.transact().chop(new_axe.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').chop('{new_axe}')",
+                              lambda: self._contractTub.transact().chop(new_axe.value))
 
     def cork(self, new_hat: Wad) -> Optional[Receipt]:
         """Update the debt ceiling.
@@ -289,11 +286,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_hat, Wad)
-        try:
-            tx_hash = self._contractTub.transact().cork(new_hat.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').cork('{new_hat}')",
+                              lambda: self._contractTub.transact().cork(new_hat.value))
 
     def cuff(self, new_mat: Ray) -> Optional[Receipt]:
         """Update the liquidation ratio.
@@ -306,11 +300,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_mat, Ray)
-        try:
-            tx_hash = self._contractTub.transact().cuff(new_mat.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').cuff('{new_mat}')",
+                              lambda: self._contractTub.transact().cuff(new_mat.value))
 
     def crop(self, new_tax: Ray) -> Optional[Receipt]:
         """Update the stability fee.
@@ -323,11 +314,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_tax, Ray)
-        try:
-            tx_hash = self._contractTub.transact().crop(new_tax.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').crop('{new_tax}')",
+                              lambda: self._contractTub.transact().crop(new_tax.value))
 
     def coax(self, new_way: Ray) -> Optional[Receipt]:
         """Update the holder fee.
@@ -340,11 +328,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_way, Ray)
-        try:
-            tx_hash = self._contractTip.transact().coax(new_way.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tip('{self._contractTub.call().tip()}').coax('{new_way}')",
+                              lambda: self._contractTip.transact().coax(new_way.value))
 
     def drip(self) -> Optional[Receipt]:
         """Recalculate the internal debt price (`chi`).
@@ -353,11 +338,8 @@ class Tub(Contract):
             A `Receipt` if the Ethereum transaction was successful.
             `None` if the Ethereum transaction failed.
         """
-        try:
-            tx_hash = self._contractTub.transact().drip()
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').drip()",
+                              lambda: self._contractTub.transact().drip())
 
     def prod(self) -> Optional[Receipt]:
         """Recalculate the accrued holder fee (`par`).
@@ -366,11 +348,8 @@ class Tub(Contract):
             A `Receipt` if the Ethereum transaction was successful.
             `None` if the Ethereum transaction failed.
         """
-        try:
-            tx_hash = self._contractTip.transact().prod()
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tip('{self._contractTub.call().tip()}').prod()",
+                              lambda: self._contractTip.transact().prod())
 
     def ice(self) -> Wad:
         """Get the amount of good debt.
@@ -486,11 +465,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_gap, Wad)
-        try:
-            tx_hash = self._contractTap.transact().jump(new_gap.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tap('{self.addressTap}').jump('{new_gap}')",
+                              lambda: self._contractTap.transact().jump(new_gap.value))
 
     # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
     def tap_bid(self) -> Wad:
@@ -531,11 +507,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_gap, Wad)
-        try:
-            tx_hash = self._contractJar.transact().jump(new_gap.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Jar('{self._contractTub.call().jar()}').jump('{new_gap}')",
+                              lambda: self._contractJar.transact().jump(new_gap.value))
 
     # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
     def jar_bid(self) -> Ray:
@@ -635,11 +608,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(amount_in_gem, Wad)
-        try:
-            tx_hash = self._contractTub.transact().join(amount_in_gem.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').join('{amount_in_gem}')",
+                              lambda: self._contractTub.transact().join(amount_in_gem.value))
 
     def join_calldata(self, amount_in_gem: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abiTub).encodeABI('join', [amount_in_gem]))
@@ -655,11 +625,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(amount_in_skr, Wad)
-        try:
-            tx_hash = self._contractTub.transact().exit(amount_in_skr.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').exit('{amount_in_skr}')",
+                              lambda: self._contractTub.transact().exit(amount_in_skr.value))
 
     def exit_calldata(self, amount_in_skr: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abiTub).encodeABI('exit', [amount_in_skr]))
@@ -672,11 +639,8 @@ class Tub(Contract):
             A `Receipt` if the Ethereum transaction was successful.
             `None` if the Ethereum transaction failed.
         """
-        try:
-            tx_hash = self._contractTub.transact().open()
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').open()",
+                              lambda: self._contractTub.transact().open())
 
     def shut(self, cup_id: int) -> Optional[Receipt]:
         """Close a cup.
@@ -692,11 +656,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(cup_id, int)
-        try:
-            tx_hash = self._contractTub.transact().shut(int_to_bytes32(cup_id))
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').shut('{cup_id}')",
+                              lambda: self._contractTub.transact().shut(int_to_bytes32(cup_id)))
 
     def lock(self, cup_id: int, amount_in_skr: Wad) -> Optional[Receipt]:
         """Post additional SKR collateral to a cup.
@@ -711,11 +672,8 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
-        try:
-            tx_hash = self._contractTub.transact().lock(int_to_bytes32(cup_id), amount_in_skr.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').lock('{cup_id}', '{amount_in_skr}')",
+                              lambda: self._contractTub.transact().lock(int_to_bytes32(cup_id), amount_in_skr.value))
 
     def free(self, cup_id: int, amount_in_skr: Wad) -> Optional[Receipt]:
         """Remove excess SKR collateral from a cup.
@@ -730,11 +688,8 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
-        try:
-            tx_hash = self._contractTub.transact().free(int_to_bytes32(cup_id), amount_in_skr.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').free('{cup_id}', '{amount_in_skr}')",
+                              lambda: self._contractTub.transact().free(int_to_bytes32(cup_id), amount_in_skr.value))
 
     def draw(self, cup_id: int, amount_in_sai: Wad) -> Optional[Receipt]:
         """Issue the specified amount of SAI stablecoins.
@@ -749,11 +704,8 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
-        try:
-            tx_hash = self._contractTub.transact().draw(int_to_bytes32(cup_id), amount_in_sai.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').draw('{cup_id}', '{amount_in_sai}')",
+                              lambda: self._contractTub.transact().draw(int_to_bytes32(cup_id), amount_in_sai.value))
 
     def wipe(self, cup_id: int, amount_in_sai: Wad) -> Optional[Receipt]:
         """Repay some portion of existing SAI debt.
@@ -768,11 +720,8 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
-        try:
-            tx_hash = self._contractTub.transact().wipe(int_to_bytes32(cup_id), amount_in_sai.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').wipe('{cup_id}', '{amount_in_sai}')",
+                              lambda: self._contractTub.transact().wipe(int_to_bytes32(cup_id), amount_in_sai.value))
 
     def give(self, cup_id: int, new_lad: Address) -> Optional[Receipt]:
         """Transfer ownership of a cup.
@@ -787,11 +736,8 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(new_lad, Address)
-        try:
-            tx_hash = self._contractTub.transact().give(int_to_bytes32(cup_id), new_lad.address)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').give('{cup_id}', '{new_lad}')",
+                              lambda: self._contractTub.transact().give(int_to_bytes32(cup_id), new_lad.address))
 
     def bite(self, cup_id: int) -> Optional[Receipt]:
         """Initiate liquidation of an undercollateralized cup.
@@ -804,11 +750,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(cup_id, int)
-        try:
-            tx_hash = self._contractTub.transact().bite(int_to_bytes32(cup_id))
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tub('{self.addressTub}').bite('{cup_id}')",
+                              lambda: self._contractTub.transact().bite(int_to_bytes32(cup_id)))
 
     def boom(self, amount_in_skr: Wad) -> Optional[Receipt]:
         """Buy some amount of SAI to process `joy` (surplus).
@@ -821,11 +764,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(amount_in_skr, Wad)
-        try:
-            tx_hash = self._contractTap.transact().boom(amount_in_skr.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tap('{self.addressTap}').boom('{amount_in_skr}')",
+                              lambda: self._contractTap.transact().boom(amount_in_skr.value))
 
     def boom_calldata(self, amount_in_skr: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abiTap).encodeABI('boom', [amount_in_skr]))
@@ -841,11 +781,8 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(amount_in_skr, Wad)
-        try:
-            tx_hash = self._contractTap.transact().bust(amount_in_skr.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Tap('{self.addressTap}').bust('{amount_in_skr}')",
+                              lambda: self._contractTap.transact().bust(amount_in_skr.value))
 
     def bust_calldata(self, amount_in_skr: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abiTap).encodeABI('bust', [amount_in_skr]))
@@ -855,7 +792,7 @@ class Tub(Contract):
     # TODO vent
 
     def __eq__(self, other):
-        return self.address == other.address
+        return self.addressT == other.address
 
     def __repr__(self):
         return f"Tub(address='{self.address}')"
@@ -949,11 +886,8 @@ class Lpc(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_gap, Wad)
-        try:
-            tx_hash = self._contract.transact().jump(new_gap.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Lpc('{self.address}').jump('{new_gap}')",
+                              lambda: self._contract.transact().jump(new_gap.value))
 
     def tag(self) -> Wad:
         """Get the current price (refs per alt).
@@ -1011,11 +945,8 @@ class Lpc(Contract):
         """
         assert isinstance(token, Address)
         assert isinstance(amount, Wad)
-        try:
-            tx_hash = self._contract.transact().pool(token.address, amount.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Lpc('{self.address}').pool('{token}', '{amount}')",
+                              lambda: self._contract.transact().pool(token.address, amount.value))
 
     def exit(self, token: Address, amount: Wad) -> Optional[Receipt]:
         """Exit the pool, exchange LPS for ref or alt.
@@ -1034,11 +965,8 @@ class Lpc(Contract):
         """
         assert isinstance(token, Address)
         assert isinstance(amount, Wad)
-        try:
-            tx_hash = self._contract.transact().exit(token.address, amount.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Lpc('{self.address}').exit('{token}', '{amount}')",
+                              lambda: self._contract.transact().exit(token.address, amount.value))
 
     def take(self, token: Address, amount: Wad) -> Optional[Receipt]:
         """Perform an exchange.
@@ -1058,11 +986,8 @@ class Lpc(Contract):
         """
         assert isinstance(token, Address)
         assert isinstance(amount, Wad)
-        try:
-            tx_hash = self._contract.transact().take(token.address, amount.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"Lpc('{self.address}').take('{token}', '{amount}')",
+                              lambda: self._contract.transact().take(token.address, amount.value))
 
     def take_calldata(self, token: Address, amount: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('take', [token.address, amount.value]))

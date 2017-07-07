@@ -154,7 +154,8 @@ class SimpleMarket(Contract):
             A `Receipt` if the Ethereum transaction was successful and the offer has been created.
             `None` if the Ethereum transaction failed.
         """
-        return self._transact(self.web3, f"SimpleMarket.make('{have_token}', '{want_token}', '{have_amount}', '{want_amount}')",
+        return self._transact(self.web3, f"SimpleMarket('{self.address}')"
+                                         f".make('{have_token}', '{want_token}', '{have_amount}', '{want_amount}')",
                               lambda: self._contract.transact().make(have_token.address, want_token.address,
                                                                      have_amount.value, want_amount.value))
 
@@ -173,11 +174,8 @@ class SimpleMarket(Contract):
             A `Receipt` if the Ethereum transaction was successful and the offer has been taken (bought).
             `None` if the Ethereum transaction failed.
         """
-        try:
-            tx_hash = self._contract.transact().take(int_to_bytes32(offer_id), quantity.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"SimpleMarket('{self.address}').take('{offer_id}', '{quantity}')",
+                              lambda: self._contract.transact().take(int_to_bytes32(offer_id), quantity.value))
 
     def take_calldata(self, offer_id: int, quantity: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('take', [int_to_bytes32(offer_id), quantity.value]))
@@ -195,5 +193,5 @@ class SimpleMarket(Contract):
             A `Receipt` if the Ethereum transaction was successful and the offer has been cancelled.
             `None` if the Ethereum transaction failed.
         """
-        return self._transact(self.web3, f"SimpleMarket.kill('{offer_id}')",
+        return self._transact(self.web3, f"SimpleMarket('{self.address}').kill('{offer_id}')",
                               lambda: self._contract.transact().kill(int_to_bytes32(offer_id)))

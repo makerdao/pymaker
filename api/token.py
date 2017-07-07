@@ -85,11 +85,8 @@ class ERC20Token(Contract):
             A `Receipt` if the Ethereum transaction (and thus the token transfer) was successful.
             `None` if the Ethereum transaction failed.
         """
-        try:
-            tx_hash = self._contract.transact().transfer(address.address, value.value)
-            return self._prepare_receipt(self.web3, tx_hash)
-        except:
-            return None
+        return self._transact(self.web3, f"ERC20Token('{self.address}').transfer('{address}', '{value}')",
+                              lambda: self._contract.transact().transfer(address.address, value.value))
 
     def approve(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Optional[Receipt]:
         """Modifies the current allowance of a specified `payee` (delegate account).
