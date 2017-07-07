@@ -28,11 +28,11 @@ from api.numeric import Ray
 from api.numeric import Wad
 from api.sai import Tub
 from keepers import Keeper
+from keepers.monitor import for_each_block
 
 
 class SaiTopUp(Keeper):
     def args(self, parser: argparse.ArgumentParser):
-        parser.add_argument("--frequency", help="Monitoring frequency in seconds (default: 5)", default=5, type=int)
         parser.add_argument("--minimum-margin", help="Margin between the liquidation ratio and the top-up threshold (default: 0.1)", default=0.1, type=float)
         parser.add_argument("--target-margin", help="Margin between the liquidation ratio and the top-up target (default: 0.25)", default=0.25, type=float)
 
@@ -49,9 +49,7 @@ class SaiTopUp(Keeper):
 
     def run(self):
         self.setup_allowance(self.tub.jar(), 'Tub.jar')
-        while True:
-            self.check_all_cups()
-            time.sleep(self.arguments.frequency)
+        for_each_block(self.web3, self.check_all_cups)
 
     def setup_allowance(self, spender_address: Address, spender_name: str):
         if self.skr.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
