@@ -75,6 +75,11 @@ class Contract:
         else:
             return None
 
+    def _event_callback(self, cls, handler):
+        def callback(log):
+            handler(cls(log['args']))
+        return callback
+
     @staticmethod
     def _load_abi(package, resource):
         return json.loads(pkg_resources.resource_string(package, resource))

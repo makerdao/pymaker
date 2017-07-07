@@ -55,15 +55,57 @@ class OfferInfo:
         return pformat(vars(self))
 
 
-class LogTake:
+class LogMake:
     def __init__(self, args):
         self.id = bytes_to_int(args['id'])
         self.maker = Address(args['maker'])
         self.have_token = Address(args['haveToken'])
+        self.have_amount = Wad(args['haveAmount'])
         self.want_token = Address(args['wantToken'])
+        self.want_amount = Wad(args['wantAmount'])
+        self.timestamp = args['timestamp']
+
+    def __str__(self):
+        return pformat(vars(self))
+
+
+class LogBump:
+    def __init__(self, args):
+        self.id = bytes_to_int(args['id'])
+        self.maker = Address(args['maker'])
+        self.have_token = Address(args['haveToken'])
+        self.have_amount = Wad(args['haveAmount'])
+        self.want_token = Address(args['wantToken'])
+        self.want_amount = Wad(args['wantAmount'])
+        self.timestamp = args['timestamp']
+
+    def __str__(self):
+        return pformat(vars(self))
+
+
+class LogTake:
+    def __init__(self, args):
+        self.id = bytes_to_int(args['id'])
+        self.maker = Address(args['maker'])
         self.taker = Address(args['taker'])
+        self.have_token = Address(args['haveToken'])
         self.take_amount = Wad(args['takeAmount'])
+        self.want_token = Address(args['wantToken'])
         self.give_amount = Wad(args['giveAmount'])
+        self.timestamp = args['timestamp']
+
+    def __str__(self):
+        return pformat(vars(self))
+
+
+class LogKill:
+    def __init__(self, args):
+        self.id = bytes_to_int(args['id'])
+        self.maker = Address(args['maker'])
+        self.have_token = Address(args['haveToken'])
+        self.have_amount = Wad(args['haveAmount'])
+        self.want_token = Address(args['wantToken'])
+        self.want_amount = Wad(args['wantAmount'])
         self.timestamp = args['timestamp']
 
     def __str__(self):
@@ -91,16 +133,19 @@ class SimpleMarket(Contract):
         self.address = address
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
-        self._contract.on('LogTake', None, self._on_take)
-        self._on_take_handler = None
         self._none_offers = set()
 
-    def _on_take(self, log):
-        if self._on_take_handler is not None:
-            self._on_take_handler(LogTake(log['args']))
+    def on_make(self, handler):
+        self._contract.on('LogMake', None, self._event_callback(LogMake, handler))
+
+    def on_bump(self, handler):
+        self._contract.on('LogBump', None, self._event_callback(LogBump, handler))
 
     def on_take(self, handler):
-        self._on_take_handler = handler
+        self._contract.on('LogTake', None, self._event_callback(LogTake, handler))
+
+    def on_kill(self, handler):
+        self._contract.on('LogKill', None, self._event_callback(LogKill, handler))
 
     def get_last_offer_id(self) -> int:
         """Get the id of the last offer created on the market.
