@@ -19,11 +19,13 @@ import argparse
 import json
 
 import logging
+
+import time
+
 from web3 import Web3, HTTPProvider
 
-from api import Address
+from api import Address, register_filter_thread, all_filter_threads_alive
 from api.token import ERC20Token
-from keepers.monitor import check_account_unlocked
 
 
 class Keeper:
@@ -42,16 +44,21 @@ class Keeper:
         self.our_address = Address(self.arguments.eth_from)
         self.config = Config(self.web3)
 
-        self.init()
-
         label = f"{type(self).__name__} keeper"
         logging.info(f"{label}")
         logging.info(f"{'-' * len(label)}")
+        self._wait_for_init()
         logging.info(f"Keeper operating as {self.our_address}")
+        self._check_account_unlocked()
 
-        check_account_unlocked(self.web3)
-
+        self.init()
         self.run()
+
+        while True:
+            time.sleep(1)
+            if not all_filter_threads_alive():
+                logging.fatal("One of filter threads is dead. Shutting down the keeper.")
+                break
 
     def args(self, parser: argparse.ArgumentParser):
         pass
@@ -61,6 +68,46 @@ class Keeper:
 
     def run(self):
         raise NotImplementedError("Please implement the run() method")
+
+    def on_block(self, callback):
+        def new_block_callback(block_hash):
+            if not self.web3.eth.syncing:
+                block = self.web3.eth.getBlock(block_hash)
+                this_block_number = block['number']
+                last_block_number = self.web3.eth.blockNumber
+                if this_block_number == last_block_number:
+                    logging.debug(f"Processing block {block_hash}")
+                    callback()
+                else:
+                    logging.info(f"Ignoring block {block_hash} as #{this_block_number} < #{last_block_number}")
+            else:
+                logging.info(f"Ignoring block {block_hash} as the client is syncing")
+
+        block_filter = self.web3.eth.filter('latest')
+        block_filter.watch(new_block_callback)
+        register_filter_thread(block_filter)
+
+    def _wait_for_init(self):
+        # wait for the client to have at least one peer
+        if self.web3.net.peerCount == 0:
+            logging.info(f"Waiting for the client to have at least one peer...")
+            while self.web3.net.peerCount == 0:
+                time.sleep(0.25)
+
+        # wait for the client to sync completely,
+        # as we do not want to apply keeper logic to stale blocks
+        if self.web3.eth.syncing:
+            logging.info(f"Waiting for the client to sync...")
+            while self.web3.eth.syncing:
+                time.sleep(0.25)
+
+    def _check_account_unlocked(self):
+        try:
+            self.web3.eth.sign(self.web3.eth.defaultAccount, "test")
+        except:
+            logging.fatal(f"Account {self.web3.eth.defaultAccount} is not unlocked.")
+            logging.fatal(f"Unlocking the account is necessary for the keeper to operate.")
+            exit(-1)
 
 
 class Config:

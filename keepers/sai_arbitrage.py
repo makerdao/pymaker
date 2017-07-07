@@ -36,7 +36,6 @@ from keepers.arbitrage.conversion import OasisTakeConversion
 from keepers.arbitrage.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion
 from keepers.arbitrage.opportunity import OpportunityFinder
 from keepers.arbitrage.transfer_formatter import TransferFormatter
-from keepers.monitor import for_each_block
 
 
 class SaiArbitrage(Keeper):
@@ -79,7 +78,7 @@ class SaiArbitrage(Keeper):
     def run(self):
         self.setup_allowances()
         self.print_balances()
-        for_each_block(self.web3, self.execute_best_opportunity_available)
+        self.on_block(self.execute_best_opportunity_available)
 
     def print_balances(self):
         def balances():

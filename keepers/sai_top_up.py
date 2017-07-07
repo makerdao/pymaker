@@ -28,7 +28,6 @@ from api.numeric import Ray
 from api.numeric import Wad
 from api.sai import Tub
 from keepers import Keeper
-from keepers.monitor import for_each_block
 
 
 class SaiTopUp(Keeper):
@@ -49,12 +48,11 @@ class SaiTopUp(Keeper):
 
     def run(self):
         self.setup_allowance(self.tub.jar(), 'Tub.jar')
-        for_each_block(self.web3, self.check_all_cups)
+        self.on_block(self.check_all_cups)
 
     def setup_allowance(self, spender_address: Address, spender_name: str):
         if self.skr.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
             logging.info(f"Approving {spender_name} ({spender_address}) to access our SKR balance...")
-            logging.info(f"")
             self.skr.approve(spender_address)
 
     def check_all_cups(self):

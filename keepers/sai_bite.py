@@ -20,7 +20,6 @@
 from api import Address
 from api.sai import Tub
 from keepers import Keeper
-from keepers.monitor import for_each_block
 
 
 class SaiBite(Keeper):
@@ -31,7 +30,7 @@ class SaiBite(Keeper):
         self.tub = Tub(web3=self.web3, address_tub=self.tub_address, address_tap=self.tap_address, address_top=self.top_address)
 
     def run(self):
-        for_each_block(self.web3, self.check_all_cups)
+        self.on_block(self.check_all_cups)
 
     def check_all_cups(self):
         for cup_id in range(self.tub.cupi()):

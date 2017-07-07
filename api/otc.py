@@ -23,7 +23,6 @@ from web3 import Web3
 from api import Contract, Address, Receipt, Calldata
 from api.numeric import Wad
 from api.util import int_to_bytes32, bytes_to_int
-from keepers.monitor import register_filter_thread
 
 
 class OfferInfo:
