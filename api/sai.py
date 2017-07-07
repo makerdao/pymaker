@@ -792,6 +792,7 @@ class Tub(Contract):
     # TODO vent
 
     def __eq__(self, other):
+        assert(isinstance(other, Tub))
         return self.addressTub == other.addressTub
 
     def __repr__(self):
