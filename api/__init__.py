@@ -45,6 +45,14 @@ def filter_thread_alive(filter_thread) -> bool:
     return hasattr(filter_thread, '_args') and hasattr(filter_thread, '_kwargs') or not filter_thread.running
 
 
+def stop_all_filter_threads():
+    for filter_thread in filter_threads:
+        try:
+            filter_thread.stop_watching(timeout=60)
+        except:
+            pass
+
+
 class Contract:
     logger = logging.getLogger('api')
 

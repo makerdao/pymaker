@@ -24,7 +24,7 @@ import time
 
 from web3 import Web3, HTTPProvider
 
-from api import Address, register_filter_thread, all_filter_threads_alive
+from api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads
 from api.token import ERC20Token
 
 
@@ -48,17 +48,29 @@ class Keeper:
         logging.info(f"{label}")
         logging.info(f"{'-' * len(label)}")
         self._wait_for_init()
+        logging.info(f"Keeper connected to {self.web3.currentProvider.endpoint_uri}")
         logging.info(f"Keeper operating as {self.our_address}")
         self._check_account_unlocked()
 
         self.init()
+        logging.info("Keeper started")
         self.run()
 
         while True:
-            time.sleep(1)
-            if not all_filter_threads_alive():
-                logging.fatal("One of filter threads is dead. Shutting down the keeper.")
+            try:
+                time.sleep(1)
+            except KeyboardInterrupt:
                 break
+            if not all_filter_threads_alive():
+                logging.fatal("One of filter threads is dead, the keeper will terminate")
+                break
+
+        logging.info("Shutting down the keeper")
+        logging.info("Waiting for all threads to terminate...")
+        stop_all_filter_threads()
+        logging.info("Executing keeper shutdown logic...")
+        self.shutdown()
+        logging.info("Keeper terminated")
 
     def args(self, parser: argparse.ArgumentParser):
         pass
@@ -68,6 +80,9 @@ class Keeper:
 
     def run(self):
         raise NotImplementedError("Please implement the run() method")
+
+    def shutdown(self):
+        pass
 
     def on_block(self, callback):
         def new_block_callback(block_hash):
