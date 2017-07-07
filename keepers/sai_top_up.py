@@ -66,10 +66,7 @@ class SaiTopUp(Keeper):
                 if self.skr.balance_of(self.our_address) < top_up_amount:
                     logging.info(f"Cannot top-up as our balance is less than {top_up_amount} SKR.")
                 else:
-                    if self.tub.lock(cup.cup_id, top_up_amount):
-                        logging.info(f"Cup {cup.cup_id} has been topped up with {top_up_amount} SKR.")
-                    else:
-                        logging.info(f"Failed to top-up cup {cup.cup_id}!")
+                    self.tub.lock(cup.cup_id, top_up_amount)
 
     def our_cups(self):
         for cup_id in range(1, self.tub.cupi()+1):
