@@ -206,7 +206,7 @@ class SaiArbitrage(Keeper):
         """Execute the opportunity step-by-step."""
         all_transfers = []
         for index, conversion in enumerate(opportunity.conversions, start=1):
-            logging.info(f"Executing step {index}/{len(opportunity.conversions)}... ", end='', flush=True)
+            logging.info(f"Executing step {index}/{len(opportunity.conversions)}... ")
             receipt = conversion.execute()
             if receipt is None:
                 logging.info(f"FAILED!")
@@ -224,7 +224,7 @@ class SaiArbitrage(Keeper):
 
     def execute_opportunity_in_one_transaction(self, opportunity):
         """Execute the opportunity in one transaction, using the `tx_manager`."""
-        logging.info(f"Executing all steps in one transaction... ", end='', flush=True)
+        logging.info(f"Executing all steps in one transaction... ")
 
         invocations = list(map(lambda conv: Invocation(conv.address(), conv.calldata()), opportunity.conversions))
         receipt = self.tx_manager.execute([self.sai.address, self.skr.address, self.gem.address], invocations)
