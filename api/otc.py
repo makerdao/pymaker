@@ -93,6 +93,7 @@ class SimpleMarket(Contract):
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
         self._contract.on('LogTake', None, self._on_take)
         self._on_take_handler = None
+        self._none_offers = set()
 
     def _on_take(self, log):
         if self._on_take_handler is not None:
@@ -109,8 +110,6 @@ class SimpleMarket(Contract):
         """
         return self._contract.call().last_offer_id()
 
-    # TODO introduce empty offer caching, as if an offer is None
-    # it won't ever become not-None again
     def get_offer(self, offer_id: int) -> Optional[OfferInfo]:
         """Get the offer details.
 
@@ -121,8 +120,14 @@ class SimpleMarket(Contract):
             An instance of `OfferInfo` if the offer is still active, or `None` if the offer has been
             already completely taken.
         """
+
+        # if an offer is None, it won't become not-None again for the same OTC instance
+        if offer_id in self._none_offers:
+            return None
+
         array = self._contract.call().offers(offer_id)
         if array[5] is not True:
+            self._none_offers.add(offer_id)
             return None
         else:
             return OfferInfo(offer_id=offer_id,
