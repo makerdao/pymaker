@@ -38,7 +38,7 @@ class Sequence:
 
         A `total_rate` > 1.0 is a general indication that executing this sequence may be profitable.
         """
-        return reduce(operator.mul, map(lambda conversion: conversion.rate, self.steps), Ray.from_number(1.0))
+        return reduce(operator.mul, map(lambda step: step.rate, self.steps), Ray.from_number(1.0))
 
     def profit(self, currency: Address) -> Wad:
         """Calculates the expected profit brought by executing this sequence (in token `token`)."""
