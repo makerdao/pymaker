@@ -43,4 +43,4 @@ class SaiKeeper(Keeper):
 
     def run(self):
         # implemented only to avoid IntelliJ IDEA warning
-        pass
+        super().run()
