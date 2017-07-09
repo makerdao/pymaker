@@ -43,13 +43,8 @@ class Sequence:
 
     def profit(self, token: Address) -> Wad:
         """Calculates the expected profit brought by executing this sequence (in token `token`)."""
-        result = Wad.from_number(0)
-        for conversion in self.steps:
-            if conversion.source_token == token:
-                result -= conversion.source_amount
-            if conversion.target_token == token:
-                result += conversion.target_amount
-        return result
+        return sum(map(lambda s: s.target_amount, filter(lambda s: s.target_token == token, self.steps)), Wad(0)) \
+               - sum(map(lambda s: s.source_amount, filter(lambda s: s.source_token == token, self.steps)), Wad(0))
 
     def tx_costs(self) -> Wad:
         """Calculates the transaction costs that this sequence will take to execute."""
