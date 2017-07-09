@@ -38,7 +38,7 @@ class SaiTopUp(SaiKeeper):
         parser.add_argument("--minimum-margin", help="Margin between the liquidation ratio and the top-up threshold", type=float)
         parser.add_argument("--target-margin", help="Margin between the liquidation ratio and the top-up target", type=float)
 
-    def run(self):
+    def startup(self):
         self.setup_allowance(self.tub.jar(), 'Tub.jar')
         self.on_block(self.check_all_cups)
 

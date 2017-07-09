@@ -52,7 +52,7 @@ class Keeper:
         logging.info(f"Keeper operating as {self.our_address}")
         self._check_account_unlocked()
         logging.info("Keeper started")
-        self.run()
+        self.startup()
 
         while True:
             try:
@@ -73,8 +73,8 @@ class Keeper:
     def args(self, parser: argparse.ArgumentParser):
         pass
 
-    def run(self):
-        raise NotImplementedError("Please implement the run() method")
+    def startup(self):
+        raise NotImplementedError("Please implement the startup() method")
 
     def shutdown(self):
         pass

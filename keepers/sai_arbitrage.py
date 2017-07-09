@@ -60,7 +60,7 @@ class SaiArbitrage(SaiKeeper):
         parser.add_argument("--maximum-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
         parser.add_argument("--tx-manager", help="Address of the TxManager to use for multi-step arbitrage", type=str)
 
-    def run(self):
+    def startup(self):
         self.setup_allowances()
         self.print_balances()
         self.on_block(self.execute_best_opportunity_available)

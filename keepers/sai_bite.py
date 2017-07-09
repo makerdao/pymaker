@@ -21,7 +21,7 @@ from keepers.sai import SaiKeeper
 
 
 class SaiBite(SaiKeeper):
-    def run(self):
+    def startup(self):
         self.on_block(self.check_all_cups)
 
     def check_all_cups(self):

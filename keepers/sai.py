@@ -41,6 +41,6 @@ class SaiKeeper(Keeper):
         ERC20Token.register_token(self.tub.sai(), 'SAI')
         ERC20Token.register_token(self.tub.gem(), 'WETH')
 
-    def run(self):
+    def startup(self):
         # implemented only to avoid IntelliJ IDEA warning
-        super().run()
+        super().startup()
