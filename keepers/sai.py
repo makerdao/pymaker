@@ -40,6 +40,7 @@ class SaiKeeper(Keeper):
         ERC20Token.register_token(self.tub.skr(), 'SKR')
         ERC20Token.register_token(self.tub.sai(), 'SAI')
         ERC20Token.register_token(self.tub.gem(), 'WETH')
+        ERC20Token.register_token(self.lpc.lps(), 'LPS')
 
     def startup(self):
         # implemented only to avoid IntelliJ IDEA warning
