@@ -41,13 +41,13 @@ class Sequence:
         """
         return reduce(operator.mul, map(lambda step: step.rate, self.steps), Ray.from_number(1.0))
 
-    def profit(self, currency: Address) -> Wad:
+    def profit(self, token: Address) -> Wad:
         """Calculates the expected profit brought by executing this sequence (in token `token`)."""
         result = Wad.from_number(0)
         for conversion in self.steps:
-            if conversion.source_token == currency:
+            if conversion.source_token == token:
                 result -= conversion.source_amount
-            if conversion.target_token == currency:
+            if conversion.target_token == token:
                 result += conversion.target_amount
         return result
 
