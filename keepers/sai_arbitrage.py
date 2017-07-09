@@ -33,7 +33,7 @@ from keepers.arbitrage.conversion import Conversion
 from keepers.arbitrage.conversion import LpcTakeAltConversion, LpcTakeRefConversion
 from keepers.arbitrage.conversion import OasisTakeConversion
 from keepers.arbitrage.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion
-from keepers.arbitrage.opportunity import OpportunityFinder
+from keepers.arbitrage.opportunity import OpportunityFinder, Sequence
 from keepers.arbitrage.transfer_formatter import TransferFormatter
 from keepers.sai import SaiKeeper
 
@@ -157,21 +157,21 @@ class SaiArbitrage(SaiKeeper):
         opportunities = sorted(opportunities, key=lambda op: op.net_profit(self.base_token.address), reverse=True)
         return opportunities
 
-    def best_opportunity(self, opportunities):
+    def best_opportunity(self, opportunities: List[Sequence]):
         """Pick the best opportunity, or return None if no profitable opportunities."""
         return opportunities[0] if len(opportunities) > 0 else None
 
-    def print_opportunity(self, opportunity):
+    def print_opportunity(self, opportunity: Sequence):
         """Print the details of the opportunity."""
         logging.info(f"Opportunity with profit={opportunity.profit(self.base_token.address)} {self.base_token.name()},"
                      f" net_profit={opportunity.net_profit(self.base_token.address)} {self.base_token.name()}")
-        for index, conversion in enumerate(opportunity.conversions, start=1):
-            logging.info(f"Step {index}/{len(opportunity.conversions)}:"
+        for index, conversion in enumerate(opportunity.steps, start=1):
+            logging.info(f"Step {index}/{len(opportunity.steps)}:"
                          f" from {conversion.source_amount} {ERC20Token.token_name_by_address(conversion.source_token)}"
                          f" to {conversion.target_amount} {ERC20Token.token_name_by_address(conversion.target_token)}"
                          f" using {conversion.name()}")
 
-    def execute_opportunity(self, opportunity):
+    def execute_opportunity(self, opportunity: Sequence):
         """Execute the opportunity either in one Ethereum transaction or step-by-step.
         Depending on whether `tx_manager` is available."""
         if self.tx_manager:
@@ -179,10 +179,10 @@ class SaiArbitrage(SaiKeeper):
         else:
             self.execute_opportunity_step_by_step(opportunity)
 
-    def execute_opportunity_step_by_step(self, opportunity):
+    def execute_opportunity_step_by_step(self, opportunity: Sequence):
         """Execute the opportunity step-by-step."""
         all_transfers = []
-        for conversion in opportunity.conversions:
+        for conversion in opportunity.steps:
             receipt = conversion.execute()
             if receipt:
                 all_transfers += receipt.transfers
@@ -193,9 +193,9 @@ class SaiArbitrage(SaiKeeper):
                 return
         logging.info(f"The profit we made is {TransferFormatter().format_net(all_transfers, self.our_address)}.")
 
-    def execute_opportunity_in_one_transaction(self, opportunity):
+    def execute_opportunity_in_one_transaction(self, opportunity: Sequence):
         """Execute the opportunity in one transaction, using the `tx_manager`."""
-        invocations = list(map(lambda conv: Invocation(conv.address(), conv.calldata()), opportunity.conversions))
+        invocations = list(map(lambda conv: Invocation(conv.address(), conv.calldata()), opportunity.steps))
         receipt = self.tx_manager.execute([self.sai.address, self.skr.address, self.gem.address], invocations)
         if receipt:
             logging.info(f"The profit we made is {TransferFormatter().format_net(receipt.transfers, self.our_address)}.")

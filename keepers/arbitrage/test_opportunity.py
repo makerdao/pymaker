@@ -21,10 +21,10 @@ from api import Address
 from api.numeric import Ray
 from api.numeric import Wad
 from keepers.arbitrage.conversion import Conversion
-from keepers.arbitrage.opportunity import Opportunity, OpportunityFinder
+from keepers.arbitrage.opportunity import Sequence, OpportunityFinder
 
 
-class TestOpportunity:
+class TestSequence:
     @pytest.fixture
     def token1(self):
         return Address('0x0101010101010101010101010101010101010101')
@@ -35,40 +35,40 @@ class TestOpportunity:
 
     def test_should_calculate_total_rate(self, token1, token2):
         # given
-        conversion1 = Conversion(token1, token2, Ray.from_number(1.01), Wad.from_number(1000), 'met1')
-        conversion2 = Conversion(token2, token1, Ray.from_number(1.02), Wad.from_number(1000), 'met2')
+        step1 = Conversion(token1, token2, Ray.from_number(1.01), Wad.from_number(1000), 'met1')
+        step2 = Conversion(token2, token1, Ray.from_number(1.02), Wad.from_number(1000), 'met2')
 
         # when
-        opportunity = Opportunity([conversion1, conversion2])
+        sequence = Sequence([step1, step2])
 
         # then
-        assert opportunity.total_rate() == Ray.from_number(1.0302)
+        assert sequence.total_rate() == Ray.from_number(1.0302)
 
     def test_should_calculate_profit_and_net_profit(self, token1, token2):
         # given
-        conversion1 = Conversion(token1, token2, Ray.from_number(1.01), Wad.from_number(1000), 'met1')
-        conversion1.source_amount = Wad.from_number(100)
-        conversion1.target_amount = Wad.from_number(101)
-        conversion2 = Conversion(token2, token1, Ray.from_number(1.02), Wad.from_number(1000), 'met2')
-        conversion2.source_amount = Wad.from_number(101)
-        conversion2.target_amount = Wad.from_number(103.02)
+        step1 = Conversion(token1, token2, Ray.from_number(1.01), Wad.from_number(1000), 'met1')
+        step1.source_amount = Wad.from_number(100)
+        step1.target_amount = Wad.from_number(101)
+        step2 = Conversion(token2, token1, Ray.from_number(1.02), Wad.from_number(1000), 'met2')
+        step2.source_amount = Wad.from_number(101)
+        step2.target_amount = Wad.from_number(103.02)
 
         # when
-        opportunity = Opportunity([conversion1, conversion2])
+        sequence = Sequence([step1, step2])
 
         # then
-        assert opportunity.profit(token1) == Wad.from_number(3.02)
-        assert opportunity.profit(token2) == Wad.from_number(0)
-        assert opportunity.net_profit(token1) == opportunity.profit(token1) - opportunity.tx_costs()
-        assert opportunity.net_profit(token2) == opportunity.profit(token2) - opportunity.tx_costs()
+        assert sequence.profit(token1) == Wad.from_number(3.02)
+        assert sequence.profit(token2) == Wad.from_number(0)
+        assert sequence.net_profit(token1) == sequence.profit(token1) - sequence.tx_costs()
+        assert sequence.net_profit(token2) == sequence.profit(token2) - sequence.tx_costs()
 
     def test_should_calculate_tx_costs(self, token1, token2):
-        # expect the tx_costs to be non negative and to increase with the number of conversions
-        conversions = []
+        # expect the tx_costs to be non negative and to increase with the number of steps
+        steps = []
         prev_tx_costs = Wad.from_number(0)
         for i in range(10):
-            conversions.append(Conversion(token1, token2, Ray(0), Wad(0), 'met'))
-            opportunity = Opportunity(conversions)
+            steps.append(Conversion(token1, token2, Ray(0), Wad(0), 'met'))
+            opportunity = Sequence(steps)
             tx_costs = opportunity.tx_costs()
             assert(tx_costs > prev_tx_costs)
             prev_tx_costs = tx_costs
@@ -103,9 +103,9 @@ class TestOpportunityFinder:
 
         # then
         assert len(opportunities) == 1
-        assert len(opportunities[0].conversions) == 2
-        assert opportunities[0].conversions[0].method == "met1"
-        assert opportunities[0].conversions[1].method == "met2"
+        assert len(opportunities[0].steps) == 2
+        assert opportunities[0].steps[0].method == "met1"
+        assert opportunities[0].steps[1].method == "met2"
 
     def test_opportunities_found_should_start_with_the_base_token(self, token1, token2):
         # given
@@ -119,9 +119,9 @@ class TestOpportunityFinder:
 
         # then
         assert len(opportunities) == 1
-        assert len(opportunities[0].conversions) == 2
-        assert opportunities[0].conversions[0].method == "met2"
-        assert opportunities[0].conversions[1].method == "met1"
+        assert len(opportunities[0].steps) == 2
+        assert opportunities[0].steps[0].method == "met2"
+        assert opportunities[0].steps[1].method == "met1"
 
     def test_should_identify_multi_step_opportunities(self, token1, token2, token3, token4):
         # given
@@ -137,11 +137,11 @@ class TestOpportunityFinder:
 
         # then
         assert len(opportunities) == 1
-        assert len(opportunities[0].conversions) == 4
-        assert opportunities[0].conversions[0].method == "met1"
-        assert opportunities[0].conversions[1].method == "met2"
-        assert opportunities[0].conversions[2].method == "met3"
-        assert opportunities[0].conversions[3].method == "met4"
+        assert len(opportunities[0].steps) == 4
+        assert opportunities[0].steps[0].method == "met1"
+        assert opportunities[0].steps[1].method == "met2"
+        assert opportunities[0].steps[2].method == "met3"
+        assert opportunities[0].steps[3].method == "met4"
 
     def test_should_ignore_irrelevant_conversions(self, token1, token2, token3, token4):
         # given
@@ -158,9 +158,9 @@ class TestOpportunityFinder:
 
         # then
         assert len(opportunities) == 1
-        assert len(opportunities[0].conversions) == 2
-        assert opportunities[0].conversions[0].method == "met1"
-        assert opportunities[0].conversions[1].method == "met2"
+        assert len(opportunities[0].steps) == 2
+        assert opportunities[0].steps[0].method == "met1"
+        assert opportunities[0].steps[1].method == "met2"
 
     def test_should_identify_all_opportunities_regardless_whether_they_are_profitable(self, token1, token2):
         # given
@@ -174,9 +174,9 @@ class TestOpportunityFinder:
 
         # then
         assert len(opportunities) == 1
-        assert len(opportunities[0].conversions) == 2
-        assert opportunities[0].conversions[0].method == "met1"
-        assert opportunities[0].conversions[1].method == "met2"
+        assert len(opportunities[0].steps) == 2
+        assert opportunities[0].steps[0].method == "met1"
+        assert opportunities[0].steps[1].method == "met2"
 
     def test_should_recognize_if_there_are_no_opportunities(self, token1, token2, token3):
         # given
@@ -205,19 +205,19 @@ class TestOpportunityFinder:
 
         # then
         assert len(opportunities) == 1
-        assert len(opportunities[0].conversions) == 4
-        assert opportunities[0].conversions[0].method == "met1"
-        assert opportunities[0].conversions[0].source_amount == Wad.from_number(100)
-        assert opportunities[0].conversions[0].target_amount == Wad.from_number(200)
-        assert opportunities[0].conversions[1].method == "met2"
-        assert opportunities[0].conversions[1].source_amount == Wad.from_number(200)
-        assert opportunities[0].conversions[1].target_amount == Wad.from_number(320)
-        assert opportunities[0].conversions[2].method == "met3"
-        assert opportunities[0].conversions[2].source_amount == Wad.from_number(320)
-        assert opportunities[0].conversions[2].target_amount == Wad.from_number(384)
-        assert opportunities[0].conversions[3].method == "met4"
-        assert opportunities[0].conversions[3].source_amount == Wad.from_number(384)
-        assert opportunities[0].conversions[3].target_amount == Wad.from_number(422.4)
+        assert len(opportunities[0].steps) == 4
+        assert opportunities[0].steps[0].method == "met1"
+        assert opportunities[0].steps[0].source_amount == Wad.from_number(100)
+        assert opportunities[0].steps[0].target_amount == Wad.from_number(200)
+        assert opportunities[0].steps[1].method == "met2"
+        assert opportunities[0].steps[1].source_amount == Wad.from_number(200)
+        assert opportunities[0].steps[1].target_amount == Wad.from_number(320)
+        assert opportunities[0].steps[2].method == "met3"
+        assert opportunities[0].steps[2].source_amount == Wad.from_number(320)
+        assert opportunities[0].steps[2].target_amount == Wad.from_number(384)
+        assert opportunities[0].steps[3].method == "met4"
+        assert opportunities[0].steps[3].source_amount == Wad.from_number(384)
+        assert opportunities[0].steps[3].target_amount == Wad.from_number(422.4)
 
     def test_should_adjust_amounts_based_on_max_source_amount(self, token1, token2, token3, token4):
         # given
@@ -233,16 +233,16 @@ class TestOpportunityFinder:
 
         # then
         assert len(opportunities) == 1
-        assert len(opportunities[0].conversions) == 4
-        assert opportunities[0].conversions[0].method == "met1"
-        assert opportunities[0].conversions[0].source_amount == Wad.from_number(31.25)
-        assert opportunities[0].conversions[0].target_amount == Wad.from_number(62.5)
-        assert opportunities[0].conversions[1].method == "met2"
-        assert opportunities[0].conversions[1].source_amount == Wad.from_number(62.5)
-        assert opportunities[0].conversions[1].target_amount == Wad.from_number(100)
-        assert opportunities[0].conversions[2].method == "met3"
-        assert opportunities[0].conversions[2].source_amount == Wad.from_number(100)
-        assert opportunities[0].conversions[2].target_amount == Wad.from_number(120)
-        assert opportunities[0].conversions[3].method == "met4"
-        assert opportunities[0].conversions[3].source_amount == Wad.from_number(120)
-        assert opportunities[0].conversions[3].target_amount == Wad.from_number(132)
+        assert len(opportunities[0].steps) == 4
+        assert opportunities[0].steps[0].method == "met1"
+        assert opportunities[0].steps[0].source_amount == Wad.from_number(31.25)
+        assert opportunities[0].steps[0].target_amount == Wad.from_number(62.5)
+        assert opportunities[0].steps[1].method == "met2"
+        assert opportunities[0].steps[1].source_amount == Wad.from_number(62.5)
+        assert opportunities[0].steps[1].target_amount == Wad.from_number(100)
+        assert opportunities[0].steps[2].method == "met3"
+        assert opportunities[0].steps[2].source_amount == Wad.from_number(100)
+        assert opportunities[0].steps[2].target_amount == Wad.from_number(120)
+        assert opportunities[0].steps[3].method == "met4"
+        assert opportunities[0].steps[3].source_amount == Wad.from_number(120)
+        assert opportunities[0].steps[3].target_amount == Wad.from_number(132)

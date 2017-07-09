@@ -28,22 +28,22 @@ from api.numeric import Wad
 from keepers.arbitrage.conversion import Conversion
 
 
-class Opportunity:
-    def __init__(self, conversions: List[Conversion]):
-        assert(isinstance(conversions, list))
-        self.conversions = conversions
+class Sequence:
+    def __init__(self, steps: List[Conversion]):
+        assert(isinstance(steps, list))
+        self.steps = steps
 
     def total_rate(self) -> Ray:
-        """Calculates the multiplication of all conversion rates forming this opportunity.
+        """Calculates the multiplication of all conversion rates forming this sequence.
 
-        A `total_rate` > 1.0 is a general indication that this opportunity may be profitable.
+        A `total_rate` > 1.0 is a general indication that executing this sequence may be profitable.
         """
-        return reduce(operator.mul, map(lambda conversion: conversion.rate, self.conversions), Ray.from_number(1.0))
+        return reduce(operator.mul, map(lambda conversion: conversion.rate, self.steps), Ray.from_number(1.0))
 
     def profit(self, currency: Address) -> Wad:
-        """Calculates the expected profit brought by this opportunity (in token `token`)."""
+        """Calculates the expected profit brought by executing this sequence (in token `token`)."""
         result = Wad.from_number(0)
-        for conversion in self.conversions:
+        for conversion in self.steps:
             if conversion.source_token == currency:
                 result -= conversion.source_amount
             if conversion.target_token == currency:
@@ -51,12 +51,12 @@ class Opportunity:
         return result
 
     def tx_costs(self) -> Wad:
-        """Calculates the transaction costs that this opportunity will take to execute."""
+        """Calculates the transaction costs that this sequence will take to execute."""
         #TODO lowered the transaction costs so the keeper is more aggressive, for testing purposes
-        return Wad.from_number(0.0003) * Wad.from_number(len(self.conversions))
+        return Wad.from_number(0.0003) * Wad.from_number(len(self.steps))
 
     def net_profit(self, token: Address) -> Wad:
-        """Calculates the expected net profit brought by this opportunity (in token `token`).
+        """Calculates the expected net profit brought by executing this sequence (in token `token`).
 
         net_profit = profit - tx_costs
         """
@@ -84,7 +84,7 @@ class OpportunityFinder:
                 chain_of_conversions = copy.deepcopy(conversions)
                 self._validate_token_chain(chain_of_conversions)
                 self._discover_prices(chain_of_conversions, max_engagement)
-                opportunities.append(Opportunity(conversions=chain_of_conversions))
+                opportunities.append(Sequence(steps=chain_of_conversions))
 
             return opportunities
         except networkx.exception.NetworkXNoPath:
