@@ -18,15 +18,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import logging
 from typing import List
 
-import logging
-
 from api import Address, Transfer
+from api.approval import via_tx_manager, directly
 from api.numeric import Ray
 from api.numeric import Wad
-from api.otc import SimpleMarket
-from api.sai import Tub, Lpc
 from api.token import ERC20Token
 from api.transact import Invocation, TxManager
 from keepers.arbitrage.conversion import Conversion
@@ -61,7 +59,7 @@ class SaiArbitrage(SaiKeeper):
         parser.add_argument("--tx-manager", help="Address of the TxManager to use for multi-step arbitrage", type=str)
 
     def startup(self):
-        self.setup_allowances()
+        self.approve()
         self.print_balances()
         self.on_block(self.execute_best_opportunity_available)
 
@@ -71,52 +69,14 @@ class SaiArbitrage(SaiKeeper):
                 yield f"{token.balance_of(self.our_address)} {token.name()}"
         logging.info(f"Keeper balances are {', '.join(balances())}.")
 
-    def setup_allowances(self):
+    def approve(self):
         """Approve all components that need to access our balances"""
-        self.setup_tub_allowances()
-        self.setup_lpc_allowances()
-        self.setup_otc_allowances()
-        self.setup_tx_manager_allowances()
-
-    def setup_tub_allowances(self):
-        """Approve Tub components so we can call join()/exit() and boom()/bust()"""
-        self.setup_allowance(self.gem, self.tub.jar(), 'Tub.jar')
-        self.setup_allowance(self.skr, self.tub.jar(), 'Tub.jar')
-        self.setup_allowance(self.skr, self.tub.pit(), 'Tub.pit')
-        self.setup_allowance(self.sai, self.tub.pit(), 'Tub.pit')
-
-    def setup_lpc_allowances(self):
-        """Approve the Lpc so we can exchange WETH and SAI using it"""
-        self.setup_allowance(self.gem, self.lpc.address, 'Lpc')
-        self.setup_allowance(self.sai, self.lpc.address, 'Lpc')
-
-    def setup_otc_allowances(self):
-        """Approve OasisDEX so we can exchange all three tokens (WETH, SAI and SKR)"""
-        self.setup_allowance(self.gem, self.otc.address, 'OasisDEX')
-        self.setup_allowance(self.sai, self.otc.address, 'OasisDEX')
-        self.setup_allowance(self.skr, self.otc.address, 'OasisDEX')
-
-    def setup_tx_manager_allowances(self):
-        """Approve the `TxManager` so it can pull all three tokens (WETH, SAI and SKR) from us"""
+        approval_method = via_tx_manager(self.tx_manager) if self.tx_manager else directly()
+        self.lpc.approve(approval_method)
+        self.tub.approve(approval_method)
+        self.otc.approve([self.gem, self.sai, self.skr], approval_method)
         if self.tx_manager:
-            self.setup_allowance(self.gem, self.tx_manager.address, 'TxManager')
-            self.setup_allowance(self.sai, self.tx_manager.address, 'TxManager')
-            self.setup_allowance(self.skr, self.tx_manager.address, 'TxManager')
-
-    def setup_allowance(self, token: ERC20Token, spender_address: Address, spender_name: str):
-        #TODO actually only one of these paths is needed, depending on whether we are using a
-        #TxManager or not
-        if token.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
-            logging.info(f"Approving {spender_name} ({spender_address}) to access our {token.name()} balance directly...")
-            if not token.approve(spender_address):
-                raise RuntimeError("Approval failed!")
-
-        if self.tx_manager and spender_address != self.tx_manager.address and \
-                        token.allowance_of(self.tx_manager.address, spender_address) < Wad(2 ** 128 - 1):
-            logging.info(f"Approving {spender_name} ({spender_address}) to access our {token.name()} balance indirectly...")
-            invocation = Invocation(address=token.address, calldata=token.approve_calldata(spender_address))
-            if not self.tx_manager.execute([], [invocation]):
-                raise RuntimeError("Approval failed!")
+            self.tx_manager.approve([self.gem, self.sai, self.skr], directly())
 
     def tub_conversions(self) -> List[Conversion]:
         return [TubJoinConversion(self.tub),

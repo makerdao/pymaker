@@ -21,6 +21,7 @@ from web3 import Web3
 
 from api import Address, Wad, Contract, Receipt, Calldata
 from api.numeric import Ray
+from api.token import ERC20Token
 from api.util import int_to_bytes32
 
 
@@ -88,6 +89,12 @@ class Tub(Contract):
         self._contractTop = web3.eth.contract(abi=self.abiTop)(address=address_top.address)
         self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contractTub.call().tip())
         self._contractJar = web3.eth.contract(abi=self.abiJar)(address=self._contractTub.call().jar())
+
+    def approve(self, approval_function):
+        approval_function(ERC20Token(web3=self.web3, address=self.gem()), self.jar(), 'Tub.jar')
+        approval_function(ERC20Token(web3=self.web3, address=self.skr()), self.jar(), 'Tub.jar')
+        approval_function(ERC20Token(web3=self.web3, address=self.skr()), self.pit(), 'Tub.pit')
+        approval_function(ERC20Token(web3=self.web3, address=self.sai()), self.pit(), 'Tub.pit')
 
     def sai(self) -> Address:
         """Get the SAI token.
@@ -825,6 +832,10 @@ class Lpc(Contract):
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
         self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contract.call().tip())
+
+    def approve(self, approval_function):
+        approval_function(ERC20Token(web3=self.web3, address=self.ref()), self.address, 'Lpc')
+        approval_function(ERC20Token(web3=self.web3, address=self.alt()), self.address, 'Lpc')
 
     def ref(self) -> Address:
         """Get the ref token.

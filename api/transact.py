@@ -22,6 +22,7 @@ from typing import Optional, List
 from web3 import Web3
 
 from api import Contract, Address, Receipt, Calldata
+from api.token import ERC20Token
 
 
 class Invocation(object):
@@ -63,6 +64,10 @@ class TxManager(Contract):
         self.address = address
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+
+    def approve(self, tokens: List[ERC20Token], approval_function):
+        for token in tokens:
+            approval_function(token, self.address, 'TxManager')
 
     def owner(self) -> Address:
         return Address(self._contract.call().owner())

@@ -22,6 +22,7 @@ from web3 import Web3
 
 from api import Contract, Address, Receipt, Calldata
 from api.numeric import Wad
+from api.token import ERC20Token
 from api.util import int_to_bytes32, bytes_to_int
 
 
@@ -134,6 +135,10 @@ class SimpleMarket(Contract):
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
         self._none_offers = set()
+
+    def approve(self, tokens: List[ERC20Token], approval_function):
+        for token in tokens:
+            approval_function(token, self.address, 'OasisDEX')
 
     def on_make(self, handler, include_past_events=False):
         self._on_event(self._contract, 'LogMake', LogMake, handler, include_past_events)

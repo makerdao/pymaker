@@ -22,6 +22,7 @@ import argparse
 import logging
 
 from api import Address
+from api.approval import directly
 from api.numeric import Ray
 from api.numeric import Wad
 from keepers.sai import SaiKeeper
@@ -39,13 +40,11 @@ class SaiTopUp(SaiKeeper):
         parser.add_argument("--target-margin", help="Margin between the liquidation ratio and the top-up target", type=float)
 
     def startup(self):
-        self.setup_allowance(self.tub.jar(), 'Tub.jar')
+        self.approve()
         self.on_block(self.check_all_cups)
 
-    def setup_allowance(self, spender_address: Address, spender_name: str):
-        if self.skr.allowance_of(self.our_address, spender_address) < Wad(2 ** 128 - 1):
-            logging.info(f"Approving {spender_name} ({spender_address}) to access our SKR balance...")
-            self.skr.approve(spender_address)
+    def approve(self):
+        self.tub.approve(directly())
 
     def check_all_cups(self):
         for cup in self.our_cups():
