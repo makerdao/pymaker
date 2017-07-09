@@ -89,13 +89,15 @@ class Keeper:
                     logging.debug(f"Processing block {block_hash}")
                     callback()
                 else:
-                    logging.info(f"Ignoring block {block_hash} as #{this_block_number} < #{last_block_number}")
+                    logging.info(f"Ignoring block {block_hash} (as #{this_block_number} < #{last_block_number})")
             else:
                 logging.info(f"Ignoring block {block_hash} as the client is syncing")
 
         block_filter = self.web3.eth.filter('latest')
         block_filter.watch(new_block_callback)
         register_filter_thread(block_filter)
+
+        logging.info("Watching for new blocks")
 
     def _wait_for_init(self):
         # wait for the client to have at least one peer
