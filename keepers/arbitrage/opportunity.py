@@ -29,9 +29,10 @@ from keepers.arbitrage.conversion import Conversion
 
 
 class Sequence:
-    def __init__(self, steps: List[Conversion]):
-        assert(isinstance(steps, list))
-        self.steps = steps
+    def __init__(self, conversions: List[Conversion]):
+        assert(isinstance(conversions, list))
+        self.steps = copy.deepcopy(conversions)
+        self._validate_token_chain()
 
     def total_rate(self) -> Ray:
         """Calculates the multiplication of all conversion rates forming this sequence.
@@ -62,6 +63,27 @@ class Sequence:
         """
         return self.profit(token) - self.tx_costs()
 
+    def set_amounts(self, initial_amount: Wad):
+        def recalculate_previous_amounts(from_step_id: int):
+            for id in range(from_step_id, -1, -1):
+                self.steps[id].target_amount = self.steps[id + 1].source_amount
+                self.steps[id].source_amount = Wad(Ray(self.steps[id].target_amount) / self.steps[id].rate)
+
+        assert(isinstance(initial_amount, Wad))
+        for i in range(len(self.steps)):
+            if i == 0:
+                self.steps[0].source_amount = initial_amount
+            else:
+                self.steps[i].source_amount = self.steps[i - 1].target_amount
+            if self.steps[i].source_amount > self.steps[i].max_source_amount:
+                self.steps[i].source_amount = self.steps[i].max_source_amount
+                recalculate_previous_amounts(i - 1)
+            self.steps[i].target_amount = Wad(Ray(self.steps[i].source_amount) * self.steps[i].rate)
+
+    def _validate_token_chain(self):
+        for i in range(1, len(self.steps)):
+            assert(self.steps[i - 1].target_token == self.steps[i].source_token)
+
 
 class OpportunityFinder:
     def __init__(self, conversions):
@@ -81,10 +103,9 @@ class OpportunityFinder:
                     if 'conversion' in graph_links[path[i]][path[i+1]]:
                         conversions.append(graph_links[path[i]][path[i+1]]['conversion'])
 
-                chain_of_conversions = copy.deepcopy(conversions)
-                self._validate_token_chain(chain_of_conversions)
-                self._discover_prices(chain_of_conversions, max_engagement)
-                opportunities.append(Sequence(steps=chain_of_conversions))
+                sequence = Sequence(conversions=conversions)
+                sequence.set_amounts(max_engagement)
+                opportunities.append(sequence)
 
             return opportunities
         except networkx.exception.NetworkXNoPath:
@@ -109,25 +130,3 @@ class OpportunityFinder:
             add_conversion_link(links, src, dst + "-via-" + conversion.method, conversion)
             add_empty_link(links, dst + "-via-" + conversion.method, dst + "-pre")
         return links
-
-    def _backcalculate_amounts(self, chain_of_conversions: list, from_conversion_id: int):
-        for id in range(from_conversion_id, -1, -1):
-            chain_of_conversions[id].target_amount = chain_of_conversions[id + 1].source_amount
-            chain_of_conversions[id].source_amount = Wad(Ray(chain_of_conversions[id].target_amount) / chain_of_conversions[id].rate)
-
-    def _validate_token_chain(self, chain_of_conversions: list):
-        for i in range(1, len(chain_of_conversions)):
-            assert(chain_of_conversions[i - 1].target_token == chain_of_conversions[i].source_token)
-
-    def _discover_prices(self, chain_of_conversions: list, max_engagement: Wad):
-        assert(isinstance(chain_of_conversions, list))
-        assert(isinstance(max_engagement, Wad))
-        for i in range(len(chain_of_conversions)):
-            if i == 0:
-                chain_of_conversions[0].source_amount = max_engagement
-            else:
-                chain_of_conversions[i].source_amount = chain_of_conversions[i - 1].target_amount
-            if chain_of_conversions[i].source_amount > chain_of_conversions[i].max_source_amount:
-                chain_of_conversions[i].source_amount = chain_of_conversions[i].max_source_amount
-                self._backcalculate_amounts(chain_of_conversions, i - 1)
-            chain_of_conversions[i].target_amount = Wad(Ray(chain_of_conversions[i].source_amount) * chain_of_conversions[i].rate)

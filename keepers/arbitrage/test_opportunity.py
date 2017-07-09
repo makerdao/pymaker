@@ -62,12 +62,12 @@ class TestSequence:
         assert sequence.net_profit(token1) == sequence.profit(token1) - sequence.tx_costs()
         assert sequence.net_profit(token2) == sequence.profit(token2) - sequence.tx_costs()
 
-    def test_should_calculate_tx_costs(self, token1, token2):
+    def test_should_calculate_tx_costs(self, token1):
         # expect the tx_costs to be non negative and to increase with the number of steps
         steps = []
         prev_tx_costs = Wad.from_number(0)
         for i in range(10):
-            steps.append(Conversion(token1, token2, Ray(0), Wad(0), 'met'))
+            steps.append(Conversion(token1, token1, Ray(0), Wad(0), 'met'))
             opportunity = Sequence(steps)
             tx_costs = opportunity.tx_costs()
             assert(tx_costs > prev_tx_costs)
