@@ -63,3 +63,26 @@ class EtherDelta(Contract):
 
     def fee_rebate(self) -> Wad:
         return Wad(self._contract.call().feeRebate())
+
+    def deposit(self, amount: Wad) -> Optional[Receipt]:
+        pass #TODO
+
+    def withdraw(self, amount: Wad) -> Optional[Receipt]:
+        pass #TODO
+
+    def deposit_token(self, token: Address, amount: Wad) -> Optional[Receipt]:
+        assert(isinstance(token, Address))
+        assert(isinstance(amount, Wad))
+        return self._transact(self.web3, f"EtherDelta('{self.address}').depositToken('{token}', '{amount}')",
+                              lambda: self._contract.transact().depositToken(token.address, amount.value))
+
+    def withdraw_token(self, token: Address, amount: Wad) -> Optional[Receipt]:
+        assert(isinstance(token, Address))
+        assert(isinstance(amount, Wad))
+        return self._transact(self.web3, f"EtherDelta('{self.address}').withdrawToken('{token}', '{amount}')",
+                              lambda: self._contract.transact().withdrawToken(token.address, amount.value))
+
+    def balance_of(self, token: Address, user: Address) -> Wad:
+        assert(isinstance(token, Address))
+        assert(isinstance(user, Address))
+        return Wad(self._contract.call().balanceOf(token.address, user.address))
