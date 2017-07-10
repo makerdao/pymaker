@@ -15,15 +15,50 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pprint import pformat
+import hashlib
+import random
 from typing import Optional, List
 
+from eth_abi.encoding import get_single_encoder
+from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
 
-from api import Contract, Address, Receipt, Calldata
+from api import Contract, Address, Receipt
 from api.numeric import Wad
 from api.token import ERC20Token
-from api.util import int_to_bytes32, bytes_to_int
+
+
+class Order:
+    def __init__(self, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int):
+        self.token_get = token_get
+        self.amount_get = amount_get
+        self.token_give = token_give
+        self.amount_give = amount_give
+        self.expires = expires
+        self.nonce = None
+        self.user = None
+        self.v = None
+        self.r = None
+        self.s = None
+
+
+class OffChainOrder(Order):
+    def __init__(self, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int,
+                 nonce: int, user: Address, v: int, r: bytes, s: bytes):
+        super().__init__(token_get, amount_get, token_give, amount_give, expires)
+        self.nonce = nonce
+        self.user = user
+        self.v = v
+        self.r = r
+        self.s = s
+
+
+class OnChainOrder(Order):
+    def __init__(self, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int,
+                 nonce: int, user: Address):
+        super().__init__(token_get, amount_get, token_give, amount_give, expires)
+        self.nonce = nonce
+        self.user = user
 
 
 class EtherDelta(Contract):
@@ -94,3 +129,106 @@ class EtherDelta(Contract):
         assert(isinstance(token, Address))
         assert(isinstance(user, Address))
         return Wad(self._contract.call().balanceOf(token.address, user.address))
+
+    #TODO remove nonce...?
+    def place_order_onchain(self,
+                            token_get: Address,
+                            amount_get: Wad,
+                            token_give: Address,
+                            amount_give: Wad,
+                            expires: int,
+                            nonce: int) -> Optional[Receipt]:
+
+        return self._transact(self.web3, f"EtherDelta('{self.address}').order('{token_get}', '{amount_get}',"
+                                         f" '{token_give}', '{amount_give}', '{expires}', '{nonce}')",
+                              lambda: self._contract.transact().order(token_get.address, amount_get.value,
+                                                                      token_give.address, amount_give.value,
+                                                                      expires, nonce))
+
+    def place_order_offchain(self,
+                             token_get: Address,
+                             amount_get: Wad,
+                             token_give: Address,
+                             amount_give: Wad,
+                             expires: int) -> OffChainOrder:
+
+        def encode_address(address: Address) -> bytes:
+            return get_single_encoder("address", None, None)(address.address)[12:]
+
+        def encode_uint256(value: int) -> bytes:
+            return get_single_encoder("uint", 256, None)(value)
+
+        nonce = random.randint(0, 2**256 - 1)
+        order_hash = hashlib.sha256(encode_address(self.address) +
+                                    encode_address(token_get) +
+                                    encode_uint256(amount_get.value) +
+                                    encode_address(token_give) +
+                                    encode_uint256(amount_give.value) +
+                                    encode_uint256(expires) +
+                                    encode_uint256(nonce)).digest()
+        signed_hash = self._eth_sign(self.web3.eth.defaultAccount, order_hash)[2:]
+        r = bytes.fromhex(signed_hash[0:64])
+        s = bytes.fromhex(signed_hash[64:128])
+        v = ord(bytes.fromhex(signed_hash[128:130]))
+
+        return OffChainOrder(token_get, amount_get, token_give, amount_give, expires, nonce,
+                             Address(self.web3.eth.defaultAccount), v, r, s)
+
+    def available_volume(self, order: Order) -> Wad:
+        return Wad(self._contract.call().availableVolume(order.token_get.address,
+                                                         order.amount_get.value,
+                                                         order.token_give.address,
+                                                         order.amount_give.value,
+                                                         order.expires,
+                                                         order.nonce,
+                                                         order.user.address,
+                                                         self._none_as_zero(order.v),
+                                                         self._none_as_empty(order.r),
+                                                         self._none_as_empty(order.s)))
+
+    def amount_filled(self, order: Order) -> Wad:
+        return Wad(self._contract.call().amountFilled(order.token_get.address,
+                                                      order.amount_get.value,
+                                                      order.token_give.address,
+                                                      order.amount_give.value,
+                                                      order.expires,
+                                                      order.nonce,
+                                                      order.user.address,
+                                                      self._none_as_zero(order.v),
+                                                      self._none_as_empty(order.r),
+                                                      self._none_as_empty(order.s)))
+
+    def cancel_order(self, order: Order) -> Optional[Receipt]:
+        assert(isinstance(order, Order))
+        assert(order.user == Address(self.web3.eth.defaultAccount))
+
+        return self._transact(self.web3, f"EtherDelta('{self.address}').cancelOrder('{order.token_get}',"
+                                         f" '{order.amount_get}', '{order.token_give}', '{order.amount_give}',"
+                                         f" '{order.expires}', '{order.nonce}', '0x...', '0x...', '0x...')",
+                              lambda: self._contract.transact().cancelOrder(order.token_get.address,
+                                                                            order.amount_get.value,
+                                                                            order.token_give.address,
+                                                                            order.amount_give.value,
+                                                                            order.expires,
+                                                                            order.nonce,
+                                                                            self._none_as_zero(order.v),
+                                                                            self._none_as_empty(order.r),
+                                                                            self._none_as_empty(order.s)))
+
+    @coerce_return_to_text
+    def _eth_sign(self, account, data_hash):
+        return self.web3._requestManager.request_blocking(
+            "eth_sign", [account, encode_hex(data_hash)],
+        )
+
+    @staticmethod
+    def _none_as_zero(x: int) -> int:
+        return x if x else 0
+
+    @staticmethod
+    def _none_as_empty(x: bytes) -> bytes:
+        return x if x else bytes()
+
+
+  # function trade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user, uint8 v, bytes32 r, bytes32 s, uint amount) {
+  # function testTrade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user, uint8 v, bytes32 r, bytes32 s, uint amount, address sender) constant returns(bool) {
