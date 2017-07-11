@@ -175,6 +175,18 @@ class EtherDelta(Contract):
                              Address(self.web3.eth.defaultAccount), v, r, s)
 
     def amount_available(self, order: Order) -> Wad:
+        """Returns the amount that is still available (tradeable) for an order.
+
+        The result will never be greater than `order.amount_get - amount_filled(order)`.
+        It can be lower though if the order maker does not have enough balance on EtherDelta.
+
+        Args:
+            order: The order object you want to know the available amount of.
+                Can be either an `OnChainOrder` or an `OffChainOrder`.
+
+        Returns:
+            The available amount for the order, in terms of `token_get`.
+        """
         return Wad(self._contract.call().availableVolume(order.token_get.address,
                                                          order.amount_get.value,
                                                          order.token_give.address,
@@ -187,6 +199,18 @@ class EtherDelta(Contract):
                                                          self._none_as_empty(order.s)))
 
     def amount_filled(self, order: Order) -> Wad:
+        """Returns the amount that has been already filled for an order.
+
+        The result will never be greater than `order.amount_get`.
+        It can be lower though if the order maker does not have enough balance on EtherDelta.
+
+        Args:
+            order: The order object you want to know the filled amount of.
+                Can be either an `OnChainOrder` or an `OffChainOrder`.
+
+        Returns:
+            The amount already filled for the order, in terms of `token_get`.
+        """
         return Wad(self._contract.call().amountFilled(order.token_get.address,
                                                       order.amount_get.value,
                                                       order.token_give.address,
