@@ -174,7 +174,7 @@ class EtherDelta(Contract):
         return OffChainOrder(token_get, amount_get, token_give, amount_give, expires, nonce,
                              Address(self.web3.eth.defaultAccount), v, r, s)
 
-    def available_volume(self, order: Order) -> Wad:
+    def amount_available(self, order: Order) -> Wad:
         return Wad(self._contract.call().availableVolume(order.token_get.address,
                                                          order.amount_get.value,
                                                          order.token_give.address,
