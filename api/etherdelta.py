@@ -248,7 +248,6 @@ class EtherDelta(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert(isinstance(order, Order))
-        assert(order.user == Address(self.web3.eth.defaultAccount))
 
         return self._transact(self.web3, f"EtherDelta('{self.address}').cancelOrder('{order.token_get}',"
                                          f" '{order.amount_get}', '{order.token_give}', '{order.amount_give}',"
