@@ -259,6 +259,35 @@ class EtherDelta(Contract):
                                                                       self._none_as_empty(order.s),
                                                                       amount.value))
 
+    def can_trade(self, order: Order, amount: Wad) -> bool:
+        """Verifies whether a trade can be executed.
+
+        Verifies whether amount `amount` can be traded on order `order` i.e. whether the `trade()`
+        method executed with exactly the same parameters should succeed.
+
+        Args:
+            order: The order you want to verify the trade for. Can be either an `OnChainOrder` or an `OffChainOrder`.
+            amount: Amount expressed in terms of `token_get` that you want to verify the trade for.
+
+        Returns:
+            'True' if the given amount can be traded on this order. `False` otherwise.
+        """
+        assert(isinstance(order, Order))
+        assert(isinstance(amount, Wad))
+
+        return self._contract.call().testTrade(order.token_get.address,
+                                               order.amount_get.value,
+                                               order.token_give.address,
+                                               order.amount_give.value,
+                                               order.expires,
+                                               order.nonce,
+                                               order.user.address,
+                                               self._none_as_zero(order.v),
+                                               self._none_as_empty(order.r),
+                                               self._none_as_empty(order.s),
+                                               amount.value,
+                                               self.web3.eth.defaultAccount)
+
     def cancel_order(self, order: Order) -> Optional[Receipt]:
         """Cancels an existing order.
 
@@ -299,6 +328,3 @@ class EtherDelta(Contract):
     @staticmethod
     def _none_as_empty(x: bytes) -> bytes:
         return x if x else bytes()
-
-
-  # function testTrade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user, uint8 v, bytes32 r, bytes32 s, uint amount, address sender) constant returns(bool) {
