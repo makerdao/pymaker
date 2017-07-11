@@ -201,8 +201,11 @@ class EtherDelta(Contract):
     def amount_filled(self, order: Order) -> Wad:
         """Returns the amount that has been already filled for an order.
 
-        The result will never be greater than `order.amount_get`.
-        It can be lower though if the order maker does not have enough balance on EtherDelta.
+        The result will never be greater than `order.amount_get`. It can be lower though
+        if the order maker does not have enough balance on EtherDelta.
+
+        If an order has been cancelled, `amount_filled(order)` will be always equal
+        to `order.amount_get`. Cancelled orders basically look like completely filled ones.
 
         Args:
             order: The order object you want to know the filled amount of.
@@ -232,8 +235,8 @@ class EtherDelta(Contract):
         successful. The corresponding amount of `token_have` tokens will be added to your EtherDelta balance.
 
         Args:
-            order: The order you want to take (buy).
-            amount: Amount of `token_get` that you want to be deducted from your EtherDelta balance
+            order: The order you want to take (buy). Can be either an `OnChainOrder` or an `OffChainOrder`.
+            amount: Amount of `token_get` tokens that you want to be deducted from your EtherDelta balance
                 in order to buy a corresponding amount of `token_have` tokens.
 
         Returns:
@@ -294,7 +297,7 @@ class EtherDelta(Contract):
         Orders can be cancelled only by their owners.
 
         Args:
-            order: The order you want to cancel.
+            order: The order you want to cancel. Can be either an `OnChainOrder` or an `OffChainOrder`.
 
         Returns:
             A `Receipt` if the Ethereum transaction was successful and the order has been cancelled.
