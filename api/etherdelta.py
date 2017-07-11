@@ -236,6 +236,17 @@ class EtherDelta(Contract):
                                                                       amount.value))
 
     def cancel_order(self, order: Order) -> Optional[Receipt]:
+        """Cancels an existing order.
+
+        Orders can be cancelled only by their owners.
+
+        Args:
+            order: The order you want to cancel.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful and the order has been cancelled.
+            `None` if the Ethereum transaction failed.
+        """
         assert(isinstance(order, Order))
         assert(order.user == Address(self.web3.eth.defaultAccount))
 
