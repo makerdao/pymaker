@@ -198,6 +198,43 @@ class EtherDelta(Contract):
                                                       self._none_as_empty(order.r),
                                                       self._none_as_empty(order.s)))
 
+    def trade(self, order: Order, amount: Wad) -> Optional[Receipt]:
+        """Takes (buys) an order.
+
+        `amount` is in `token_get` terms, it is the amount you want to buy with. It can not be higher
+        than `available_volume(order)`.
+
+        The 'amount' of `token_get` tokens will get deducted from your EtherDelta balance if the trade was
+        successful. The corresponding amount of `token_have` tokens will be added to your EtherDelta balance.
+
+        Args:
+            order: The order you want to take (buy).
+            amount: Amount of `token_get` that you want to be deducted from your EtherDelta balance
+                in order to buy a corresponding amount of `token_have` tokens.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful and so was the trade.
+            `None` if the Ethereum transaction failed.
+        """
+        assert(isinstance(order, Order))
+        assert(isinstance(amount, Wad))
+
+        return self._transact(self.web3, f"EtherDelta('{self.address}').trade('{order.token_get}',"
+                                         f" '{order.amount_get}', '{order.token_give}', '{order.amount_give}',"
+                                         f" '{order.expires}', '{order.nonce}', '{order.user}', '0x...', '0x...',"
+                                         f" '0x...', '{amount}')",
+                              lambda: self._contract.transact().trade(order.token_get.address,
+                                                                      order.amount_get.value,
+                                                                      order.token_give.address,
+                                                                      order.amount_give.value,
+                                                                      order.expires,
+                                                                      order.nonce,
+                                                                      order.user.address,
+                                                                      self._none_as_zero(order.v),
+                                                                      self._none_as_empty(order.r),
+                                                                      self._none_as_empty(order.s),
+                                                                      amount.value))
+
     def cancel_order(self, order: Order) -> Optional[Receipt]:
         assert(isinstance(order, Order))
         assert(order.user == Address(self.web3.eth.defaultAccount))
@@ -230,5 +267,4 @@ class EtherDelta(Contract):
         return x if x else bytes()
 
 
-  # function trade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user, uint8 v, bytes32 r, bytes32 s, uint amount) {
   # function testTrade(address tokenGet, uint amountGet, address tokenGive, uint amountGive, uint expires, uint nonce, address user, uint8 v, bytes32 r, bytes32 s, uint amount, address sender) constant returns(bool) {
