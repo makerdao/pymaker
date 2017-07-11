@@ -85,9 +85,19 @@ class EtherDelta(Contract):
             approval_function(token, self.address, 'EtherDelta')
 
     def admin(self) -> Address:
+        """Returns the address of the admin account.
+
+        Returns:
+            The address of the admin account.
+        """
         return Address(self._contract.call().admin())
 
     def fee_account(self) -> Address:
+        """Returns the address of the fee account i.e. the account that receives all fees collected.
+
+        Returns:
+            The address of the fee account.
+        """
         return Address(self._contract.call().feeAccount())
 
     def fee_make(self) -> Wad:
@@ -100,32 +110,95 @@ class EtherDelta(Contract):
         return Wad(self._contract.call().feeRebate())
 
     def deposit(self, amount: Wad) -> Optional[Receipt]:
+        """Deposits `amount` of raw ETH to EtherDelta.
+
+        Args:
+            amount: Amount of raw ETH to be deposited on EtherDelta.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful and the amount has been deposited.
+            `None` if the Ethereum transaction failed.
+        """
         assert(isinstance(amount, Wad))
         return self._transact(self.web3, f"EtherDelta('{self.address}').deposit() with value='{amount}'",
                               lambda: self._contract.transact({'value': amount.value}).deposit())
 
     def withdraw(self, amount: Wad) -> Optional[Receipt]:
+        """Withdraws `amount` of raw ETH from EtherDelta.
+
+        The withdrawn ETH will get transferred to the calling account.
+
+        Args:
+            amount: Amount of raw ETH to be withdrawn from EtherDelta.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful and the amount has been withdrawn.
+            `None` if the Ethereum transaction failed.
+        """
         assert(isinstance(amount, Wad))
         return self._transact(self.web3, f"EtherDelta('{self.address}').withdraw('{amount}')",
                               lambda: self._contract.transact().withdraw(amount.value))
 
     def balance_of(self, user: Address) -> Wad:
+        """Returns the amount of raw ETH deposited by the specified user.
+
+        Args:
+            user: Address of the user to check the balance of.
+
+        Returns:
+            The raw ETH balance kept in the EtherDelta contract by the specified user.
+        """
         assert(isinstance(user, Address))
         return Wad(self._contract.call().balanceOf('0x0000000000000000000000000000000000000000', user.address))
 
     def deposit_token(self, token: Address, amount: Wad) -> Optional[Receipt]:
+        """Deposits `amount` of token `token` to EtherDelta.
+
+        Tokens will be pulled from the calling account, so the EtherDelta contract needs
+        to have appropriate allowance. Either call `approve()` or set the allowance manually
+        before trying to deposit tokens.
+
+        Args:
+            token: Address of the token to be deposited.
+            amount: Amount of token `token` to be deposited on EtherDelta.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful and the tokens have been deposited.
+            `None` if the Ethereum transaction failed.
+        """
         assert(isinstance(token, Address))
         assert(isinstance(amount, Wad))
         return self._transact(self.web3, f"EtherDelta('{self.address}').depositToken('{token}', '{amount}')",
                               lambda: self._contract.transact().depositToken(token.address, amount.value))
 
     def withdraw_token(self, token: Address, amount: Wad) -> Optional[Receipt]:
+        """Withdraws `amount` of token `token` from EtherDelta.
+
+        Tokens will get transferred to the calling account.
+
+        Args:
+            token: Address of the token to be withdrawn.
+            amount: Amount of token `token` to be withdrawn from EtherDelta.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful and the tokens have been withdrawn.
+            `None` if the Ethereum transaction failed.
+        """
         assert(isinstance(token, Address))
         assert(isinstance(amount, Wad))
         return self._transact(self.web3, f"EtherDelta('{self.address}').withdrawToken('{token}', '{amount}')",
                               lambda: self._contract.transact().withdrawToken(token.address, amount.value))
 
     def balance_of_token(self, token: Address, user: Address) -> Wad:
+        """Returns the amount of token `token` deposited by the specified user.
+
+        Args:
+            token: Address of the token return the balance of.
+            user: Address of the user to check the balance of.
+
+        Returns:
+            The token `token` balance kept in the EtherDelta contract by the specified user.
+        """
         assert(isinstance(token, Address))
         assert(isinstance(user, Address))
         return Wad(self._contract.call().balanceOf(token.address, user.address))
