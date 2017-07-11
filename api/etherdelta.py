@@ -152,14 +152,14 @@ class EtherDelta(Contract):
         return Wad(self._contract.call().balanceOf('0x0000000000000000000000000000000000000000', user.address))
 
     def deposit_token(self, token: Address, amount: Wad) -> Optional[Receipt]:
-        """Deposits `amount` of token `token` to EtherDelta.
+        """Deposits `amount` of ERC20 token `token` to EtherDelta.
 
         Tokens will be pulled from the calling account, so the EtherDelta contract needs
         to have appropriate allowance. Either call `approve()` or set the allowance manually
         before trying to deposit tokens.
 
         Args:
-            token: Address of the token to be deposited.
+            token: Address of the ERC20 token to be deposited.
             amount: Amount of token `token` to be deposited on EtherDelta.
 
         Returns:
@@ -172,12 +172,12 @@ class EtherDelta(Contract):
                               lambda: self._contract.transact().depositToken(token.address, amount.value))
 
     def withdraw_token(self, token: Address, amount: Wad) -> Optional[Receipt]:
-        """Withdraws `amount` of token `token` from EtherDelta.
+        """Withdraws `amount` of ERC20 token `token` from EtherDelta.
 
         Tokens will get transferred to the calling account.
 
         Args:
-            token: Address of the token to be withdrawn.
+            token: Address of the ERC20 token to be withdrawn.
             amount: Amount of token `token` to be withdrawn from EtherDelta.
 
         Returns:
@@ -190,14 +190,14 @@ class EtherDelta(Contract):
                               lambda: self._contract.transact().withdrawToken(token.address, amount.value))
 
     def balance_of_token(self, token: Address, user: Address) -> Wad:
-        """Returns the amount of token `token` deposited by the specified user.
+        """Returns the amount of ERC20 token `token` deposited by the specified user.
 
         Args:
-            token: Address of the token return the balance of.
+            token: Address of the ERC20 token return the balance of.
             user: Address of the user to check the balance of.
 
         Returns:
-            The token `token` balance kept in the EtherDelta contract by the specified user.
+            The ERC20 token `token` balance kept in the EtherDelta contract by the specified user.
         """
         assert(isinstance(token, Address))
         assert(isinstance(user, Address))
@@ -211,7 +211,28 @@ class EtherDelta(Contract):
                             amount_give: Wad,
                             expires: int,
                             nonce: int) -> Optional[Receipt]:
+        """Creates a new on-chain order.
 
+        Although it's not necessary to have any amount of `token_give` deposited to EtherDelta
+        before placing an order, nobody will be able to take this order until some balance of
+        'token_give' is provided.
+
+        If you want to trade raw ETH, pass `Address('0x0000000000000000000000000000000000000000')`
+        as either `token_get` or `token_give`.
+
+        Args:
+            token_get: Address of the ERC20 token you want to be paid with.
+            amount_get:  Amount of the `token_get` you want to receive.
+            token_give: Address of the ERC20 token you want to put on sale.
+            amount_give: Amount of the `token_give` token you want to put on sale.
+            expires: The block number after which the order will expire.
+            nonce: An identifier which can distinguish two orders for the same token pair
+                and having exactly the same amounts.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful and the order has been placed.
+            `None` if the Ethereum transaction failed.
+        """
         return self._transact(self.web3, f"EtherDelta('{self.address}').order('{token_get}', '{amount_get}',"
                                          f" '{token_give}', '{amount_give}', '{expires}', '{nonce}')",
                               lambda: self._contract.transact().order(token_get.address, amount_get.value,
@@ -224,6 +245,25 @@ class EtherDelta(Contract):
                              token_give: Address,
                              amount_give: Wad,
                              expires: int) -> OffChainOrder:
+        """Creates a new off-chain order.
+
+        Although it's not necessary to have any amount of `token_give` deposited to EtherDelta
+        before placing an order, nobody will be able to take this order until some balance of
+        'token_give' is provided.
+
+        If you want to trade raw ETH, pass `Address('0x0000000000000000000000000000000000000000')`
+        as either `token_get` or `token_give`.
+
+        Args:
+            token_get: Address of the ERC20 token you want to be paid with.
+            amount_get:  Amount of the `token_get` you want to receive.
+            token_give: Address of the ERC20 token you want to put on sale.
+            amount_give: Amount of the `token_give` token you want to put on sale.
+            expires: The block number after which the order will expire.
+
+        Returns:
+            Newly created order as an instance of the `OffChainOrder` class.
+        """
 
         def encode_address(address: Address) -> bytes:
             return get_single_encoder("address", None, None)(address.address)[12:]
