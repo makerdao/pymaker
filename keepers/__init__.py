@@ -56,20 +56,7 @@ class Keeper:
         self._check_account_unlocked()
         logging.info("Keeper started")
         self.startup()
-
-        while any_filter_thread_present():
-            try:
-                time.sleep(1)
-            except KeyboardInterrupt:
-                break
-            if not all_filter_threads_alive():
-                logging.fatal("One of filter threads is dead, the keeper will terminate")
-                break
-            if self._last_block_time and (datetime.datetime.now() - self._last_block_time).total_seconds() > 120:
-                if not self.web3.eth.syncing:
-                    logging.fatal("No new blocks received for 120 seconds, the keeper will terminate")
-                    break
-
+        self._main_loop()
         logging.info("Shutting down the keeper")
         if any_filter_thread_present():
             logging.info("Waiting for all threads to terminate...")
@@ -130,6 +117,19 @@ class Keeper:
             logging.fatal(f"Unlocking the account is necessary for the keeper to operate.")
             exit(-1)
 
+    def _main_loop(self):
+        while any_filter_thread_present():
+            try:
+                time.sleep(1)
+            except KeyboardInterrupt:
+                break
+            if not all_filter_threads_alive():
+                logging.fatal("One of filter threads is dead, the keeper will terminate")
+                break
+            if self._last_block_time and (datetime.datetime.now() - self._last_block_time).total_seconds() > 120:
+                if not self.web3.eth.syncing:
+                    logging.fatal("No new blocks received for 120 seconds, the keeper will terminate")
+                    break
 
 class Config:
     def __init__(self, web3: Web3):
