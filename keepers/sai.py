@@ -18,7 +18,7 @@
 from api import Address
 from api.oasis import SimpleMarket
 from api.sai import Tub, Lpc
-from api.token import ERC20Token
+from api.token import ERC20Token, DSEthToken
 from keepers import Keeper
 
 
@@ -36,7 +36,7 @@ class SaiKeeper(Keeper):
 
         self.skr = ERC20Token(web3=self.web3, address=self.tub.skr())
         self.sai = ERC20Token(web3=self.web3, address=self.tub.sai())
-        self.gem = ERC20Token(web3=self.web3, address=self.tub.gem())
+        self.gem = DSEthToken(web3=self.web3, address=self.tub.gem())
         ERC20Token.register_token(self.tub.skr(), 'SKR')
         ERC20Token.register_token(self.tub.sai(), 'SAI')
         ERC20Token.register_token(self.tub.gem(), 'WETH')
