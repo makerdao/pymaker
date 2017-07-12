@@ -118,18 +118,39 @@ class Keeper:
             exit(-1)
 
     def _main_loop(self):
+        # in case at least one filter has been set up, we enter an infinite loop and let
+        # the callbacks do the job. in case of no filters, we will not enter this loop
+        # and the keeper will terminate soon after it started
         while any_filter_thread_present():
+            # we watch for KeyboardInterrupt in order to detect SIGINT signals
+            # capturing this event allows the keeper to shutdown gracefully
             try:
                 time.sleep(1)
             except KeyboardInterrupt:
                 break
+
+            # if any exception is raised in filter handling thread (could be an HTTP exception
+            # while communicating with the node), web3.py does not retry and the filter becomes
+            # dysfunctional i.e. no new callbacks will ever be fired. we detect it and terminate
+            # the keeper so it can be restarted.
             if not all_filter_threads_alive():
                 logging.fatal("One of filter threads is dead, the keeper will terminate")
                 break
+
+            # if we are watching for new blocks and no new block has been reported during
+            # the last 2 minutes, we assume the watching filter died and terminate the keeper
+            # so it can be restarted.
+            #
+            # this used to happen when the machine that has the node and the keeper running
+            # was put to sleep and then woken up.
+            #
+            # TODO the same thing could possibly happen if we watch any event other than
+            # TODO a new block. if that happens, we have no reliable way of detecting it now.
             if self._last_block_time and (datetime.datetime.now() - self._last_block_time).total_seconds() > 120:
                 if not self.web3.eth.syncing:
                     logging.fatal("No new blocks received for 120 seconds, the keeper will terminate")
                     break
+
 
 class Config:
     def __init__(self, web3: Web3):
