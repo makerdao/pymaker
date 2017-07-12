@@ -22,6 +22,7 @@ import logging
 
 import time
 
+import datetime
 from web3 import Web3, HTTPProvider
 
 from api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
@@ -43,6 +44,7 @@ class Keeper:
         self.web3.eth.defaultAccount = self.arguments.eth_from #TODO allow to use ETH_FROM env variable
         self.our_address = Address(self.arguments.eth_from)
         self.config = Config(self.web3)
+        self._last_block_time = None
 
     def start(self):
         label = f"{type(self).__name__} keeper"
@@ -63,6 +65,10 @@ class Keeper:
             if not all_filter_threads_alive():
                 logging.fatal("One of filter threads is dead, the keeper will terminate")
                 break
+            if self._last_block_time and (datetime.datetime.now() - self._last_block_time).total_seconds() > 120:
+                if not self.web3.eth.syncing:
+                    logging.fatal("No new blocks received for 120 seconds, the keeper will terminate")
+                    break
 
         logging.info("Shutting down the keeper")
         if any_filter_thread_present():
@@ -83,12 +89,13 @@ class Keeper:
 
     def on_block(self, callback):
         def new_block_callback(block_hash):
+            self._last_block_time = datetime.datetime.now()
             if not self.web3.eth.syncing:
                 block = self.web3.eth.getBlock(block_hash)
                 this_block_number = block['number']
                 last_block_number = self.web3.eth.blockNumber
                 if this_block_number == last_block_number:
-                    logging.info(f"Processing block {block_hash}")
+                    logging.debug(f"Processing block {block_hash}")
                     callback()
                 else:
                     logging.info(f"Ignoring block {block_hash} (as #{this_block_number} < #{last_block_number})")
