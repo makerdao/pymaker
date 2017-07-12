@@ -86,7 +86,7 @@ class Keeper:
                 this_block_number = block['number']
                 last_block_number = self.web3.eth.blockNumber
                 if this_block_number == last_block_number:
-                    logging.debug(f"Processing block {block_hash}")
+                    logging.info(f"Processing block {block_hash}")
                     callback()
                 else:
                     logging.info(f"Ignoring block {block_hash} (as #{this_block_number} < #{last_block_number})")
