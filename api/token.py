@@ -159,6 +159,49 @@ class DSToken(ERC20Token):
 
 
 class DSEthToken(ERC20Token):
-    abi = None #TODO implement the WETH wrapper contract
+    """A client for a the `DSEthToken` contract.
 
-    pass
+    `DSEthToken`, also known as _ETH Wrapper_ or _W-ETH_, is a smart contract into which you can deposit
+    raw ETH and then deal with it like with any other ERC20 token. In addition to the `deposit()`
+    and `withdraw()` methods, it implements the standard ERC20 token API.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `DSEthToken` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/DSEthToken.abi')
+
+    def __init__(self, web3, address):
+        super().__init__(web3, address)
+        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+
+    def deposit(self, amount: Wad) -> Optional[Receipt]:
+        """Deposits `amount` of raw ETH to `DSEthToken`.
+
+        Args:
+            amount: Amount of raw ETH to be deposited to `DSEthToken`.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful and the amount has been deposited.
+            `None` if the Ethereum transaction failed.
+        """
+        assert(isinstance(amount, Wad))
+        return self._transact(self.web3, f"DSEthToken('{self.address}').deposit() with value='{amount}'",
+                              lambda: self._contract.transact({'value': amount.value}).deposit())
+
+    def withdraw(self, amount: Wad) -> Optional[Receipt]:
+        """Withdraws `amount` of raw ETH from `DSEthToken`.
+
+        The withdrawn ETH will get transferred to the calling account.
+
+        Args:
+            amount: Amount of raw ETH to be withdrawn from `DSEthToken`.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful and the amount has been withdrawn.
+            `None` if the Ethereum transaction failed.
+        """
+        assert(isinstance(amount, Wad))
+        return self._transact(self.web3, f"DSEthToken('{self.address}').withdraw('{amount}')",
+                              lambda: self._contract.transact().withdraw(amount.value))
