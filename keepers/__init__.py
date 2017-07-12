@@ -24,7 +24,8 @@ import time
 
 from web3 import Web3, HTTPProvider
 
-from api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads
+from api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
+    any_filter_thread_present
 from api.token import ERC20Token
 
 
@@ -54,7 +55,7 @@ class Keeper:
         logging.info("Keeper started")
         self.startup()
 
-        while True:
+        while any_filter_thread_present():
             try:
                 time.sleep(1)
             except KeyboardInterrupt:
@@ -64,8 +65,9 @@ class Keeper:
                 break
 
         logging.info("Shutting down the keeper")
-        logging.info("Waiting for all threads to terminate...")
-        stop_all_filter_threads()
+        if any_filter_thread_present():
+            logging.info("Waiting for all threads to terminate...")
+            stop_all_filter_threads()
         logging.info("Executing keeper shutdown logic...")
         self.shutdown()
         logging.info("Keeper terminated")

@@ -35,6 +35,10 @@ def register_filter_thread(filter_thread):
     filter_threads.append(filter_thread)
 
 
+def any_filter_thread_present() -> bool:
+    return len(filter_threads) > 0
+
+
 def all_filter_threads_alive() -> bool:
     return all(filter_thread_alive(filter_thread) for filter_thread in filter_threads)
 
