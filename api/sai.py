@@ -93,6 +93,7 @@ class Tub(Contract):
     def approve(self, approval_function):
         approval_function(ERC20Token(web3=self.web3, address=self.gem()), self.jar(), 'Tub.jar')
         approval_function(ERC20Token(web3=self.web3, address=self.skr()), self.jar(), 'Tub.jar')
+        approval_function(ERC20Token(web3=self.web3, address=self.sai()), self.pot(), 'Tub.pot')
         approval_function(ERC20Token(web3=self.web3, address=self.skr()), self.pit(), 'Tub.pit')
         approval_function(ERC20Token(web3=self.web3, address=self.sai()), self.pit(), 'Tub.pit')
 
