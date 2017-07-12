@@ -421,7 +421,7 @@ class Tub(Contract):
         return Wad(self._contractJar.call().tag())
 
     def par(self) -> Wad:
-        """Get the accrued holder fee.
+        """Get the accrued holder fee (REF per SAI).
 
         Every invocation of this method calls `prod()` internally, so the value you receive is always up-to-date.
         But as calling it doesn't result in an Ethereum transaction, the actual `_par` value in the smart
