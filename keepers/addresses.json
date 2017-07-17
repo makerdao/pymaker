@@ -7,7 +7,7 @@
       "MKR": "0x4bb514a7f83fbb13c2b41448208e89fabbcfe2fb"
     },
     "contracts": {
-      "otc": "0x6e1d90a1341a466327ce306103f0ad345e3c4ac1",
+      "otc": "0x45ab8d410049116c7a01f6edfc08d564475c08ed",
       "saiTub": "0xb7ae5ccabd002b5eebafe6a8fad5499394f67980",
       "saiTap": "0xb9e0a196d2150a6393713e09bd79a0d39293ec13",
       "saiTop": "0xc25789084005dc4ed6be033a943f2c2f3efafcc1",
@@ -22,7 +22,7 @@
       "MKR": "0xc66ea802717bfb9833400264dd12c2bceaa34a6d"
     },
     "contracts": {
-      "otc": "",
+      "otc": "0x83ce340889c15a3b4d38cfcd1fc93e5d8497691f",
       "saiTub": "0xe819300b6f3d0625632b47196233fe6671a59891",
       "saiTap": "0x897c798c096d44e511a275153da9de6139ebc249",
       "saiTop": "0x92bfd0e786e284429c96cf6a6e4a3ecf46fb3e9a"
