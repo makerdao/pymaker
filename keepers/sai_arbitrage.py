@@ -28,7 +28,6 @@ from api.numeric import Wad
 from api.token import ERC20Token
 from api.transact import Invocation, TxManager
 from keepers.arbitrage.conversion import Conversion
-from keepers.arbitrage.conversion import LpcTakeAltConversion, LpcTakeRefConversion
 from keepers.arbitrage.conversion import OasisTakeConversion
 from keepers.arbitrage.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion
 from keepers.arbitrage.opportunity import OpportunityFinder, Sequence
@@ -72,7 +71,6 @@ class SaiArbitrage(SaiKeeper):
     def approve(self):
         """Approve all components that need to access our balances"""
         approval_method = via_tx_manager(self.tx_manager) if self.tx_manager else directly()
-        self.lpc.approve(approval_method)
         self.tub.approve(approval_method)
         self.otc.approve([self.gem, self.sai, self.skr], approval_method)
         if self.tx_manager:
@@ -84,10 +82,6 @@ class SaiArbitrage(SaiKeeper):
                 TubBoomConversion(self.tub),
                 TubBustConversion(self.tub)]
 
-    def lpc_conversions(self) -> List[Conversion]:
-        return [LpcTakeRefConversion(self.lpc),
-                LpcTakeAltConversion(self.lpc)]
-
     def otc_offers(self, tokens):
         return [offer for offer in self.otc.active_offers()
                 if offer.sell_which_token in tokens and offer.buy_which_token in tokens]
@@ -96,7 +90,7 @@ class SaiArbitrage(SaiKeeper):
         return list(map(lambda offer: OasisTakeConversion(self.otc, offer), self.otc_offers(tokens)))
 
     def all_conversions(self):
-        return self.tub_conversions() + self.lpc_conversions() + \
+        return self.tub_conversions() + \
                self.otc_conversions([self.sai.address, self.skr.address, self.gem.address])
 
     def execute_best_opportunity_available(self):

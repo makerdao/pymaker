@@ -17,7 +17,7 @@
 
 from api import Address
 from api.oasis import SimpleMarket
-from api.sai import Tub, Lpc
+from api.sai import Tub
 from api.token import ERC20Token, DSEthToken
 from keepers import Keeper
 
@@ -29,8 +29,6 @@ class SaiKeeper(Keeper):
         self.tap_address = Address(self.config.get_contract_address("saiTap"))
         self.top_address = Address(self.config.get_contract_address("saiTop"))
         self.tub = Tub(web3=self.web3, address_tub=self.tub_address, address_tap=self.tap_address, address_top=self.top_address)
-        self.lpc_address = Address(self.config.get_contract_address("saiLpc"))
-        self.lpc = Lpc(web3=self.web3, address=self.lpc_address)
         self.otc_address = Address(self.config.get_contract_address("otc"))
         self.otc = SimpleMarket(web3=self.web3, address=self.otc_address)
 
@@ -40,7 +38,6 @@ class SaiKeeper(Keeper):
         ERC20Token.register_token(self.tub.skr(), 'SKR')
         ERC20Token.register_token(self.tub.sai(), 'SAI')
         ERC20Token.register_token(self.tub.gem(), 'WETH')
-        ERC20Token.register_token(self.lpc.lps(), 'LPS')
 
     def startup(self):
         # implemented only to avoid IntelliJ IDEA warning
