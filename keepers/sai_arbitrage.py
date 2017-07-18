@@ -36,6 +36,34 @@ from keepers.sai import SaiKeeper
 
 
 class SaiArbitrage(SaiKeeper):
+    """SAI keeper to arbitrage on OasisDEX, `join`, `exit`, `boom` and `boost.'
+
+    Keeper constantly looks for profitable enough arbitrage opportunities
+    and executes them the moment they become available. It can make profit on:
+    - taking orders on OasisDEX (on SAI/SKR, SAI/W-ETH and SKR/W-ETH pairs),
+    - calling `join` and `exit` to exchange between W-ETH and SKR,
+    - calling `boom` and `bust` to exchange between SAI and SKR.
+
+    Opportunities discovered by the keeper are sequences of token exchanges
+    executed using methods listed above. An opportunity can consist of two
+    or three steps, technically it could be more but practically it will never
+    be more than three.
+
+    Steps can be executed sequentially (each one as a separate Etheruem
+    transaction, checking if one has been successful before executing the next
+    one) or in one ago. The latter method requires a `TxManager` contract deployed,
+    also the contract has to be owned by the account the keeper operates from.
+
+    You can find the source code of the `TxManager` here:
+    <https://github.com/reverendus/tx-manager>.
+
+    The base token of this keeper is SAI i.e. all arbitrage opportunities will
+    start with some amount of SAI, exchange it to some other token(s) and then exchange
+    back to SAI, aiming to end up with more SAI than it started with. The keeper is aware
+    of gas costs and takes a rough estimate of these costs while calculating arbitrage
+    profitability.
+    """
+
     def __init__(self):
         super().__init__()
         self.base_token = self.sai
