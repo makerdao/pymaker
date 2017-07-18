@@ -43,7 +43,7 @@ class Keeper:
         self.web3 = Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
         self.web3.eth.defaultAccount = self.arguments.eth_from #TODO allow to use ETH_FROM env variable
         self.our_address = Address(self.arguments.eth_from)
-        self.config = Config(self.web3)
+        self.config = Config(self.web3, self.chain())
         self._last_block_time = None
 
     def start(self):
@@ -51,7 +51,7 @@ class Keeper:
         logging.info(f"{label}")
         logging.info(f"{'-' * len(label)}")
         self._wait_for_init()
-        logging.info(f"Keeper connected to {self.web3.currentProvider.endpoint_uri}")
+        logging.info(f"Keeper on {self.chain()}, connected to {self.web3.currentProvider.endpoint_uri}")
         logging.info(f"Keeper operating as {self.our_address}")
         self._check_account_unlocked()
         logging.info("Keeper started")
@@ -73,6 +73,23 @@ class Keeper:
 
     def shutdown(self):
         pass
+
+    def chain(self) -> str:
+        block_0 = self.web3.eth.getBlock(0)['hash']
+        if block_0 == "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3":
+            block_1920000 = self.web3.eth.getBlock(1920000)['hash']
+            if block_1920000 == "0x94365e3a8c0b35089c1d1195081fe7489b528a84b22199c916180db8b28ade7f":
+                return "etclive"
+            else:
+                return "ethlive"
+        elif block_0 == "0xa3c565fc15c7478862d50ccd6561e3c06b24cc509bf388941c25ea985ce32cb9":
+            return "kovan"
+        elif block_0 == "0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d":
+            return "ropsten"
+        elif block_0 == "0x0cd786a2425d16f152c658316c423e6ce1181e15c3295826d7c9904cba9ce303":
+            return "morden"
+        else:
+            return "unknown"
 
     def on_block(self, callback):
         def new_block_callback(block_hash):
@@ -153,30 +170,13 @@ class Keeper:
 
 
 class Config:
-    def __init__(self, web3: Web3):
+    def __init__(self, web3: Web3, chain: str):
         with open('keepers/addresses.json') as data_file:
-            self.network = self._network_name(web3)
+            self.chain = chain
             self.addresses = json.load(data_file)
-        for key, value in self.addresses[self.network]["tokens"].items():
+        for key, value in self.addresses[self.chain]["tokens"].items():
             ERC20Token.register_token(Address(value), key)
 
     def get_contract_address(self, name):
-        return self.addresses[self.network]["contracts"].get(name, None)
+        return self.addresses[self.chain]["contracts"].get(name, None)
 
-    @staticmethod
-    def _network_name(web3: Web3) -> str:
-        block_0 = web3.eth.getBlock(0)['hash']
-        if block_0 == "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3":
-            block_1920000 = web3.eth.getBlock(1920000)['hash']
-            if block_1920000 == "0x94365e3a8c0b35089c1d1195081fe7489b528a84b22199c916180db8b28ade7f":
-                return "etclive"
-            else:
-                return "ethlive"
-        elif block_0 == "0xa3c565fc15c7478862d50ccd6561e3c06b24cc509bf388941c25ea985ce32cb9":
-            return "kovan"
-        elif block_0 == "0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d":
-            return "ropsten"
-        elif block_0 == "0x0cd786a2425d16f152c658316c423e6ce1181e15c3295826d7c9904cba9ce303":
-            return "morden"
-        else:
-            return "unknown"
