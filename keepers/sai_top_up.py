@@ -32,12 +32,12 @@ class SaiTopUp(SaiKeeper):
     def __init__(self):
         super().__init__()
         self.liquidation_ratio = self.tub.mat()
-        self.minimum_ratio = self.liquidation_ratio + Ray.from_number(self.arguments.minimum_margin)
-        self.target_ratio = self.liquidation_ratio + Ray.from_number(self.arguments.target_margin)
+        self.minimum_ratio = self.liquidation_ratio + Ray.from_number(self.arguments.min_margin)
+        self.target_ratio = self.liquidation_ratio + Ray.from_number(self.arguments.top_up_margin)
 
     def args(self, parser: argparse.ArgumentParser):
-        parser.add_argument("--minimum-margin", help="Margin between the liquidation ratio and the top-up threshold", type=float)
-        parser.add_argument("--target-margin", help="Margin between the liquidation ratio and the top-up target", type=float)
+        parser.add_argument("--min-margin", help="Margin between the liquidation ratio and the top-up threshold", type=float)
+        parser.add_argument("--top-up-margin", help="Margin between the liquidation ratio and the top-up target", type=float)
 
     def startup(self):
         self.approve()

@@ -39,8 +39,8 @@ class SaiArbitrage(SaiKeeper):
     def __init__(self):
         super().__init__()
         self.base_token = self.sai
-        self.minimum_profit = Wad.from_number(self.arguments.minimum_profit)
-        self.maximum_engagement = Wad.from_number(self.arguments.maximum_engagement)
+        self.min_profit = Wad.from_number(self.arguments.min_profit)
+        self.max_engagement = Wad.from_number(self.arguments.max_engagement)
 
         if self.arguments.tx_manager:
             self.tx_manager_address = Address(self.arguments.tx_manager)
@@ -53,8 +53,8 @@ class SaiArbitrage(SaiKeeper):
             self.tx_manager = None
 
     def args(self, parser: argparse.ArgumentParser):
-        parser.add_argument("--minimum-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.01)", default=0.01, type=float)
-        parser.add_argument("--maximum-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
+        parser.add_argument("--min-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.01)", default=0.01, type=float)
+        parser.add_argument("--max-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
         parser.add_argument("--tx-manager", help="Address of the TxManager to use for multi-step arbitrage", type=str)
 
     def startup(self):
@@ -103,11 +103,11 @@ class SaiArbitrage(SaiKeeper):
 
     def profitable_opportunities(self):
         """Identify all profitable arbitrage opportunities within given limits."""
-        entry_amount = Wad.min(self.base_token.balance_of(self.our_address), self.maximum_engagement)
+        entry_amount = Wad.min(self.base_token.balance_of(self.our_address), self.max_engagement)
         opportunity_finder = OpportunityFinder(conversions=self.all_conversions())
         opportunities = opportunity_finder.find_opportunities(self.base_token.address, entry_amount)
         opportunities = filter(lambda op: op.total_rate() > Ray.from_number(1.000001), opportunities)
-        opportunities = filter(lambda op: op.net_profit(self.base_token.address) > self.minimum_profit, opportunities)
+        opportunities = filter(lambda op: op.net_profit(self.base_token.address) > self.min_profit, opportunities)
         opportunities = sorted(opportunities, key=lambda op: op.net_profit(self.base_token.address), reverse=True)
         return opportunities
 
