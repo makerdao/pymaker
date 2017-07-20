@@ -48,8 +48,8 @@ class Sequence:
 
     def tx_costs(self) -> Wad:
         """Calculates the transaction costs that this sequence will take to execute."""
-        #TODO lowered the transaction costs so the keeper is more aggressive, for testing purposes
-        return Wad.from_number(0.0003) * Wad.from_number(len(self.steps))
+        # TODO transaction costs are still in a fixed currency (SAI) here
+        return Wad.from_number(0.25) * Wad.from_number(len(self.steps))
 
     def net_profit(self, token: Address) -> Wad:
         """Calculates the expected net profit brought by executing this sequence (in token `token`).
