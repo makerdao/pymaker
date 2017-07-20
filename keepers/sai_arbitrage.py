@@ -70,6 +70,8 @@ class SaiArbitrage(SaiKeeper):
                                      address=ERC20Token.token_address_by_name(self.arguments.base_token))
         self.min_profit = Wad.from_number(self.arguments.min_profit)
         self.max_engagement = Wad.from_number(self.arguments.max_engagement)
+        self.errors = 0
+        self.max_errors = self.arguments.max_errors
 
         if self.arguments.tx_manager:
             self.tx_manager_address = Address(self.arguments.tx_manager)
@@ -91,13 +93,16 @@ class SaiArbitrage(SaiKeeper):
         parser.add_argument("--max-engagement", type=float, required=True,
                             help="Maximum engagement (in base token) in one arbitrage operation")
 
+        parser.add_argument("--max-errors", type=int, default=100,
+                            help="Maximum number of allowed errors before the keeper terminates (default: 100)")
+
         parser.add_argument("--tx-manager", type=str,
                             help="Address of the TxManager to use for multi-step arbitrage")
 
     def startup(self):
         self.approve()
         self.print_balances()
-        self.on_block(self.execute_best_opportunity_available)
+        self.on_block(self.process_block)
 
     def print_balances(self):
         def balances():
@@ -129,6 +134,12 @@ class SaiArbitrage(SaiKeeper):
     def all_conversions(self):
         return self.tub_conversions() + \
                self.otc_conversions([self.sai.address, self.skr.address, self.gem.address])
+
+    def process_block(self):
+        if self.errors >= self.max_errors:
+            self.terminate()
+        else:
+            self.execute_best_opportunity_available()
 
     def execute_best_opportunity_available(self):
         """Find the best arbitrage opportunity present and execute it."""
@@ -181,6 +192,7 @@ class SaiArbitrage(SaiKeeper):
                 incoming = TransferFormatter().format(filter(Transfer.incoming(self.our_address), receipt.transfers))
                 logging.info(f"Exchanged {outgoing} to {incoming}")
             else:
+                self.errors += 1
                 return
         logging.info(f"The profit we made is {TransferFormatter().format_net(all_transfers, self.our_address)}.")
 
@@ -191,7 +203,7 @@ class SaiArbitrage(SaiKeeper):
         if receipt:
             logging.info(f"The profit we made is {TransferFormatter().format_net(receipt.transfers, self.our_address)}.")
         else:
-            exit(-1) #TODO while we debug
+            self.errors += 1
 
 
 if __name__ == '__main__':

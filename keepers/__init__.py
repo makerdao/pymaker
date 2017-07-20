@@ -44,6 +44,7 @@ class Keeper:
         self.web3.eth.defaultAccount = self.arguments.eth_from #TODO allow to use ETH_FROM env variable
         self.our_address = Address(self.arguments.eth_from)
         self.config = Config(self.web3, self.chain())
+        self.terminated = False
         self._last_block_time = None
 
     def start(self):
@@ -73,6 +74,9 @@ class Keeper:
 
     def shutdown(self):
         pass
+    
+    def terminate(self):
+        self.terminated = True
 
     def chain(self) -> str:
         block_0 = self.web3.eth.getBlock(0)['hash']
@@ -144,6 +148,11 @@ class Keeper:
             try:
                 time.sleep(1)
             except KeyboardInterrupt:
+                break
+
+            # if the keeper logic asked us to terminate, we do so
+            if self.terminated:
+                logging.warning("Keeper logic asked for termination, the keeper will terminate")
                 break
 
             # if any exception is raised in filter handling thread (could be an HTTP exception
