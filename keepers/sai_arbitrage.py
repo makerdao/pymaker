@@ -85,11 +85,11 @@ class SaiArbitrage(SaiKeeper):
         parser.add_argument("--base-token", type=str, required=True,
                             help="The token all arbitrage sequences will start and end with")
 
-        parser.add_argument("--min-profit", default=0.01, type=float,
-                            help="Minimum profit (in base token) from one arbitrage operation (default: 0.01)")
+        parser.add_argument("--min-profit", type=float, required=True,
+                            help="Minimum profit (in base token) from one arbitrage operation")
 
-        parser.add_argument("--max-engagement", default=1000, type=float,
-                            help="Maximum engagement (in base token) in one arbitrage operation (default: 1000)")
+        parser.add_argument("--max-engagement", type=float, required=True,
+                            help="Maximum engagement (in base token) in one arbitrage operation")
 
         parser.add_argument("--tx-manager", type=str,
                             help="Address of the TxManager to use for multi-step arbitrage")
