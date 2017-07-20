@@ -66,7 +66,8 @@ class SaiArbitrage(SaiKeeper):
 
     def __init__(self):
         super().__init__()
-        self.base_token = self.sai
+        self.base_token = ERC20Token(web3=self.web3,
+                                     address=ERC20Token.token_address_by_name(self.arguments.base_token))
         self.min_profit = Wad.from_number(self.arguments.min_profit)
         self.max_engagement = Wad.from_number(self.arguments.max_engagement)
 
@@ -81,9 +82,17 @@ class SaiArbitrage(SaiKeeper):
             self.tx_manager = None
 
     def args(self, parser: argparse.ArgumentParser):
-        parser.add_argument("--min-profit", help="Minimum profit in SAI from one arbitrage operation (default: 0.01)", default=0.01, type=float)
-        parser.add_argument("--max-engagement", help="Maximum engagement in SAI in one arbitrage operation (default: 1000)", default=1000, type=float)
-        parser.add_argument("--tx-manager", help="Address of the TxManager to use for multi-step arbitrage", type=str)
+        parser.add_argument("--base-token", type=str, required=True,
+                            help="The token all arbitrage sequences will start and end with")
+
+        parser.add_argument("--min-profit", default=0.01, type=float,
+                            help="Minimum profit (in base token) from one arbitrage operation (default: 0.01)")
+
+        parser.add_argument("--max-engagement", default=1000, type=float,
+                            help="Maximum engagement (in base token) in one arbitrage operation (default: 1000)")
+
+        parser.add_argument("--tx-manager", type=str,
+                            help="Address of the TxManager to use for multi-step arbitrage")
 
     def startup(self):
         self.approve()
