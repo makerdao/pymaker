@@ -43,7 +43,7 @@ class Keeper:
         self.web3 = Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
         self.web3.eth.defaultAccount = self.arguments.eth_from #TODO allow to use ETH_FROM env variable
         self.our_address = Address(self.arguments.eth_from)
-        self.config = Config(self.web3, self.chain())
+        self.config = Config(self.chain())
         self.terminated = False
         self._last_block_time = None
 
@@ -179,7 +179,7 @@ class Keeper:
 
 
 class Config:
-    def __init__(self, web3: Web3, chain: str):
+    def __init__(self, chain: str):
         with open('keepers/addresses.json') as data_file:
             self.chain = chain
             self.addresses = json.load(data_file)
