@@ -86,9 +86,10 @@ class TxManager(Contract):
             return reduce(operator.add, map(lambda invocation: script_entry(invocation), invocations), bytes())
 
         def script_entry(invocation: Invocation) -> bytes:
-            body = invocation.address.as_bytes() + invocation.calldata.as_bytes()
-            header = len(body).to_bytes(32, byteorder='big')
-            return header + body
+            address = invocation.address.as_bytes()
+            calldata = invocation.calldata.as_bytes()
+            calldata_length = len(calldata).to_bytes(32, byteorder='big')
+            return address + calldata_length + calldata
 
         assert(isinstance(tokens, list))
         assert(isinstance(invocations, list))
