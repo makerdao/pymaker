@@ -19,6 +19,7 @@ import argparse
 import json
 
 import logging
+import threading
 
 import time
 
@@ -115,6 +116,14 @@ class Keeper:
         register_filter_thread(block_filter)
 
         logging.info("Watching for new blocks")
+
+    def every(self, time_in_seconds, callback):
+        def func():
+            callback()
+            timer = threading.Timer(time_in_seconds, func)
+            timer.daemon = True
+            timer.start()
+        func()
 
     def _wait_for_init(self):
         # wait for the client to have at least one peer

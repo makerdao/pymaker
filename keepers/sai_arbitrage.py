@@ -19,6 +19,7 @@
 
 import argparse
 import logging
+import threading
 from typing import List
 
 from api import Address, Transfer
@@ -101,8 +102,8 @@ class SaiArbitrage(SaiKeeper):
 
     def startup(self):
         self.approve()
-        self.print_balances()
         self.on_block(self.process_block)
+        self.every(60*60, self.print_balances)
 
     def print_balances(self):
         def balances():
