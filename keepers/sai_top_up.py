@@ -21,7 +21,6 @@ import argparse
 
 import logging
 
-from api import Address
 from api.approval import directly
 from api.numeric import Ray
 from api.numeric import Wad
@@ -29,6 +28,14 @@ from keepers.sai import SaiKeeper
 
 
 class SaiTopUp(SaiKeeper):
+    """SAI keeper to top-up cups before they reach the liquidation ratio.
+
+    Kepper constantly monitors cups owned by the `--eth-from` account. If the
+    collateralization ratio falls under `mat` + `min-margin`, the cup will get
+    topped-up up to `mat` + `top-up-margin`.
+
+    Cups owned by other addresses are ignored.
+    """
     def __init__(self):
         super().__init__()
         self.liquidation_ratio = self.tub.mat()
