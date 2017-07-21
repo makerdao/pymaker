@@ -31,7 +31,7 @@ From `keepers/sai_top_up.py`:
 sai_abitrage.py
 ---------------
 
-A keeper to use arbitrage opportunities to earn money executing transactions between `Tub`, `Lpc` and OasisDEX.
+A keeper to use arbitrage opportunities to earn money executing transactions between the `Tub` and OasisDEX.
 
 From `keepers/sai_arbitrage.py`:
 
@@ -40,3 +40,14 @@ From `keepers/sai_arbitrage.py`:
     :linenos:
 
 and also some other files.
+
+sai_maker_otc.py
+----------------
+
+A keeper to act as a market maker on OasisDEX on the WETH/SAI pair.
+
+From `keepers/sai_maker_otc.py`:
+
+.. literalinclude:: ../keepers/sai_maker_otc.py
+    :language: python
+    :linenos:

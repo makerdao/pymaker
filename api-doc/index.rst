@@ -37,14 +37,23 @@ Data feeds
 .. toctree::
     api.feed
 
-OasisDEX/OTC
-~~~~~~~~~~~~
+OasisDEX
+~~~~~~~~
 
-`OsaisDEX/OTC` is independent of `SAI Stablecoin System`, but as a decentralized exchange provides arbitraging
+`OsaisDEX` is independent of `SAI Stablecoin System`, but as a decentralized exchange provides arbitraging
 opportunities for profit-seeking agents, so an API has been created around it as well.
 
 .. toctree::
-    api.otc
+    api.oasis
+
+EtherDelta
+~~~~~~~~~~
+
+`EtherDelta` is independent of `SAI Stablecoin System`, but as a decentralized exchange provides arbitraging
+opportunities for profit-seeking agents, so an API has been created around it as well.
+
+.. toctree::
+    api.etherdelta
 
 Numeric types
 -------------
@@ -60,6 +69,9 @@ Other classes
 -------------
 
 .. automodule:: api
+    :members:
+
+.. automodule:: api.approval
     :members:
 
 .. automodule:: api.transact
