@@ -317,14 +317,12 @@ class EtherDelta(Contract):
 
         return list(self._onchain_orders)
 
-    #TODO remove nonce...?
     def place_order_onchain(self,
                             token_get: Address,
                             amount_get: Wad,
                             token_give: Address,
                             amount_give: Wad,
-                            expires: int,
-                            nonce: int) -> Optional[Receipt]:
+                            expires: int) -> Optional[Receipt]:
         """Creates a new on-chain order.
 
         Although it's not necessary to have any amount of `token_give` deposited to EtherDelta
@@ -340,13 +338,12 @@ class EtherDelta(Contract):
             token_give: Address of the ERC20 token you want to put on sale.
             amount_give: Amount of the `token_give` token you want to put on sale.
             expires: The block number after which the order will expire.
-            nonce: An identifier which can distinguish two orders for the same token pair
-                and having exactly the same amounts.
 
         Returns:
             A `Receipt` if the Ethereum transaction was successful and the order has been placed.
             `None` if the Ethereum transaction failed.
         """
+        nonce = self.random_nonce()
         return self._transact(self.web3, f"EtherDelta('{self.address}').order('{token_get}', '{amount_get}',"
                                          f" '{token_give}', '{amount_give}', '{expires}', '{nonce}')",
                               lambda: self._contract.transact().order(token_get.address, amount_get.value,
@@ -385,7 +382,7 @@ class EtherDelta(Contract):
         def encode_uint256(value: int) -> bytes:
             return get_single_encoder("uint", 256, None)(value)
 
-        nonce = random.randint(0, 2**256 - 1)
+        nonce = self.random_nonce()
         order_hash = hashlib.sha256(encode_address(self.address) +
                                     encode_address(token_get) +
                                     encode_uint256(amount_get.value) +
@@ -421,9 +418,9 @@ class EtherDelta(Contract):
                                                          order.expires,
                                                          order.nonce,
                                                          order.user.address,
-                                                         self._none_as_zero(order.v),
-                                                         self._none_as_empty(order.r),
-                                                         self._none_as_empty(order.s)))
+                                                         order.v if hasattr(order, 'v') else 0,
+                                                         order.r if hasattr(order, 'r') else bytes(),
+                                                         order.s if hasattr(order, 's') else bytes()))
 
     def amount_filled(self, order: Order) -> Wad:
         """Returns the amount that has been already filled for an order.
@@ -448,9 +445,9 @@ class EtherDelta(Contract):
                                                       order.expires,
                                                       order.nonce,
                                                       order.user.address,
-                                                      self._none_as_zero(order.v),
-                                                      self._none_as_empty(order.r),
-                                                      self._none_as_empty(order.s)))
+                                                      order.v if hasattr(order, 'v') else 0,
+                                                      order.r if hasattr(order, 'r') else bytes(),
+                                                      order.s if hasattr(order, 's') else bytes()))
 
     def trade(self, order: Order, amount: Wad) -> Optional[Receipt]:
         """Takes (buys) an order.
@@ -484,9 +481,9 @@ class EtherDelta(Contract):
                                                                       order.expires,
                                                                       order.nonce,
                                                                       order.user.address,
-                                                                      self._none_as_zero(order.v),
-                                                                      self._none_as_empty(order.r),
-                                                                      self._none_as_empty(order.s),
+                                                                      order.v if hasattr(order, 'v') else 0,
+                                                                      order.r if hasattr(order, 'r') else bytes(),
+                                                                      order.s if hasattr(order, 's') else bytes(),
                                                                       amount.value))
 
     def can_trade(self, order: Order, amount: Wad) -> bool:
@@ -512,9 +509,9 @@ class EtherDelta(Contract):
                                                order.expires,
                                                order.nonce,
                                                order.user.address,
-                                               self._none_as_zero(order.v),
-                                               self._none_as_empty(order.r),
-                                               self._none_as_empty(order.s),
+                                               order.v if hasattr(order, 'v') else 0,
+                                               order.r if hasattr(order, 'r') else bytes(),
+                                               order.s if hasattr(order, 's') else bytes(),
                                                amount.value,
                                                self.web3.eth.defaultAccount)
 
@@ -541,20 +538,16 @@ class EtherDelta(Contract):
                                                                             order.amount_give.value,
                                                                             order.expires,
                                                                             order.nonce,
-                                                                            self._none_as_zero(order.v),
-                                                                            self._none_as_empty(order.r),
-                                                                            self._none_as_empty(order.s)))
+                                                                            order.v if hasattr(order, 'v') else 0,
+                                                                            order.r if hasattr(order, 'r') else bytes(),
+                                                                            order.s if hasattr(order, 's') else bytes()))
+
+    @staticmethod
+    def random_nonce():
+        return random.randint(0, 2**256 - 1)
 
     @coerce_return_to_text
     def _eth_sign(self, account, data_hash):
         return self.web3._requestManager.request_blocking(
             "eth_sign", [account, encode_hex(data_hash)],
         )
-
-    @staticmethod
-    def _none_as_zero(x: int) -> int:
-        return x if x else 0
-
-    @staticmethod
-    def _none_as_empty(x: bytes) -> bytes:
-        return x if x else bytes()

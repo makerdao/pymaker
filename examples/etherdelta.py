@@ -45,8 +45,8 @@ gem = ERC20Token(web3=web3, address=Address('0x53eccc9246c1e537d79199d0c7231e425
 
 etherdelta.approve([sai, gem], directly())
 
-print(etherdelta.active_onchain_orders())
-exit(-1)
+# print(etherdelta.active_onchain_orders())
+# exit(-1)
 #
 # etherdelta.deposit_token(sai.address, Wad.from_number(0.5))
 # etherdelta.withdraw_token(sai.address, Wad.from_number(0.4))
@@ -84,8 +84,8 @@ logging.info(etherdelta.amount_filled(offchain_order))
 
 logging.info("---")
 
-logging.info(etherdelta.place_order_onchain(gem.address, Wad.from_number(0.0025), sai.address, Wad.from_number(0.1), 2600003, 111))
-onchain_order = OnChainOrder(gem.address, Wad.from_number(0.0025), sai.address, Wad.from_number(0.1), 2600003, 111, our_address)
+logging.info(etherdelta.place_order_onchain(gem.address, Wad.from_number(0.0025), sai.address, Wad.from_number(0.1), 3600003))
+onchain_order = OnChainOrder(gem.address, Wad.from_number(0.0025), sai.address, Wad.from_number(0.1), 3600003, 108207123768469167288277382516046143893265072544230933698775098822034023113615, our_address)
 logging.info(onchain_order)
 logging.info(etherdelta.amount_available(onchain_order))
 logging.info(etherdelta.amount_filled(onchain_order))
