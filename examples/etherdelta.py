@@ -45,7 +45,7 @@ gem = ERC20Token(web3=web3, address=Address('0x53eccc9246c1e537d79199d0c7231e425
 
 etherdelta.approve([sai, gem], directly())
 
-# print(etherdelta.active_onchain_orders())
+# print(len(etherdelta.active_onchain_orders()))
 # exit(-1)
 #
 # etherdelta.deposit_token(sai.address, Wad.from_number(0.5))
@@ -67,29 +67,33 @@ logging.info(etherdelta.balance_of_token(sai.address, our_address))
 
 logging.info("---")
 
-offchain_order = etherdelta.place_order_offchain(gem.address, Wad.from_number(0.0025), sai.address, Wad.from_number(0.1),
-                                           3600002)
-logging.info(offchain_order)
-logging.info(etherdelta.amount_available(offchain_order))
-logging.info(etherdelta.amount_filled(offchain_order))
-logging.info(etherdelta.can_trade(offchain_order, Wad.from_number(0.0026)))
-logging.info(etherdelta.can_trade(offchain_order, Wad.from_number(0.0025)))
-logging.info(etherdelta.can_trade(offchain_order, Wad.from_number(0.0006)))
-logging.info(etherdelta.trade(offchain_order, Wad.from_number(0.0006)))
-logging.info(etherdelta.amount_available(offchain_order))
-logging.info(etherdelta.amount_filled(offchain_order))
-logging.info(etherdelta.cancel_order(offchain_order))
-logging.info(etherdelta.amount_available(offchain_order))
-logging.info(etherdelta.amount_filled(offchain_order))
+# offchain_order = etherdelta.place_order_offchain(gem.address, Wad.from_number(0.0025), sai.address, Wad.from_number(0.1),
+#                                            3600002)
+# logging.info(offchain_order)
+# logging.info(etherdelta.amount_available(offchain_order))
+# logging.info(etherdelta.amount_filled(offchain_order))
+# logging.info(etherdelta.can_trade(offchain_order, Wad.from_number(0.0026)))
+# logging.info(etherdelta.can_trade(offchain_order, Wad.from_number(0.0025)))
+# logging.info(etherdelta.can_trade(offchain_order, Wad.from_number(0.0006)))
+# logging.info(etherdelta.trade(offchain_order, Wad.from_number(0.0006)))
+# logging.info(etherdelta.amount_available(offchain_order))
+# logging.info(etherdelta.amount_filled(offchain_order))
+# logging.info(etherdelta.cancel_order(offchain_order))
+# logging.info(etherdelta.amount_available(offchain_order))
+# logging.info(etherdelta.amount_filled(offchain_order))
+#
+# logging.info("---")
 
-logging.info("---")
-
+logging.info(len(etherdelta.active_onchain_orders()))
 logging.info(etherdelta.place_order_onchain(gem.address, Wad.from_number(0.0025), sai.address, Wad.from_number(0.1), 3600003))
 onchain_order = OnChainOrder(gem.address, Wad.from_number(0.0025), sai.address, Wad.from_number(0.1), 3600003, 108207123768469167288277382516046143893265072544230933698775098822034023113615, our_address)
+logging.info(len(etherdelta.active_onchain_orders()))
 logging.info(onchain_order)
 logging.info(etherdelta.amount_available(onchain_order))
 logging.info(etherdelta.amount_filled(onchain_order))
+logging.info(len(etherdelta.active_onchain_orders()))
 logging.info(etherdelta.cancel_order(onchain_order))
 logging.info(etherdelta.amount_available(onchain_order))
 logging.info(etherdelta.amount_filled(onchain_order))
+logging.info(len(etherdelta.active_onchain_orders()))
 

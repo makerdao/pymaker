@@ -166,6 +166,8 @@ class EtherDelta(Contract):
 
     abi = Contract._load_abi(__name__, 'abi/EtherDelta.abi')
 
+    ETH_TOKEN = Address('0x0000000000000000000000000000000000000000')
+
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
         self.address = address
@@ -309,11 +311,18 @@ class EtherDelta(Contract):
         return Wad(self._contract.call().balanceOf(token.address, user.address))
 
     def active_onchain_orders(self) -> List[OnChainOrder]:
+        # if this method is being called for the first time, discover existing orders
+        # by looking for past events and set up monitoring of the future ones
         if not self._onchain_orders:
             self._onchain_orders = set()
             self.on_order(lambda order: self._onchain_orders.add(order.to_order()))
             for old_order in self.past_order(1000000):
                 self._onchain_orders.add(old_order.to_order())
+
+        # remove orders which have been completely filled (or cancelled)
+        for order in list(self._onchain_orders):
+            if self.amount_filled(order) == order.amount_get:
+                self._onchain_orders.remove(order)
 
         return list(self._onchain_orders)
 
@@ -344,11 +353,25 @@ class EtherDelta(Contract):
             `None` if the Ethereum transaction failed.
         """
         nonce = self.random_nonce()
-        return self._transact(self.web3, f"EtherDelta('{self.address}').order('{token_get}', '{amount_get}',"
+        result = self._transact(self.web3, f"EtherDelta('{self.address}').order('{token_get}', '{amount_get}',"
                                          f" '{token_give}', '{amount_give}', '{expires}', '{nonce}')",
                               lambda: self._contract.transact().order(token_get.address, amount_get.value,
                                                                       token_give.address, amount_give.value,
                                                                       expires, nonce))
+
+        # in order to avoid delay between order creation and the Order event,
+        # which would cause `active_orders()` to return a stale list,
+        # we add newly created order to that collection straight away
+        #
+        # as the collection is a set, if the event arrives later,
+        # no duplicate will get added
+        if result is not None and self._onchain_orders is not None:
+            onchain_order = OnChainOrder(token_get, amount_get, token_give, amount_give,
+                                         expires, nonce, Address(self.web3.eth.defaultAccount))
+
+            self._onchain_orders.add(onchain_order)
+
+        return result
 
     def place_order_offchain(self,
                              token_get: Address,
