@@ -27,7 +27,7 @@ import datetime
 from web3 import Web3, HTTPProvider
 
 from api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
-    any_filter_thread_present
+    any_filter_thread_present, Wad
 from api.token import ERC20Token
 
 
@@ -95,6 +95,10 @@ class Keeper:
             return "morden"
         else:
             return "unknown"
+
+    def eth_balance(self, address: Address) -> Wad:
+        assert(isinstance(address, Address))
+        return Wad(self.web3.eth.getBalance(address.address))
 
     def on_block(self, callback):
         def new_block_callback(block_hash):
