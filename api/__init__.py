@@ -123,10 +123,10 @@ class Contract:
     def _event_callback(self, cls, handler, past):
         def callback(log):
             if past:
-                self.logger.info(f"Past event {log['event']} discovered, block_number={log['blockNumber']},"
+                self.logger.debug(f"Past event {log['event']} discovered, block_number={log['blockNumber']},"
                                  f" tx_hash={log['transactionHash']}")
             else:
-                self.logger.info(f"Event {log['event']} discovered, block_number={log['blockNumber']},"
+                self.logger.debug(f"Event {log['event']} discovered, block_number={log['blockNumber']},"
                                  f" tx_hash={log['transactionHash']}")
             handler(cls(log['args']))
         return callback
