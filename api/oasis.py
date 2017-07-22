@@ -52,7 +52,7 @@ class OfferInfo:
     def __eq__(self, other):
         return self.offer_id == other.offer_id
 
-    def __str__(self):
+    def __repr__(self):
         return pformat(vars(self))
 
 
@@ -66,7 +66,7 @@ class LogMake:
         self.want_amount = Wad(args['wantAmount'])
         self.timestamp = args['timestamp']
 
-    def __str__(self):
+    def __repr__(self):
         return pformat(vars(self))
 
 
@@ -80,7 +80,7 @@ class LogBump:
         self.want_amount = Wad(args['wantAmount'])
         self.timestamp = args['timestamp']
 
-    def __str__(self):
+    def __repr__(self):
         return pformat(vars(self))
 
 
@@ -95,7 +95,7 @@ class LogTake:
         self.give_amount = Wad(args['giveAmount'])
         self.timestamp = args['timestamp']
 
-    def __str__(self):
+    def __repr__(self):
         return pformat(vars(self))
 
 
@@ -109,7 +109,7 @@ class LogKill:
         self.want_amount = Wad(args['wantAmount'])
         self.timestamp = args['timestamp']
 
-    def __str__(self):
+    def __repr__(self):
         return pformat(vars(self))
 
 
@@ -140,17 +140,29 @@ class SimpleMarket(Contract):
         for token in tokens:
             approval_function(token, self.address, 'OasisDEX')
 
-    def on_make(self, handler, include_past_events=False):
-        self._on_event(self._contract, 'LogMake', LogMake, handler, include_past_events)
+    def on_make(self, handler):
+        self._on_event(self._contract, 'LogMake', LogMake, handler)
 
-    def on_bump(self, handler, include_past_events=False):
-        self._on_event(self._contract, 'LogBump', LogBump, handler, include_past_events)
+    def on_bump(self, handler):
+        self._on_event(self._contract, 'LogBump', LogBump, handler)
 
-    def on_take(self, handler, include_past_events=False):
-        self._on_event(self._contract, 'LogTake', LogTake, handler, include_past_events)
+    def on_take(self, handler):
+        self._on_event(self._contract, 'LogTake', LogTake, handler)
 
-    def on_kill(self, handler, include_past_events=False):
-        self._on_event(self._contract, 'LogKill', LogKill, handler, include_past_events)
+    def on_kill(self, handler):
+        self._on_event(self._contract, 'LogKill', LogKill, handler)
+
+    def past_make(self, number_of_past_blocks: int) -> List[LogMake]:
+        return self._past_events(self._contract, 'LogMake', LogMake, number_of_past_blocks)
+
+    def past_bump(self, number_of_past_blocks: int) -> List[LogBump]:
+        return self._past_events(self._contract, 'LogBump', LogBump, number_of_past_blocks)
+
+    def past_take(self, number_of_past_blocks: int) -> List[LogTake]:
+        return self._past_events(self._contract, 'LogTake', LogTake, number_of_past_blocks)
+
+    def past_kill(self, number_of_past_blocks: int) -> List[LogKill]:
+        return self._past_events(self._contract, 'LogKill', LogKill, number_of_past_blocks)
 
     def get_last_offer_id(self) -> int:
         """Get the id of the last offer created on the market.

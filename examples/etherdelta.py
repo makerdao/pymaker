@@ -65,7 +65,7 @@ logging.info(etherdelta.balance_of_token(sai.address, our_address))
 logging.info("---")
 
 offchain_order = etherdelta.place_order_offchain(gem.address, Wad.from_number(0.0025), sai.address, Wad.from_number(0.1),
-                                           2600002)
+                                           3600002)
 logging.info(offchain_order)
 logging.info(etherdelta.amount_available(offchain_order))
 logging.info(etherdelta.amount_filled(offchain_order))

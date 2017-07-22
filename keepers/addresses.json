@@ -8,6 +8,7 @@
     },
     "contracts": {
       "otc": "0x45ab8d410049116c7a01f6edfc08d564475c08ed",
+      "etherDelta": "0xF4Ff487adA7bb29603077216082DA7f4bA989854",
       "saiTub": "0xb7ae5ccabd002b5eebafe6a8fad5499394f67980",
       "saiTap": "0xb9e0a196d2150a6393713e09bd79a0d39293ec13",
       "saiTop": "0xc25789084005dc4ed6be033a943f2c2f3efafcc1",

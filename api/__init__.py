@@ -72,12 +72,21 @@ class Contract:
                 return receipt
             time.sleep(0.25)
 
-    def _on_event(self, contract, event, cls, handler, include_past_events):
+    def _on_event(self, contract, event, cls, handler):
         register_filter_thread(contract.on(event, None, self._event_callback(cls, handler, False)))
-        if include_past_events:
-            block_number = contract.web3.eth.blockNumber
-            filter_params = {'fromBlock': block_number-10000, 'toBlock': block_number-1}
-            register_filter_thread(contract.pastEvents(event, filter_params, self._event_callback(cls, handler, True)))
+
+    def _past_events(self, contract, event, cls, number_of_past_blocks) -> list:
+        events = []
+
+        def handler(obj):
+            events.append(obj)
+
+        block_number = contract.web3.eth.blockNumber
+        filter_params = {'fromBlock': block_number-number_of_past_blocks, 'toBlock': block_number-1}
+        thread = contract.pastEvents(event, filter_params, self._event_callback(cls, handler, True))
+        register_filter_thread(thread)
+        thread.join()
+        return events
 
     def _transact(self, web3, log_message, func):
         try:
