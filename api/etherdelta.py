@@ -313,7 +313,7 @@ class EtherDelta(Contract):
     def active_onchain_orders(self) -> List[OnChainOrder]:
         # if this method is being called for the first time, discover existing orders
         # by looking for past events and set up monitoring of the future ones
-        if not self._onchain_orders:
+        if self._onchain_orders is None:
             self._onchain_orders = set()
             self.on_order(lambda order: self._onchain_orders.add(order.to_order()))
             for old_order in self.past_order(1000000):
