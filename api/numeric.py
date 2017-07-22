@@ -108,6 +108,9 @@ class Wad:
         else:
             raise ArithmeticError
 
+    def __hash__(self):
+        return hash(self.value)
+
     def __lt__(self, other):
         if isinstance(other, Wad):
             return self.value < other.value
@@ -205,6 +208,9 @@ class Ray:
             return self.value == other.value
         else:
             raise ArithmeticError
+
+    def __hash__(self):
+        return hash(self.value)
 
     def __lt__(self, other):
         if isinstance(other, Ray):

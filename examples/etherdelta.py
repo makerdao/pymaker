@@ -45,6 +45,9 @@ gem = ERC20Token(web3=web3, address=Address('0x53eccc9246c1e537d79199d0c7231e425
 
 etherdelta.approve([sai, gem], directly())
 
+print(etherdelta.active_onchain_orders())
+exit(-1)
+#
 # etherdelta.deposit_token(sai.address, Wad.from_number(0.5))
 # etherdelta.withdraw_token(sai.address, Wad.from_number(0.4))
 # logging.info(etherdelta.balance_of_token(sai.address, our_address))

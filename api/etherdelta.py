@@ -38,9 +38,6 @@ class Order:
         self.expires = expires
         self.nonce = None
         self.user = None
-        self.v = None
-        self.r = None
-        self.s = None
 
 
 class OffChainOrder(Order):
@@ -61,9 +58,27 @@ class OffChainOrder(Order):
                    self.amount_give == other.amount_give and \
                    self.expires == other.expires and \
                    self.nonce == other.nonce and \
-                   self.user == other.user
+                   self.user == other.user and \
+                   self.v == other.v and \
+                   self.r == other.r and \
+                   self.s == other.s
         else:
             return False
+
+    def __hash__(self):
+        return hash((self.token_get,
+                     self.amount_get,
+                     self.token_give,
+                     self.amount_give,
+                     self.expires,
+                     self.nonce,
+                     self.user,
+                     self.v,
+                     self.r,
+                     self.s))
+
+    def __repr__(self):
+        return pformat(vars(self))
 
 
 class OnChainOrder(Order):
@@ -81,12 +96,21 @@ class OnChainOrder(Order):
                    self.amount_give == other.amount_give and \
                    self.expires == other.expires and \
                    self.nonce == other.nonce and \
-                   self.user == other.user and \
-                   self.v == other.v and \
-                   self.r == other.r and \
-                   self.s == other.s
+                   self.user == other.user
         else:
             return False
+
+    def __hash__(self):
+        return hash((self.token_get,
+                     self.amount_get,
+                     self.token_give,
+                     self.amount_give,
+                     self.expires,
+                     self.nonce,
+                     self.user))
+
+    def __repr__(self):
+        return pformat(vars(self))
 
 
 class LogOrder():
@@ -108,7 +132,7 @@ class LogOrder():
                             nonce=self.nonce,
                             user=self.user)
 
-    def __str__(self):
+    def __repr__(self):
         return pformat(vars(self))
 
 
@@ -125,9 +149,8 @@ class LogCancel():
         self.r = args['r']
         self.s = args['s']
 
-    def __str__(self):
+    def __repr__(self):
         return pformat(vars(self))
-
 
 
 class EtherDelta(Contract):
@@ -148,17 +171,23 @@ class EtherDelta(Contract):
         self.address = address
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
-        self._onchain_orders = set()
+        self._onchain_orders = None
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         for token in tokens:
             approval_function(token, self.address, 'EtherDelta')
 
-    # def monitor_onchain_events(self):
-    #     def onchain_order(event: LogOrder):
-    #         pass
-    #
-    #     self._on_event(self._contract, 'Order', LogOrder, onchain_order, True)
+    def on_order(self, handler):
+        self._on_event(self._contract, 'Order', LogOrder, handler)
+
+    def on_cancel(self, handler):
+        self._on_event(self._contract, 'Cancel', LogCancel, handler)
+
+    def past_order(self, number_of_past_blocks: int) -> List[LogOrder]:
+        return self._past_events(self._contract, 'Order', LogOrder, number_of_past_blocks)
+
+    def past_cancel(self, number_of_past_blocks: int) -> List[LogCancel]:
+        return self._past_events(self._contract, 'Cancel', LogCancel, number_of_past_blocks)
 
     def admin(self) -> Address:
         """Returns the address of the admin account.
@@ -280,8 +309,13 @@ class EtherDelta(Contract):
         return Wad(self._contract.call().balanceOf(token.address, user.address))
 
     def active_onchain_orders(self) -> List[OnChainOrder]:
-        # offers = [self.get_offer(offer_id + 1) for offer_id in range(self.get_last_offer_id())]
-        # return [offer for offer in offers if offer is not None]
+        if not self._onchain_orders:
+            self._onchain_orders = set()
+            self.on_order(lambda order: self._onchain_orders.add(order.to_order()))
+            for old_order in self.past_order(1000000):
+                self._onchain_orders.add(old_order.to_order())
+
+        return list(self._onchain_orders)
 
     #TODO remove nonce...?
     def place_order_onchain(self,
