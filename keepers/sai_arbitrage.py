@@ -71,8 +71,12 @@ class SaiArbitrage(SaiKeeper):
                                      address=ERC20Token.token_address_by_name(self.arguments.base_token))
         self.min_profit = Wad.from_number(self.arguments.min_profit)
         self.max_engagement = Wad.from_number(self.arguments.max_engagement)
-        self.errors = 0
+        if len(self.arguments.excluded_makers) > 0:
+            self.excluded_makers = set(map(lambda maker: Address(maker), self.arguments.excluded_makers.split(',')))
+        else:
+            self.excluded_makers = set()
         self.max_errors = self.arguments.max_errors
+        self.errors = 0
 
         if self.arguments.tx_manager:
             self.tx_manager_address = Address(self.arguments.tx_manager)
@@ -93,6 +97,9 @@ class SaiArbitrage(SaiKeeper):
 
         parser.add_argument("--max-engagement", type=float, required=True,
                             help="Maximum engagement (in base token) in one arbitrage operation")
+
+        parser.add_argument("--excluded-makers", type=str, default='',
+                            help="Comma-separated list of OasisDEX makers who the keeper will not trade with")
 
         parser.add_argument("--max-errors", type=int, default=100,
                             help="Maximum number of allowed errors before the keeper terminates (default: 100)")
@@ -127,7 +134,9 @@ class SaiArbitrage(SaiKeeper):
 
     def otc_offers(self, tokens):
         return [offer for offer in self.otc.active_offers()
-                if offer.sell_which_token in tokens and offer.buy_which_token in tokens]
+                if offer.sell_which_token in tokens
+                and offer.buy_which_token in tokens
+                and offer.owner not in self.excluded_makers]
 
     def otc_conversions(self, tokens) -> List[Conversion]:
         return list(map(lambda offer: OasisTakeConversion(self.otc, offer), self.otc_offers(tokens)))
