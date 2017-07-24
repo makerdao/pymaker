@@ -29,11 +29,17 @@ from web3 import Web3
 from api import Contract, Address, Receipt
 from api.numeric import Wad
 from api.token import ERC20Token
-from api.util import bytes_to_0xhexstring
+from api.util import bytes_to_hexstring, hexstring_to_bytes
 
 
 class Order:
     def __init__(self, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int):
+        assert(isinstance(token_get, Address))
+        assert(isinstance(amount_get, Wad))
+        assert(isinstance(token_give, Address))
+        assert(isinstance(amount_give, Wad))
+        assert(isinstance(expires, int))
+
         self.token_get = token_get
         self.amount_get = amount_get
         self.token_give = token_give
@@ -47,24 +53,45 @@ class OffChainOrder(Order):
     def __init__(self, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int,
                  nonce: int, user: Address, v: int, r: bytes, s: bytes):
         super().__init__(token_get, amount_get, token_give, amount_give, expires)
+
+        assert(isinstance(nonce, int))
+        assert(isinstance(user, Address))
+        assert(isinstance(v, int))
+        assert(isinstance(r, bytes))
+        assert(isinstance(s, bytes))
+
         self.nonce = nonce
         self.user = user
         self.v = v
         self.r = r
         self.s = s
 
-    def _to_json(self, etherdelta_contract_address: Address) -> str:
-        return json.dumps({'contractAddr': etherdelta_contract_address.address,
-                           'tokenGet': self.token_get.address,
-                           'amountGet': self.amount_get.value,
-                           'tokenGive': self.token_give.address,
-                           'amountGive': self.amount_give.value,
-                           'expires': self.expires,
-                           'nonce': self.nonce,
-                           'v': self.v,
-                           'r': bytes_to_0xhexstring(self.r),
-                           's': bytes_to_0xhexstring(self.s),
-                           'user': self.user.address})
+    @staticmethod
+    def from_json(data: dict):
+        assert(isinstance(data, dict))
+        return OffChainOrder(token_get=Address(data['tokenGet']),
+                             amount_get=Wad(int(data['amountGet'])),
+                             token_give=Address(data['tokenGive']),
+                             amount_give=Wad(int(data['amountGive'])),
+                             expires=int(data['expires']),
+                             nonce=int(data['nonce']),
+                             v=int(data['v']),
+                             r=hexstring_to_bytes(data['r']),
+                             s=hexstring_to_bytes(data['s']),
+                             user=Address(data['user']))
+
+    def to_json(self, etherdelta_contract_address: Address) -> dict:
+        return {'contractAddr': etherdelta_contract_address.address,
+                'tokenGet': self.token_get.address,
+                'amountGet': self.amount_get.value,
+                'tokenGive': self.token_give.address,
+                'amountGive': self.amount_give.value,
+                'expires': self.expires,
+                'nonce': self.nonce,
+                'v': self.v,
+                'r': bytes_to_hexstring(self.r),
+                's': bytes_to_hexstring(self.s),
+                'user': self.user.address}
 
     def __eq__(self, other):
         if isinstance(other, OffChainOrder):
@@ -101,6 +128,10 @@ class OnChainOrder(Order):
     def __init__(self, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int,
                  nonce: int, user: Address):
         super().__init__(token_get, amount_get, token_give, amount_give, expires)
+
+        assert(isinstance(nonce, int))
+        assert(isinstance(user, Address))
+
         self.nonce = nonce
         self.user = user
 
@@ -190,6 +221,7 @@ class EtherDelta(Contract):
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
         self._onchain_orders = None
+        self._offchain_orders = set()
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         for token in tokens:
@@ -335,12 +367,40 @@ class EtherDelta(Contract):
             for old_order in self.past_order(1000000):
                 self._onchain_orders.add(old_order.to_order())
 
-        # remove orders which have been completely filled (or cancelled)
-        for order in list(self._onchain_orders):
-            if self.amount_filled(order) == order.amount_get:
-                self._onchain_orders.remove(order)
+        self._remove_filled_orders(self._onchain_orders)
 
         return list(self._onchain_orders)
+
+    def active_offchain_orders(self, token1: Address, token2: Address) -> List[OnChainOrder]:
+        assert(isinstance(token1, Address))
+        assert(isinstance(token2, Address))
+
+        nonce = str(hash(token1.address)) + str(hash(token2.address)) + str(random.randint(1, 2**32 - 1))
+        url = f"https://cache2.etherdelta.com/orders/{nonce}/{token1.address}/{token2.address}"
+        res = requests.get(url)
+        if res.ok:
+            if len(res.text) > 0:
+                orders_dicts = map(lambda entry: entry['order'], json.loads(res.text)['orders'])
+                orders_dicts = filter(lambda order: Address(order['contractAddr']) == self.address, orders_dicts)
+                orders = list(map(lambda order: OffChainOrder.from_json(order), orders_dicts))
+                for order in orders:
+                    self._offchain_orders.add(order)
+        else:
+            raise Exception("Fetch failed")
+
+        self._remove_filled_orders(self._offchain_orders)
+
+        return list(filter(lambda order: (order.token_get == token1 and order.token_give == token2) or
+                                         (order.token_get == token2 and order.token_give == token1),
+                           self._offchain_orders))
+
+    def _remove_filled_orders(self, order_set: set):
+        assert(isinstance(order_set, set))
+
+        # remove orders which have been completely filled (or cancelled)
+        for order in list(order_set):
+            if self.amount_filled(order) == order.amount_get:
+                order_set.remove(order)
 
     def place_order_onchain(self,
                             token_get: Address,
@@ -438,8 +498,13 @@ class EtherDelta(Contract):
                               Address(self.web3.eth.defaultAccount), v, r, s)
 
         res = requests.post('https://cache2.etherdelta.com/message',
-                             data={'message': off_chain_order._to_json(self.address)}, timeout=15)
-        return off_chain_order if '"success"' in res.text else None
+                            data={'message': json.dumps(off_chain_order.to_json(self.address))}, timeout=15)
+
+        if '"success"' in res.text:
+            self._offchain_orders.add(off_chain_order)
+            return off_chain_order
+        else:
+            return None
 
     def amount_available(self, order: Order) -> Wad:
         """Returns the amount that is still available (tradeable) for an order.

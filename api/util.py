@@ -32,6 +32,12 @@ def bytes_to_int(value) -> int:
         raise AssertionError
 
 
-def bytes_to_0xhexstring(value) -> str:
+def bytes_to_hexstring(value) -> str:
     assert(isinstance(value, bytes) or isinstance(value, bytearray))
     return "0x" + "".join(map(lambda b: format(b, "02x"), value))
+
+
+def hexstring_to_bytes(value: str) -> bytes:
+    assert(isinstance(value, str))
+    assert(value.startswith("0x"))
+    return bytes.fromhex(value.replace("0x", ""))
