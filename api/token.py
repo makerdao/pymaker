@@ -152,7 +152,9 @@ class DSToken(ERC20Token):
         raise NotImplementedError
 
     def mint(self, amount):
-        raise NotImplementedError
+        assert(isinstance(amount, Wad))
+        return self._transact(self.web3, f"DSToken('{self.address}').mint('{amount}')",
+                              lambda: self._contract.transact().mint(amount.value))
 
     def burn(self, amount):
         raise NotImplementedError
