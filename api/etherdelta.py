@@ -587,7 +587,7 @@ class EtherDelta(Contract):
 
     @staticmethod
     def random_nonce():
-        return random.randint(0, 2**256 - 1)
+        return random.randint(1, 2**32 - 1)
 
     @coerce_return_to_text
     def _eth_sign(self, account, data_hash):
