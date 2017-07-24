@@ -22,6 +22,7 @@ from pprint import pformat
 from typing import Optional, List
 
 import requests
+import sys
 from eth_abi.encoding import get_single_encoder
 from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
@@ -209,15 +210,17 @@ class EtherDelta(Contract):
     Attributes:
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `EtherDelta` contract.
+        api_server: Base URL of the `EtherDelta` API server (for off-chain order support etc.).
     """
 
     abi = Contract._load_abi(__name__, 'abi/EtherDelta.abi')
 
     ETH_TOKEN = Address('0x0000000000000000000000000000000000000000')
 
-    def __init__(self, web3: Web3, address: Address):
+    def __init__(self, web3: Web3, address: Address, api_server: str):
         self.web3 = web3
         self.address = address
+        self.api_server = api_server
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
         self._onchain_orders = None
@@ -376,7 +379,7 @@ class EtherDelta(Contract):
         assert(isinstance(token2, Address))
 
         nonce = str(hash(token1.address)) + str(hash(token2.address)) + str(random.randint(1, 2**32 - 1))
-        url = f"https://cache2.etherdelta.com/orders/{nonce}/{token1.address}/{token2.address}"
+        url = f"{self.api_server}/orders/{nonce}/{token1.address}/{token2.address}"
         res = requests.get(url)
         if res.ok:
             if len(res.text) > 0:
@@ -495,16 +498,27 @@ class EtherDelta(Contract):
         v = ord(bytes.fromhex(signed_hash[128:130]))
 
         off_chain_order = OffChainOrder(token_get, amount_get, token_give, amount_give, expires, nonce,
-                              Address(self.web3.eth.defaultAccount), v, r, s)
+                                        Address(self.web3.eth.defaultAccount), v, r, s)
 
-        res = requests.post('https://cache2.etherdelta.com/message',
-                            data={'message': json.dumps(off_chain_order.to_json(self.address))}, timeout=15)
+        log_signature = f"('{token_get}', '{amount_get}', '{token_give}', '{amount_give}', '{expires}', '{nonce}')"
 
-        if '"success"' in res.text:
-            self._offchain_orders.add(off_chain_order)
-            return off_chain_order
-        else:
+        try:
+            self.logger.info(f"Creating off-chain EtherDelta order {log_signature} in progress...")
+            res = requests.post(f"{self.api_server}/message",
+                                data={'message': json.dumps(off_chain_order.to_json(self.address))},
+                                timeout=15)
+
+            if '"success"' in res.text:
+                self.logger.info(f"Created off-chain EtherDelta order {log_signature} successfully")
+                self._offchain_orders.add(off_chain_order)
+                return off_chain_order
+            else:
+                self.logger.warning(f"Creating off-chain EtherDelta order {log_signature} failed ({res.text})")
+                return None
+        except:
+            self.logger.warning(f"Creating off-chain EtherDelta order {log_signature} failed ({sys.exc_info()[1]})")
             return None
+
 
     def amount_available(self, order: Order) -> Wad:
         """Returns the amount that is still available (tradeable) for an order.

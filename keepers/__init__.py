@@ -193,12 +193,15 @@ class Keeper:
 
 class Config:
     def __init__(self, chain: str):
-        with open('keepers/addresses.json') as data_file:
+        with open('keepers/config.json') as data_file:
             self.chain = chain
-            self.addresses = json.load(data_file)
-        for key, value in self.addresses[self.chain]["tokens"].items():
+            self.config = json.load(data_file)
+        for key, value in self.config[self.chain]["tokens"].items():
             ERC20Token.register_token(Address(value), key)
 
+    def get_config(self):
+        return self.config[self.chain]
+
     def get_contract_address(self, name):
-        return self.addresses[self.chain]["contracts"].get(name, None)
+        return self.config[self.chain]["contracts"].get(name, None)
 
