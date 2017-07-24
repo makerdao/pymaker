@@ -504,9 +504,10 @@ class EtherDelta(Contract):
 
         try:
             self.logger.info(f"Creating off-chain EtherDelta order {log_signature} in progress...")
+            self.logger.debug(json.dumps(off_chain_order.to_json(self.address)))
             res = requests.post(f"{self.api_server}/message",
                                 data={'message': json.dumps(off_chain_order.to_json(self.address))},
-                                timeout=15)
+                                timeout=30)
 
             if '"success"' in res.text:
                 self.logger.info(f"Created off-chain EtherDelta order {log_signature} successfully")
