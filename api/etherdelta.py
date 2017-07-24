@@ -16,10 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import hashlib
+import json
 import random
 from pprint import pformat
 from typing import Optional, List
 
+import requests
 from eth_abi.encoding import get_single_encoder
 from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
@@ -27,6 +29,7 @@ from web3 import Web3
 from api import Contract, Address, Receipt
 from api.numeric import Wad
 from api.token import ERC20Token
+from api.util import bytes_to_0xhexstring
 
 
 class Order:
@@ -49,6 +52,19 @@ class OffChainOrder(Order):
         self.v = v
         self.r = r
         self.s = s
+
+    def _to_json(self, etherdelta_contract_address: Address) -> str:
+        return json.dumps({'contractAddr': etherdelta_contract_address.address,
+                           'tokenGet': self.token_get.address,
+                           'amountGet': self.amount_get.value,
+                           'tokenGive': self.token_give.address,
+                           'amountGive': self.amount_give.value,
+                           'expires': self.expires,
+                           'nonce': self.nonce,
+                           'v': self.v,
+                           'r': bytes_to_0xhexstring(self.r),
+                           's': bytes_to_0xhexstring(self.s),
+                           'user': self.user.address})
 
     def __eq__(self, other):
         if isinstance(other, OffChainOrder):
@@ -378,7 +394,7 @@ class EtherDelta(Contract):
                              amount_get: Wad,
                              token_give: Address,
                              amount_give: Wad,
-                             expires: int) -> OffChainOrder:
+                             expires: int) -> Optional[OffChainOrder]:
         """Creates a new off-chain order.
 
         Although it's not necessary to have any amount of `token_give` deposited to EtherDelta
@@ -418,8 +434,12 @@ class EtherDelta(Contract):
         s = bytes.fromhex(signed_hash[64:128])
         v = ord(bytes.fromhex(signed_hash[128:130]))
 
-        return OffChainOrder(token_get, amount_get, token_give, amount_give, expires, nonce,
-                             Address(self.web3.eth.defaultAccount), v, r, s)
+        off_chain_order = OffChainOrder(token_get, amount_get, token_give, amount_give, expires, nonce,
+                              Address(self.web3.eth.defaultAccount), v, r, s)
+
+        res = requests.post('https://cache2.etherdelta.com/message',
+                             data={'message': off_chain_order._to_json(self.address)}, timeout=15)
+        return off_chain_order if '"success"' in res.text else None
 
     def amount_available(self, order: Order) -> Wad:
         """Returns the amount that is still available (tradeable) for an order.

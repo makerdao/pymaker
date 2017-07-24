@@ -30,3 +30,8 @@ def bytes_to_int(value) -> int:
         return int.from_bytes(b, byteorder='big')
     else:
         raise AssertionError
+
+
+def bytes_to_0xhexstring(value) -> str:
+    assert(isinstance(value, bytes) or isinstance(value, bytearray))
+    return "0x" + "".join(map(lambda b: format(b, "02x"), value))
