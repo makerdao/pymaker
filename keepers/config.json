@@ -15,7 +15,7 @@
     },
     "etherDelta": {
       "contract": "0xF4Ff487adA7bb29603077216082DA7f4bA989854",
-      "apiServer": null
+      "apiServer": ["http://non-existing.host:9999", "http://non-existing.host:9999"]
     }
   },
   "ethlive": {
