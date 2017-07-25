@@ -187,9 +187,9 @@ class Keeper:
             #
             # TODO the same thing could possibly happen if we watch any event other than
             # TODO a new block. if that happens, we have no reliable way of detecting it now.
-            if self._last_block_time and (datetime.datetime.now() - self._last_block_time).total_seconds() > 120:
+            if self._last_block_time and (datetime.datetime.now() - self._last_block_time).total_seconds() > 300:
                 if True: #TODO syncing check broken after web3.py upgrade to 3.10.0 if not self.web3.eth.syncing:
-                    logging.fatal("No new blocks received for 120 seconds, the keeper will terminate")
+                    logging.fatal("No new blocks received for 300 seconds, the keeper will terminate")
                     break
 
 
