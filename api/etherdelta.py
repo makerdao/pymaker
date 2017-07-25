@@ -211,6 +211,7 @@ class EtherDelta(Contract):
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `EtherDelta` contract.
         api_server: Base URL of the `EtherDelta` API server (for off-chain order support etc.).
+            `None` if no off-chain order support desired.
     """
 
     abi = Contract._load_abi(__name__, 'abi/EtherDelta.abi')
@@ -218,6 +219,9 @@ class EtherDelta(Contract):
     ETH_TOKEN = Address('0x0000000000000000000000000000000000000000')
 
     def __init__(self, web3: Web3, address: Address, api_server: str):
+        assert(isinstance(address, Address))
+        assert(isinstance(api_server, str) or api_server is None)
+
         self.web3 = web3
         self.address = address
         self.api_server = api_server
@@ -225,6 +229,9 @@ class EtherDelta(Contract):
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
         self._onchain_orders = None
         self._offchain_orders = set()
+
+    def supports_offchain_orders(self) -> bool:
+        return self.api_server is not None
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         for token in tokens:
@@ -378,6 +385,9 @@ class EtherDelta(Contract):
         assert(isinstance(token1, Address))
         assert(isinstance(token2, Address))
 
+        if not self.supports_offchain_orders():
+            raise Exception("Off-chain orders not supported for this EtherDelta instance")
+
         nonce = str(hash(token1.address)) + str(hash(token2.address)) + str(random.randint(1, 2**32 - 1))
         url = f"{self.api_server}/orders/{nonce}/{token1.address}/{token2.address}"
         res = requests.get(url)
@@ -483,6 +493,9 @@ class EtherDelta(Contract):
 
         def encode_uint256(value: int) -> bytes:
             return get_single_encoder("uint", 256, None)(value)
+
+        if not self.supports_offchain_orders():
+            raise Exception("Off-chain orders not supported for this EtherDelta instance")
 
         nonce = self.random_nonce()
         order_hash = hashlib.sha256(encode_address(self.address) +

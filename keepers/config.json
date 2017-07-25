@@ -14,8 +14,7 @@
       "auctionManager": "0xD0Abb0e61A905a50b21Bf4c74F39B9e101469365"
     },
     "etherDelta": {
-      "contract": "0xF4Ff487adA7bb29603077216082DA7f4bA989854",
-      "apiServer": ["http://non-existing.host:9999", "http://non-existing.host:9999"]
+      "contract": "0xF4Ff487adA7bb29603077216082DA7f4bA989854"
     }
   },
   "ethlive": {
