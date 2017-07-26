@@ -20,6 +20,15 @@ import pytest
 from api.numeric import Wad, Ray
 
 
+def is_hashable(v):
+    """Determine whether `v` can be hashed."""
+    try:
+        hash(v)
+    except TypeError:
+        return False
+    return True
+
+
 class TestWad:
     def test_should_support_negative_values(self):
         Wad(-1)
@@ -101,6 +110,9 @@ class TestWad:
             assert Wad(1000) >= 1000
         with pytest.raises(ArithmeticError):
             assert Wad(1000) >= 999
+
+    def test_should_be_hashable(self):
+        assert is_hashable(Wad(123))
 
     def test_min_value(self):
         assert Wad.min(Wad(10), Wad(20)) == Wad(10)
@@ -218,6 +230,9 @@ class TestRay:
             assert Ray(1000) >= 1000
         with pytest.raises(ArithmeticError):
             assert Ray(1000) >= 999
+
+    def test_should_be_hashable(self):
+        assert is_hashable(Ray(123))
 
     def test_min_value(self):
         assert Ray.min(Ray(10), Ray(20)) == Ray(10)
