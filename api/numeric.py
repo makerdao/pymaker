@@ -225,17 +225,11 @@ class Ray:
             raise ArithmeticError
 
     @staticmethod
-    # TODO try to implement a variable argument min()
-    def min(first, second):
-        """Returns the lower of the two Ray values"""
-        if not isinstance(first, Ray) or not isinstance(second, Ray):
-            raise ArithmeticError
-        return Ray(min(first.value, second.value))
+    def min(*args):
+        """Returns the lower of the Ray values"""
+        return reduce(lambda x, y: x if x < y else y, args[1:], args[0])
 
     @staticmethod
-    # TODO try to implement a variable argument max()
-    def max(first, second):
-        """Returns the higher of the two Ray values"""
-        if not isinstance(first, Ray) or not isinstance(second, Ray):
-            raise ArithmeticError
-        return Ray(max(first.value, second.value))
+    def max(*args):
+        """Returns the higher of the Ray values"""
+        return reduce(lambda x, y: x if x > y else y, args[1:], args[0])
