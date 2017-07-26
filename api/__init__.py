@@ -105,7 +105,7 @@ class Contract:
     logger = logging.getLogger('api')
 
     @staticmethod
-    def _deploy(web3: Web3, abi: dict, bytecode: str, *args) -> Address:
+    def _deploy(web3: Web3, abi: dict, bytecode: str, args) -> Address:
         contract_factory = web3.eth.contract(abi=abi, bytecode=bytecode)
         tx_hash = contract_factory.deploy(args=args)
         receipt = web3.eth.getTransactionReceipt(tx_hash)

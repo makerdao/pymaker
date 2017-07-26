@@ -140,7 +140,7 @@ class DSToken(ERC20Token):
     bin = Contract._load_bin(__name__, 'abi/DSToken.bin')
 
     @staticmethod
-    def deploy(web3: Web3, *args):
+    def deploy(web3: Web3, args=[]):
         return DSToken(web3=web3, address=Contract._deploy(web3, DSToken.abi, DSToken.bin, args))
 
     def is_stopped(self):
