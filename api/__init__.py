@@ -24,6 +24,8 @@ import eth_utils
 import logging
 import pkg_resources
 import sys
+
+from web3 import Web3
 from web3.utils.events import get_event_data
 
 from api.numeric import Wad
@@ -58,8 +60,56 @@ def stop_all_filter_threads():
             pass
 
 
+@total_ordering
+class Address:
+    """Represents an Ethereum address.
+
+    Addresses get normalized automatically, so instances of this class can be safely compared to each other.
+
+    Args:
+        address: Can be any address representation allowed by web3.py
+            or another instance of the Address class.
+
+    Attributes:
+        address: Normalized hexadecimal representation of the Ethereum address.
+    """
+    def __init__(self, address):
+        if isinstance(address, Address):
+            self.address = address.address
+        else:
+            self.address = eth_utils.to_normalized_address(address)
+
+    def as_bytes(self) -> bytes:
+        """Return the address as a 20-byte bytes array."""
+        return bytes.fromhex(self.address.replace('0x', ''))
+
+    def __str__(self):
+        return f"{self.address}"
+
+    def __repr__(self):
+        return f"Address('{self.address}')"
+
+    def __hash__(self):
+        return self.address.__hash__()
+
+    def __eq__(self, other):
+        assert(isinstance(other, Address))
+        return self.address == other.address
+
+    def __lt__(self, other):
+        assert(isinstance(other, Address))
+        return self.address < other.address
+
+
 class Contract:
     logger = logging.getLogger('api')
+
+    @staticmethod
+    def _deploy(web3: Web3, abi: dict, bytecode: str, *args) -> Address:
+        contract_factory = web3.eth.contract(abi=abi, bytecode=bytecode)
+        tx_hash = contract_factory.deploy(args=args)
+        receipt = web3.eth.getTransactionReceipt(tx_hash)
+        return Address(receipt['contractAddress'])
 
     def _assert_contract_exists(self, web3, address):
         code = web3.eth.getCode(address.address)
@@ -178,47 +228,6 @@ class Contract:
     @staticmethod
     def _load_bin(package, resource) -> str:
         return pkg_resources.resource_string(package, resource)
-
-
-@total_ordering
-class Address:
-    """Represents an Ethereum address.
-
-    Addresses get normalized automatically, so instances of this class can be safely compared to each other.
-
-    Args:
-        address: Can be any address representation allowed by web3.py
-            or another instance of the Address class.
-
-    Attributes:
-        address: Normalized hexadecimal representation of the Ethereum address.
-    """
-    def __init__(self, address):
-        if isinstance(address, Address):
-            self.address = address.address
-        else:
-            self.address = eth_utils.to_normalized_address(address)
-
-    def as_bytes(self) -> bytes:
-        """Return the address as a 20-byte bytes array."""
-        return bytes.fromhex(self.address.replace('0x', ''))
-
-    def __str__(self):
-        return f"{self.address}"
-
-    def __repr__(self):
-        return f"Address('{self.address}')"
-
-    def __hash__(self):
-        return self.address.__hash__()
-
-    def __eq__(self, other):
-        assert(isinstance(other, Address))
-        return self.address == other.address
-
-    def __lt__(self, other):
-        assert(isinstance(other, Address))
-        return self.address < other.address
 
 
 class Calldata:

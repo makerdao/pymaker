@@ -17,6 +17,8 @@
 
 from typing import Optional
 
+from web3 import Web3
+
 from api import Contract, Address, Receipt, Calldata
 from api.numeric import Wad
 
@@ -135,6 +137,11 @@ class ERC20Token(Contract):
 
 class DSToken(ERC20Token):
     abi = Contract._load_abi(__name__, 'abi/DSToken.abi')
+    bin = Contract._load_bin(__name__, 'abi/DSToken.bin')
+
+    @staticmethod
+    def deploy(web3: Web3, *args):
+        return DSToken(web3=web3, address=Contract._deploy(web3, DSToken.abi, DSToken.bin, args))
 
     def is_stopped(self):
         raise NotImplementedError
@@ -151,13 +158,15 @@ class DSToken(ERC20Token):
     def pull(self, address, amount):
         raise NotImplementedError
 
-    def mint(self, amount):
+    def mint(self, amount: Wad) -> Optional[Receipt]:
         assert(isinstance(amount, Wad))
         return self._transact(self.web3, f"DSToken('{self.address}').mint('{amount}')",
                               lambda: self._contract.transact().mint(amount.value))
 
-    def burn(self, amount):
-        raise NotImplementedError
+    def burn(self, amount: Wad) -> Optional[Receipt]:
+        assert(isinstance(amount, Wad))
+        return self._transact(self.web3, f"DSToken('{self.address}').burn('{amount}')",
+                              lambda: self._contract.transact().burn(amount.value))
 
 
 class DSEthToken(ERC20Token):
