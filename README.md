@@ -1,5 +1,10 @@
 # Maker Keeper Framework
 
+Reference Maker Keeper Framework.
+
+[![Build Status](https://travis-ci.org/reverendus/keeper.svg?branch=master)](https://travis-ci.org/reverendus/keeper)
+[![codecov](https://codecov.io/gh/reverendus/keeper/branch/master/graph/badge.svg)](https://codecov.io/gh/reverendus/keeper)
+
 ## Rationale
 
 The _SAI Stablecoin System_, as well as the _DAI Stablecoin System_ in the future,
