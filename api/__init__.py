@@ -172,8 +172,12 @@ class Contract:
         return callback
 
     @staticmethod
-    def _load_abi(package, resource):
+    def _load_abi(package, resource) -> dict:
         return json.loads(pkg_resources.resource_string(package, resource))
+
+    @staticmethod
+    def _load_bin(package, resource) -> str:
+        return pkg_resources.resource_string(package, resource)
 
 
 @total_ordering

@@ -48,6 +48,14 @@ class DSValue(Contract):
     """
 
     abi = Contract._load_abi(__name__, 'abi/DSValue.abi')
+    bin = Contract._load_bin(__name__, 'abi/DSValue.bin')
+
+    @staticmethod
+    def deploy(web3: Web3, *args):
+        contract_factory = web3.eth.contract(abi=DSValue.abi, bytecode=DSValue.bin)
+        tx_hash = contract_factory.deploy(args=args)
+        receipt = web3.eth.getTransactionReceipt(tx_hash)
+        return DSValue(web3=web3, address=Address(receipt['contractAddress']))
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
