@@ -27,10 +27,10 @@ class TestERC20Token:
     def setup_method(self):
         self.web3 = Web3(EthereumTesterProvider())
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
-        self.token = DSToken.deploy(self.web3, ['ABC'])
-        self.token.mint(Wad(1000000))
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.second_address = Address(self.web3.eth.accounts[1])
+        self.token = DSToken.deploy(self.web3, ['ABC'])
+        self.token.mint(Wad(1000000))
 
     def test_total_supply(self):
         self.token.total_supply() == Wad(1000000)
@@ -52,8 +52,8 @@ class TestDSToken:
     def setup_method(self):
         self.web3 = Web3(EthereumTesterProvider())
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
-        self.dstoken = DSToken.deploy(self.web3, ['ABC'])
         self.our_address = Address(self.web3.eth.defaultAccount)
+        self.dstoken = DSToken.deploy(self.web3, ['ABC'])
 
     def test_mint(self):
         # when
