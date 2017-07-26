@@ -15,6 +15,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+
+
+def synchronize(futures) -> list:
+    loop = asyncio.get_event_loop()
+    try:
+        return loop.run_until_complete(asyncio.gather(*futures))
+    finally:
+        loop.close()
+
 
 def int_to_bytes32(value: int) -> bytes:
     assert(isinstance(value, int))
