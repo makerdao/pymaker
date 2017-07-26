@@ -180,10 +180,16 @@ class Ray:
         return (tmp[0:len(tmp)-27] + "." + tmp[len(tmp)-27:len(tmp)]).replace("-.", "-0.")
 
     def __add__(self, other):
-        return Ray(self.value + other.value)
+        if isinstance(other, Ray):
+            return Ray(self.value + other.value)
+        else:
+            raise ArithmeticError
 
     def __sub__(self, other):
-        return Ray(self.value - other.value)
+        if isinstance(other, Ray):
+            return Ray(self.value - other.value)
+        else:
+            raise ArithmeticError
 
     def __mul__(self, other):
         if isinstance(other, Ray):
