@@ -60,6 +60,10 @@ class TestWad:
         assert str(Wad(-500000000000000000)) == "-0.500000000000000000"
         assert str(Wad(-1)) == "-0.000000000000000001"
 
+    def test_should_have_nice_printable_representation(self):
+        for wad in [Wad(1), Wad(100), Wad.from_number(2.5), Wad(-1)]:
+            assert repr(wad) == f"Wad({wad.value})"
+
     def test_add(self):
         assert Wad(1) + Wad(2) == Wad(3)
 
@@ -230,6 +234,10 @@ class TestRay:
         assert str(Ray(-1500000000000000000000000000)) == "-1.500000000000000000000000000"
         assert str(Ray(-500000000000000000000000000)) == "-0.500000000000000000000000000"
         assert str(Ray(-1)) == "-0.000000000000000000000000001"
+
+    def test_should_have_nice_printable_representation(self):
+        for ray in [Ray(1), Ray(100), Ray.from_number(2.5), Ray(-1)]:
+            assert repr(ray) == f"Ray({ray.value})"
 
     def test_add(self):
         assert Ray(1) + Ray(2) == Ray(3)
