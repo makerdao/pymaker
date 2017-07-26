@@ -79,6 +79,28 @@ class TestWad:
         with pytest.raises(ArithmeticError):
             Wad(10) - Ray(2)
 
+    def test_multiply(self):
+        assert Wad.from_number(2) * Wad.from_number(3) == Wad.from_number(6)
+        assert Wad.from_number(2) * Wad(3) == Wad(6)
+        assert Wad.from_number(2.5) * Wad(3) == Wad(7)
+        assert Wad.from_number(2.99999) * Wad(3) == Wad(8)
+
+    def test_multiply_by_ray(self):
+        assert Wad.from_number(2) * Ray.from_number(3) == Wad.from_number(6)
+        assert Wad.from_number(2) * Ray(3) == Wad(0)
+        assert Wad(2) * Ray(499999999999999999999999999) == Wad(0)
+        assert Wad(2) * Ray(500000000000000000000000000) == Wad(1)
+        assert Wad(2) * Ray(999999999999999999999999999) == Wad(1)
+        assert Wad(2) * Ray(1000000000000000000000000000) == Wad(2)
+
+    def test_multiply_by_int(self):
+        assert Wad.from_number(2) * 3 == Wad.from_number(6)
+        assert Wad.from_number(2) * 1 == Wad.from_number(2)
+
+    def test_should_fail_to_multiply_by_float(self):
+        with pytest.raises(ArithmeticError):
+            Wad(2) * 3.0
+
     def test_should_compare_wads_with_each_other(self):
         assert Wad(1000) == Wad(1000)
         assert Wad(1000) != Wad(999)
