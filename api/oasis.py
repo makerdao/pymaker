@@ -263,3 +263,7 @@ class SimpleMarket(Contract):
         """
         return self._transact(self.web3, f"SimpleMarket('{self.address}').kill('{offer_id}')",
                               lambda: self._contract.transact().kill(int_to_bytes32(offer_id)))
+
+    async def kill_async(self, offer_id: int) -> Optional[Receipt]:
+        return await self._async_transact(self.web3, f"SimpleMarket('{self.address}').kill('{offer_id}')",
+                                          lambda: self._contract.transact().kill(int_to_bytes32(offer_id)))
