@@ -2,8 +2,8 @@
 
 Reference Maker Keeper Framework.
 
-[![Build Status](https://travis-ci.org/reverendus/keeper.svg?branch=master)](https://travis-ci.org/reverendus/keeper)
-[![codecov](https://codecov.io/gh/reverendus/keeper/branch/master/graph/badge.svg)](https://codecov.io/gh/reverendus/keeper)
+[![Build Status](https://travis-ci.org/makerdao/keeper.svg?branch=master)](https://travis-ci.org/makerdao/keeper)
+[![codecov](https://codecov.io/gh/makerdao/keeper/branch/master/graph/badge.svg)](https://codecov.io/gh/makerdao/keeper)
 
 ## Rationale
 
