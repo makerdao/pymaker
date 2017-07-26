@@ -157,7 +157,7 @@ class Ray:
             self.value = int((Decimal(value.value) * (Decimal(10)**Decimal(9))).quantize(1))
         elif isinstance(value, int):
             assert(value >= 0)
-            self.value = value
+            # self.value = value
         else:
             raise ArithmeticError
 
