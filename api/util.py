@@ -25,6 +25,8 @@ def synchronize(futures) -> list:
             return loop.run_until_complete(asyncio.gather(*futures, loop=loop))
         finally:
             loop.close()
+    else:
+        return []
 
 
 def int_to_bytes32(value: int) -> bytes:
