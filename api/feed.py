@@ -149,18 +149,6 @@ class DSValue(Contract):
         return self._transact(self.web3, f"DSValue('{self.address}').void()",
                               lambda: self._contract.transact().void())
 
-    #TODO as web3.py doesn't seem to support anonymous events, monitoring for LogNote events does not work
-    # def watch(self):
-    #     self._contract.on("LogNote", {'filter': {'sig': bytearray.fromhex('1504460f')}}, self.__note)
-    #     self._contract.pastEvents("LogNote", {'fromBlock': 0, 'filter': {'sig': bytearray.fromhex('1504460f')}}, self.__note)
-    #
-    #     # 'topics': ['0x1504460f00000000000000000000000000000000000000000000000000000000']
-    #     # 'topics': ['0x1504460f00000000000000000000000000000000000000000000000000000000']
-    #
-    # def __note(self, log):
-    #     args = log['args']
-    #     print(args)
-
 
 class DSCache(DSValue):
     """A client for the `DSCache` contract, an expiring single-value data feed.
