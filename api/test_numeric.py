@@ -212,6 +212,27 @@ class TestRay:
         with pytest.raises(ArithmeticError):
             Ray(10) - Wad(2)
 
+    def test_multiply(self):
+        assert Ray.from_number(2) * Ray.from_number(3) == Ray.from_number(6)
+        assert Ray.from_number(2) * Ray(3) == Ray(6)
+        assert Ray.from_number(2.5) * Ray(3) == Ray(7)
+        assert Ray.from_number(2.99999) * Ray(3) == Ray(8)
+
+    def test_multiply_by_wad(self):
+        assert Ray.from_number(2) * Wad.from_number(3) == Ray.from_number(6)
+        assert Ray.from_number(2) * Wad(3) == Ray(6000000000)
+        assert Ray(2) * Wad(3) == Ray(0)
+        assert Ray(2) * Wad(999999999999999999) == Ray(1)
+        assert Ray(2) * Wad(1000000000000000000) == Ray(2)
+
+    def test_multiply_by_int(self):
+        assert Ray.from_number(2) * 3 == Ray.from_number(6)
+        assert Ray.from_number(2) * 1 == Ray.from_number(2)
+
+    def test_should_fail_to_multiply_by_float(self):
+        with pytest.raises(ArithmeticError):
+            Ray(2) * 3.0
+
     def test_should_compare_rays_with_each_other(self):
         assert Ray(1000) == Ray(1000)
         assert Ray(1000) != Ray(999)
