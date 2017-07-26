@@ -19,11 +19,12 @@ import asyncio
 
 
 def synchronize(futures) -> list:
-    loop = asyncio.get_event_loop()
-    try:
-        return loop.run_until_complete(asyncio.gather(*futures))
-    finally:
-        loop.close()
+    if len(futures) > 0:
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(asyncio.gather(*futures, loop=loop))
+        finally:
+            loop.close()
 
 
 def int_to_bytes32(value: int) -> bytes:
