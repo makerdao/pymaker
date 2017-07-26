@@ -47,6 +47,16 @@ class TestERC20Token:
         self.token.balance_of(self.our_address) == Wad(999500)
         self.token.balance_of(self.second_address) == Wad(500)
 
+    def test_allowance_of(self):
+        self.token.allowance_of(self.our_address, self.second_address) == Wad(0)
+
+    def test_approve(self):
+        # when
+        self.token.approve(self.second_address, Wad(2000))
+
+        # then
+        self.token.allowance_of(self.our_address, self.second_address) == Wad(2000)
+
 
 class TestDSToken:
     def setup_method(self):
