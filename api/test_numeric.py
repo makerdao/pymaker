@@ -38,6 +38,20 @@ class TestWad:
         Wad(2**256 + 1)
         Wad(2**512)
 
+    def test_should_instantiate_from_a_wad(self):
+        assert Wad(Wad(1)) == Wad(1)
+
+    def test_should_instantiate_from_a_ray(self):
+        assert Wad(Ray(10000000000000001010101010101)) == Wad(10000000000000001010)
+        assert Wad(Ray(10000000000000001019999999999)) == Wad(10000000000000001019)
+
+    def test_should_instantiate_from_an_int(self):
+        assert Wad(10).value == 10
+
+    def test_should_fail_to_instantiate_from_a_float(self):
+        with pytest.raises(ArithmeticError):
+            assert Wad(10.5)
+
     def test_should_format_to_string_nicely(self):
         assert str(Wad(1)) == "0.000000000000000001"
         assert str(Wad(500000000000000000)) == "0.500000000000000000"
@@ -157,6 +171,19 @@ class TestRay:
         Ray(2**256)
         Ray(2**256 + 1)
         Ray(2**512)
+
+    def test_should_instantiate_from_a_ray(self):
+        assert Ray(Ray(1)) == Ray(1)
+
+    def test_should_instantiate_from_a_wad(self):
+        assert Ray(Wad(10000000000000000000)) == Ray(10000000000000000000000000000)
+
+    def test_should_instantiate_from_an_int(self):
+        assert Ray(10).value == 10
+
+    def test_should_fail_to_instantiate_from_a_float(self):
+        with pytest.raises(ArithmeticError):
+            assert Ray(10.5)
 
     def test_should_format_to_string_nicely(self):
         assert str(Ray(1)) == "0.000000000000000000000000001"
