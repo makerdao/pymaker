@@ -87,8 +87,8 @@ class DSValue(Contract):
     def read_as_int(self) -> int:
         """Reads the current value from this instance and converts it to an int.
 
-        If the value is actually a `Ray` or a `Wad`, you can convert it to one using `Ray.from_uint(...)`
-        or `Wad.from_uint(...)`. Please see `Ray` or `Wad` for more details.
+        If the value is actually a `Ray` or a `Wad`, you can convert it to one using `Ray(...)`
+        or `Wad(...)`. Please see `Ray` or `Wad` for more details.
 
         If this instance does not contain a value, throws an exception.
 

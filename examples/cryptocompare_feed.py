@@ -47,7 +47,7 @@ web3.eth.defaultAccount = "0x002ca7F9b416B2304cDd20c26882d1EF5c53F611"
 dsvalue_address = Address('0x038b3d8288df582d57db9be2106a27be796b0daf')
 dsvalue = DSValue(web3=web3, address=dsvalue_address)
 
-dsvalue_value = Wad.from_uint(dsvalue.read_as_int())
+dsvalue_value = Wad(dsvalue.read_as_int())
 cryptocompare_value = cryptocompare_rate()
 threshold = Wad.from_number(0.25)
 
@@ -58,7 +58,7 @@ print(f"")
 if difference(dsvalue_value, cryptocompare_value) > threshold:
     print(f"Difference is >= {threshold}, will update")
     if dsvalue.poke_with_int(cryptocompare_value.value):
-        dsvalue_value = Wad.from_uint(dsvalue.read_as_int())
+        dsvalue_value = Wad(dsvalue.read_as_int())
         print(f"Successfully updated the DSValue value, which is now {dsvalue_value} USD/ETH")
     else:
         print(f"Updating the DSValue value failed")

@@ -60,10 +60,6 @@ class Wad:
         dec = Decimal(str(number)) * pwr
         return Wad(int(dec.quantize(1)))
 
-    @classmethod
-    def from_uint(cls, uint):
-        return Wad(uint)
-
     def __repr__(self):
         return "Wad(" + str(self.value) + ")"
 
@@ -167,10 +163,6 @@ class Ray:
         pwr = Decimal(10) ** 27
         dec = Decimal(str(number)) * pwr
         return Ray(int(dec.quantize(1)))
-
-    @classmethod
-    def from_uint(cls, uint):
-        return Ray(uint)
 
     def __repr__(self):
         return "Ray(" + str(self.value) + ")"
