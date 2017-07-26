@@ -23,6 +23,31 @@ from api.numeric import Wad
 from api.token import DSToken
 
 
+class TestERC20Token:
+    def setup_method(self):
+        self.web3 = Web3(EthereumTesterProvider())
+        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
+        self.token = DSToken.deploy(self.web3, ['ABC'])
+        self.token.mint(Wad(1000000))
+        self.our_address = Address(self.web3.eth.defaultAccount)
+        self.second_address = Address(self.web3.eth.accounts[1])
+
+    def test_total_supply(self):
+        self.token.total_supply() == Wad(1000000)
+
+    def test_balance_of(self):
+        self.token.balance_of(self.our_address) == Wad(1000000)
+        self.token.balance_of(self.second_address) == Wad(0)
+
+    def test_transfer(self):
+        # when
+        self.token.transfer(self.second_address, Wad(500))
+
+        # then
+        self.token.balance_of(self.our_address) == Wad(999500)
+        self.token.balance_of(self.second_address) == Wad(500)
+
+
 class TestDSToken:
     def setup_method(self):
         self.web3 = Web3(EthereumTesterProvider())
