@@ -101,6 +101,22 @@ class TestWad:
         with pytest.raises(ArithmeticError):
             Wad(2) * 3.0
 
+    def test_divide(self):
+        assert Wad.from_number(4) / Wad.from_number(2) == Wad.from_number(2)
+        assert Wad(4) / Wad.from_number(2) == Wad(2)
+        assert Wad(3) / Wad.from_number(2) == Wad(1)
+        assert Wad(39) / Wad.from_number(20) == Wad(1)
+        assert Wad(40) / Wad.from_number(20) == Wad(2)
+        assert Wad.from_number(0.2) / Wad.from_number(0.1) == Wad.from_number(2)
+
+    def test_should_fail_to_divide_by_rays(self):
+        with pytest.raises(ArithmeticError):
+            Wad(4) / Ray(2)
+
+    def test_should_fail_to_divide_by_ints(self):
+        with pytest.raises(ArithmeticError):
+            Wad(4) / 2
+
     def test_should_compare_wads_with_each_other(self):
         assert Wad(1000) == Wad(1000)
         assert Wad(1000) != Wad(999)
@@ -254,6 +270,22 @@ class TestRay:
     def test_should_fail_to_multiply_by_float(self):
         with pytest.raises(ArithmeticError):
             Ray(2) * 3.0
+
+    def test_divide(self):
+        assert Ray.from_number(4) / Ray.from_number(2) == Ray.from_number(2)
+        assert Ray(4) / Ray.from_number(2) == Ray(2)
+        assert Ray(3) / Ray.from_number(2) == Ray(1)
+        assert Ray(39) / Ray.from_number(20) == Ray(1)
+        assert Ray(40) / Ray.from_number(20) == Ray(2)
+        assert Ray.from_number(0.2) / Ray.from_number(0.1) == Ray.from_number(2)
+
+    def test_should_fail_to_divide_by_wads(self):
+        with pytest.raises(ArithmeticError):
+            Ray(4) / Wad(2)
+
+    def test_should_fail_to_divide_by_ints(self):
+        with pytest.raises(ArithmeticError):
+            Ray(4) / 2
 
     def test_should_compare_rays_with_each_other(self):
         assert Ray(1000) == Ray(1000)
