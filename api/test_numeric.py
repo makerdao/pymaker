@@ -136,3 +136,119 @@ class TestWad:
         with pytest.raises(ArithmeticError):
             Wad.max(15, Wad(25))
 
+
+class TestRay:
+    def test_should_support_negative_values(self):
+        Ray(-1)
+
+    def test_should_support_values_greater_than_uint256(self):
+        Ray(2**256)
+        Ray(2**256 + 1)
+        Ray(2**512)
+
+    def test_should_format_to_string_nicely(self):
+        assert str(Ray(1)) == "0.000000000000000000000000001"
+        assert str(Ray(500000000000000000000000000)) == "0.500000000000000000000000000"
+        assert str(Ray(1500000000000000000000000000)) == "1.500000000000000000000000000"
+        assert str(Ray(-1500000000000000000000000000)) == "-1.500000000000000000000000000"
+        assert str(Ray(-500000000000000000000000000)) == "-0.500000000000000000000000000"
+        assert str(Ray(-1)) == "-0.000000000000000000000000001"
+
+    def test_add(self):
+        assert Ray(1) + Ray(2) == Ray(3)
+
+    def test_add_should_not_work_with_wads(self):
+        with pytest.raises(ArithmeticError):
+            Ray(1) + Wad(2)
+
+    def test_add_should_not_work_with_ints(self):
+        with pytest.raises(ArithmeticError):
+            Ray(1) + 2
+
+    def test_subtract(self):
+        assert Ray(10) - Ray(2) == Ray(8)
+        assert Ray(1) - Ray(2) == Ray(-1)
+
+    def test_subtract_should_not_work_with_wads(self):
+        with pytest.raises(ArithmeticError):
+            Ray(10) - Wad(2)
+
+    def test_should_compare_rays_with_each_other(self):
+        assert Ray(1000) == Ray(1000)
+        assert Ray(1000) != Ray(999)
+        assert Ray(1000) > Ray(999)
+        assert Ray(999) < Ray(1000)
+        assert Ray(999) <= Ray(1000)
+        assert Ray(1000) <= Ray(1000)
+        assert Ray(1000) >= Ray(1000)
+        assert Ray(1000) >= Ray(999)
+
+    def test_should_reject_comparison_with_wads(self):
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) == Wad(1000)
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) != Wad(999)
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) > Wad(999)
+        with pytest.raises(ArithmeticError):
+            assert Ray(999) < Wad(1000)
+        with pytest.raises(ArithmeticError):
+            assert Ray(999) <= Wad(1000)
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) <= Wad(1000)
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) >= Wad(1000)
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) >= Wad(999)
+
+    def test_should_reject_comparison_with_ints(self):
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) == 100
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) != 999
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) > 999
+        with pytest.raises(ArithmeticError):
+            assert Ray(999) < 1000
+        with pytest.raises(ArithmeticError):
+            assert Ray(999) <= 1000
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) <= 1000
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) >= 1000
+        with pytest.raises(ArithmeticError):
+            assert Ray(1000) >= 999
+
+    def test_min_value(self):
+        assert Ray.min(Ray(10), Ray(20)) == Ray(10)
+        assert Ray.min(Ray(25), Ray(15)) == Ray(15)
+        assert Ray.min(Ray(25), Ray(15), Ray(5)) == Ray(5)
+
+    def test_min_value_should_reject_comparison_with_wads(self):
+        with pytest.raises(ArithmeticError):
+            Ray.min(Ray(10), Wad(20))
+        with pytest.raises(ArithmeticError):
+            Ray.min(Wad(25), Ray(15))
+
+    def test_min_value_should_reject_comparison_with_ints(self):
+        with pytest.raises(ArithmeticError):
+            Ray.min(Ray(10), 20)
+        with pytest.raises(ArithmeticError):
+            Ray.min(20, Ray(10))
+
+    def test_max_value(self):
+        assert Ray.max(Ray(10), Ray(20)) == Ray(20)
+        assert Ray.max(Ray(25), Ray(15)) == Ray(25)
+        assert Ray.max(Ray(25), Ray(15), Ray(40)) == Ray(40)
+
+    def test_max_value_should_reject_comparison_with_wads(self):
+        with pytest.raises(ArithmeticError):
+            Ray.max(Ray(10), Wad(20))
+        with pytest.raises(ArithmeticError):
+            Ray.max(Ray(25), Wad(15))
+
+    def test_max_value_should_reject_comparison_with_ints(self):
+        with pytest.raises(ArithmeticError):
+            Ray.max(Ray(10), 20)
+        with pytest.raises(ArithmeticError):
+            Ray.max(15, Ray(25))
