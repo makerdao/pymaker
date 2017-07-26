@@ -26,7 +26,6 @@ from api.feed import DSValue
 class TestDSValue:
     def setup_method(self):
         self.web3 = Web3(EthereumTesterProvider())
-        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.dsvalue = DSValue.deploy(self.web3)
 
     def test_address(self):
