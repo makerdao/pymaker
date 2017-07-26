@@ -20,7 +20,7 @@ from web3 import Web3
 
 from api import Address
 from api.numeric import Wad
-from api.token import DSToken
+from api.token import DSToken, DSEthToken
 
 
 class TestERC20Token:
@@ -81,3 +81,28 @@ class TestDSToken:
 
         # then
         assert self.dstoken.balance_of(self.our_address) == Wad(60000)
+
+
+class TestDSEthToken:
+    def setup_method(self):
+        self.web3 = Web3(EthereumTesterProvider())
+        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
+        self.our_address = Address(self.web3.eth.defaultAccount)
+        self.dsethtoken = DSEthToken.deploy(self.web3)
+
+    def test_deposit(self):
+        # when
+        self.dsethtoken.deposit(Wad(100000))
+
+        # then
+        assert self.dsethtoken.balance_of(self.our_address) == Wad(100000)
+
+    def test_withdraw(self):
+        # given
+        self.dsethtoken.deposit(Wad(100000))
+
+        # when
+        self.dsethtoken.withdraw(Wad(40000))
+
+        # then
+        assert self.dsethtoken.balance_of(self.our_address) == Wad(60000)

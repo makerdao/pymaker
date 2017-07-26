@@ -182,6 +182,11 @@ class DSEthToken(ERC20Token):
     """
 
     abi = Contract._load_abi(__name__, 'abi/DSEthToken.abi')
+    bin = Contract._load_bin(__name__, 'abi/DSEthToken.bin')
+
+    @staticmethod
+    def deploy(web3: Web3, args=[]):
+        return DSEthToken(web3=web3, address=Contract._deploy(web3, DSEthToken.abi, DSEthToken.bin, args))
 
     def __init__(self, web3, address):
         super().__init__(web3, address)
