@@ -42,11 +42,11 @@ class ExpTestSaiBite():
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         our_account = Address(self.web3.eth.defaultAccount)
 
-        sai = self.deploy('DSToken', ['SAI'])
-        sin = self.deploy('DSToken', ['SIN'])
-        gem = self.deploy('DSToken', ['ETH'])
-        pip = self.deploy('DSValue')
-        skr = self.deploy('DSToken', ['SKR'])
+        sai = DSToken.deploy(self.web3, ['SAI'])
+        sin = DSToken.deploy(self.web3, ['SIN'])
+        gem = DSToken.deploy(self.web3, ['ETH'])
+        pip = DSValue.deploy(self.web3)
+        skr = DSToken.deploy(self.web3, ['SKR'])
 
         pot = self.deploy('DSVault')
         pit = self.deploy('DSVault')
@@ -55,17 +55,16 @@ class ExpTestSaiBite():
         dad = self.deploy('DSGuard')
         mom = self.deploy('DSRoles')
 
-        jug = self.deploy('SaiJug', [sai, sin])
-        jar = self.deploy('SaiJar', [skr, gem, pip])
+        jug = self.deploy('SaiJug', [sai.address.address, sin.address.address])
+        jar = self.deploy('SaiJar', [skr.address.address, gem.address.address, pip.address.address])
 
         tub = self.deploy('Tub', [jar, jug, pot, pit, tip])
         tap = self.deploy('Tap', [tub, pit])
         top = self.deploy('Top', [tub, tap])
 
-        gem_token = DSToken(web3=self.web3, address=Address(gem))
-        print(gem_token.balance_of(our_account))
-        gem_token.mint(Wad.from_number(10))
-        print(gem_token.balance_of(our_account))
+        print(gem.balance_of(our_account))
+        gem.mint(Wad.from_number(10))
+        print(gem.balance_of(our_account))
 
         self.tub = Tub(web3=self.web3, address_tub=Address(tub), address_tap=Address(tap), address_top=Address(top))
 
