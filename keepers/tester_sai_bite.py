@@ -24,6 +24,7 @@ from web3 import Web3, EthereumTesterProvider, TestRPCProvider
 
 from api import Address, Wad
 from api.approval import directly
+from api.auth import DSGuard
 from api.feed import DSValue
 from api.sai import Tub
 from api.token import DSToken
@@ -52,7 +53,7 @@ class ExpTestSaiBite():
         pit = self.deploy('DSVault')
         tip = self.deploy('Tip')
 
-        dad = self.deploy('DSGuard')
+        dad = DSGuard.deploy(self.web3)
         mom = self.deploy('DSRoles')
 
         jug = self.deploy('SaiJug', [sai.address.address, sin.address.address])
@@ -62,11 +63,68 @@ class ExpTestSaiBite():
         tap = self.deploy('Tap', [tub, pit])
         top = self.deploy('Top', [tub, tap])
 
+        saiTub = Tub(self.web3, address_tub=Address(tub), address_tap=Address(tap))
+
+
+
+# seth send $SAI_TIP "warp(uint64)" 0
+#
+# seth send $SAI_TIP "setAuthority(address)" $SAI_MOM
+# seth send $SAI_TUB "setAuthority(address)" $SAI_MOM
+# seth send $SAI_TAP "setAuthority(address)" $SAI_MOM
+# seth send $SAI_TOP "setAuthority(address)" $SAI_MOM
+# seth send $SAI_JAR "setAuthority(address)" $SAI_MOM
+#
+# seth send $SAI_POT "setAuthority(address)" $SAI_DAD
+# seth send $SAI_PIT "setAuthority(address)" $SAI_DAD
+# seth send $SAI_JUG "setAuthority(address)" $SAI_DAD
+#
+# seth send $SAI_SAI "setAuthority(address)" $SAI_DAD
+# seth send $SAI_SIN "setAuthority(address)" $SAI_DAD
+# seth send $SAI_SKR "setAuthority(address)" $SAI_DAD
+#
+# seth send $SAI_MOM "setUserRole(address,uint8,bool)" $SAI_TUB 255 true
+# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 255 $SAI_JAR $(seth calldata 'join(address,uint128)') true
+# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 255 $SAI_JAR $(seth calldata 'exit(address,uint128)') true
+# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 255 $SAI_JAR $(seth calldata 'push(address,address,uint128)') true
+# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 255 $SAI_JAR $(seth calldata 'pull(address,address,uint128)') true
+#
+# seth send $SAI_MOM "setUserRole(address,uint8,bool)" $SAI_TOP 254 true
+# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 254 $SAI_JAR $(seth calldata 'push(address,address,uint128)') true
+# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 254 $SAI_TUB $(seth calldata 'cage(uint128)') true
+
+
+
+        dad.permit(saiTub.addressTub, Address(jug), DSGuard.ANY_SIG)
+        dad.permit(saiTub.addressTub, Address(pot), DSGuard.ANY_SIG)
+
+        dad.permit(Address(tap), Address(jug), DSGuard.ANY_SIG)
+        dad.permit(Address(tap), Address(pit), DSGuard.ANY_SIG)
+
+        dad.permit(Address(top), Address(jug), DSGuard.ANY_SIG)
+        dad.permit(Address(top), Address(pit), DSGuard.ANY_SIG)
+
+        dad.permit(Address(jar), skr.address, DSGuard.ANY_SIG)
+
+        dad.permit(Address(jug), Address(pot), DSGuard.ANY_SIG)
+        dad.permit(Address(jug), Address(pit), DSGuard.ANY_SIG)
+
+        dad.permit(Address(pot), sai.address, DSGuard.ANY_SIG)
+        dad.permit(Address(pot), sin.address, DSGuard.ANY_SIG)
+
+        dad.permit(Address(pit), sai.address, DSGuard.ANY_SIG)
+        dad.permit(Address(pit), sin.address, DSGuard.ANY_SIG)
+        dad.permit(Address(pit), skr.address, DSGuard.ANY_SIG)
+
+
+
         print(gem.balance_of(our_account))
         gem.mint(Wad.from_number(10))
         print(gem.balance_of(our_account))
 
-        self.tub = Tub(web3=self.web3, address_tub=Address(tub), address_tap=Address(tap), address_top=Address(top))
+        self.tub = Tub(web3=self.web3, address_tub=Address(tub), address_tap=Address(tap))
+
+
 
 
 

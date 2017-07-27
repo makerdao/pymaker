@@ -17,7 +17,7 @@
 
 from api import Address
 from api.oasis import SimpleMarket
-from api.sai import Tub
+from api.sai import Tub, Top
 from api.token import ERC20Token, DSEthToken
 from keepers import Keeper
 
@@ -27,8 +27,9 @@ class SaiKeeper(Keeper):
         super().__init__()
         self.tub_address = Address(self.config.get_contract_address("saiTub"))
         self.tap_address = Address(self.config.get_contract_address("saiTap"))
+        self.tub = Tub(web3=self.web3, address_tub=self.tub_address, address_tap=self.tap_address)
         self.top_address = Address(self.config.get_contract_address("saiTop"))
-        self.tub = Tub(web3=self.web3, address_tub=self.tub_address, address_tap=self.tap_address, address_top=self.top_address)
+        self.top = Top(web3=self.web3, address=self.top_address)
         self.otc_address = Address(self.config.get_contract_address("otc"))
         self.otc = SimpleMarket(web3=self.web3, address=self.otc_address)
 

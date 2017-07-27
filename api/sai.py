@@ -72,21 +72,17 @@ class Tub(Contract):
 
     abiTub = Contract._load_abi(__name__, 'abi/Tub.abi')
     abiTap = Contract._load_abi(__name__, 'abi/Tap.abi')
-    abiTop = Contract._load_abi(__name__, 'abi/Top.abi')
     abiTip = Contract._load_abi(__name__, 'abi/Tip.abi')
     abiJar = Contract._load_abi(__name__, 'abi/SaiJar.abi')
 
-    def __init__(self, web3: Web3, address_tub: Address, address_tap: Address, address_top: Address):
+    def __init__(self, web3: Web3, address_tub: Address, address_tap: Address):
         self.web3 = web3
         self.addressTub = address_tub
         self.addressTap = address_tap
-        self.addressTop = address_top
         self._assert_contract_exists(web3, address_tub)
         self._assert_contract_exists(web3, address_tap)
-        self._assert_contract_exists(web3, address_top)
         self._contractTub = web3.eth.contract(abi=self.abiTub)(address=address_tub.address)
         self._contractTap = web3.eth.contract(abi=self.abiTap)(address=address_tap.address)
-        self._contractTop = web3.eth.contract(abi=self.abiTop)(address=address_top.address)
         self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contractTub.call().tip())
         self._contractJar = web3.eth.contract(abi=self.abiJar)(address=self._contractTub.call().jar())
 
@@ -232,14 +228,6 @@ class Tub(Contract):
             The GEM per SKR settlement (kill) price.
         """
         return Ray(self._contractTub.call().fit())
-
-    def fix(self) -> Ray:
-        """Get the GEM per SAI settlement price.
-
-        Returns:
-            The GEM per SAI settlement (kill) price.
-        """
-        return Ray(self._contractTop.call().fix())
 
     def rho(self) -> int:
         """Get the time of the last drip.
@@ -795,16 +783,48 @@ class Tub(Contract):
     def bust_calldata(self, amount_in_skr: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abiTap).encodeABI('bust', [amount_in_skr]))
 
-    # TODO cage
-    # TODO cash
-    # TODO vent
-
     def __eq__(self, other):
         assert(isinstance(other, Tub))
         return self.addressTub == other.addressTub
 
     def __repr__(self):
         return f"Tub(addressTub='{self.addressTub}')"
+
+
+class Top(Contract):
+    """A client for the `Top` contract, one of the `SAI Stablecoin System` contracts.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `Top` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/Top.abi')
+
+    def __init__(self, web3: Web3, address: Address):
+        self.web3 = web3
+        self.address = address
+        self._assert_contract_exists(web3, address)
+        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+
+    def fix(self) -> Ray:
+        """Get the GEM per SAI settlement price.
+
+        Returns:
+            The GEM per SAI settlement (kill) price.
+        """
+        return Ray(self._contract.call().fix())
+
+    # TODO cage
+    # TODO cash
+    # TODO vent
+
+    def __eq__(self, other):
+        assert(isinstance(other, Top))
+        return self.address == other.address
+
+    def __repr__(self):
+        return f"Top(address='{self.address}')"
 
 
 class Lpc(Contract):

@@ -30,8 +30,7 @@ web3.eth.defaultAccount = "0x002ca7F9b416B2304cDd20c26882d1EF5c53F611"
 
 tub = Tub(web3=web3,
           address_tub=Address('0xc349a197c9c3200411094adec82972a2b921c6e2'),
-          address_tap=Address('0x3d9a8aa3753bab869b1cc58063063773da54bd66'),
-          address_top=Address('0x66174cf99acdb1a5568186a55827b2aac56275e1'))
+          address_tap=Address('0x3d9a8aa3753bab869b1cc58063063773da54bd66'))
 sai = ERC20Token(web3=web3, address=tub.sai())
 skr = ERC20Token(web3=web3, address=tub.skr())
 gem = ERC20Token(web3=web3, address=tub.gem())
