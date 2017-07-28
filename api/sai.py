@@ -807,6 +807,11 @@ class Top(Contract):
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
+    def set_authority(self, address: Address) -> Optional[Receipt]:
+        assert(isinstance(address, Address))
+        return self._transact(self.web3, f"Top('{self.address}').setAuthority('{address}')",
+                              lambda: self._contract.transact().setAuthority(address.address))
+
     def fix(self) -> Ray:
         """Get the GEM per SAI settlement price.
 
