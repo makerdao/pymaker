@@ -129,8 +129,8 @@ class SaiArbitrage(SaiKeeper):
     def tub_conversions(self) -> List[Conversion]:
         return [TubJoinConversion(self.tub),
                 TubExitConversion(self.tub),
-                TubBoomConversion(self.tub),
-                TubBustConversion(self.tub)]
+                TubBoomConversion(self.tub, self.tap),
+                TubBustConversion(self.tub, self.tap)]
 
     def otc_offers(self, tokens):
         return [offer for offer in self.otc.active_offers()

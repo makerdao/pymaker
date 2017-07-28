@@ -20,7 +20,7 @@ from api.oasis import SimpleMarket
 from api.numeric import Ray
 from api.numeric import Wad
 from api.oasis import OfferInfo
-from api.sai import Tub, Lpc
+from api.sai import Tub, Lpc, Tap
 from api.token import ERC20Token
 
 
@@ -73,7 +73,7 @@ class TubJoinConversion(Conversion):
         return self.tub.join(self.source_amount)
 
     def address(self) -> Address:
-        return self.tub.addressTub
+        return self.tub.address
 
     def calldata(self):
         return self.tub.join_calldata(self.source_amount)
@@ -95,61 +95,63 @@ class TubExitConversion(Conversion):
         return self.tub.exit(self.source_amount)
 
     def address(self) -> Address:
-        return self.tub.addressTub
+        return self.tub.address
 
     def calldata(self):
         return self.tub.exit_calldata(self.source_amount)
 
 
 class TubBoomConversion(Conversion):
-    def __init__(self, tub: Tub):
+    def __init__(self, tub: Tub, tap: Tap):
         self.tub = tub
+        self.tap = tap
         super().__init__(source_token=self.tub.skr(),
                          target_token=self.tub.sai(),
-                         rate=Ray(tub.tap_bid()),
-                         max_source_amount=self.boomable_amount_in_skr(tub),
+                         rate=Ray(tap.bid()),
+                         max_source_amount=self.boomable_amount_in_skr(tap),
                          method="tub.boom()")
 
     #TODO currently the keeper doesn't see `joy` changing unless `drip` gets called
     #this is the thing `sai-explorer` is trying to calculate on his own
-    def boomable_amount_in_sai(self, tub: Tub):
-        return Wad.max(tub.joy() - tub.woe(), Wad.from_number(0))
+    def boomable_amount_in_sai(self, tap: Tap):
+        return Wad.max(tap.joy() - tap.woe(), Wad.from_number(0))
 
-    def boomable_amount_in_skr(self, tub: Tub):
+    def boomable_amount_in_skr(self, tap: Tap):
         # we deduct 0.000001 in order to avoid rounding errors
-        return Wad.max(Wad(self.boomable_amount_in_sai(tub) / (tub.tap_bid())) - Wad.from_number(0.000001), Wad.from_number(0))
+        return Wad.max(Wad(self.boomable_amount_in_sai(tap) / (tap.bid())) - Wad.from_number(0.000001), Wad.from_number(0))
 
     def name(self):
         return f"tub.boom('{self.source_amount}')"
 
     def execute(self):
-        return self.tub.boom(self.source_amount)
+        return self.tap.boom(self.source_amount)
 
     def address(self) -> Address:
-        return self.tub.addressTap
+        return self.tap.address
 
     def calldata(self):
-        return self.tub.boom_calldata(self.source_amount)
+        return self.tap.boom_calldata(self.source_amount)
 
 
 class TubBustConversion(Conversion):
-    def __init__(self, tub: Tub):
+    def __init__(self, tub: Tub, tap: Tap):
         self.tub = tub
+        self.tap = tap
         super().__init__(source_token=self.tub.sai(),
                          target_token=self.tub.skr(),
-                         rate=(Ray.from_number(1) / Ray(tub.tap_ask())),
-                         max_source_amount=self.bustable_amount_in_sai(tub),
+                         rate=(Ray.from_number(1) / Ray(tap.ask())),
+                         max_source_amount=self.bustable_amount_in_sai(tap),
                          method="tub.bust()")
 
-    def bustable_amount_in_sai(self, tub: Tub):
+    def bustable_amount_in_sai(self, tap: Tap):
         #TODO we always try to bust 10 SAI less than what the Tub reports
         #in order to discount the growth of `joy()` that might've have happened since the last drip
         #of course this is not the right solution and it won't even work properly if the last
         #drip happened enough time ago
-        bustable_woe = tub.woe() - tub.joy() - Wad.from_number(10)
+        bustable_woe = tap.woe() - tap.joy() - Wad.from_number(10)
 
         # we deduct 0.000001 in order to avoid rounding errors
-        bustable_fog = tub.fog() * tub.tap_ask() - Wad.from_number(0.000001)
+        bustable_fog = tap.fog() * tap.ask() - Wad.from_number(0.000001)
 
         return Wad.max(bustable_woe, bustable_fog, Wad.from_number(0))
 
@@ -157,13 +159,13 @@ class TubBustConversion(Conversion):
         return f"tub.bust('{self.target_amount}')"
 
     def execute(self):
-        return self.tub.bust(self.target_amount)
+        return self.tap.bust(self.target_amount)
 
     def address(self) -> Address:
-        return self.tub.addressTap
+        return self.tap.address
 
     def calldata(self):
-        return self.tub.bust_calldata(self.target_amount)
+        return self.tap.bust_calldata(self.target_amount)
 
 
 class LpcTakeRefConversion(Conversion):

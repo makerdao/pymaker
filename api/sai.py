@@ -71,20 +71,27 @@ class Tub(Contract):
     """
 
     abiTub = Contract._load_abi(__name__, 'abi/Tub.abi')
-    abiTap = Contract._load_abi(__name__, 'abi/Tap.abi')
+    binTub = Contract._load_bin(__name__, 'abi/Tub.bin')
     abiTip = Contract._load_abi(__name__, 'abi/Tip.abi')
     abiJar = Contract._load_abi(__name__, 'abi/SaiJar.abi')
 
-    def __init__(self, web3: Web3, address_tub: Address, address_tap: Address):
+    def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
-        self.addressTub = address_tub
-        self.addressTap = address_tap
-        self._assert_contract_exists(web3, address_tub)
-        self._assert_contract_exists(web3, address_tap)
-        self._contractTub = web3.eth.contract(abi=self.abiTub)(address=address_tub.address)
-        self._contractTap = web3.eth.contract(abi=self.abiTap)(address=address_tap.address)
+        self.address = address
+        self._assert_contract_exists(web3, address)
+        self._contractTub = web3.eth.contract(abi=self.abiTub)(address=address.address)
         self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contractTub.call().tip())
         self._contractJar = web3.eth.contract(abi=self.abiJar)(address=self._contractTub.call().jar())
+
+    @staticmethod
+    def deploy(web3: Web3, jar: Address, jug: Address, pot: Address, pit: Address, tip: Address):
+        assert(isinstance(jar, Address))
+        assert(isinstance(jug, Address))
+        assert(isinstance(pot, Address))
+        assert(isinstance(pit, Address))
+        assert(isinstance(tip, Address))
+        return Tub(web3=web3, address=Contract._deploy(web3, Tub.abiTub, Tub.binTub,
+                                                       [jar.address, jug.address, pot.address, pit.address, tip.address]))
 
     def approve(self, approval_function):
         approval_function(ERC20Token(web3=self.web3, address=self.gem()), self.jar(), 'Tub.jar')
@@ -268,7 +275,7 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_axe, Ray)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').chop('{new_axe}')",
+        return self._transact(self.web3, f"Tub('{self.address}').chop('{new_axe}')",
                               lambda: self._contractTub.transact().chop(new_axe.value))
 
     def cork(self, new_hat: Wad) -> Optional[Receipt]:
@@ -282,7 +289,7 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_hat, Wad)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').cork('{new_hat}')",
+        return self._transact(self.web3, f"Tub('{self.address}').cork('{new_hat}')",
                               lambda: self._contractTub.transact().cork(new_hat.value))
 
     def cuff(self, new_mat: Ray) -> Optional[Receipt]:
@@ -296,7 +303,7 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_mat, Ray)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').cuff('{new_mat}')",
+        return self._transact(self.web3, f"Tub('{self.address}').cuff('{new_mat}')",
                               lambda: self._contractTub.transact().cuff(new_mat.value))
 
     def crop(self, new_tax: Ray) -> Optional[Receipt]:
@@ -310,7 +317,7 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(new_tax, Ray)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').crop('{new_tax}')",
+        return self._transact(self.web3, f"Tub('{self.address}').crop('{new_tax}')",
                               lambda: self._contractTub.transact().crop(new_tax.value))
 
     def coax(self, new_way: Ray) -> Optional[Receipt]:
@@ -334,7 +341,7 @@ class Tub(Contract):
             A `Receipt` if the Ethereum transaction was successful.
             `None` if the Ethereum transaction failed.
         """
-        return self._transact(self.web3, f"Tub('{self.addressTub}').drip()",
+        return self._transact(self.web3, f"Tub('{self.address}').drip()",
                               lambda: self._contractTub.transact().drip())
 
     def prod(self) -> Optional[Receipt]:
@@ -355,14 +362,6 @@ class Tub(Contract):
         """
         return Wad(self._contractTub.call().ice())
 
-    def woe(self) -> Wad:
-        """Get the amount of bad debt.
-
-        Returns:
-            The amount of bad debt in SAI.
-        """
-        return Wad(self._contractTap.call().woe())
-
     def pie(self) -> Wad:
         """Get the amount of raw collateral.
 
@@ -378,25 +377,6 @@ class Tub(Contract):
             The amount of backing collateral in SKR.
         """
         return Wad(self._contractTub.call().air())
-
-    def fog(self) -> Wad:
-        """Get the amount of SKR pending liquidation.
-
-        Returns:
-            The amount of SKR pending liquidation, in SKR.
-        """
-        return Wad(self._contractTap.call().fog())
-
-    #TODO beware that it doesn't call drip() underneath so if `tax`>1.0 we won't get an up-to-date value of joy()
-    def joy(self) -> Wad:
-        """Get the amount of surplus SAI.
-
-        Surplus SAI can be processed using `boom()`.
-
-        Returns:
-            The amount of surplus SAI accumulated in the Tub.
-        """
-        return Wad(self._contractTap.call().joy())
 
     def tag(self) -> Wad:
         """Get the reference price (REF per SKR).
@@ -431,56 +411,6 @@ class Tub(Contract):
             The current GEM per SKR price.
         """
         return Ray(self._contractJar.call().per())
-
-    def s2s(self) -> Wad:
-        """Get the current SKR per SAI rate (for `boom` and `bust`).
-
-        Returns:
-            The current SKR per SAI rate.
-        """
-        return Wad(self._contractTap.call().s2s())
-
-    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
-    def tap_gap(self) -> Wad:
-        """Get the current spread for `boom` and `bust`.
-
-        Returns:
-            The current spread for `boom` and `bust`. `1.0` means no spread, `1.01` means 1% spread.
-        """
-        return Wad(self._contractTap.call().gap())
-
-    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
-    def tap_jump(self, new_gap: Wad) -> Optional[Receipt]:
-        """Update the current spread (`gap`) for `boom` and `bust`.
-
-        Args:
-            new_tax: The new value of the spread (`gap`). `1.0` means no spread, `1.01` means 1% spread.
-
-        Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
-        """
-        assert isinstance(new_gap, Wad)
-        return self._transact(self.web3, f"Tap('{self.addressTap}').jump('{new_gap}')",
-                              lambda: self._contractTap.transact().jump(new_gap.value))
-
-    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
-    def tap_bid(self) -> Wad:
-        """Get the current price of SKR in SAI for `boom`.
-
-        Returns:
-            The SKR in SAI price that will be used on `boom()`.
-        """
-        return Wad(self._contractTap.call().bid())
-
-    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
-    def tap_ask(self) -> Wad:
-        """Get the current price of SKR in SAI for `bust`.
-
-        Returns:
-            The SKR in SAI price that will be used on `bust()`.
-        """
-        return Wad(self._contractTap.call().ask())
 
     # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
     def jar_gap(self) -> Wad:
@@ -604,7 +534,7 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(amount_in_gem, Wad)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').join('{amount_in_gem}')",
+        return self._transact(self.web3, f"Tub('{self.address}').join('{amount_in_gem}')",
                               lambda: self._contractTub.transact().join(amount_in_gem.value))
 
     def join_calldata(self, amount_in_gem: Wad) -> Calldata:
@@ -621,7 +551,7 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(amount_in_skr, Wad)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').exit('{amount_in_skr}')",
+        return self._transact(self.web3, f"Tub('{self.address}').exit('{amount_in_skr}')",
                               lambda: self._contractTub.transact().exit(amount_in_skr.value))
 
     def exit_calldata(self, amount_in_skr: Wad) -> Calldata:
@@ -635,7 +565,7 @@ class Tub(Contract):
             A `Receipt` if the Ethereum transaction was successful.
             `None` if the Ethereum transaction failed.
         """
-        return self._transact(self.web3, f"Tub('{self.addressTub}').open()",
+        return self._transact(self.web3, f"Tub('{self.address}').open()",
                               lambda: self._contractTub.transact().open())
 
     def shut(self, cup_id: int) -> Optional[Receipt]:
@@ -652,7 +582,7 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(cup_id, int)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').shut('{cup_id}')",
+        return self._transact(self.web3, f"Tub('{self.address}').shut('{cup_id}')",
                               lambda: self._contractTub.transact().shut(int_to_bytes32(cup_id)))
 
     def lock(self, cup_id: int, amount_in_skr: Wad) -> Optional[Receipt]:
@@ -668,7 +598,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').lock('{cup_id}', '{amount_in_skr}')",
+        return self._transact(self.web3, f"Tub('{self.address}').lock('{cup_id}', '{amount_in_skr}')",
                               lambda: self._contractTub.transact().lock(int_to_bytes32(cup_id), amount_in_skr.value))
 
     def free(self, cup_id: int, amount_in_skr: Wad) -> Optional[Receipt]:
@@ -684,7 +614,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').free('{cup_id}', '{amount_in_skr}')",
+        return self._transact(self.web3, f"Tub('{self.address}').free('{cup_id}', '{amount_in_skr}')",
                               lambda: self._contractTub.transact().free(int_to_bytes32(cup_id), amount_in_skr.value))
 
     def draw(self, cup_id: int, amount_in_sai: Wad) -> Optional[Receipt]:
@@ -700,7 +630,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').draw('{cup_id}', '{amount_in_sai}')",
+        return self._transact(self.web3, f"Tub('{self.address}').draw('{cup_id}', '{amount_in_sai}')",
                               lambda: self._contractTub.transact().draw(int_to_bytes32(cup_id), amount_in_sai.value))
 
     def wipe(self, cup_id: int, amount_in_sai: Wad) -> Optional[Receipt]:
@@ -716,7 +646,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').wipe('{cup_id}', '{amount_in_sai}')",
+        return self._transact(self.web3, f"Tub('{self.address}').wipe('{cup_id}', '{amount_in_sai}')",
                               lambda: self._contractTub.transact().wipe(int_to_bytes32(cup_id), amount_in_sai.value))
 
     def give(self, cup_id: int, new_lad: Address) -> Optional[Receipt]:
@@ -732,7 +662,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(new_lad, Address)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').give('{cup_id}', '{new_lad}')",
+        return self._transact(self.web3, f"Tub('{self.address}').give('{cup_id}', '{new_lad}')",
                               lambda: self._contractTub.transact().give(int_to_bytes32(cup_id), new_lad.address))
 
     def bite(self, cup_id: int) -> Optional[Receipt]:
@@ -746,8 +676,112 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(cup_id, int)
-        return self._transact(self.web3, f"Tub('{self.addressTub}').bite('{cup_id}')",
+        return self._transact(self.web3, f"Tub('{self.address}').bite('{cup_id}')",
                               lambda: self._contractTub.transact().bite(int_to_bytes32(cup_id)))
+
+    def __eq__(self, other):
+        assert(isinstance(other, Tub))
+        return self.address == other.addressTub
+
+    def __repr__(self):
+        return f"Tub(addressTub='{self.address}')"
+
+
+class Tap(Contract):
+    """A client for the `Tap` contract, on of the contracts driving the `SAI Stablecoin System`.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `Tap` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/Tap.abi')
+    bin = Contract._load_bin(__name__, 'abi/Tap.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        self.web3 = web3
+        self.address = address
+        self._assert_contract_exists(web3, address)
+        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+
+    @staticmethod
+    def deploy(web3: Web3, tub: Address, pit: Address):
+        assert(isinstance(tub, Address))
+        assert(isinstance(pit, Address))
+        return Tap(web3=web3, address=Contract._deploy(web3, Tap.abi, Tap.bin, [tub.address, pit.address]))
+
+    def woe(self) -> Wad:
+        """Get the amount of bad debt.
+
+        Returns:
+            The amount of bad debt in SAI.
+        """
+        return Wad(self._contract.call().woe())
+
+    def fog(self) -> Wad:
+        """Get the amount of SKR pending liquidation.
+
+        Returns:
+            The amount of SKR pending liquidation, in SKR.
+        """
+        return Wad(self._contract.call().fog())
+
+    #TODO beware that it doesn't call drip() underneath so if `tax`>1.0 we won't get an up-to-date value of joy()
+    def joy(self) -> Wad:
+        """Get the amount of surplus SAI.
+
+        Surplus SAI can be processed using `boom()`.
+
+        Returns:
+            The amount of surplus SAI accumulated in the Tub.
+        """
+        return Wad(self._contract.call().joy())
+
+    def gap(self) -> Wad:
+        """Get the current spread for `boom` and `bust`.
+
+        Returns:
+            The current spread for `boom` and `bust`. `1.0` means no spread, `1.01` means 1% spread.
+        """
+        return Wad(self._contract.call().gap())
+
+    def jump(self, new_gap: Wad) -> Optional[Receipt]:
+        """Update the current spread (`gap`) for `boom` and `bust`.
+
+        Args:
+            new_tax: The new value of the spread (`gap`). `1.0` means no spread, `1.01` means 1% spread.
+
+        Returns:
+            A `Receipt` if the Ethereum transaction was successful.
+            `None` if the Ethereum transaction failed.
+        """
+        assert isinstance(new_gap, Wad)
+        return self._transact(self.web3, f"Tap('{self.address}').jump('{new_gap}')",
+                              lambda: self._contract.transact().jump(new_gap.value))
+
+    def s2s(self) -> Wad:
+        """Get the current SKR per SAI rate (for `boom` and `bust`).
+
+        Returns:
+            The current SKR per SAI rate.
+        """
+        return Wad(self._contract.call().s2s())
+
+    def bid(self) -> Wad:
+        """Get the current price of SKR in SAI for `boom`.
+
+        Returns:
+            The SKR in SAI price that will be used on `boom()`.
+        """
+        return Wad(self._contract.call().bid())
+
+    def ask(self) -> Wad:
+        """Get the current price of SKR in SAI for `bust`.
+
+        Returns:
+            The SKR in SAI price that will be used on `bust()`.
+        """
+        return Wad(self._contract.call().ask())
 
     def boom(self, amount_in_skr: Wad) -> Optional[Receipt]:
         """Buy some amount of SAI to process `joy` (surplus).
@@ -760,11 +794,11 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(amount_in_skr, Wad)
-        return self._transact(self.web3, f"Tap('{self.addressTap}').boom('{amount_in_skr}')",
-                              lambda: self._contractTap.transact().boom(amount_in_skr.value))
+        return self._transact(self.web3, f"Tap('{self.address}').boom('{amount_in_skr}')",
+                              lambda: self._contract.transact().boom(amount_in_skr.value))
 
     def boom_calldata(self, amount_in_skr: Wad) -> Calldata:
-        return Calldata(self.web3.eth.contract(abi=self.abiTap).encodeABI('boom', [amount_in_skr]))
+        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('boom', [amount_in_skr]))
 
     def bust(self, amount_in_skr: Wad) -> Optional[Receipt]:
         """Sell some amount of SAI to process `woe` (bad debt).
@@ -777,18 +811,18 @@ class Tub(Contract):
             `None` if the Ethereum transaction failed.
         """
         assert isinstance(amount_in_skr, Wad)
-        return self._transact(self.web3, f"Tap('{self.addressTap}').bust('{amount_in_skr}')",
-                              lambda: self._contractTap.transact().bust(amount_in_skr.value))
+        return self._transact(self.web3, f"Tap('{self.address}').bust('{amount_in_skr}')",
+                              lambda: self._contract.transact().bust(amount_in_skr.value))
 
     def bust_calldata(self, amount_in_skr: Wad) -> Calldata:
-        return Calldata(self.web3.eth.contract(abi=self.abiTap).encodeABI('bust', [amount_in_skr]))
+        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('bust', [amount_in_skr]))
 
     def __eq__(self, other):
-        assert(isinstance(other, Tub))
-        return self.addressTub == other.addressTub
+        assert(isinstance(other, Tap))
+        return self.address == other.address
 
     def __repr__(self):
-        return f"Tub(addressTub='{self.addressTub}')"
+        return f"Tap(address='{self.address}')"
 
 
 class Top(Contract):
@@ -800,12 +834,19 @@ class Top(Contract):
     """
 
     abi = Contract._load_abi(__name__, 'abi/Top.abi')
+    bin = Contract._load_bin(__name__, 'abi/Top.bin')
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
         self.address = address
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+
+    @staticmethod
+    def deploy(web3: Web3, tub: Address, tap: Address):
+        assert(isinstance(tub, Address))
+        assert(isinstance(tap, Address))
+        return Top(web3=web3, address=Contract._deploy(web3, Top.abi, Top.bin, [tub.address, tap.address]))
 
     def set_authority(self, address: Address) -> Optional[Receipt]:
         assert(isinstance(address, Address))

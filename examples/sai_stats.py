@@ -27,9 +27,7 @@ from api.sai import Tub, Lpc
 
 
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
-tub = Tub(web3=web3,
-          address_tub=Address('0xc349a197c9c3200411094adec82972a2b921c6e2'),
-          address_tap=Address('0x3d9a8aa3753bab869b1cc58063063773da54bd66'))
+tub = Tub(web3=web3, address=Address('0xc349a197c9c3200411094adec82972a2b921c6e2'))
 sai = ERC20Token(web3=web3, address=tub.sai())
 skr = ERC20Token(web3=web3, address=tub.skr())
 gem = ERC20Token(web3=web3, address=tub.gem())

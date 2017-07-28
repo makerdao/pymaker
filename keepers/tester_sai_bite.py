@@ -26,8 +26,9 @@ from api import Address, Wad
 from api.approval import directly
 from api.auth import DSGuard
 from api.feed import DSValue
-from api.sai import Tub, Top
+from api.sai import Tub, Top, Tap
 from api.token import DSToken
+from api.vault import DSVault
 
 
 class ExpTestSaiBite():
@@ -49,8 +50,8 @@ class ExpTestSaiBite():
         pip = DSValue.deploy(self.web3)
         skr = DSToken.deploy(self.web3, 'SKR')
 
-        pot = self.deploy('DSVault')
-        pit = self.deploy('DSVault')
+        pot = DSVault.deploy(self.web3)
+        pit = DSVault.deploy(self.web3)
         tip = self.deploy('Tip')
 
         dad = DSGuard.deploy(self.web3)
@@ -58,16 +59,18 @@ class ExpTestSaiBite():
         jug = self.deploy('SaiJug', [sai.address.address, sin.address.address])
         jar = self.deploy('SaiJar', [skr.address.address, gem.address.address, pip.address.address])
 
-        tub = self.deploy('Tub', [jar, jug, pot, pit, tip])
-        tap = self.deploy('Tap', [tub, pit])
-        top = self.deploy('Top', [tub, tap])
+        tub = Tub.deploy(self.web3, Address(jar), Address(jug), pot.address, pit.address, Address(tip))
+        tap = Tap.deploy(self.web3, tub.address, pit.address)
+        top = Top.deploy(self.web3, tub.address, tap.address)
 
-        saiTub = Tub(self.web3, address_tub=Address(tub), address_tap=Address(tap))
 
 
         sai.set_authority(dad.address)
         sin.set_authority(dad.address)
         skr.set_authority(dad.address)
+        pot.set_authority(dad.address)
+        pit.set_authority(dad.address)
+        top.set_authority(dad.address)
 
 
 # seth send $SAI_TIP "warp(uint64)" 0
@@ -75,37 +78,34 @@ class ExpTestSaiBite():
 # seth send $SAI_TIP "setAuthority(address)" $SAI_MOM
 # seth send $SAI_TUB "setAuthority(address)" $SAI_MOM
 # seth send $SAI_TAP "setAuthority(address)" $SAI_MOM
-# seth send $SAI_TOP "setAuthority(address)" $SAI_MOM
 # seth send $SAI_JAR "setAuthority(address)" $SAI_MOM
 #
-# seth send $SAI_POT "setAuthority(address)" $SAI_DAD
-# seth send $SAI_PIT "setAuthority(address)" $SAI_DAD
 # seth send $SAI_JUG "setAuthority(address)" $SAI_DAD
 
 
-        dad.permit(saiTub.addressTub, Address(jug), DSGuard.ANY_SIG)
-        dad.permit(saiTub.addressTub, Address(pot), DSGuard.ANY_SIG)
+        dad.permit(tub.address, Address(jug), DSGuard.ANY_SIG)
+        dad.permit(tub.address, pot.address, DSGuard.ANY_SIG)
 
-        dad.permit(Address(tap), Address(jug), DSGuard.ANY_SIG)
-        dad.permit(Address(tap), Address(pit), DSGuard.ANY_SIG)
+        dad.permit(tap.address, Address(jug), DSGuard.ANY_SIG)
+        dad.permit(tap.address, pit.address, DSGuard.ANY_SIG)
 
-        dad.permit(Address(top), Address(jug), DSGuard.ANY_SIG)
-        dad.permit(Address(top), Address(pit), DSGuard.ANY_SIG)
+        dad.permit(top.address, Address(jug), DSGuard.ANY_SIG)
+        dad.permit(top.address, pit.address, DSGuard.ANY_SIG)
 
         dad.permit(Address(jar), skr.address, DSGuard.ANY_SIG)
 
-        dad.permit(Address(jug), Address(pot), DSGuard.ANY_SIG)
-        dad.permit(Address(jug), Address(pit), DSGuard.ANY_SIG)
+        dad.permit(Address(jug), pot.address, DSGuard.ANY_SIG)
+        dad.permit(Address(jug), pit.address, DSGuard.ANY_SIG)
 
-        dad.permit(Address(pot), sai.address, DSGuard.ANY_SIG)
-        dad.permit(Address(pot), sin.address, DSGuard.ANY_SIG)
+        dad.permit(pot.address, sai.address, DSGuard.ANY_SIG)
+        dad.permit(pot.address, sin.address, DSGuard.ANY_SIG)
 
-        dad.permit(Address(pit), sai.address, DSGuard.ANY_SIG)
-        dad.permit(Address(pit), sin.address, DSGuard.ANY_SIG)
+        dad.permit(pit.address, sai.address, DSGuard.ANY_SIG)
+        dad.permit(pit.address, sin.address, DSGuard.ANY_SIG)
 
-        dad.permit(tub.addressTub, tub.jar(), DSGuard.ANY_SIG)
+        dad.permit(tub.address, tub.jar(), DSGuard.ANY_SIG)
         dad.permit(top.address, tub.jar(), DSGuard.ANY_SIG)
-        dad.permit(top.address, tub.addressTub, DSGuard.ANY_SIG)
+        dad.permit(top.address, tub.address, DSGuard.ANY_SIG)
 
 
 
@@ -113,10 +113,8 @@ class ExpTestSaiBite():
         gem.mint(Wad.from_number(10))
         print(gem.balance_of(our_account))
 
-        self.tub = Tub(web3=self.web3, address_tub=Address(tub), address_tap=Address(tap))
-        self.top = Top(web3=self.web3, address=Address(top))
+        self.tub = tub
 
-        self.top.set_authority(Address(mom))
 
 
 
