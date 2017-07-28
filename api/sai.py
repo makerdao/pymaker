@@ -74,6 +74,7 @@ class Tub(Contract):
     binTub = Contract._load_bin(__name__, 'abi/Tub.bin')
     abiTip = Contract._load_abi(__name__, 'abi/Tip.abi')
     abiJar = Contract._load_abi(__name__, 'abi/SaiJar.abi')
+    abiJug = Contract._load_abi(__name__, 'abi/SaiJug.abi')
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
@@ -82,6 +83,7 @@ class Tub(Contract):
         self._contractTub = web3.eth.contract(abi=self.abiTub)(address=address.address)
         self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contractTub.call().tip())
         self._contractJar = web3.eth.contract(abi=self.abiJar)(address=self._contractTub.call().jar())
+        self._contractJug = web3.eth.contract(abi=self.abiJug)(address=self._contractTub.call().jug())
 
     @staticmethod
     def deploy(web3: Web3, jar: Address, jug: Address, pot: Address, pit: Address, tip: Address):
@@ -92,6 +94,17 @@ class Tub(Contract):
         assert(isinstance(tip, Address))
         return Tub(web3=web3, address=Contract._deploy(web3, Tub.abiTub, Tub.binTub,
                                                        [jar.address, jug.address, pot.address, pit.address, tip.address]))
+
+    def set_authority(self, address: Address) -> Optional[Receipt]:
+        assert(isinstance(address, Address))
+        self._transact(self.web3, f"Tub('{self.address}').setAuthority('{address}')",
+                       lambda: self._contractTub.transact().setAuthority(address.address))
+        self._transact(self.web3, f"Tip('{self._contractTub.call().tip()}').setAuthority('{address}')",
+                       lambda: self._contractTip.transact().setAuthority(address.address))
+        self._transact(self.web3, f"SaiJar('{self._contractTub.call().jar()}').setAuthority('{address}')",
+                       lambda: self._contractJar.transact().setAuthority(address.address))
+        return self._transact(self.web3, f"SaiJug('{self._contractTub.call().jug()}').setAuthority('{address}')",
+                       lambda: self._contractJug.transact().setAuthority(address.address))
 
     def approve(self, approval_function):
         approval_function(ERC20Token(web3=self.web3, address=self.gem()), self.jar(), 'Tub.jar')
@@ -115,6 +128,14 @@ class Tub(Contract):
             The address of the SIN token.
         """
         return Address(self._contractTub.call().sin())
+
+    def jug(self) -> Address:
+        """Get the SAI/SIN tracker.
+
+        Returns:
+            The address of the SAI/SIN tracker token.
+        """
+        return Address(self._contractTub.call().jug())
 
     def jar(self) -> Address:
         """Get the collateral vault.
@@ -709,6 +730,11 @@ class Tap(Contract):
         assert(isinstance(tub, Address))
         assert(isinstance(pit, Address))
         return Tap(web3=web3, address=Contract._deploy(web3, Tap.abi, Tap.bin, [tub.address, pit.address]))
+
+    def set_authority(self, address: Address) -> Optional[Receipt]:
+        assert(isinstance(address, Address))
+        return self._transact(self.web3, f"Tap('{self.address}').setAuthority('{address}')",
+                              lambda: self._contract.transact().setAuthority(address.address))
 
     def woe(self) -> Wad:
         """Get the amount of bad debt.

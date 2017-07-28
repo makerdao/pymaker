@@ -70,17 +70,12 @@ class ExpTestSaiBite():
         skr.set_authority(dad.address)
         pot.set_authority(dad.address)
         pit.set_authority(dad.address)
+        tub.set_authority(dad.address)
+        tap.set_authority(dad.address)
         top.set_authority(dad.address)
 
 
 # seth send $SAI_TIP "warp(uint64)" 0
-#
-# seth send $SAI_TIP "setAuthority(address)" $SAI_MOM
-# seth send $SAI_TUB "setAuthority(address)" $SAI_MOM
-# seth send $SAI_TAP "setAuthority(address)" $SAI_MOM
-# seth send $SAI_JAR "setAuthority(address)" $SAI_MOM
-#
-# seth send $SAI_JUG "setAuthority(address)" $SAI_DAD
 
 
         dad.permit(tub.address, Address(jug), DSGuard.ANY_SIG)
@@ -120,7 +115,9 @@ class ExpTestSaiBite():
 
         # run test
         self.tub.approve(directly())
-        self.tub.join(Wad.from_number(5))
+        print(skr.total_supply())
+        print(self.tub.join(Wad.from_number(5)))
+        print(skr.total_supply())
 
 
         # pip_contract = DSValue(web3=self.web3, address=Address(pip))
