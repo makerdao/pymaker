@@ -43,18 +43,17 @@ class ExpTestSaiBite():
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         our_account = Address(self.web3.eth.defaultAccount)
 
-        sai = DSToken.deploy(self.web3, ['SAI'])
-        sin = DSToken.deploy(self.web3, ['SIN'])
-        gem = DSToken.deploy(self.web3, ['ETH'])
+        sai = DSToken.deploy(self.web3, 'SAI')
+        sin = DSToken.deploy(self.web3, 'SIN')
+        gem = DSToken.deploy(self.web3, 'ETH')
         pip = DSValue.deploy(self.web3)
-        skr = DSToken.deploy(self.web3, ['SKR'])
+        skr = DSToken.deploy(self.web3, 'SKR')
 
         pot = self.deploy('DSVault')
         pit = self.deploy('DSVault')
         tip = self.deploy('Tip')
 
         dad = DSGuard.deploy(self.web3)
-        mom = self.deploy('DSRoles')
 
         jug = self.deploy('SaiJug', [sai.address.address, sin.address.address])
         jar = self.deploy('SaiJar', [skr.address.address, gem.address.address, pip.address.address])
@@ -65,6 +64,10 @@ class ExpTestSaiBite():
 
         saiTub = Tub(self.web3, address_tub=Address(tub), address_tap=Address(tap))
 
+
+        sai.set_authority(dad.address)
+        sin.set_authority(dad.address)
+        skr.set_authority(dad.address)
 
 
 # seth send $SAI_TIP "warp(uint64)" 0
@@ -78,21 +81,6 @@ class ExpTestSaiBite():
 # seth send $SAI_POT "setAuthority(address)" $SAI_DAD
 # seth send $SAI_PIT "setAuthority(address)" $SAI_DAD
 # seth send $SAI_JUG "setAuthority(address)" $SAI_DAD
-#
-# seth send $SAI_SAI "setAuthority(address)" $SAI_DAD
-# seth send $SAI_SIN "setAuthority(address)" $SAI_DAD
-# seth send $SAI_SKR "setAuthority(address)" $SAI_DAD
-#
-# seth send $SAI_MOM "setUserRole(address,uint8,bool)" $SAI_TUB 255 true
-# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 255 $SAI_JAR $(seth calldata 'join(address,uint128)') true
-# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 255 $SAI_JAR $(seth calldata 'exit(address,uint128)') true
-# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 255 $SAI_JAR $(seth calldata 'push(address,address,uint128)') true
-# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 255 $SAI_JAR $(seth calldata 'pull(address,address,uint128)') true
-#
-# seth send $SAI_MOM "setUserRole(address,uint8,bool)" $SAI_TOP 254 true
-# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 254 $SAI_JAR $(seth calldata 'push(address,address,uint128)') true
-# seth send $SAI_MOM "setRoleCapability(uint8,address,bytes4,bool)" 254 $SAI_TUB $(seth calldata 'cage(uint128)') true
-
 
 
         dad.permit(saiTub.addressTub, Address(jug), DSGuard.ANY_SIG)
@@ -114,7 +102,10 @@ class ExpTestSaiBite():
 
         dad.permit(Address(pit), sai.address, DSGuard.ANY_SIG)
         dad.permit(Address(pit), sin.address, DSGuard.ANY_SIG)
-        dad.permit(Address(pit), skr.address, DSGuard.ANY_SIG)
+
+        dad.permit(tub.addressTub, tub.jar(), DSGuard.ANY_SIG)
+        dad.permit(top.address, tub.jar(), DSGuard.ANY_SIG)
+        dad.permit(top.address, tub.addressTub, DSGuard.ANY_SIG)
 
 
 

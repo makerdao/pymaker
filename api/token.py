@@ -140,8 +140,14 @@ class DSToken(ERC20Token):
     bin = Contract._load_bin(__name__, 'abi/DSToken.bin')
 
     @staticmethod
-    def deploy(web3: Web3, args=[]):
-        return DSToken(web3=web3, address=Contract._deploy(web3, DSToken.abi, DSToken.bin, args))
+    def deploy(web3: Web3, symbol: str):
+        assert(isinstance(symbol, str))
+        return DSToken(web3=web3, address=Contract._deploy(web3, DSToken.abi, DSToken.bin, [symbol]))
+
+    def set_authority(self, address: Address) -> Optional[Receipt]:
+        assert(isinstance(address, Address))
+        return self._transact(self.web3, f"DSToken('{self.address}').setAuthority('{address}')",
+                              lambda: self._contract.transact().setAuthority(address.address))
 
     def is_stopped(self):
         raise NotImplementedError
