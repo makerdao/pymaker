@@ -14,10 +14,11 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from typing import Optional
 
 from web3 import Web3
 
-from api import Contract, Address
+from api import Contract, Address, Receipt
 from api.util import bytes_to_hexstring, int_to_bytes32
 
 
@@ -25,7 +26,7 @@ class DSGuard(Contract):
     abi = Contract._load_abi(__name__, 'abi/DSGuard.abi')
     bin = Contract._load_bin(__name__, 'abi/DSGuard.bin')
 
-    ANY_SIG = int_to_bytes32(2**256-1)
+    ANY = int_to_bytes32(2 ** 256 - 1)
 
     def __init__(self, web3, address):
         self.web3 = web3
@@ -36,21 +37,31 @@ class DSGuard(Contract):
     def deploy(web3: Web3):
         return DSGuard(web3=web3, address=Contract._deploy(web3, DSGuard.abi, DSGuard.bin, []))
 
-    def permit(self, src: Address, dst: Address, sig: bytes):
+    def permit(self, src, dst, sig: bytes) -> Optional[Receipt]:
         assert(isinstance(src, Address) or isinstance(src, bytes))
         assert(isinstance(dst, Address) or isinstance(dst, bytes))
         assert(isinstance(sig, bytes) and len(sig) == 32)
+
+        if isinstance(src, Address):
+            src = src.address
+        if isinstance(dst, Address):
+            dst = dst.address
 
         return self._transact(self.web3, f"DSGuard('{self.address}').permit('{src}', '{dst}', '{bytes_to_hexstring(sig)}')",
-                              lambda: self._contract.transact().permit(src.address, dst.address, sig))
+                              lambda: self._contract.transact().permit(src, dst, sig))
 
-    def forbid(self, src: Address, dst: Address, sig: bytes):
+    def forbid(self, src: Address, dst: Address, sig: bytes) -> Optional[Receipt]:
         assert(isinstance(src, Address) or isinstance(src, bytes))
         assert(isinstance(dst, Address) or isinstance(dst, bytes))
         assert(isinstance(sig, bytes) and len(sig) == 32)
 
+        if isinstance(src, Address):
+            src = src.address
+        if isinstance(dst, Address):
+            dst = dst.address
+
         return self._transact(self.web3, f"DSGuard('{self.address}').forbid('{src}', '{dst}', '{bytes_to_hexstring(sig)}')",
-                              lambda: self._contract.transact().forbid(src.address, dst.address, sig))
+                              lambda: self._contract.transact().forbid(src, dst, sig))
 
 
 class DSRoles(Contract):

@@ -51,46 +51,12 @@ class TestSai():
         self.tap = Tap.deploy(self.web3, self.tub.address, self.pit.address)
         self.top = Top.deploy(self.web3, self.tub.address, self.tap.address)
 
+        # set permissions
+        self.dad.permit(DSGuard.ANY, DSGuard.ANY, DSGuard.ANY)
         for auth in [self.sai, self.sin, self.skr, self.pot, self.pit, self.tub, self.tap, self.top]:
             auth.set_authority(self.dad.address)
 
-        # seth send $SAI_TIP "warp(uint64)" 0
-
-
-        # tub
-        # tap
-        # top
-        # jar
-        # jug
-        # pot
-        # pit
-        # skr
-        # sai
-        # sin
-        self.dad.permit(self.tub.address, Address(self.jug), DSGuard.ANY_SIG)
-        self.dad.permit(self.tub.address, self.pot.address, DSGuard.ANY_SIG)
-
-        self.dad.permit(self.tap.address, Address(self.jug), DSGuard.ANY_SIG)
-        self.dad.permit(self.tap.address, self.pit.address, DSGuard.ANY_SIG)
-
-        self.dad.permit(self.top.address, Address(self.jug), DSGuard.ANY_SIG)
-        self.dad.permit(self.top.address, self.pit.address, DSGuard.ANY_SIG)
-
-        self.dad.permit(Address(self.jar), self.skr.address, DSGuard.ANY_SIG)
-
-        self.dad.permit(Address(self.jug), self.pot.address, DSGuard.ANY_SIG)
-        self.dad.permit(Address(self.jug), self.pit.address, DSGuard.ANY_SIG)
-
-        self.dad.permit(self.pot.address, self.sai.address, DSGuard.ANY_SIG)
-        self.dad.permit(self.pot.address, self.sin.address, DSGuard.ANY_SIG)
-
-        self.dad.permit(self.pit.address, self.sai.address, DSGuard.ANY_SIG)
-        self.dad.permit(self.pit.address, self.sin.address, DSGuard.ANY_SIG)
-
-        self.dad.permit(self.tub.address, self.tub.jar(), DSGuard.ANY_SIG)
-        self.dad.permit(self.top.address, self.tub.jar(), DSGuard.ANY_SIG)
-        self.dad.permit(self.top.address, self.tub.address, DSGuard.ANY_SIG)
-
+        # approve, mint some GEMs
         self.tub.approve(directly())
         self.gem.mint(Wad.from_number(1000000))
 
