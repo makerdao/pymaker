@@ -37,16 +37,16 @@ class DSGuard(Contract):
         return DSGuard(web3=web3, address=Contract._deploy(web3, DSGuard.abi, DSGuard.bin, []))
 
     def permit(self, src: Address, dst: Address, sig: bytes):
-        assert(isinstance(src, Address))
-        assert(isinstance(dst, Address))
+        assert(isinstance(src, Address) or isinstance(src, bytes))
+        assert(isinstance(dst, Address) or isinstance(dst, bytes))
         assert(isinstance(sig, bytes) and len(sig) == 32)
 
         return self._transact(self.web3, f"DSGuard('{self.address}').permit('{src}', '{dst}', '{bytes_to_hexstring(sig)}')",
                               lambda: self._contract.transact().permit(src.address, dst.address, sig))
 
     def forbid(self, src: Address, dst: Address, sig: bytes):
-        assert(isinstance(src, Address))
-        assert(isinstance(dst, Address))
+        assert(isinstance(src, Address) or isinstance(src, bytes))
+        assert(isinstance(dst, Address) or isinstance(dst, bytes))
         assert(isinstance(sig, bytes) and len(sig) == 32)
 
         return self._transact(self.web3, f"DSGuard('{self.address}').forbid('{src}', '{dst}', '{bytes_to_hexstring(sig)}')",

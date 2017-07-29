@@ -54,7 +54,6 @@ class TestSai():
         for auth in [self.sai, self.sin, self.skr, self.pot, self.pit, self.tub, self.tap, self.top]:
             auth.set_authority(self.dad.address)
 
-
         # seth send $SAI_TIP "warp(uint64)" 0
 
 
