@@ -51,19 +51,23 @@ class TestSai():
         self.tap = Tap.deploy(self.web3, self.tub.address, self.pit.address)
         self.top = Top.deploy(self.web3, self.tub.address, self.tap.address)
 
-        self.sai.set_authority(self.dad.address)
-        self.sin.set_authority(self.dad.address)
-        self.skr.set_authority(self.dad.address)
-        self.pot.set_authority(self.dad.address)
-        self.pit.set_authority(self.dad.address)
-        self.tub.set_authority(self.dad.address)
-        self.tap.set_authority(self.dad.address)
-        self.top.set_authority(self.dad.address)
+        for auth in [self.sai, self.sin, self.skr, self.pot, self.pit, self.tub, self.tap, self.top]:
+            auth.set_authority(self.dad.address)
 
 
         # seth send $SAI_TIP "warp(uint64)" 0
 
 
+        # tub
+        # tap
+        # top
+        # jar
+        # jug
+        # pot
+        # pit
+        # skr
+        # sai
+        # sin
         self.dad.permit(self.tub.address, Address(self.jug), DSGuard.ANY_SIG)
         self.dad.permit(self.tub.address, self.pot.address, DSGuard.ANY_SIG)
 
@@ -88,13 +92,8 @@ class TestSai():
         self.dad.permit(self.top.address, self.tub.jar(), DSGuard.ANY_SIG)
         self.dad.permit(self.top.address, self.tub.address, DSGuard.ANY_SIG)
 
-
-
-        print(self.gem.balance_of(self.our_address))
-        self.gem.mint(Wad.from_number(10))
-        print(self.gem.balance_of(self.our_address))
-
         self.tub.approve(directly())
+        self.gem.mint(Wad.from_number(1000000))
 
     def deploy(self, contract_name, args=None):
         contract_factory = self.web3.eth.contract(abi=json.loads(pkg_resources.resource_string('api.feed', f'abi/{contract_name}.abi')),
