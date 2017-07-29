@@ -85,3 +85,13 @@ class TestSai():
         # then
         assert self.skr.balance_of(self.our_address) == Wad.from_number(1)
         assert self.skr.total_supply() == Wad.from_number(1)
+
+    def test_cork_and_hat(self):
+        # given
+        assert self.tub.hat() == Wad(0)
+
+        # when
+        print(self.tub.cork(Wad.from_number(150000)))
+
+        # then
+        assert self.tub.hat() == Wad.from_number(150000)
