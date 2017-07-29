@@ -107,7 +107,7 @@ class Contract:
     @staticmethod
     def _deploy(web3: Web3, abi: dict, bytecode: str, args) -> Address:
         contract_factory = web3.eth.contract(abi=abi, bytecode=bytecode)
-        tx_hash = contract_factory._deploy(contract_name=args, args=args)
+        tx_hash = contract_factory.deploy(args=args)
         receipt = web3.eth.getTransactionReceipt(tx_hash)
         return Address(receipt['contractAddress'])
 

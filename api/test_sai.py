@@ -43,10 +43,10 @@ class TestSai():
         self.skr = DSToken.deploy(self.web3, 'SKR')
         self.pot = DSVault.deploy(self.web3)
         self.pit = DSVault.deploy(self.web3)
-        self.tip = self._deploy('Tip')
+        self.tip = self.deploy('Tip')
         self.dad = DSGuard.deploy(self.web3)
-        self.jug = self._deploy('SaiJug', [self.sai.address.address, self.sin.address.address])
-        self.jar = self._deploy('SaiJar', [self.skr.address.address, self.gem.address.address, self.pip.address.address])
+        self.jug = self.deploy('SaiJug', [self.sai.address.address, self.sin.address.address])
+        self.jar = self.deploy('SaiJar', [self.skr.address.address, self.gem.address.address, self.pip.address.address])
         self.tub = Tub.deploy(self.web3, Address(self.jar), Address(self.jug), self.pot.address, self.pit.address, Address(self.tip))
         self.tap = Tap.deploy(self.web3, self.tub.address, self.pit.address)
         self.top = Top.deploy(self.web3, self.tub.address, self.tap.address)
@@ -60,10 +60,10 @@ class TestSai():
         self.tub.approve(directly())
         self.gem.mint(Wad.from_number(1000000))
 
-    def _deploy(self, contract_name, args=None):
+    def deploy(self, contract_name, args=None):
         contract_factory = self.web3.eth.contract(abi=json.loads(pkg_resources.resource_string('api.feed', f'abi/{contract_name}.abi')),
                                      bytecode=pkg_resources.resource_string('api.feed', f'abi/{contract_name}.bin'))
-        tx_hash = contract_factory._deploy(contract_name=args, args=args)
+        tx_hash = contract_factory.deploy(args=args)
         receipt = self.web3.eth.getTransactionReceipt(tx_hash)
         return receipt['contractAddress']
 
