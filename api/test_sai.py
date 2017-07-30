@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import pytest
 
 from api import Address
@@ -22,7 +23,7 @@ from api.feed import DSValue
 from api.numeric import Wad, Ray
 
 
-class TestSai:
+class TestTub:
     def test_join_and_exit(self, sai: SaiDeployment):
         # given
         assert sai.skr.balance_of(sai.our_address) == Wad(0)
