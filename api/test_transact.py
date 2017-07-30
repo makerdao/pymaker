@@ -19,6 +19,9 @@ from web3 import EthereumTesterProvider
 from web3 import Web3
 
 from api import Address
+from api import Wad
+from api.approval import directly
+from api.token import DSToken
 from api.transact import TxManager
 
 
@@ -28,6 +31,20 @@ class TestTxManager:
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.tx = TxManager.deploy(self.web3)
+
+    def test_approve(self):
+        # given
+        token1 = DSToken.deploy(self.web3, 'ABC')
+        token2 = DSToken.deploy(self.web3, 'DEF')
+        assert token1.allowance_of(self.our_address, self.tx.address) == Wad(0)
+        assert token2.allowance_of(self.our_address, self.tx.address) == Wad(0)
+
+        # when
+        self.tx.approve([token1, token2], directly())
+
+        # then
+        assert token1.allowance_of(self.our_address, self.tx.address) == Wad(2**256-1)
+        assert token2.allowance_of(self.our_address, self.tx.address) == Wad(2**256-1)
 
     def test_owner(self):
         assert self.tx.owner() == self.our_address
