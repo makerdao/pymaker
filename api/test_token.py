@@ -78,6 +78,18 @@ class TestERC20Token:
         # then
         self.token.allowance_of(self.our_address, self.second_address) == Wad(2000)
 
+    def test_equals(self):
+        # given
+        token1 = DSToken.deploy(self.web3, 'ABC')
+        token2 = DSToken.deploy(self.web3, 'DEF')
+        token2b = ERC20Token(web3=self.web3, address=token2.address)
+
+        # expect
+        assert token1 == token1
+        assert token2 == token2b
+        assert not token1 == token2
+        assert not token1 == token2b
+
 
 class TestDSToken:
     def setup_method(self):
