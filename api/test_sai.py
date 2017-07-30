@@ -15,20 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
-
-import pkg_resources
-import pytest
-from web3 import Web3, EthereumTesterProvider
-
-from api import Address, Wad
-from api.approval import directly
-from api.auth import DSGuard
-from api.feed import DSValue
-from api.numeric import Ray
-from api.sai import Tub, Top, Tap
-from api.token import DSToken
-from api.vault import DSVault
+from api.numeric import Wad, Ray
 
 
 class TestSai:
@@ -38,14 +25,14 @@ class TestSai:
         assert sai.skr.total_supply() == Wad(0)
 
         # when
-        print(sai.tub.join(Wad.from_number(5)))
+        sai.tub.join(Wad.from_number(5))
 
         # then
         assert sai.skr.balance_of(sai.our_address) == Wad.from_number(5)
         assert sai.skr.total_supply() == Wad.from_number(5)
 
         # when
-        print(sai.tub.exit(Wad.from_number(4)))
+        sai.tub.exit(Wad.from_number(4))
 
         # then
         assert sai.skr.balance_of(sai.our_address) == Wad.from_number(1)
@@ -56,7 +43,7 @@ class TestSai:
         assert sai.tub.hat() == Wad(0)
 
         # when
-        print(sai.tub.cork(Wad.from_number(150000)))
+        sai.tub.cork(Wad.from_number(150000))
 
         # then
         assert sai.tub.hat() == Wad.from_number(150000)
@@ -66,7 +53,7 @@ class TestSai:
         assert sai.tub.tax() == Ray.from_number(1)
 
         # when
-        print(sai.tub.crop(Ray.from_number(1.00000000000000002)))
+        sai.tub.crop(Ray.from_number(1.00000000000000002))
 
         # then
         assert sai.tub.tax() == Ray.from_number(1.00000000000000002)
