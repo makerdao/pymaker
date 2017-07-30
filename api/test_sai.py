@@ -120,3 +120,19 @@ class TestSai:
 
         # then
         assert sai.tub.tag() == Wad.from_number(250.45)
+
+    def test_open_and_cupi(self, sai: SaiDeployment):
+        # when
+        sai.tub.open()
+
+        # then
+        assert sai.tub.cupi() == 1
+
+    def test_cups(self, sai: SaiDeployment):
+        # when
+        sai.tub.open()
+
+        # then
+        assert sai.tub.cups(1).art == Wad(0)
+        assert sai.tub.cups(1).ink == Wad(0)
+        assert sai.tub.cups(1).lad == sai.our_address
