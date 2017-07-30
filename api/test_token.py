@@ -15,12 +15,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
 from api import Address
 from api.numeric import Wad
-from api.token import DSToken, DSEthToken
+from api.token import DSToken, DSEthToken, ERC20Token
 
 
 class TestERC20Token:
@@ -31,6 +32,26 @@ class TestERC20Token:
         self.second_address = Address(self.web3.eth.accounts[1])
         self.token = DSToken.deploy(self.web3, 'ABC')
         self.token.mint(Wad(1000000))
+
+    def test_token_registry(self):
+        # given
+        ERC20Token.register_token(Address('0x0100000000000000000000000000000000000000'), 'ABC')
+        ERC20Token.register_token(Address('0x0200000000000000000000000000000000000000'), 'DEF')
+        ERC20Token.register_token(Address('0x0300000000000000000000000000000000000000'), 'GHI')
+
+        # expect
+        assert ERC20Token.token_name_by_address(Address('0x0100000000000000000000000000000000000000')) == 'ABC'
+        assert ERC20Token.token_name_by_address(Address('0x0200000000000000000000000000000000000000')) == 'DEF'
+        assert ERC20Token.token_name_by_address(Address('0x0300000000000000000000000000000000000000')) == 'GHI'
+        with pytest.raises(Exception):
+            assert ERC20Token.token_name_by_address(Address('0x0400000000000000000000000000000000000000'))
+
+        # and
+        assert ERC20Token.token_address_by_name('ABC') == Address('0x0100000000000000000000000000000000000000')
+        assert ERC20Token.token_address_by_name('DEF') == Address('0x0200000000000000000000000000000000000000')
+        assert ERC20Token.token_address_by_name('GHI') == Address('0x0300000000000000000000000000000000000000')
+        with pytest.raises(Exception):
+            ERC20Token.token_address_by_name('XXX')
 
     def test_total_supply(self):
         self.token.total_supply() == Wad(1000000)
