@@ -164,6 +164,16 @@ class TestSai:
         # then
         assert sai.tub.lad(1) == sai.our_address
 
+    def test_give(self, sai: SaiDeployment):
+        # given
+        sai.tub.open()
+
+        # when
+        sai.tub.give(1, Address('0x0101010101020202020203030303030404040404'))
+
+        # then
+        assert sai.tub.lad(1) == Address('0x0101010101020202020203030303030404040404')
+
     @pytest.mark.skip(reason="some issue with safe() - ethereum.tester.TransactionFailed")
     def test_shut(self, sai: SaiDeployment):
         # given
