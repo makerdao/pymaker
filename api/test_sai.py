@@ -226,3 +226,15 @@ class TestTub:
 
         # then
         assert sai.sai.balance_of(sai.our_address) == Wad.from_number(20)
+
+
+class TestTap:
+    def test_jump_and_gap(self, sai: SaiDeployment):
+        # given
+        assert sai.tap.gap() == Wad.from_number(1)
+
+        # when
+        sai.tap.jump(Wad.from_number(1.05))
+
+        # then
+        assert sai.tap.gap() == Wad.from_number(1.05)
