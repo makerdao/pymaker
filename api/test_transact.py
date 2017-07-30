@@ -32,33 +32,34 @@ class TestTxManager:
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.other_address = Address(self.web3.eth.accounts[1])
         self.tx = TxManager.deploy(self.web3)
+        self.token1 = DSToken.deploy(self.web3, 'ABC')
+        self.token1.mint(Wad.from_number(1000000))
+        self.token2 = DSToken.deploy(self.web3, 'DEF')
 
     def test_owner(self):
         assert self.tx.owner() == self.our_address
 
     def test_approve(self):
         # given
-        token1 = DSToken.deploy(self.web3, 'ABC')
-        token2 = DSToken.deploy(self.web3, 'DEF')
-        assert token1.allowance_of(self.our_address, self.tx.address) == Wad(0)
-        assert token2.allowance_of(self.our_address, self.tx.address) == Wad(0)
+        assert self.token1.allowance_of(self.our_address, self.tx.address) == Wad(0)
+        assert self.token2.allowance_of(self.our_address, self.tx.address) == Wad(0)
 
         # when
-        self.tx.approve([token1, token2], directly())
+        self.tx.approve([self.token1, self.token2], directly())
 
         # then
-        assert token1.allowance_of(self.our_address, self.tx.address) == Wad(2**256-1)
-        assert token2.allowance_of(self.our_address, self.tx.address) == Wad(2**256-1)
+        assert self.token1.allowance_of(self.our_address, self.tx.address) == Wad(2**256-1)
+        assert self.token2.allowance_of(self.our_address, self.tx.address) == Wad(2**256-1)
 
     def test_execute(self):
         # given
-        token1 = DSToken.deploy(self.web3, 'ABC')
-        token1.mint(Wad.from_number(1000000))
-        self.tx.approve([token1], directly())
+        self.tx.approve([self.token1], directly())
 
         # when
-        self.tx.execute([token1.address], [Invocation(token1.address, token1.transfer_calldata(self.other_address, Wad.from_number(500)))])
+        self.tx.execute([self.token1.address],
+                        [Invocation(self.token1.address,
+                                    self.token1.transfer_calldata(self.other_address, Wad.from_number(500)))])
 
         # then
-        assert token1.balance_of(self.our_address) == Wad.from_number(999500)
-        assert token1.balance_of(self.other_address) == Wad.from_number(500)
+        assert self.token1.balance_of(self.our_address) == Wad.from_number(999500)
+        assert self.token1.balance_of(self.other_address) == Wad.from_number(500)
