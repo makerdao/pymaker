@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from api.conftest import SaiDeployment
 from api.numeric import Wad, Ray
 
 
@@ -57,3 +58,34 @@ class TestSai:
 
         # then
         assert sai.tub.tax() == Ray.from_number(1.00000000000000002)
+
+    def test_cuff_and_mat(self, sai):
+        # given
+        assert sai.tub.mat() == Ray.from_number(1)
+
+        # when
+        sai.tub.cuff(Ray.from_number(1.5))
+
+        # then
+        assert sai.tub.mat() == Ray.from_number(1.5)
+
+    def test_chop_and_axe(self, sai):
+        # given
+        assert sai.tub.axe() == Ray.from_number(1)
+        sai.tub.cuff(Ray.from_number(1.5))
+
+        # when
+        sai.tub.chop(Ray.from_number(1.2))
+
+        # then
+        assert sai.tub.axe() == Ray.from_number(1.2)
+
+    def test_coax_and_way(self, sai):
+        # given
+        assert sai.tub.way() == Ray.from_number(1)
+
+        # when
+        sai.tub.coax(Ray.from_number(1.00000000000000007))
+
+        # then
+        assert sai.tub.way() == Ray.from_number(1.00000000000000007)
