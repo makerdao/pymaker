@@ -90,6 +90,9 @@ class ERC20Token(Contract):
         return self._transact(self.web3, f"ERC20Token('{self.address}').transfer('{address}', '{value}')",
                               lambda: self._contract.transact().transfer(address.address, value.value))
 
+    def transfer_calldata(self, address: Address, value: Wad) -> Optional[Receipt]:
+        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('transfer', [address.address, value.value]))
+
     def approve(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Optional[Receipt]:
         """Modifies the current allowance of a specified `payee` (delegate account).
 

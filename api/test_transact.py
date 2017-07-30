@@ -22,7 +22,7 @@ from api import Address
 from api import Wad
 from api.approval import directly
 from api.token import DSToken
-from api.transact import TxManager
+from api.transact import TxManager, Invocation
 
 
 class TestTxManager:
@@ -30,7 +30,11 @@ class TestTxManager:
         self.web3 = Web3(EthereumTesterProvider())
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
+        self.other_address = Address(self.web3.eth.accounts[1])
         self.tx = TxManager.deploy(self.web3)
+
+    def test_owner(self):
+        assert self.tx.owner() == self.our_address
 
     def test_approve(self):
         # given
@@ -46,5 +50,15 @@ class TestTxManager:
         assert token1.allowance_of(self.our_address, self.tx.address) == Wad(2**256-1)
         assert token2.allowance_of(self.our_address, self.tx.address) == Wad(2**256-1)
 
-    def test_owner(self):
-        assert self.tx.owner() == self.our_address
+    def test_execute(self):
+        # given
+        token1 = DSToken.deploy(self.web3, 'ABC')
+        token1.mint(Wad.from_number(1000000))
+        self.tx.approve([token1], directly())
+
+        # when
+        self.tx.execute([token1.address], [Invocation(token1.address, token1.transfer_calldata(self.other_address, Wad.from_number(500)))])
+
+        # then
+        assert token1.balance_of(self.our_address) == Wad.from_number(999500)
+        assert token1.balance_of(self.other_address) == Wad.from_number(500)
