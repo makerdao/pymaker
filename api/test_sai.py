@@ -238,3 +238,22 @@ class TestTap:
 
         # then
         assert sai.tap.gap() == Wad.from_number(1.05)
+
+    def test_woe(self, sai: SaiDeployment):
+        assert sai.tap.woe() == Wad(0)
+
+    def test_fog(self, sai: SaiDeployment):
+        assert sai.tap.fog() == Wad(0)
+
+    def test_joy(self, sai: SaiDeployment):
+        assert sai.tap.joy() == Wad(0)
+
+    def test_s2s_and_bid_and_ask(self, sai: SaiDeployment):
+        # when
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(500).value)
+        sai.tap.jump(Wad.from_number(1.05))
+
+        # then
+        assert sai.tap.bid() == Wad.from_number(475)
+        assert sai.tap.s2s() == Wad.from_number(500)
+        assert sai.tap.ask() == Wad.from_number(525)
