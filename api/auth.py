@@ -75,4 +75,4 @@ class DSRoles(Contract):
 
     @staticmethod
     def deploy(web3: Web3):
-        return DSGuard(web3=web3, address=Contract._deploy(web3, DSRoles.abi, DSRoles.bin, []))
+        return DSRoles(web3=web3, address=Contract._deploy(web3, DSRoles.abi, DSRoles.bin, []))
