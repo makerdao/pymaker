@@ -152,21 +152,6 @@ class DSToken(ERC20Token):
         return self._transact(self.web3, f"DSToken('{self.address}').setAuthority('{address}')",
                               lambda: self._contract.transact().setAuthority(address.address))
 
-    def is_stopped(self):
-        raise NotImplementedError
-
-    def stop(self):
-        raise NotImplementedError
-
-    def start(self):
-        raise NotImplementedError
-
-    def push(self, address, amount):
-        raise NotImplementedError
-
-    def pull(self, address, amount):
-        raise NotImplementedError
-
     def mint(self, amount: Wad) -> Optional[Receipt]:
         assert(isinstance(amount, Wad))
         return self._transact(self.web3, f"DSToken('{self.address}').mint('{amount}')",
