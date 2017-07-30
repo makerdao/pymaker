@@ -20,7 +20,7 @@ from api.numeric import Wad, Ray
 
 
 class TestSai:
-    def test_join_and_exit(self, sai):
+    def test_join_and_exit(self, sai: SaiDeployment):
         # given
         assert sai.skr.balance_of(sai.our_address) == Wad(0)
         assert sai.skr.total_supply() == Wad(0)
@@ -39,7 +39,7 @@ class TestSai:
         assert sai.skr.balance_of(sai.our_address) == Wad.from_number(1)
         assert sai.skr.total_supply() == Wad.from_number(1)
 
-    def test_cork_and_hat(self, sai):
+    def test_cork_and_hat(self, sai: SaiDeployment):
         # given
         assert sai.tub.hat() == Wad(0)
 
@@ -49,7 +49,7 @@ class TestSai:
         # then
         assert sai.tub.hat() == Wad.from_number(150000)
 
-    def test_crop_and_tax(self, sai):
+    def test_crop_and_tax(self, sai: SaiDeployment):
         # given
         assert sai.tub.tax() == Ray.from_number(1)
 
@@ -59,7 +59,7 @@ class TestSai:
         # then
         assert sai.tub.tax() == Ray.from_number(1.00000000000000002)
 
-    def test_cuff_and_mat(self, sai):
+    def test_cuff_and_mat(self, sai: SaiDeployment):
         # given
         assert sai.tub.mat() == Ray.from_number(1)
 
@@ -69,7 +69,7 @@ class TestSai:
         # then
         assert sai.tub.mat() == Ray.from_number(1.5)
 
-    def test_chop_and_axe(self, sai):
+    def test_chop_and_axe(self, sai: SaiDeployment):
         # given
         assert sai.tub.axe() == Ray.from_number(1)
         sai.tub.cuff(Ray.from_number(1.5))
@@ -80,7 +80,7 @@ class TestSai:
         # then
         assert sai.tub.axe() == Ray.from_number(1.2)
 
-    def test_coax_and_way(self, sai):
+    def test_coax_and_way(self, sai: SaiDeployment):
         # given
         assert sai.tub.way() == Ray.from_number(1)
 
