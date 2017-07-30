@@ -96,4 +96,5 @@ def new_sai() -> SaiDeployment:
 @pytest.fixture()
 def sai(new_sai: SaiDeployment) -> SaiDeployment:
     new_sai.web3.currentProvider.rpc_methods.evm_revert()
+    new_sai.web3.currentProvider.rpc_methods.evm_snapshot()
     return new_sai
