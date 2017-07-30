@@ -136,3 +136,44 @@ class TestSai:
         assert sai.tub.cups(1).art == Wad(0)
         assert sai.tub.cups(1).ink == Wad(0)
         assert sai.tub.cups(1).lad == sai.our_address
+
+    def test_ink(self, sai: SaiDeployment):
+        # when
+        sai.tub.open()
+
+        # then
+        assert sai.tub.ink(1) == Wad(0)
+
+    def test_lad(self, sai: SaiDeployment):
+        # when
+        sai.tub.open()
+
+        # then
+        assert sai.tub.lad(1) == sai.our_address
+
+    def test_shut(self, sai: SaiDeployment):
+        # given
+        sai.tub.open()
+
+        # when
+        sai.tub.shut(1)
+
+        # then
+        assert sai.tub.lad(1) == Address('0x0000000000000000000000000000000000000000')
+
+    def test_lock_and_free(self, sai: SaiDeployment):
+        # given
+        sai.tub.open()
+        sai.tub.join(Wad.from_number(10))
+
+        # when
+        sai.tub.lock(1, Wad.from_number(5))
+
+        # then
+        sai.tub.ink(1) == Wad.from_number(5)
+
+        # when
+        sai.tub.free(1, Wad.from_number(3))
+
+        # then
+        sai.tub.ink(1) == Wad.from_number(2)
