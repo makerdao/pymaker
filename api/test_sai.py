@@ -17,6 +17,7 @@
 
 from api import Address
 from api.conftest import SaiDeployment
+from api.feed import DSValue
 from api.numeric import Wad, Ray
 
 
@@ -109,3 +110,13 @@ class TestSai:
 
     def test_reg(self, sai: SaiDeployment):
         assert sai.tub.reg() == 0
+
+    def test_per(self, sai: SaiDeployment):
+        assert sai.tub.per() == Ray.from_number(1.0)
+
+    def test_tag(self, sai: SaiDeployment):
+        # when
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250.45).value)
+
+        # then
+        assert sai.tub.tag() == Wad.from_number(250.45)
