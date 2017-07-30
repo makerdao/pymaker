@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from api import Address
 from api.conftest import SaiDeployment
 from api.numeric import Wad, Ray
 
@@ -89,3 +90,22 @@ class TestSai:
 
         # then
         assert sai.tub.way() == Ray.from_number(1.00000000000000007)
+
+    def test_sai(self, sai: SaiDeployment):
+        assert sai.tub.sai() == sai.sai.address
+
+    def test_gem(self, sai: SaiDeployment):
+        assert sai.tub.gem() == sai.gem.address
+
+    def test_skr(self, sai: SaiDeployment):
+        assert sai.tub.skr() == sai.skr.address
+
+    def test_jug_pip(self, sai: SaiDeployment):
+        assert isinstance(sai.tub.jug(), Address)
+        assert isinstance(sai.tub.pip(), Address)
+
+    def test_tip(self, sai: SaiDeployment):
+        assert isinstance(sai.tub.tip(), Address)
+
+    def test_reg(self, sai: SaiDeployment):
+        assert sai.tub.reg() == 0
