@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+from unittest.mock import MagicMock
 
 import pytest
 from web3 import EthereumTesterProvider
@@ -30,12 +31,15 @@ from api.util import synchronize, int_to_bytes32, bytes_to_int, bytes_to_hexstri
 
 
 def setup_module():
-    global web3, our_address, second_address, token
-
+    global web3, our_address, second_address
     web3 = Web3(EthereumTesterProvider())
     web3.eth.defaultAccount = web3.eth.accounts[0]
     our_address = Address(web3.eth.defaultAccount)
     second_address = Address(web3.eth.accounts[1])
+
+
+def setup_function():
+    global token
     token = DSToken.deploy(web3, 'ABC')
 
 
@@ -62,6 +66,16 @@ def test_direct_approval_should_not_approve_if_already_approved():
     assert token.allowance_of(our_address, second_address) == Wad(2**248+17)
 
 
+def test_direct_approval_should_raise_exception_if_approval_fails():
+    # given
+    global web3, our_address, second_address, token
+    token.approve = MagicMock(return_value=None)
+
+    # expect
+    with pytest.raises(Exception):
+        directly()(token, second_address, "some-name")
+
+
 def test_via_tx_manager_approval():
     # given
     global web3, our_address, second_address, token
@@ -74,7 +88,7 @@ def test_via_tx_manager_approval():
     assert token.allowance_of(tx.address, second_address) == Wad(2**256-1)
 
 
-def test_via_tx_manager_should_not_approve_if_already_approved():
+def test_via_tx_manager_approval_should_not_approve_if_already_approved():
     # given
     global web3, our_address, second_address, token
     tx = TxManager.deploy(web3)
@@ -87,3 +101,12 @@ def test_via_tx_manager_should_not_approve_if_already_approved():
     assert token.allowance_of(tx.address, second_address) == Wad(2**248+19)
 
 
+def test_via_tx_manager_approval_should_raise_exception_if_approval_fails():
+    # given
+    global web3, our_address, second_address, token
+    tx = TxManager.deploy(web3)
+    tx.execute = MagicMock(return_value=None)
+
+    # when
+    with pytest.raises(Exception):
+        via_tx_manager(tx)(token, second_address, "some-name")
