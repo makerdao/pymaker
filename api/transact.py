@@ -67,8 +67,8 @@ class TxManager(Contract):
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
     @staticmethod
-    def deploy(web3: Web3, *args):
-        return TxManager(web3=web3, address=Contract._deploy(web3, TxManager.abi, TxManager.bin, args))
+    def deploy(web3: Web3):
+        return TxManager(web3=web3, address=Contract._deploy(web3, TxManager.abi, TxManager.bin, []))
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         for token in tokens:
