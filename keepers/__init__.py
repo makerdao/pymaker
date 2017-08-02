@@ -103,7 +103,7 @@ class Keeper:
     def on_block(self, callback):
         def new_block_callback(block_hash):
             self._last_block_time = datetime.datetime.now()
-            if True: #TODO syncing check broken after web3.py upgrade to 3.10.0 -- if not self.web3.eth.syncing:
+            if not self.web3.eth.syncing:
                 block = self.web3.eth.getBlock(block_hash)
                 this_block_number = block['number']
                 last_block_number = self.web3.eth.blockNumber
@@ -136,14 +136,12 @@ class Keeper:
             while self.web3.net.peerCount == 0:
                 time.sleep(0.25)
 
-        #TODO syncing check broken after web3.py upgrade to 3.10.0
-        #TODO uncomment section below when fixed
         # wait for the client to sync completely,
         # as we do not want to apply keeper logic to stale blocks
-        # if self.web3.eth.syncing:
-        #     logging.info(f"Waiting for the client to sync...")
-        #     while self.web3.eth.syncing:
-        #         time.sleep(0.25)
+        if self.web3.eth.syncing:
+            logging.info(f"Waiting for the client to sync...")
+            while self.web3.eth.syncing:
+                time.sleep(0.25)
 
     def _check_account_unlocked(self):
         try:
@@ -188,7 +186,7 @@ class Keeper:
             # TODO the same thing could possibly happen if we watch any event other than
             # TODO a new block. if that happens, we have no reliable way of detecting it now.
             if self._last_block_time and (datetime.datetime.now() - self._last_block_time).total_seconds() > 300:
-                if True: #TODO syncing check broken after web3.py upgrade to 3.10.0 if not self.web3.eth.syncing:
+                if not self.web3.eth.syncing:
                     logging.fatal("No new blocks received for 300 seconds, the keeper will terminate")
                     break
 
