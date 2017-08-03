@@ -19,7 +19,6 @@
 
 import argparse
 import logging
-import threading
 from typing import List
 
 from api import Address, Transfer
@@ -146,6 +145,8 @@ class SaiArbitrage(SaiKeeper):
                self.otc_conversions([self.sai.address, self.skr.address, self.gem.address])
 
     def process_block(self):
+        """Callback called on each new block.
+        If too many errors, terminate the keeper to minimize potential damage."""
         if self.errors >= self.max_errors:
             self.terminate()
         else:
