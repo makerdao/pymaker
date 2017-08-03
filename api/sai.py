@@ -697,7 +697,7 @@ class Tub(Contract):
         return self.address == other.addressTub
 
     def __repr__(self):
-        return f"Tub(addressTub='{self.address}')"
+        return f"Tub('{self.address}')"
 
 
 class Tap(Contract):
@@ -840,7 +840,7 @@ class Tap(Contract):
         return self.address == other.address
 
     def __repr__(self):
-        return f"Tap(address='{self.address}')"
+        return f"Tap('{self.address}')"
 
 
 class Top(Contract):
@@ -888,7 +888,7 @@ class Top(Contract):
         return self.address == other.address
 
     def __repr__(self):
-        return f"Top(address='{self.address}')"
+        return f"Top('{self.address}')"
 
 
 class Lpc(Contract):
@@ -1093,4 +1093,4 @@ class Lpc(Contract):
         return self.address == other.address
 
     def __repr__(self):
-        return f"Tub(address='{self.address}')"
+        return f"Lpc('{self.address}')"

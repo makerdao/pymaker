@@ -120,7 +120,7 @@ class ERC20Token(Contract):
         return self.address == other.address
 
     def __repr__(self):
-        return f"ERC20Token(address='{self.address}')"
+        return f"ERC20Token('{self.address}')"
 
     @staticmethod
     def register_token(address: Address, name):
