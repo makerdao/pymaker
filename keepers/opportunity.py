@@ -25,7 +25,7 @@ import networkx
 from api import Address
 from api.numeric import Ray
 from api.numeric import Wad
-from keepers.arbitrage.conversion import Conversion
+from keepers.conversion import Conversion
 
 
 class Sequence:

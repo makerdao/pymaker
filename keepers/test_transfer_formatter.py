@@ -18,9 +18,9 @@
 import pytest
 
 from api import Address, Transfer
-from api.token import ERC20Token
 from api.numeric import Wad
-from keepers.arbitrage.transfer_formatter import TransferFormatter
+from api.token import ERC20Token
+from keepers.transfer_formatter import TransferFormatter
 
 
 @pytest.fixture(autouse=True)

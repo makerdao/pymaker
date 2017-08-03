@@ -18,10 +18,10 @@
 import pytest
 
 from api import Address
-from api.token import ERC20Token
 from api.numeric import Ray
 from api.numeric import Wad
-from keepers.arbitrage.conversion import Conversion
+from api.token import ERC20Token
+from keepers.conversion import Conversion
 
 
 @pytest.fixture(autouse=True)

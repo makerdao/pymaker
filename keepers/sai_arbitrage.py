@@ -27,12 +27,12 @@ from api.numeric import Ray
 from api.numeric import Wad
 from api.token import ERC20Token
 from api.transact import Invocation, TxManager
-from keepers.arbitrage.conversion import Conversion
-from keepers.arbitrage.conversion import OasisTakeConversion
-from keepers.arbitrage.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion
-from keepers.arbitrage.opportunity import OpportunityFinder, Sequence
-from keepers.arbitrage.transfer_formatter import TransferFormatter
+from keepers.conversion import Conversion
+from keepers.conversion import OasisTakeConversion
+from keepers.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion
+from keepers.opportunity import OpportunityFinder, Sequence
 from keepers.sai import SaiKeeper
+from keepers.transfer_formatter import TransferFormatter
 
 
 class SaiArbitrage(SaiKeeper):

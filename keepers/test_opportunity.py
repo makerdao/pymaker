@@ -20,8 +20,8 @@ import pytest
 from api import Address
 from api.numeric import Ray
 from api.numeric import Wad
-from keepers.arbitrage.conversion import Conversion
-from keepers.arbitrage.opportunity import Sequence, OpportunityFinder
+from keepers.conversion import Conversion
+from keepers.opportunity import Sequence, OpportunityFinder
 
 
 class TestSequence:
