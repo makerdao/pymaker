@@ -148,30 +148,3 @@ class DSValue(Contract):
 
     def __repr__(self):
         return f"DSValue('{self.address}')"
-
-
-class DSCache(DSValue):
-    """A client for the `DSCache` contract, an expiring single-value data feed.
-
-    As `DSCache` inherits from `DSValue`, it replicates most of its features and methods.
-
-    You can find the source code of the `DSCache` contract here:
-    <https://github.com/dapphub/ds-cache>.
-
-    Attributes:
-        web3: An instance of `Web` from `web3.py`.
-        address: Ethereum address of the `DSCache` contract.
-    """
-
-    abi = Contract._load_abi(__name__, 'abi/DSCache.abi')
-
-    def __init__(self, web3: Web3, address: Address):
-        self.web3 = web3
-        self.address = address
-        self._assert_contract_exists(web3, address)
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
-
-    #TODO implement prod() method
-
-    def __repr__(self):
-        return f"DSCache('{self.address}')"
