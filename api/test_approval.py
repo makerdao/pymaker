@@ -30,6 +30,14 @@ from api.transact import TxManager, Invocation
 from api.util import synchronize, int_to_bytes32, bytes_to_int, bytes_to_hexstring, hexstring_to_bytes
 
 
+class FailingTransact:
+    def transact(self):
+        return None
+
+    async def transact_async(self):
+        return None
+
+
 def setup_module():
     global web3, our_address, second_address
     web3 = Web3(EthereumTesterProvider())
@@ -69,7 +77,7 @@ def test_direct_approval_should_not_approve_if_already_approved():
 def test_direct_approval_should_raise_exception_if_approval_fails():
     # given
     global web3, our_address, second_address, token
-    token.approve = MagicMock(return_value=None)
+    token.approve = MagicMock(return_value=FailingTransact())
 
     # expect
     with pytest.raises(Exception):
@@ -105,8 +113,7 @@ def test_via_tx_manager_approval_should_raise_exception_if_approval_fails():
     # given
     global web3, our_address, second_address, token
     tx = TxManager.deploy(web3)
-    tx.execute = MagicMock(return_value=None)
-    tx.execute.transact = MagicMock(return_value=None)
+    tx.execute = MagicMock(return_value=FailingTransact())
 
     # when
     with pytest.raises(Exception):
