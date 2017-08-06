@@ -20,6 +20,8 @@ import time
 from functools import total_ordering
 
 import asyncio
+from typing import Optional
+
 import eth_utils
 import logging
 import pkg_resources
@@ -269,6 +271,123 @@ class Receipt:
         assert(isinstance(transfers, list))
         self.transaction_hash = transaction_hash
         self.transfers = transfers
+
+
+class Transact:
+    logger = logging.getLogger('api')
+
+    from api.transact import Invocation
+
+    def __init__(self, origin, web3, abi, address, contract, function, parameters):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(abi, dict))
+        assert(isinstance(address, Address))
+        assert(isinstance(contract, object))
+        assert(isinstance(function, str))
+        assert(isinstance(parameters, list))
+
+        self.origin = origin
+        self.web3 = web3
+        self.abi = abi
+        self.address = address
+        self.contract = contract
+        self.function = function
+        self.parameters = parameters
+
+    def _transact(self, web3, log_message, func):
+        try:
+            self.logger.info(f"Transaction {log_message} in progress...")
+            tx_hash = func()
+            receipt = self._prepare_receipt(web3, tx_hash)
+            if receipt:
+                self.logger.info(f"Transaction {log_message} was successful (tx_hash={receipt.transaction_hash})")
+            else:
+                self.logger.warning(f"Transaction {log_message} failed")
+            return receipt
+        except:
+            self.logger.warning(f"Transaction {log_message} failed ({sys.exc_info()[1]})")
+            return None
+
+    async def _async_transact(self, web3, log_message, func):
+        try:
+            self.logger.info(f"Async transaction {log_message} in progress...")
+            tx_hash = func()
+            receipt = await self._async_prepare_receipt(web3, tx_hash)
+            if receipt:
+                self.logger.info(f"Async transaction {log_message} was successful (tx_hash={receipt.transaction_hash})")
+            else:
+                self.logger.warning(f"Async transaction {log_message} failed")
+            return receipt
+        except:
+            self.logger.warning(f"Async transaction {log_message} failed ({sys.exc_info()[1]})")
+            return None
+
+    def _prepare_receipt(self, web3, transaction_hash):
+        receipt = self._wait_for_receipt(web3, transaction_hash)
+        receipt_logs = receipt['logs']
+        if (receipt_logs is not None) and (len(receipt_logs) > 0):
+            transfers = []
+            for receipt_log in receipt_logs:
+                if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
+                    from api.token import ERC20Token
+                    transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
+                    event_data = get_event_data(transfer_abi, receipt_log)
+                    transfers.append(Transfer(token_address=Address(event_data['address']),
+                                              from_address=Address(event_data['args']['from']),
+                                              to_address=Address(event_data['args']['to']),
+                                              value=Wad(event_data['args']['value'])))
+            return Receipt(transaction_hash=transaction_hash, transfers=transfers)
+        else:
+            return None
+
+    async def _async_prepare_receipt(self, web3, transaction_hash):
+        receipt = await self._async_wait_for_receipt(web3, transaction_hash)
+        receipt_logs = receipt['logs']
+        if (receipt_logs is not None) and (len(receipt_logs) > 0):
+            transfers = []
+            for receipt_log in receipt_logs:
+                if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
+                    from api.token import ERC20Token
+                    transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
+                    event_data = get_event_data(transfer_abi, receipt_log)
+                    transfers.append(Transfer(token_address=Address(event_data['address']),
+                                              from_address=Address(event_data['args']['from']),
+                                              to_address=Address(event_data['args']['to']),
+                                              value=Wad(event_data['args']['value'])))
+            return Receipt(transaction_hash=transaction_hash, transfers=transfers)
+        else:
+            return None
+
+    def _wait_for_receipt(self, web3, transaction_hash):
+        while True:
+            receipt = web3.eth.getTransactionReceipt(transaction_hash)
+            if receipt is not None and receipt['blockNumber'] is not None:
+                return receipt
+            time.sleep(0.25)
+
+    async def _async_wait_for_receipt(self, web3, transaction_hash):
+        while True:
+            receipt = web3.eth.getTransactionReceipt(transaction_hash)
+            if receipt is not None and receipt['blockNumber'] is not None:
+                return receipt
+            await asyncio.sleep(0.25)
+
+    def _func(self):
+        return lambda: self.contract.transact()[self.function](*self.parameters)
+
+    def name(self) -> str:
+        return f"{repr(self.origin)}.{self.function}({self.parameters})"
+
+    def transact(self) -> Optional[Receipt]:
+        return self._transact(self.web3, self.name(), self._func())
+
+    async def transact_async(self) -> Optional[Receipt]:
+        return await self._async_transact(self.web3, self.name(), self._func())
+
+    def invocation(self) -> Invocation:
+        from api.transact import Invocation
+        return Invocation(self.address,
+                          Calldata(self.web3.eth.contract(abi=self.abi).encodeABI(self.function, self.parameters)))
 
 
 class Transfer:

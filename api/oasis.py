@@ -20,7 +20,7 @@ from typing import Optional, List
 
 from web3 import Web3
 
-from api import Contract, Address, Receipt, Calldata
+from api import Contract, Address, Receipt, Calldata, Transact
 from api.numeric import Wad
 from api.token import ERC20Token
 from api.util import int_to_bytes32, bytes_to_int
@@ -248,7 +248,7 @@ class SimpleMarket(Contract):
     def take_calldata(self, offer_id: int, quantity: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('take', [int_to_bytes32(offer_id), quantity.value]))
 
-    def kill(self, offer_id: int) -> Optional[Receipt]:
+    def kill(self, offer_id: int) -> Transact:
         """Cancels an existing offer.
 
         Offers can be cancelled only by their owners. In addition to that, in case of expiring markets,
@@ -258,12 +258,6 @@ class SimpleMarket(Contract):
             offer_id: Id of the offer you want to cancel.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the offer has been cancelled.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
-        return self._transact(self.web3, f"SimpleMarket('{self.address}').kill('{offer_id}')",
-                              lambda: self._contract.transact().kill(int_to_bytes32(offer_id)))
-
-    async def kill_async(self, offer_id: int) -> Optional[Receipt]:
-        return await self._async_transact(self.web3, f"SimpleMarket('{self.address}').kill('{offer_id}')",
-                                          lambda: self._contract.transact().kill(int_to_bytes32(offer_id)))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kill', [int_to_bytes32(offer_id)])
