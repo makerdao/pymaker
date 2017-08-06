@@ -257,6 +257,20 @@ class Calldata:
         return self.str == other.str
 
 
+class Invocation(object):
+    """Single smart contract method invocation, to be used together with `TxManager`.
+
+    Attributes:
+        address: Smart contract address.
+        calldata: The calldata of the invocation.
+    """
+    def __init__(self, address: Address, calldata: Calldata):
+        assert(isinstance(address, Address))
+        assert(isinstance(calldata, Calldata))
+        self.address = address
+        self.calldata = calldata
+
+
 class Receipt:
     """Represents a confirmation of a successful Ethereum transaction.
 
@@ -275,8 +289,6 @@ class Receipt:
 
 class Transact:
     logger = logging.getLogger('api')
-
-    from api.transact import Invocation
 
     def __init__(self, origin, web3, abi, address, contract, function, parameters):
         assert(isinstance(origin, object))
@@ -374,7 +386,7 @@ class Transact:
             await asyncio.sleep(0.25)
 
     def _func(self):
-        return lambda: self.contract.transact()[self.function](*self.parameters)
+        return lambda: self.contract.transact().__getattr__(self.function)(*self.parameters)
 
     def name(self) -> str:
         return f"{repr(self.origin)}.{self.function}({self.parameters})"
@@ -386,7 +398,6 @@ class Transact:
         return await self._async_transact(self.web3, self.name(), self._func())
 
     def invocation(self) -> Invocation:
-        from api.transact import Invocation
         return Invocation(self.address,
                           Calldata(self.web3.eth.contract(abi=self.abi).encodeABI(self.function, self.parameters)))
 

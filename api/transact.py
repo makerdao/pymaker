@@ -21,22 +21,8 @@ from typing import Optional, List
 
 from web3 import Web3
 
-from api import Contract, Address, Receipt, Calldata
+from api import Contract, Address, Receipt, Invocation
 from api.token import ERC20Token
-
-
-class Invocation(object):
-    """Single smart contract method invocation, to be used together with `TxManager`.
-
-    Attributes:
-        address: Smart contract address.
-        calldata: The calldata of the invocation.
-    """
-    def __init__(self, address: Address, calldata: Calldata):
-        assert(isinstance(address, Address))
-        assert(isinstance(calldata, Calldata))
-        self.address = address
-        self.calldata = calldata
 
 
 class TxManager(Contract):
