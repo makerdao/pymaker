@@ -88,7 +88,7 @@ class ERC20Token(Contract):
         """
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'transfer', [address.address, value.value])
 
-    def approve(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Optional[Receipt]:
+    def approve(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Transact:
         """Modifies the current allowance of a specified `payee` (delegate account).
 
         Allowance is an ERC20 concept allowing the `payee` (delegate account) to spend a fixed amount of tokens
@@ -102,11 +102,10 @@ class ERC20Token(Contract):
                 can spend on behalf of their owner.
 
         Returns:
-            A `Receipt` if the Ethereum transaction (and thus the approval) was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
-        return self._transact(self.web3, f"ERC20Token('{self.address}').approve('{payee}', '{limit}')",
-                              lambda: self._contract.transact().approve(payee.address, limit.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'approve', [payee.address, limit.value])
 
     def approve_calldata(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('approve', [payee.address, limit.value]))

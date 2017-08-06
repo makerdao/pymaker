@@ -139,6 +139,6 @@ class BasicForwardAuctionStrategy(Strategy):
     def _ensure_allowance(auction, context, bid_amount):
         our_allowance = auction.buying.allowance_of(context.trader_address, context.auction_manager_address)
         if bid_amount > our_allowance:
-            return auction.buying.approve(context.auction_manager_address)
+            return auction.buying.approve(context.auction_manager_address).transact()
         else:
             return True

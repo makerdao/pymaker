@@ -26,7 +26,7 @@ def directly():
     def approval_function(token: ERC20Token, spender_address: Address, spender_name: str):
         if token.allowance_of(Address(token.web3.eth.defaultAccount), spender_address) < Wad(2 ** 128 - 1):
             logging.info(f"Approving {spender_name} ({spender_address}) to access our {token.name()} directly")
-            if not token.approve(spender_address):
+            if not token.approve(spender_address).transact():
                 raise RuntimeError("Approval failed!")
 
     return approval_function

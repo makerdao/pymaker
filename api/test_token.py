@@ -82,7 +82,7 @@ class TestERC20Token:
 
     def test_approve(self):
         # when
-        self.token.approve(self.second_address, Wad(2000))
+        self.token.approve(self.second_address, Wad(2000)).transact()
 
         # then
         assert self.token.allowance_of(self.our_address, self.second_address) == Wad(2000)

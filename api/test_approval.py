@@ -57,7 +57,7 @@ def test_direct_approval():
 def test_direct_approval_should_not_approve_if_already_approved():
     # given
     global web3, our_address, second_address, token
-    token.approve(second_address, Wad(2**248+17))
+    token.approve(second_address, Wad(2**248+17)).transact()
 
     # when
     directly()(token, second_address, "some-name")
