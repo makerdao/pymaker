@@ -107,9 +107,6 @@ class ERC20Token(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'approve', [payee.address, limit.value])
 
-    def approve_calldata(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Calldata:
-        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('approve', [payee.address, limit.value]))
-
     def __eq__(self, other):
         return self.address == other.address
 

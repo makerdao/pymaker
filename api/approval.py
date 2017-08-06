@@ -37,8 +37,7 @@ def via_tx_manager(tx_manager: TxManager):
         if token.allowance_of(tx_manager.address, spender_address) < Wad(2 ** 128 - 1):
             logging.info(f"Approving {spender_name} ({spender_address}) to access our {token.name()}"
                          f" via TxManager {tx_manager.address}")
-            invocation = Invocation(address=token.address, calldata=token.approve_calldata(spender_address))
-            if not tx_manager.execute([], [invocation]):
+            if not tx_manager.execute([], [(token.approve(spender_address).invocation())]):
                 raise RuntimeError("Approval failed!")
 
     return approval_function

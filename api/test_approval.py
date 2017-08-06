@@ -92,7 +92,7 @@ def test_via_tx_manager_approval_should_not_approve_if_already_approved():
     # given
     global web3, our_address, second_address, token
     tx = TxManager.deploy(web3)
-    tx.execute([], [Invocation(token.address, token.approve_calldata(second_address, Wad(2**248+19)))])
+    tx.execute([], [token.approve(second_address, Wad(2**248+19)).invocation()])
 
     # when
     via_tx_manager(tx)(token, second_address, "some-name")
