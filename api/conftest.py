@@ -82,8 +82,9 @@ def new_sai() -> SaiDeployment:
 
     # set permissions
     dad.permit(DSGuard.ANY, DSGuard.ANY, DSGuard.ANY)
-    for auth in [sai, sin, skr, pot, pit, tub, tap, top]:
-        auth.set_authority(dad.address)
+    tub.set_authority(dad.address)
+    for auth in [sai, sin, skr, pot, pit, tap, top]:
+        auth.set_authority(dad.address).transact()
 
     # approve, mint some GEMs
     tub.approve(directly())

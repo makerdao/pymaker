@@ -19,7 +19,7 @@ from typing import Optional
 
 from web3 import Web3
 
-from api import Address, Wad, Contract, Receipt, Calldata
+from api import Address, Wad, Contract, Receipt, Calldata, Transact
 from api.numeric import Ray
 from api.token import ERC20Token
 from api.util import int_to_bytes32
@@ -723,10 +723,9 @@ class Tap(Contract):
         assert(isinstance(pit, Address))
         return Tap(web3=web3, address=Contract._deploy(web3, Tap.abi, Tap.bin, [tub.address, pit.address]))
 
-    def set_authority(self, address: Address) -> Optional[Receipt]:
+    def set_authority(self, address: Address) -> Transact:
         assert(isinstance(address, Address))
-        return self._transact(self.web3, f"Tap('{self.address}').setAuthority('{address}')",
-                              lambda: self._contract.transact().setAuthority(address.address))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
 
     def woe(self) -> Wad:
         """Get the amount of bad debt.
@@ -866,10 +865,9 @@ class Top(Contract):
         assert(isinstance(tap, Address))
         return Top(web3=web3, address=Contract._deploy(web3, Top.abi, Top.bin, [tub.address, tap.address]))
 
-    def set_authority(self, address: Address) -> Optional[Receipt]:
+    def set_authority(self, address: Address) -> Transact:
         assert(isinstance(address, Address))
-        return self._transact(self.web3, f"Top('{self.address}').setAuthority('{address}')",
-                              lambda: self._contract.transact().setAuthority(address.address))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
 
     def fix(self) -> Ray:
         """Get the GEM per SAI settlement price.

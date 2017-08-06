@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
-
 from web3 import Web3
 
-from api import Contract, Address, Receipt
+from api import Contract, Address, Transact
 
 
 class DSVault(Contract):
@@ -35,8 +33,7 @@ class DSVault(Contract):
     def deploy(web3: Web3):
         return DSVault(web3=web3, address=Contract._deploy(web3, DSVault.abi, DSVault.bin, []))
 
-    def set_authority(self, address: Address) -> Optional[Receipt]:
+    def set_authority(self, address: Address) -> Transact:
         assert(isinstance(address, Address))
-        return self._transact(self.web3, f"DSVault('{self.address}').setAuthority('{address}')",
-                              lambda: self._contract.transact().setAuthority(address.address))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
 

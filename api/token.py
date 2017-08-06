@@ -149,10 +149,9 @@ class DSToken(ERC20Token):
         assert(isinstance(symbol, str))
         return DSToken(web3=web3, address=Contract._deploy(web3, DSToken.abi, DSToken.bin, [symbol]))
 
-    def set_authority(self, address: Address) -> Optional[Receipt]:
+    def set_authority(self, address: Address) -> Transact:
         assert(isinstance(address, Address))
-        return self._transact(self.web3, f"DSToken('{self.address}').setAuthority('{address}')",
-                              lambda: self._contract.transact().setAuthority(address.address))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
 
     def mint(self, amount: Wad) -> Transact:
         assert(isinstance(amount, Wad))
