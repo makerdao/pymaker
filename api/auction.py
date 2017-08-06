@@ -119,6 +119,12 @@ class AuctionManager(Contract):
         except:
             return False
 
+    def __repr__(self):
+        if self.is_splitting:
+            return f"SplittingAuctionManager('{self.address}')"
+        else:
+            return f"AuctionManager('{self.address}')"
+
 
 class Auction:
     def __init__(self, auction_manager, auction_id, auction_info):

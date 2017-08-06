@@ -162,6 +162,9 @@ class DSToken(ERC20Token):
         return self._transact(self.web3, f"DSToken('{self.address}').burn('{amount}')",
                               lambda: self._contract.transact().burn(amount.value))
 
+    def __repr__(self):
+        return f"DSToken('{self.address}')"
+
 
 class DSEthToken(ERC20Token):
     """A client for a the `DSEthToken` contract.
@@ -215,3 +218,6 @@ class DSEthToken(ERC20Token):
         assert(isinstance(amount, Wad))
         return self._transact(self.web3, f"DSEthToken('{self.address}').withdraw('{amount}')",
                               lambda: self._contract.transact().withdraw(amount.value))
+
+    def __repr__(self):
+        return f"DSEthToken('{self.address}')"

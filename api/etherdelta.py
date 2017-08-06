@@ -687,3 +687,6 @@ class EtherDelta(Contract):
         return self.web3._requestManager.request_blocking(
             "eth_sign", [account, encode_hex(data_hash)],
         )
+
+    def __repr__(self):
+        return f"EtherDelta('{self.address}')"

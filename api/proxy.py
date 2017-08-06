@@ -44,3 +44,6 @@ class DSProxy(Contract):
     def execute(self, contract: bytes, calldata: bytes) -> Optional[Receipt]:
         return self._transact(self.web3, f"DSProxy('{self.address}').execute('0x...', '0x....')",
                               lambda: self._contract.transact().execute(contract, calldata))
+
+    def __repr__(self):
+        return f"DSProxy('{self.address}')"

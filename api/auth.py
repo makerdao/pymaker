@@ -64,6 +64,9 @@ class DSGuard(Contract):
         return self._transact(self.web3, f"DSGuard('{self.address}').forbid('{src}', '{dst}', '{bytes_to_hexstring(sig)}')",
                               lambda: self._contract.transact().forbid(src, dst, sig))
 
+    def __repr__(self):
+        return f"DSGuard('{self.address}')"
+
 
 class DSRoles(Contract):
     abi = Contract._load_abi(__name__, 'abi/DSRoles.abi')
@@ -77,3 +80,6 @@ class DSRoles(Contract):
     @staticmethod
     def deploy(web3: Web3):
         return DSRoles(web3=web3, address=Contract._deploy(web3, DSRoles.abi, DSRoles.bin, []))
+
+    def __repr__(self):
+        return f"DSRoles('{self.address}')"

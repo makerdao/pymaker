@@ -146,6 +146,9 @@ class DSValue(Contract):
         return self._transact(self.web3, f"DSValue('{self.address}').void()",
                               lambda: self._contract.transact().void())
 
+    def __repr__(self):
+        return f"DSValue('{self.address}')"
+
 
 class DSCache(DSValue):
     """A client for the `DSCache` contract, an expiring single-value data feed.
@@ -169,3 +172,6 @@ class DSCache(DSValue):
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
     #TODO implement prod() method
+
+    def __repr__(self):
+        return f"DSCache('{self.address}')"

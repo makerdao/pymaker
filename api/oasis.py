@@ -261,3 +261,6 @@ class SimpleMarket(Contract):
             A `Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'kill', [int_to_bytes32(offer_id)])
+
+    def __repr__(self):
+        return f"SimpleMarket('{self.address}')"
