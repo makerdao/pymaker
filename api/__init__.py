@@ -279,8 +279,9 @@ class Transact:
     from api.transact import Invocation
 
     def __init__(self, origin, web3, abi, address, contract, function, parameters):
+        assert(isinstance(origin, object))
         assert(isinstance(web3, Web3))
-        assert(isinstance(abi, dict))
+        assert(isinstance(abi, object))
         assert(isinstance(address, Address))
         assert(isinstance(contract, object))
         assert(isinstance(function, str))
