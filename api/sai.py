@@ -95,16 +95,12 @@ class Tub(Contract):
         return Tub(web3=web3, address=Contract._deploy(web3, Tub.abiTub, Tub.binTub,
                                                        [jar.address, jug.address, pot.address, pit.address, tip.address]))
 
-    def set_authority(self, address: Address) -> Optional[Receipt]:
+    def set_authority(self, address: Address):
         assert(isinstance(address, Address))
-        self._transact(self.web3, f"Tub('{self.address}').setAuthority('{address}')",
-                       lambda: self._contractTub.transact().setAuthority(address.address))
-        self._transact(self.web3, f"Tip('{self._contractTub.call().tip()}').setAuthority('{address}')",
-                       lambda: self._contractTip.transact().setAuthority(address.address))
-        self._transact(self.web3, f"SaiJar('{self._contractTub.call().jar()}').setAuthority('{address}')",
-                       lambda: self._contractJar.transact().setAuthority(address.address))
-        return self._transact(self.web3, f"SaiJug('{self._contractTub.call().jug()}').setAuthority('{address}')",
-                       lambda: self._contractJug.transact().setAuthority(address.address))
+        Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'setAuthority', [address.address]).transact()
+        Transact(self, self.web3, self.abiTip, self.tip(), self._contractTip, 'setAuthority', [address.address]).transact()
+        Transact(self, self.web3, self.abiJar, self.jar(), self._contractJar, 'setAuthority', [address.address]).transact()
+        Transact(self, self.web3, self.abiJug, self.jug(), self._contractJug, 'setAuthority', [address.address]).transact()
 
     def approve(self, approval_function):
         approval_function(ERC20Token(web3=self.web3, address=self.gem()), self.jar(), 'Tub.jar')
