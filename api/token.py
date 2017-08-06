@@ -19,7 +19,7 @@ from typing import Optional
 
 from web3 import Web3
 
-from api import Contract, Address, Receipt, Calldata, Transact
+from api import Contract, Address, Receipt, Transact
 from api.numeric import Wad
 
 
@@ -59,6 +59,8 @@ class ERC20Token(Contract):
         Returns:
             The token balance of the address specified.
         """
+        assert(isinstance(address, Address))
+
         return Wad(self._contract.call().balanceOf(address.address))
 
     def allowance_of(self, address: Address, payee: Address) -> Wad:
@@ -74,6 +76,9 @@ class ERC20Token(Contract):
         Returns:
             The allowance of the `payee` specified in regards to the `address`.
         """
+        assert(isinstance(address, Address))
+        assert(isinstance(payee, Address))
+
         return Wad(self._contract.call().allowance(address.address, payee.address))
 
     def transfer(self, address: Address, value: Wad) -> Transact:
@@ -86,6 +91,9 @@ class ERC20Token(Contract):
         Returns:
             A `Transact` instance, which can be used to trigger the transaction.
         """
+        assert(isinstance(address, Address))
+        assert(isinstance(value, Wad))
+
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'transfer', [address.address, value.value])
 
     def approve(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Transact:
@@ -104,6 +112,9 @@ class ERC20Token(Contract):
         Returns:
             A `Transact` instance, which can be used to trigger the transaction.
         """
+        assert(isinstance(payee, Address))
+        assert(isinstance(limit, Wad))
+
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'approve', [payee.address, limit.value])
 
