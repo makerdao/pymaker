@@ -154,15 +154,13 @@ class DSToken(ERC20Token):
         return self._transact(self.web3, f"DSToken('{self.address}').setAuthority('{address}')",
                               lambda: self._contract.transact().setAuthority(address.address))
 
-    def mint(self, amount: Wad) -> Optional[Receipt]:
+    def mint(self, amount: Wad) -> Transact:
         assert(isinstance(amount, Wad))
-        return self._transact(self.web3, f"DSToken('{self.address}').mint('{amount}')",
-                              lambda: self._contract.transact().mint(amount.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mint', [amount.value])
 
-    def burn(self, amount: Wad) -> Optional[Receipt]:
+    def burn(self, amount: Wad) -> Transact:
         assert(isinstance(amount, Wad))
-        return self._transact(self.web3, f"DSToken('{self.address}').burn('{amount}')",
-                              lambda: self._contract.transact().burn(amount.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'burn', [amount.value])
 
     def __repr__(self):
         return f"DSToken('{self.address}')"

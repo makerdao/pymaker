@@ -32,7 +32,7 @@ class TestERC20Token:
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.second_address = Address(self.web3.eth.accounts[1])
         self.token = DSToken.deploy(self.web3, 'ABC')
-        self.token.mint(Wad(1000000))
+        self.token.mint(Wad(1000000)).transact()
 
     def test_token_registry(self):
         # given
@@ -113,17 +113,17 @@ class TestDSToken:
 
     def test_mint(self):
         # when
-        self.dstoken.mint(Wad(100000))
+        self.dstoken.mint(Wad(100000)).transact()
 
         # then
         assert self.dstoken.balance_of(self.our_address) == Wad(100000)
 
     def test_burn(self):
         # given
-        self.dstoken.mint(Wad(100000))
+        self.dstoken.mint(Wad(100000)).transact()
 
         # when
-        self.dstoken.burn(Wad(40000))
+        self.dstoken.burn(Wad(40000)).transact()
 
         # then
         assert self.dstoken.balance_of(self.our_address) == Wad(60000)

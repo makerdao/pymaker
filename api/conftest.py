@@ -87,7 +87,7 @@ def new_sai() -> SaiDeployment:
 
     # approve, mint some GEMs
     tub.approve(directly())
-    gem.mint(Wad.from_number(1000000))
+    gem.mint(Wad.from_number(1000000)).transact()
 
     web3.currentProvider.rpc_methods.evm_snapshot()
     return SaiDeployment(web3, our_address, gem, sai, skr, tub, tap, top)

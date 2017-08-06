@@ -33,7 +33,7 @@ class TestTxManager:
         self.other_address = Address(self.web3.eth.accounts[1])
         self.tx = TxManager.deploy(self.web3)
         self.token1 = DSToken.deploy(self.web3, 'ABC')
-        self.token1.mint(Wad.from_number(1000000))
+        self.token1.mint(Wad.from_number(1000000)).transact()
         self.token2 = DSToken.deploy(self.web3, 'DEF')
 
     def test_owner(self):
