@@ -78,3 +78,6 @@ class TestDSValue:
 
         # then
         assert self.dsvalue.has_value() is False
+
+    def test_should_have_printable_representation(self):
+        assert repr(self.dsvalue) == f"DSValue('{self.dsvalue.address}')"
