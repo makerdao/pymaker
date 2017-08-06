@@ -92,7 +92,7 @@ def test_via_tx_manager_approval_should_not_approve_if_already_approved():
     # given
     global web3, our_address, second_address, token
     tx = TxManager.deploy(web3)
-    tx.execute([], [token.approve(second_address, Wad(2**248+19)).invocation()])
+    tx.execute([], [token.approve(second_address, Wad(2**248+19)).invocation()]).transact()
 
     # when
     via_tx_manager(tx)(token, second_address, "some-name")
@@ -106,6 +106,7 @@ def test_via_tx_manager_approval_should_raise_exception_if_approval_fails():
     global web3, our_address, second_address, token
     tx = TxManager.deploy(web3)
     tx.execute = MagicMock(return_value=None)
+    tx.execute.transact = MagicMock(return_value=None)
 
     # when
     with pytest.raises(Exception):

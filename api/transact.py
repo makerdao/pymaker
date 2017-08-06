@@ -21,7 +21,7 @@ from typing import Optional, List
 
 from web3 import Web3
 
-from api import Contract, Address, Receipt, Invocation
+from api import Contract, Address, Receipt, Invocation, Transact
 from api.token import ERC20Token
 
 
@@ -63,12 +63,15 @@ class TxManager(Contract):
     def owner(self) -> Address:
         return Address(self._contract.call().owner())
 
-    def execute(self, tokens: List[Address], invocations: List[Invocation]) -> Optional[Receipt]:
+    def execute(self, tokens: List[Address], invocations: List[Invocation]) -> Transact:
         """Executes multiple smart contract methods in one Ethereum transaction.
 
         Args:
             tokens: List of addresses of ERC20 token the invocations should be able to access.
             invocations: A list of invocations (smart contract methods) to be executed.
+
+        Returns:
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         def token_addresses() -> list:
             return list(map(lambda address: address.address, tokens))
@@ -85,5 +88,4 @@ class TxManager(Contract):
         assert(isinstance(tokens, list))
         assert(isinstance(invocations, list))
 
-        return self._transact(self.web3, f"TxManager('{self.address}').execute('0x...', '0x....')",
-                              lambda: self._contract.transact().execute(token_addresses(), script()))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'execute', [token_addresses(), script()])

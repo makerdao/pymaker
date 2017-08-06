@@ -40,5 +40,5 @@ invocations = [Invocation(Address("0xdf3893359182f55b5f225e427c93ab3fcd48e967"),
                           Calldata('0x812600df0000000000000000000000000000000000000000000000000000000000000008'))]
 
 tx = TxManager(web3=web3, address=Address("0x57bFE16ae8fcDbD46eDa9786B2eC1067cd7A8f48"))
-receipt = tx.execute([sai.address, skr.address], invocations)
+receipt = tx.execute([sai.address, skr.address], invocations).transact()
 print(receipt.transaction_hash)
