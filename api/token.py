@@ -80,12 +80,11 @@ class ERC20Token(Contract):
         """Transfers tokens to a specified address.
 
         Args:
-            address: destination address to transfer the tokens to.
-            value: the value of tokens to transfer.
+            address: Destination address to transfer the tokens to.
+            value: The value of tokens to transfer.
 
         Returns:
-            A `Receipt` if the Ethereum transaction (and thus the token transfer) was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'transfer', [address.address, value.value])
 
