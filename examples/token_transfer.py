@@ -39,7 +39,7 @@ print(f"Destination balance before the transfer is {sai.balance_of(destination_a
 print(f"")
 print(f"Attempting to transfer 10 SAI...")
 
-if sai.transfer(destination_address, Wad.from_number(10)):
+if sai.transfer(destination_address, Wad.from_number(10)).transact():
     print(f"Transfer was successful")
     print(f"")
     print(f"Source balance after the transfer is {sai.balance_of(our_address)} SAI")

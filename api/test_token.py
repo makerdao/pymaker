@@ -22,6 +22,7 @@ from web3 import Web3
 from api import Address
 from api.numeric import Wad
 from api.token import DSToken, DSEthToken, ERC20Token
+from api.util import synchronize
 
 
 class TestERC20Token:
@@ -62,11 +63,19 @@ class TestERC20Token:
 
     def test_transfer(self):
         # when
-        self.token.transfer(self.second_address, Wad(500))
+        self.token.transfer(self.second_address, Wad(500)).transact()
 
         # then
         assert self.token.balance_of(self.our_address) == Wad(999500)
         assert self.token.balance_of(self.second_address) == Wad(500)
+
+    def test_transfer_async(self):
+        # when
+        synchronize([self.token.transfer(self.second_address, Wad(750)).transact_async()])
+
+        # then
+        assert self.token.balance_of(self.our_address) == Wad(999250)
+        assert self.token.balance_of(self.second_address) == Wad(750)
 
     def test_allowance_of(self):
         assert self.token.allowance_of(self.our_address, self.second_address) == Wad(0)

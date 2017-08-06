@@ -19,7 +19,7 @@ from typing import Optional
 
 from web3 import Web3
 
-from api import Contract, Address, Receipt, Calldata
+from api import Contract, Address, Receipt, Calldata, Transact
 from api.numeric import Wad
 
 
@@ -76,7 +76,7 @@ class ERC20Token(Contract):
         """
         return Wad(self._contract.call().allowance(address.address, payee.address))
 
-    def transfer(self, address: Address, value: Wad) -> Optional[Receipt]:
+    def transfer(self, address: Address, value: Wad) -> Transact:
         """Transfers tokens to a specified address.
 
         Args:
@@ -87,11 +87,7 @@ class ERC20Token(Contract):
             A `Receipt` if the Ethereum transaction (and thus the token transfer) was successful.
             `None` if the Ethereum transaction failed.
         """
-        return self._transact(self.web3, f"ERC20Token('{self.address}').transfer('{address}', '{value}')",
-                              lambda: self._contract.transact().transfer(address.address, value.value))
-
-    def transfer_calldata(self, address: Address, value: Wad) -> Optional[Receipt]:
-        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('transfer', [address.address, value.value]))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'transfer', [address.address, value.value])
 
     def approve(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Optional[Receipt]:
         """Modifies the current allowance of a specified `payee` (delegate account).

@@ -57,8 +57,7 @@ class TestTxManager:
 
         # when
         self.tx.execute([self.token1.address],
-                        [Invocation(self.token1.address,
-                                    self.token1.transfer_calldata(self.other_address, Wad.from_number(500)))])
+                        [self.token1.transfer(self.other_address, Wad.from_number(500)).invocation()])
 
         # then
         assert self.token1.balance_of(self.our_address) == Wad.from_number(999500)
