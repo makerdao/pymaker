@@ -54,29 +54,29 @@ class TestERC20Token:
             ERC20Token.token_address_by_name('XXX')
 
     def test_total_supply(self):
-        self.token.total_supply() == Wad(1000000)
+        assert self.token.total_supply() == Wad(1000000)
 
     def test_balance_of(self):
-        self.token.balance_of(self.our_address) == Wad(1000000)
-        self.token.balance_of(self.second_address) == Wad(0)
+        assert self.token.balance_of(self.our_address) == Wad(1000000)
+        assert self.token.balance_of(self.second_address) == Wad(0)
 
     def test_transfer(self):
         # when
         self.token.transfer(self.second_address, Wad(500))
 
         # then
-        self.token.balance_of(self.our_address) == Wad(999500)
-        self.token.balance_of(self.second_address) == Wad(500)
+        assert self.token.balance_of(self.our_address) == Wad(999500)
+        assert self.token.balance_of(self.second_address) == Wad(500)
 
     def test_allowance_of(self):
-        self.token.allowance_of(self.our_address, self.second_address) == Wad(0)
+        assert self.token.allowance_of(self.our_address, self.second_address) == Wad(0)
 
     def test_approve(self):
         # when
         self.token.approve(self.second_address, Wad(2000))
 
         # then
-        self.token.allowance_of(self.our_address, self.second_address) == Wad(2000)
+        assert self.token.allowance_of(self.our_address, self.second_address) == Wad(2000)
 
     def test_equals(self):
         # given
