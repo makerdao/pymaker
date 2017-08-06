@@ -205,7 +205,7 @@ class SimpleMarket(Contract):
         return [offer for offer in offers if offer is not None]
 
     #TODO make it return the id of the newly created offer
-    def make(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> Optional[Receipt]:
+    def make(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> Transact:
         """Create a new offer.
 
         The `have_amount` of `have_token` token will be taken from you on offer creation and deposited
@@ -219,13 +219,10 @@ class SimpleMarket(Contract):
             want_amount: Amount of the `want_token` you want to receive.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the offer has been created.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
-        return self._transact(self.web3, f"SimpleMarket('{self.address}')"
-                                         f".make('{have_token}', '{want_token}', '{have_amount}', '{want_amount}')",
-                              lambda: self._contract.transact().make(have_token.address, want_token.address,
-                                                                     have_amount.value, want_amount.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'make', [have_token.address, want_token.address, have_amount.value, want_amount.value])
 
     def take(self, offer_id: int, quantity: Wad) -> Optional[Receipt]:
         """Takes (buys) an offer.
