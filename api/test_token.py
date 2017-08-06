@@ -99,6 +99,10 @@ class TestERC20Token:
         assert not token1 == token2
         assert not token1 == token2b
 
+    def test_should_have_printable_representation(self):
+        erc20token = ERC20Token(web3=self.web3, address=self.token.address)
+        assert repr(erc20token) == f"ERC20Token('{erc20token.address}')"
+
 
 class TestDSToken:
     def setup_method(self):
@@ -124,6 +128,9 @@ class TestDSToken:
         # then
         assert self.dstoken.balance_of(self.our_address) == Wad(60000)
 
+    def test_should_have_printable_representation(self):
+        assert repr(self.dstoken) == f"DSToken('{self.dstoken.address}')"
+
 
 class TestDSEthToken:
     def setup_method(self):
@@ -148,3 +155,6 @@ class TestDSEthToken:
 
         # then
         assert self.dsethtoken.balance_of(self.our_address) == Wad(60000)
+
+    def test_should_have_printable_representation(self):
+        assert repr(self.dsethtoken) == f"DSEthToken('{self.dsethtoken.address}')"
