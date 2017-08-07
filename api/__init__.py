@@ -290,7 +290,7 @@ class Receipt:
 class Transact:
     logger = logging.getLogger('api')
 
-    def __init__(self, origin, web3, abi, address, contract, function, parameters):
+    def __init__(self, origin, web3, abi, address, contract, function, parameters, extra=None):
         assert(isinstance(origin, object))
         assert(isinstance(web3, Web3))
         assert(isinstance(abi, object))
@@ -306,6 +306,7 @@ class Transact:
         self.contract = contract
         self.function = function
         self.parameters = parameters
+        self.extra = extra
 
     async def _async_transact(self, web3, log_message, func):
         try:
@@ -347,10 +348,11 @@ class Transact:
             await asyncio.sleep(0.25)
 
     def _func(self):
-        return lambda: self.contract.transact().__getattr__(self.function)(*self.parameters)
+        return lambda: self.contract.transact(self.extra).__getattr__(self.function)(*self.parameters)
 
     def name(self) -> str:
-        return f"{repr(self.origin)}.{self.function}({self.parameters})"
+        name = f"{repr(self.origin)}.{self.function}({self.parameters})"
+        return name if self.extra is None else name + f" with {self.extra}"
 
     def transact(self) -> Optional[Receipt]:
         return synchronize([self.transact_async()])[0]

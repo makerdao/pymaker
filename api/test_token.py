@@ -141,17 +141,17 @@ class TestDSEthToken:
 
     def test_deposit(self):
         # when
-        self.dsethtoken.deposit(Wad(100000))
+        self.dsethtoken.deposit(Wad(100000)).transact()
 
         # then
         assert self.dsethtoken.balance_of(self.our_address) == Wad(100000)
 
     def test_withdraw(self):
         # given
-        self.dsethtoken.deposit(Wad(100000))
+        self.dsethtoken.deposit(Wad(100000)).transact()
 
         # when
-        self.dsethtoken.withdraw(Wad(40000))
+        self.dsethtoken.withdraw(Wad(40000)).transact()
 
         # then
         assert self.dsethtoken.balance_of(self.our_address) == Wad(60000)

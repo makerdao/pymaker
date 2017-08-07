@@ -188,21 +188,19 @@ class DSEthToken(ERC20Token):
         super().__init__(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
-    def deposit(self, amount: Wad) -> Optional[Receipt]:
+    def deposit(self, amount: Wad) -> Transact:
         """Deposits `amount` of raw ETH to `DSEthToken`.
 
         Args:
             amount: Amount of raw ETH to be deposited to `DSEthToken`.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the amount has been deposited.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(amount, Wad))
-        return self._transact(self.web3, f"DSEthToken('{self.address}').deposit() with value='{amount}'",
-                              lambda: self._contract.transact({'value': amount.value}).deposit())
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'deposit', [], {'value': amount.value})
 
-    def withdraw(self, amount: Wad) -> Optional[Receipt]:
+    def withdraw(self, amount: Wad) -> Transact:
         """Withdraws `amount` of raw ETH from `DSEthToken`.
 
         The withdrawn ETH will get transferred to the calling account.
@@ -211,12 +209,10 @@ class DSEthToken(ERC20Token):
             amount: Amount of raw ETH to be withdrawn from `DSEthToken`.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the amount has been withdrawn.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(amount, Wad))
-        return self._transact(self.web3, f"DSEthToken('{self.address}').withdraw('{amount}')",
-                              lambda: self._contract.transact().withdraw(amount.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'withdraw', [amount.value])
 
     def __repr__(self):
         return f"DSEthToken('{self.address}')"
