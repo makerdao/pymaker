@@ -109,6 +109,28 @@ class Tub(Contract):
         approval_function(ERC20Token(web3=self.web3, address=self.skr()), self.pit(), 'Tub.pit')
         approval_function(ERC20Token(web3=self.web3, address=self.sai()), self.pit(), 'Tub.pit')
 
+    def era(self) -> int:
+        """Return the current SAI contracts timestamp.
+
+        Returns:
+            Timestamp as a unix timestamp.
+        """
+        return self._contractTip.call().era()
+
+    def warp(self, seconds: int) -> Transact:
+        """Move the SAI contracts forward in time.
+
+        If the `seconds` parameter is equal to `0`, time travel will get permanently disabled
+        and subsequent `warp()` calls will always fail.
+
+        Args:
+            seconds: Number of seconds to warp the time forward, or `0` to permanently disable time travel.
+
+        Returns:
+            A `Transact` instance, which can be used to trigger the transaction.
+        """
+        return Transact(self, self.web3, self.abiTip, self.tip(), self._contractTip, 'warp', [seconds])
+
     def sai(self) -> Address:
         """Get the SAI token.
 

@@ -123,6 +123,20 @@ class TestTub:
         # then
         assert sai.tub.tag() == Wad.from_number(250.45)
 
+    def test_drip_and_chi_and_rho(self, sai: SaiDeployment):
+        # given
+        sai.tub.crop(Ray(1000000000000000020000000000)).transact()
+        old_chi = sai.tub.chi()
+        old_rho = sai.tub.rho()
+
+        # when
+        sai.tub.warp(1000).transact()
+        sai.tub.drip().transact()
+
+        # then
+        assert sai.tub.chi() > old_chi
+        assert sai.tub.rho() > old_rho
+
     def test_open_and_cupi(self, sai: SaiDeployment):
         # when
         sai.tub.open()
