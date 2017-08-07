@@ -353,7 +353,7 @@ class Tub(Contract):
             A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_way, Ray)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'coax', [new_way.value])
+        return Transact(self, self.web3, self.abiTip, self.tip(), self._contractTip, 'coax', [new_way.value])
 
     def drip(self) -> Transact:
         """Recalculate the internal debt price (`chi`).
