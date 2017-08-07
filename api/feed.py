@@ -15,12 +15,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
-
 import array
+
 from web3 import Web3
 
-from api import Contract, Address, Receipt
+from api import Contract, Address, Transact
 
 
 class DSValue(Contract):
@@ -102,22 +101,20 @@ class DSValue(Contract):
         """
         return int(self.read_as_hex(), 16)
 
-    def poke(self, new_value: bytes) -> Optional[Receipt]:
+    def poke(self, new_value: bytes) -> Transact:
         """Populates this instance with a new value.
 
         Args:
             new_value: A 32-byte array with the new value to be set.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the value has been set.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(new_value, bytes))
         assert(len(new_value) == 32)
-        return self._transact(self.web3, f"DSValue('{self.address}').poke('{new_value}')",
-                              lambda: self._contract.transact().poke(new_value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'poke', [new_value])
 
-    def poke_with_int(self, new_value: int) -> Optional[Receipt]:
+    def poke_with_int(self, new_value: int) -> Transact:
         """Populates this instance with a new value.
 
         Handles the conversion of a Python `int` into the Solidity `bytes32` type automatically.
@@ -129,22 +126,19 @@ class DSValue(Contract):
             new_value: A non-negative integer with the new value to be set.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the value has been set.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(new_value, int))
         assert(new_value >= 0)
         return self.poke(new_value.to_bytes(32, byteorder='big'))
 
-    def void(self) -> Optional[Receipt]:
+    def void(self) -> Transact:
         """Removes the current value from this instance.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the value has been removed.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
-        return self._transact(self.web3, f"DSValue('{self.address}').void()",
-                              lambda: self._contract.transact().void())
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'void', [])
 
     def __repr__(self):
         return f"DSValue('{self.address}')"

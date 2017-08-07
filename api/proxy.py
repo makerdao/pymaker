@@ -19,7 +19,7 @@ from typing import Optional
 
 from web3 import Web3
 
-from api import Contract, Address, Receipt
+from api import Contract, Address, Receipt, Transact
 
 
 class DSProxy(Contract):
@@ -41,9 +41,8 @@ class DSProxy(Contract):
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
-    def execute(self, contract: bytes, calldata: bytes) -> Optional[Receipt]:
-        return self._transact(self.web3, f"DSProxy('{self.address}').execute('0x...', '0x....')",
-                              lambda: self._contract.transact().execute(contract, calldata))
+    def execute(self, contract: bytes, calldata: bytes) -> Transact:
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'execute', [contract, calldata])
 
     def __repr__(self):
         return f"DSProxy('{self.address}')"

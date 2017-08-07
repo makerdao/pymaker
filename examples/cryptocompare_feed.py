@@ -57,7 +57,7 @@ print(f"")
 
 if difference(dsvalue_value, cryptocompare_value) > threshold:
     print(f"Difference is >= {threshold}, will update")
-    if dsvalue.poke_with_int(cryptocompare_value.value):
+    if dsvalue.poke_with_int(cryptocompare_value.value).transact():
         dsvalue_value = Wad(dsvalue.read_as_int())
         print(f"Successfully updated the DSValue value, which is now {dsvalue_value} USD/ETH")
     else:

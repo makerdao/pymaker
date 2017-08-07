@@ -118,7 +118,7 @@ class TestTub:
 
     def test_tag(self, sai: SaiDeployment):
         # when
-        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250.45).value)
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250.45).value).transact()
 
         # then
         assert sai.tub.tag() == Wad.from_number(250.45)
@@ -209,7 +209,7 @@ class TestTub:
         # given
         sai.tub.join(Wad.from_number(10))
         sai.tub.cork(Wad.from_number(100000))
-        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250.45).value)
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250.45).value).transact()
 
         # and
         sai.tub.open()
@@ -250,7 +250,7 @@ class TestTap:
 
     def test_s2s_and_bid_and_ask(self, sai: SaiDeployment):
         # when
-        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(500).value)
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
         sai.tap.jump(Wad.from_number(1.05))
 
         # then

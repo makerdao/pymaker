@@ -46,7 +46,7 @@ class TestDSValue:
         self.dsvalue.poke(bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xf4]))
+                                 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xf4])).transact()
 
         # then
         assert self.dsvalue.has_value() is True
@@ -58,7 +58,7 @@ class TestDSValue:
 
     def test_poke_with_int(self):
         # when
-        self.dsvalue.poke_with_int(500)
+        self.dsvalue.poke_with_int(500).transact()
 
         # then
         assert self.dsvalue.has_value() is True
@@ -70,11 +70,11 @@ class TestDSValue:
 
     def test_void(self):
         # given
-        self.dsvalue.poke_with_int(250)
+        self.dsvalue.poke_with_int(250).transact()
         assert self.dsvalue.has_value() is True
 
         # when
-        self.dsvalue.void()
+        self.dsvalue.void().transact()
 
         # then
         assert self.dsvalue.has_value() is False
