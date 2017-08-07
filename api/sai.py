@@ -333,25 +333,21 @@ class Tub(Contract):
         assert isinstance(new_way, Ray)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'coax', [new_way.value])
 
-    def drip(self) -> Optional[Receipt]:
+    def drip(self) -> Transact:
         """Recalculate the internal debt price (`chi`).
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
-        return self._transact(self.web3, f"Tub('{self.address}').drip()",
-                              lambda: self._contractTub.transact().drip())
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'drip', [])
 
-    def prod(self) -> Optional[Receipt]:
+    def prod(self) -> Transact:
         """Recalculate the accrued holder fee (`par`).
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
-        return self._transact(self.web3, f"Tip('{self._contractTub.call().tip()}').prod()",
-                              lambda: self._contractTip.transact().prod())
+        return Transact(self, self.web3, self.abiTip, self.tip(), self._contractTip, 'prod', [])
 
     def ice(self) -> Wad:
         """Get the amount of good debt.
