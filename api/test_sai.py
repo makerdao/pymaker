@@ -24,6 +24,16 @@ from api.numeric import Wad, Ray
 
 
 class TestTub:
+    def test_warp_and_era(self, sai: SaiDeployment):
+        # given
+        old_era = sai.tub.era()
+
+        # when
+        sai.tub.warp(30).transact()
+
+        # then
+        assert sai.tub.era() == old_era + 30
+
     def test_join_and_exit(self, sai: SaiDeployment):
         # given
         assert sai.skr.balance_of(sai.our_address) == Wad(0)
