@@ -147,6 +147,20 @@ class TestTub:
         assert sai.tub.chi() > old_chi
         assert sai.tub.rho() > old_rho
 
+    def test_prod_and_par_and_tau(self, sai: SaiDeployment):
+        # given
+        sai.tub.coax(Ray(1000000000000000070000000000)).transact()
+        old_par = sai.tub.par()
+        old_tau = sai.tub.tau()
+
+        # when
+        sai.tub.warp(1000).transact()
+        sai.tub.prod().transact()
+
+        # then
+        assert sai.tub.par() > old_par
+        assert sai.tub.tau() > old_tau
+
     def test_open_and_cupi(self, sai: SaiDeployment):
         # when
         sai.tub.open()
