@@ -81,7 +81,7 @@ def new_sai() -> SaiDeployment:
     top = Top.deploy(web3, tub.address, tap.address)
 
     # set permissions
-    dad.permit(DSGuard.ANY, DSGuard.ANY, DSGuard.ANY)
+    dad.permit(DSGuard.ANY, DSGuard.ANY, DSGuard.ANY).transact()
     tub.set_authority(dad.address)
     for auth in [sai, sin, skr, pot, pit, tap, top]:
         auth.set_authority(dad.address).transact()

@@ -19,7 +19,7 @@ from typing import Optional
 
 from web3 import Web3
 
-from api import Contract, Address, Receipt
+from api import Contract, Address, Receipt, Transact
 from api.util import bytes_to_hexstring, int_to_bytes32
 
 
@@ -38,7 +38,7 @@ class DSGuard(Contract):
     def deploy(web3: Web3):
         return DSGuard(web3=web3, address=Contract._deploy(web3, DSGuard.abi, DSGuard.bin, []))
 
-    def permit(self, src, dst, sig: bytes) -> Optional[Receipt]:
+    def permit(self, src, dst, sig: bytes) -> Transact:
         assert(isinstance(src, Address) or isinstance(src, bytes))
         assert(isinstance(dst, Address) or isinstance(dst, bytes))
         assert(isinstance(sig, bytes) and len(sig) == 32)
@@ -48,8 +48,7 @@ class DSGuard(Contract):
         if isinstance(dst, Address):
             dst = dst.address
 
-        return self._transact(self.web3, f"DSGuard('{self.address}').permit('{src}', '{dst}', '{bytes_to_hexstring(sig)}')",
-                              lambda: self._contract.transact().permit(src, dst, sig))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'permit', [src, dst, sig])
 
     def forbid(self, src: Address, dst: Address, sig: bytes) -> Optional[Receipt]:
         assert(isinstance(src, Address) or isinstance(src, bytes))
@@ -61,8 +60,7 @@ class DSGuard(Contract):
         if isinstance(dst, Address):
             dst = dst.address
 
-        return self._transact(self.web3, f"DSGuard('{self.address}').forbid('{src}', '{dst}', '{bytes_to_hexstring(sig)}')",
-                              lambda: self._contract.transact().forbid(src, dst, sig))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'forbid', [src, dst, sig])
 
     def __repr__(self):
         return f"DSGuard('{self.address}')"
