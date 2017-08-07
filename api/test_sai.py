@@ -68,10 +68,10 @@ class TestTub:
         assert sai.tub.tax() == Ray.from_number(1)
 
         # when
-        sai.tub.crop(Ray.from_number(1.00000000000000002)).transact()
+        sai.tub.crop(Ray(1000000000000000020000000000)).transact()
 
         # then
-        assert sai.tub.tax() == Ray.from_number(1.00000000000000002)
+        assert sai.tub.tax() == Ray(1000000000000000020000000000)
 
     def test_cuff_and_mat(self, sai: SaiDeployment):
         # given
@@ -99,10 +99,10 @@ class TestTub:
         assert sai.tub.way() == Ray.from_number(1)
 
         # when
-        sai.tub.coax(Ray.from_number(1.00000000000000007)).transact()
+        sai.tub.coax(Ray(1000000000000000070000000000)).transact()
 
         # then
-        assert sai.tub.way() == Ray.from_number(1.00000000000000007)
+        assert sai.tub.way() == Ray(1000000000000000070000000000)
 
     def test_sai(self, sai: SaiDeployment):
         assert sai.tub.sai() == sai.sai.address
