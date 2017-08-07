@@ -48,7 +48,7 @@ class TestTub:
         assert sai.tub.hat() == Wad(0)
 
         # when
-        sai.tub.cork(Wad.from_number(150000))
+        sai.tub.cork(Wad.from_number(150000)).transact()
 
         # then
         assert sai.tub.hat() == Wad.from_number(150000)
@@ -58,7 +58,7 @@ class TestTub:
         assert sai.tub.tax() == Ray.from_number(1)
 
         # when
-        sai.tub.crop(Ray.from_number(1.00000000000000002))
+        sai.tub.crop(Ray.from_number(1.00000000000000002)).transact()
 
         # then
         assert sai.tub.tax() == Ray.from_number(1.00000000000000002)
@@ -68,7 +68,7 @@ class TestTub:
         assert sai.tub.mat() == Ray.from_number(1)
 
         # when
-        sai.tub.cuff(Ray.from_number(1.5))
+        sai.tub.cuff(Ray.from_number(1.5)).transact()
 
         # then
         assert sai.tub.mat() == Ray.from_number(1.5)
@@ -76,10 +76,10 @@ class TestTub:
     def test_chop_and_axe(self, sai: SaiDeployment):
         # given
         assert sai.tub.axe() == Ray.from_number(1)
-        sai.tub.cuff(Ray.from_number(1.5))
+        sai.tub.cuff(Ray.from_number(1.5)).transact()
 
         # when
-        sai.tub.chop(Ray.from_number(1.2))
+        sai.tub.chop(Ray.from_number(1.2)).transact()
 
         # then
         assert sai.tub.axe() == Ray.from_number(1.2)
@@ -89,7 +89,7 @@ class TestTub:
         assert sai.tub.way() == Ray.from_number(1)
 
         # when
-        sai.tub.coax(Ray.from_number(1.00000000000000007))
+        sai.tub.coax(Ray.from_number(1.00000000000000007)).transact()
 
         # then
         assert sai.tub.way() == Ray.from_number(1.00000000000000007)
@@ -142,8 +142,8 @@ class TestTub:
     @pytest.mark.skip(reason="some issue with safe() - ethereum.tester.TransactionFailed")
     def test_safe(self, sai: SaiDeployment):
         # given
-        sai.tub.cuff(Ray.from_number(1.5))
-        sai.tub.chop(Ray.from_number(1.2))
+        sai.tub.cuff(Ray.from_number(1.5)).transact()
+        sai.tub.chop(Ray.from_number(1.2)).transact()
 
         # when
         sai.tub.open()
@@ -208,7 +208,7 @@ class TestTub:
     def test_draw_and_wipe(self, sai: SaiDeployment):
         # given
         sai.tub.join(Wad.from_number(10))
-        sai.tub.cork(Wad.from_number(100000))
+        sai.tub.cork(Wad.from_number(100000)).transact()
         DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250.45).value).transact()
 
         # and

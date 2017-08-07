@@ -273,75 +273,65 @@ class Tub(Contract):
         """
         return Ray(self._contractTub.call().chi())
 
-    def chop(self, new_axe: Ray) -> Optional[Receipt]:
+    def chop(self, new_axe: Ray) -> Transact:
         """Update the liquidation penalty.
 
         Args:
             new_axe: The new value of the liquidation penalty (`axe`). `1.0` means no penalty. `1.2` means 20% penalty.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_axe, Ray)
-        return self._transact(self.web3, f"Tub('{self.address}').chop('{new_axe}')",
-                              lambda: self._contractTub.transact().chop(new_axe.value))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'chop', [new_axe.value])
 
-    def cork(self, new_hat: Wad) -> Optional[Receipt]:
+    def cork(self, new_hat: Wad) -> Transact:
         """Update the debt ceiling.
 
         Args:
             new_hat: The new value of the debt ceiling (`hat`), in SAI.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_hat, Wad)
-        return self._transact(self.web3, f"Tub('{self.address}').cork('{new_hat}')",
-                              lambda: self._contractTub.transact().cork(new_hat.value))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'cork', [new_hat.value])
 
-    def cuff(self, new_mat: Ray) -> Optional[Receipt]:
+    def cuff(self, new_mat: Ray) -> Transact:
         """Update the liquidation ratio.
 
         Args:
             new_mat: The new value of the liquidation ratio (`mat`). `1.5` means the liquidation ratio is 150%.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_mat, Ray)
-        return self._transact(self.web3, f"Tub('{self.address}').cuff('{new_mat}')",
-                              lambda: self._contractTub.transact().cuff(new_mat.value))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'cuff', [new_mat.value])
 
-    def crop(self, new_tax: Ray) -> Optional[Receipt]:
+    def crop(self, new_tax: Ray) -> Transact:
         """Update the stability fee.
 
         Args:
             new_tax: The new per-second value of the stability fee (`tax`). `1.0` means no stability fee.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_tax, Ray)
-        return self._transact(self.web3, f"Tub('{self.address}').crop('{new_tax}')",
-                              lambda: self._contractTub.transact().crop(new_tax.value))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'crop', [new_tax.value])
 
-    def coax(self, new_way: Ray) -> Optional[Receipt]:
+    def coax(self, new_way: Ray) -> Transact:
         """Update the holder fee.
 
         Args:
-            new_tax: The new per-second value of the holder fee (`way`). `1.0` means no holder fee.
+            new_way: The new per-second value of the holder fee (`way`). `1.0` means no holder fee.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_way, Ray)
-        return self._transact(self.web3, f"Tip('{self._contractTub.call().tip()}').coax('{new_way}')",
-                              lambda: self._contractTip.transact().coax(new_way.value))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'coax', [new_way.value])
 
     def drip(self) -> Optional[Receipt]:
         """Recalculate the internal debt price (`chi`).
