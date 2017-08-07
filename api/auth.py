@@ -50,7 +50,7 @@ class DSGuard(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'permit', [src, dst, sig])
 
-    def forbid(self, src: Address, dst: Address, sig: bytes) -> Optional[Receipt]:
+    def forbid(self, src: Address, dst: Address, sig: bytes) -> Transact:
         assert(isinstance(src, Address) or isinstance(src, bytes))
         assert(isinstance(dst, Address) or isinstance(dst, bytes))
         assert(isinstance(sig, bytes) and len(sig) == 32)
