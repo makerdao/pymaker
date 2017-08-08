@@ -70,7 +70,7 @@ class TubJoinConversion(Conversion):
         return f"tub.join('{self.source_amount}')"
 
     def execute(self):
-        return self.tub.join(self.source_amount)
+        return self.tub.join(self.source_amount).transact()
 
     def address(self) -> Address:
         return self.tub.address
@@ -92,7 +92,7 @@ class TubExitConversion(Conversion):
         return f"tub.exit('{self.source_amount}')"
 
     def execute(self):
-        return self.tub.exit(self.source_amount)
+        return self.tub.exit(self.source_amount).transact()
 
     def address(self) -> Address:
         return self.tub.address

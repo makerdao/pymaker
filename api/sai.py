@@ -540,36 +540,32 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         return self._contractTub.call().safe(int_to_bytes32(cup_id))
 
-    def join(self, amount_in_gem: Wad) -> Optional[Receipt]:
+    def join(self, amount_in_gem: Wad) -> Transact:
         """Buy SKR for GEMs.
 
         Args:
             amount_in_gem: The amount of GEMs to buy SKR for.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(amount_in_gem, Wad)
-        return self._transact(self.web3, f"Tub('{self.address}').join('{amount_in_gem}')",
-                              lambda: self._contractTub.transact().join(amount_in_gem.value))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'join', [amount_in_gem.value])
 
     def join_calldata(self, amount_in_gem: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abiTub).encodeABI('join', [amount_in_gem]))
 
-    def exit(self, amount_in_skr: Wad) -> Optional[Receipt]:
+    def exit(self, amount_in_skr: Wad) -> Transact:
         """Sell SKR for GEMs.
 
         Args:
             amount_in_skr: The amount of SKR to sell for GEMs.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(amount_in_skr, Wad)
-        return self._transact(self.web3, f"Tub('{self.address}').exit('{amount_in_skr}')",
-                              lambda: self._contractTub.transact().exit(amount_in_skr.value))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'exit', [amount_in_skr.value])
 
     def exit_calldata(self, amount_in_skr: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abiTub).encodeABI('exit', [amount_in_skr]))

@@ -40,14 +40,14 @@ class TestTub:
         assert sai.skr.total_supply() == Wad(0)
 
         # when
-        sai.tub.join(Wad.from_number(5))
+        sai.tub.join(Wad.from_number(5)).transact()
 
         # then
         assert sai.skr.balance_of(sai.our_address) == Wad.from_number(5)
         assert sai.skr.total_supply() == Wad.from_number(5)
 
         # when
-        sai.tub.exit(Wad.from_number(4))
+        sai.tub.exit(Wad.from_number(4)).transact()
 
         # then
         assert sai.skr.balance_of(sai.our_address) == Wad.from_number(1)
@@ -228,7 +228,7 @@ class TestTub:
     def test_lock_and_free(self, sai: SaiDeployment):
         # given
         sai.tub.open()
-        sai.tub.join(Wad.from_number(10))
+        sai.tub.join(Wad.from_number(10)).transact()
 
         # when
         print(sai.tub.cupi())
@@ -245,7 +245,7 @@ class TestTub:
 
     def test_draw_and_wipe(self, sai: SaiDeployment):
         # given
-        sai.tub.join(Wad.from_number(10))
+        sai.tub.join(Wad.from_number(10)).transact()
         sai.tub.cork(Wad.from_number(100000)).transact()
         DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250.45).value).transact()
 
