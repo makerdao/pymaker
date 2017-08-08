@@ -177,7 +177,7 @@ class Keeper:
                 break
 
             # if we are watching for new blocks and no new block has been reported during
-            # the last 2 minutes, we assume the watching filter died and terminate the keeper
+            # some time, we assume the watching filter died and terminate the keeper
             # so it can be restarted.
             #
             # this used to happen when the machine that has the node and the keeper running
