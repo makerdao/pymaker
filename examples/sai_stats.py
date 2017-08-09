@@ -23,15 +23,15 @@ from web3 import Web3
 from api import Address
 from api.token import ERC20Token
 from api.numeric import Ray
-from api.sai import Tub, Lpc
+from api.sai import Tub, Tap
 
 
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
-tub = Tub(web3=web3, address=Address('0xc349a197c9c3200411094adec82972a2b921c6e2'))
+tub = Tub(web3=web3, address=Address('0xe819300b6f3d0625632b47196233fe6671a59891'))
+tap = Tap(web3=web3, address=Address('0x897c798c096d44e511a275153da9de6139ebc249'))
 sai = ERC20Token(web3=web3, address=tub.sai())
 skr = ERC20Token(web3=web3, address=tub.skr())
 gem = ERC20Token(web3=web3, address=tub.gem())
-lpc = Lpc(web3=web3, address=Address('0x421943ce89b6d0daf0128aafc679079050aa0c1e'))
 
 print(f"")
 print(f"Token summary")
@@ -44,14 +44,14 @@ print(f"Collateral summary")
 print(f"------------------")
 print(f"GEM collateral         : {tub.pie()} GEM")
 print(f"SKR collateral         : {tub.air()} SKR")
-print(f"SKR pending liquidation: {tub.fog()} SKR")
+print(f"SKR pending liquidation: {tap.fog()} SKR")
 print(f"")
 print(f"Debt summary")
 print(f"------------")
 print(f"Debt ceiling           : {tub.hat()} SAI")
 print(f"Good debt              : {tub.ice()} SAI")
-print(f"Bad debt               : {tub.woe()} SAI")
-print(f"Surplus                : {tub.joy()} SAI")
+print(f"Bad debt               : {tap.woe()} SAI")
+print(f"Surplus                : {tap.joy()} SAI")
 print(f"")
 print(f"Feed summary")
 print(f"------------")
