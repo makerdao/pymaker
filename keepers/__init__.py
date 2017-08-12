@@ -47,6 +47,7 @@ class Keeper:
         self.config = Config(self.chain())
         self.terminated = False
         self._last_block_time = None
+        self._on_block_callback = None
 
     def start(self):
         label = f"{type(self).__name__} keeper"
@@ -63,6 +64,9 @@ class Keeper:
         if any_filter_thread_present():
             logging.info("Waiting for all threads to terminate...")
             stop_all_filter_threads()
+        if self._on_block_callback is not None and self._on_block_callback.is_alive():
+            logging.info("Waiting for outstanding callback to terminate...")
+            self._on_block_callback.join()
         logging.info("Executing keeper shutdown logic...")
         self.shutdown()
         logging.info("Keeper terminated")
@@ -108,8 +112,12 @@ class Keeper:
                 this_block_number = block['number']
                 last_block_number = self.web3.eth.blockNumber
                 if this_block_number == last_block_number:
-                    logging.debug(f"Processing block {block_hash}")
-                    callback()
+                    if self._on_block_callback is None or not self._on_block_callback.is_alive():
+                        logging.debug(f"Processing block {block_hash}")
+                        self._on_block_callback = threading.Thread(target=callback)
+                        self._on_block_callback.start()
+                    else:
+                        logging.info(f"Ignoring block {block_hash} because previous callback is still running")
                 else:
                     logging.info(f"Ignoring block {block_hash} (as #{this_block_number} < #{last_block_number})")
             else:
