@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import threading
 
 
 def synchronize(futures) -> list:
@@ -54,3 +55,17 @@ def hexstring_to_bytes(value: str) -> bytes:
     assert(isinstance(value, str))
     assert(value.startswith("0x"))
     return bytes.fromhex(value.replace("0x", ""))
+
+
+class AsyncCallback:
+    def __init__(self, callback):
+        self.callback = callback
+        self.thread = None
+
+    def trigger(self) -> bool:
+        if self.thread is None or not self.thread.is_alive():
+            self.thread = threading.Thread(target=self.callback)
+            self.thread.start()
+            return True
+        else:
+            return False
