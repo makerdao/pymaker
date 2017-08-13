@@ -7,10 +7,10 @@ Reference Maker Keeper Framework.
 [![Code Climate](https://codeclimate.com/github/makerdao/keeper/badges/gpa.svg)](https://codeclimate.com/github/makerdao/keeper)
 [![Issue Count](https://codeclimate.com/github/makerdao/keeper/badges/issue_count.svg)](https://codeclimate.com/github/makerdao/keeper)
 
-## Rationale
+## Introduction
 
 The _SAI Stablecoin System_, as well as the _DAI Stablecoin System_ in the future,
-both rely on external agents, often called keepers, to automate certain operations
+both rely on external agents, often called _keepers_, to automate certain operations
 around the Ethereum blockchain.
 
 ## Scope
