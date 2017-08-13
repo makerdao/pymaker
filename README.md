@@ -44,16 +44,14 @@ and set the `LDFLAGS` environment variable before you run `pip install -r requir
 export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
 ```
 
-## Python APIs for Maker smart contracts
+## APIs for smart contracts
 
 The current version provides APIs for `Tub`, `Lpc`, `ERC20Token`, `DSValue` and in addition
 also for `SimpleMarket` (OasisDEX/OTC). There is also a working API around `AuctionManager`
 and `SplittingAuctionManager`, but they will be used in _DAI Stablecoin System_, not in
 _SAI Stablecoin System_.
 
-You can find the full documentation here: http://maker-keeper-docs.surge.sh.
-The documentation covers also examples and sample keepers provided.
+You can find the full documentation of the APIs here: http://maker-keeper-docs.surge.sh.
 
-**Beware!** This is the first version of the APIs and they will definitely change and/or evolve
-in the future.
-
+**Beware!** This is the first version of the APIs and they will definitely change
+and/or evolve in the future.
