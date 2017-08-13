@@ -42,6 +42,7 @@ class Keeper:
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
         parser.add_argument("--debug", help="Enable debugging output", dest='debug', action='store_true')
+        parser.add_argument("--gas-price", help="Ethereum gas price in Wei", default=0, type=int)
         self.args(parser)
         self.arguments = parser.parse_args()
         try:
@@ -65,6 +66,11 @@ class Keeper:
         self._wait_for_init()
         self.logger.info(f"Keeper on {self.chain()}, connected to {self.web3.currentProvider.endpoint_uri}")
         self.logger.info(f"Keeper operating as {self.our_address}")
+        if self.arguments.gas_price > 0:
+            self.logger.info(f"Using gas price of {self.arguments.gas_price} Wei"
+                             f" (default is {self.web3.eth.gasPrice} Wei)")
+        else:
+            self.logger.info(f"Using default gas price which is {self.web3.eth.gasPrice} Wei at the moment")
         self._check_account_unlocked()
         self.logger.info("Keeper started")
         self.startup()
@@ -112,6 +118,12 @@ class Keeper:
     def eth_balance(self, address: Address) -> Wad:
         assert(isinstance(address, Address))
         return Wad(self.web3.eth.getBalance(address.address))
+
+    def default_options(self):
+        if self.arguments.gas_price > 0:
+            return {'gasPrice': self.arguments.gas_price}
+        else:
+            return {}
 
     def on_block(self, callback):
         def new_block_callback(block_hash):

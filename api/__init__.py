@@ -347,18 +347,26 @@ class Transact:
                 return receipt
             await asyncio.sleep(0.25)
 
-    def _func(self):
-        return lambda: self.contract.transact(self.extra).__getattr__(self.function)(*self.parameters)
+    def as_dict(self, dict_or_none):
+        if dict_or_none is None:
+            return {}
+        else:
+            return dict(**dict_or_none)
+
+    def _func(self, options):
+        return lambda: self.contract.\
+            transact({**self.as_dict(options), **self.as_dict(self.extra)}).\
+            __getattr__(self.function)(*self.parameters)
 
     def name(self) -> str:
         name = f"{repr(self.origin)}.{self.function}({self.parameters})"
         return name if self.extra is None else name + f" with {self.extra}"
 
-    def transact(self) -> Optional[Receipt]:
-        return synchronize([self.transact_async()])[0]
+    def transact(self, options=None) -> Optional[Receipt]:
+        return synchronize([self.transact_async(options)])[0]
 
-    async def transact_async(self) -> Optional[Receipt]:
-        return await self._async_transact(self.web3, self.name(), self._func())
+    async def transact_async(self, options=None) -> Optional[Receipt]:
+        return await self._async_transact(self.web3, self.name(), self._func(options))
 
     def invocation(self) -> Invocation:
         return Invocation(self.address,
