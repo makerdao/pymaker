@@ -44,6 +44,30 @@ and set the `LDFLAGS` environment variable before you run `pip install -r requir
 export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
 ```
 
+## Reference keepers
+
+This sections lists and briefly describes a set of reference keepers present in this project.
+
+### `sai_bite.py`
+
+TODO
+
+### `sai_arbitrage.py`
+
+TODO
+
+### `sai_top_up.py`
+
+TODO
+
+### `sai_maker_otc.py`
+
+TODO
+
+### `sai_maker_etherdelta.py`
+
+TODO
+
 ## APIs for smart contracts
 
 The current version provides APIs for `Tub`, `Lpc`, `ERC20Token`, `DSValue` and in addition
