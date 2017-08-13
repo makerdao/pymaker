@@ -44,14 +44,6 @@ and set the `LDFLAGS` environment variable before you run `pip install -r requir
 export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
 ```
 
-## Scope
-
-This project covers three areas:
-1. Provides a set of Python APIs to enable easy interaction with _SAI Stablecoin System_
-   smart contracts and some other smart contracts surrounding it.
-2. Provides some examples showing how to use these APIs.
-3. Provides a basic set of keepers using these APIs aiming to keep liquidity of the system.
-
 ## Python APIs for Maker smart contracts
 
 The current version provides APIs for `Tub`, `Lpc`, `ERC20Token`, `DSValue` and in addition
