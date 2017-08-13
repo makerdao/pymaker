@@ -13,6 +13,15 @@ The _SAI Stablecoin System_, as well as the _DAI Stablecoin System_ in the futur
 both rely on external agents, often called _keepers_, to automate certain operations
 around the Ethereum blockchain.
 
+This project contains a set of reference keepers, which can either be run directly
+by profit-seeking parties, or can be used by them as a foundation for building
+their own, more sophisticated keepers.
+
+As a part of the reference keeper implementation, an API around most of the
+_SAI Stablecoin System_ contracts has been created. It can be used not only by
+keepers, but may also be found useful by authors of some other, unrelated utilities
+aiming to interact with these contracts.
+
 ## Scope
 
 This project covers three areas:
