@@ -42,8 +42,8 @@ class Keeper:
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
-        parser.add_argument("--debug", help="Enable debugging output", dest='debug', action='store_true')
         parser.add_argument("--gas-price", help="Ethereum gas price in Wei", default=0, type=int)
+        parser.add_argument("--debug", help="Enable debug output", dest='debug', action='store_true')
         self.args(parser)
         self.arguments = parser.parse_args()
         if self.arguments.debug:
