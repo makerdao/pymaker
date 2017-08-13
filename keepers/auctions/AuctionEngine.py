@@ -18,6 +18,7 @@
 import threading
 import time
 
+import logging
 from sortedcontainers import SortedSet
 
 from keepers.auctions.StrategyContext import StrategyContext

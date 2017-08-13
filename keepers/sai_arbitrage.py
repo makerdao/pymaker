@@ -81,7 +81,7 @@ class SaiArbitrage(SaiKeeper):
             self.tx_manager_address = Address(self.arguments.tx_manager)
             self.tx_manager = TxManager(web3=self.web3, address=self.tx_manager_address)
             if self.tx_manager.owner() != self.our_address:
-                logging.info(f"The TxManager has to be owned by the address the keeper is operating from.")
+                self.logger.info(f"The TxManager has to be owned by the address the keeper is operating from.")
                 exit(-1)
         else:
             self.tx_manager_address = None
@@ -115,7 +115,7 @@ class SaiArbitrage(SaiKeeper):
         def balances():
             for token in [self.sai, self.skr, self.gem]:
                 yield f"{token.balance_of(self.our_address)} {token.name()}"
-        logging.info(f"Keeper balances are {', '.join(balances())}.")
+        self.logger.info(f"Keeper balances are {', '.join(balances())}.")
 
     def approve(self):
         """Approve all components that need to access our balances"""
@@ -176,13 +176,13 @@ class SaiArbitrage(SaiKeeper):
 
     def print_opportunity(self, opportunity: Sequence):
         """Print the details of the opportunity."""
-        logging.info(f"Opportunity with profit={opportunity.profit(self.base_token.address)} {self.base_token.name()},"
-                     f" net_profit={opportunity.net_profit(self.base_token.address)} {self.base_token.name()}")
+        self.logger.info(f"Opportunity with profit={opportunity.profit(self.base_token.address)} {self.base_token.name()},"
+                         f" net_profit={opportunity.net_profit(self.base_token.address)} {self.base_token.name()}")
         for index, conversion in enumerate(opportunity.steps, start=1):
-            logging.info(f"Step {index}/{len(opportunity.steps)}:"
-                         f" from {conversion.source_amount} {ERC20Token.token_name_by_address(conversion.source_token)}"
-                         f" to {conversion.target_amount} {ERC20Token.token_name_by_address(conversion.target_token)}"
-                         f" using {conversion.name()}")
+            self.logger.info(f"Step {index}/{len(opportunity.steps)}:"
+                             f" from {conversion.source_amount} {ERC20Token.token_name_by_address(conversion.source_token)}"
+                             f" to {conversion.target_amount} {ERC20Token.token_name_by_address(conversion.target_token)}"
+                             f" using {conversion.name()}")
 
     def execute_opportunity(self, opportunity: Sequence):
         """Execute the opportunity either in one Ethereum transaction or step-by-step.
@@ -201,11 +201,11 @@ class SaiArbitrage(SaiKeeper):
                 all_transfers += receipt.transfers
                 outgoing = TransferFormatter().format(filter(Transfer.outgoing(self.our_address), receipt.transfers))
                 incoming = TransferFormatter().format(filter(Transfer.incoming(self.our_address), receipt.transfers))
-                logging.info(f"Exchanged {outgoing} to {incoming}")
+                self.logger.info(f"Exchanged {outgoing} to {incoming}")
             else:
                 self.errors += 1
                 return
-        logging.info(f"The profit we made is {TransferFormatter().format_net(all_transfers, self.our_address)}.")
+        self.logger.info(f"The profit we made is {TransferFormatter().format_net(all_transfers, self.our_address)}.")
 
     def execute_opportunity_in_one_transaction(self, opportunity: Sequence):
         """Execute the opportunity in one transaction, using the `tx_manager`."""
@@ -213,7 +213,7 @@ class SaiArbitrage(SaiKeeper):
         invocations = list(map(lambda conv: Invocation(conv.address(), conv.calldata()), opportunity.steps))
         receipt = self.tx_manager.execute(tokens, invocations).transact()
         if receipt:
-            logging.info(f"The profit we made is {TransferFormatter().format_net(receipt.transfers, self.our_address)}.")
+            self.logger.info(f"The profit we made is {TransferFormatter().format_net(receipt.transfers, self.our_address)}.")
         else:
             self.errors += 1
 

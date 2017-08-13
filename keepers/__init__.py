@@ -32,15 +32,24 @@ from api.token import ERC20Token
 
 
 class Keeper:
+    logger = logging.getLogger('keeper')
+
     def __init__(self):
-        logging_format = '%(asctime)-15s %(levelname)-8s %(name)-6s %(message)s'
+        logging_format = '%(asctime)-15s %(levelname)-8s %(name)-7s %(message)s'
         logging.basicConfig(format=logging_format, level=logging.INFO)
         parser = argparse.ArgumentParser(description=f"{type(self).__name__} keeper")
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
+        parser.add_argument("--debug", help="Enable debugging output", dest='debug', action='store_true')
         self.args(parser)
         self.arguments = parser.parse_args()
+        try:
+            if self.arguments.debug:
+                logging.getLogger("api").setLevel(logging.DEBUG)
+                logging.getLogger("keeper").setLevel(logging.DEBUG)
+        except:
+            pass
         self.web3 = Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
         self.web3.eth.defaultAccount = self.arguments.eth_from #TODO allow to use ETH_FROM env variable
         self.our_address = Address(self.arguments.eth_from)
@@ -51,25 +60,25 @@ class Keeper:
 
     def start(self):
         label = f"{type(self).__name__} keeper"
-        logging.info(f"{label}")
-        logging.info(f"{'-' * len(label)}")
+        self.logger.info(f"{label}")
+        self.logger.info(f"{'-' * len(label)}")
         self._wait_for_init()
-        logging.info(f"Keeper on {self.chain()}, connected to {self.web3.currentProvider.endpoint_uri}")
-        logging.info(f"Keeper operating as {self.our_address}")
+        self.logger.info(f"Keeper on {self.chain()}, connected to {self.web3.currentProvider.endpoint_uri}")
+        self.logger.info(f"Keeper operating as {self.our_address}")
         self._check_account_unlocked()
-        logging.info("Keeper started")
+        self.logger.info("Keeper started")
         self.startup()
         self._main_loop()
-        logging.info("Shutting down the keeper")
+        self.logger.info("Shutting down the keeper")
         if any_filter_thread_present():
-            logging.info("Waiting for all threads to terminate...")
+            self.logger.info("Waiting for all threads to terminate...")
             stop_all_filter_threads()
         if self._on_block_callback is not None and self._on_block_callback.is_alive():
-            logging.info("Waiting for outstanding callback to terminate...")
+            self.logger.info("Waiting for outstanding callback to terminate...")
             self._on_block_callback.join()
-        logging.info("Executing keeper shutdown logic...")
+        self.logger.info("Executing keeper shutdown logic...")
         self.shutdown()
-        logging.info("Keeper terminated")
+        self.logger.info("Keeper terminated")
 
     def args(self, parser: argparse.ArgumentParser):
         pass
@@ -113,21 +122,21 @@ class Keeper:
                 last_block_number = self.web3.eth.blockNumber
                 if this_block_number == last_block_number:
                     if self._on_block_callback is None or not self._on_block_callback.is_alive():
-                        logging.debug(f"Processing block {block_hash}")
+                        self.logger.debug(f"Processing block {block_hash}")
                         self._on_block_callback = threading.Thread(target=callback)
                         self._on_block_callback.start()
                     else:
-                        logging.info(f"Ignoring block {block_hash} because previous callback is still running")
+                        self.logger.info(f"Ignoring block {block_hash} because previous callback is still running")
                 else:
-                    logging.info(f"Ignoring block {block_hash} (as #{this_block_number} < #{last_block_number})")
+                    self.logger.info(f"Ignoring block {block_hash} (as #{this_block_number} < #{last_block_number})")
             else:
-                logging.info(f"Ignoring block {block_hash} as the client is syncing")
+                self.logger.info(f"Ignoring block {block_hash} as the client is syncing")
 
         block_filter = self.web3.eth.filter('latest')
         block_filter.watch(new_block_callback)
         register_filter_thread(block_filter)
 
-        logging.info("Watching for new blocks")
+        self.logger.info("Watching for new blocks")
 
     def every(self, time_in_seconds, callback):
         def func():
@@ -140,14 +149,14 @@ class Keeper:
     def _wait_for_init(self):
         # wait for the client to have at least one peer
         if self.web3.net.peerCount == 0:
-            logging.info(f"Waiting for the client to have at least one peer...")
+            self.logger.info(f"Waiting for the client to have at least one peer...")
             while self.web3.net.peerCount == 0:
                 time.sleep(0.25)
 
         # wait for the client to sync completely,
         # as we do not want to apply keeper logic to stale blocks
         if self.web3.eth.syncing:
-            logging.info(f"Waiting for the client to sync...")
+            self.logger.info(f"Waiting for the client to sync...")
             while self.web3.eth.syncing:
                 time.sleep(0.25)
 
@@ -155,8 +164,8 @@ class Keeper:
         try:
             self.web3.eth.sign(self.web3.eth.defaultAccount, "test")
         except:
-            logging.fatal(f"Account {self.web3.eth.defaultAccount} is not unlocked.")
-            logging.fatal(f"Unlocking the account is necessary for the keeper to operate.")
+            self.logger.fatal(f"Account {self.web3.eth.defaultAccount} is not unlocked.")
+            self.logger.fatal(f"Unlocking the account is necessary for the keeper to operate.")
             exit(-1)
 
     def _main_loop(self):
@@ -173,7 +182,7 @@ class Keeper:
 
             # if the keeper logic asked us to terminate, we do so
             if self.terminated:
-                logging.warning("Keeper logic asked for termination, the keeper will terminate")
+                self.logger.warning("Keeper logic asked for termination, the keeper will terminate")
                 break
 
             # if any exception is raised in filter handling thread (could be an HTTP exception
@@ -181,7 +190,7 @@ class Keeper:
             # dysfunctional i.e. no new callbacks will ever be fired. we detect it and terminate
             # the keeper so it can be restarted.
             if not all_filter_threads_alive():
-                logging.fatal("One of filter threads is dead, the keeper will terminate")
+                self.logger.fatal("One of filter threads is dead, the keeper will terminate")
                 break
 
             # if we are watching for new blocks and no new block has been reported during
@@ -195,7 +204,7 @@ class Keeper:
             # TODO a new block. if that happens, we have no reliable way of detecting it now.
             if self._last_block_time and (datetime.datetime.now() - self._last_block_time).total_seconds() > 300:
                 if not self.web3.eth.syncing:
-                    logging.fatal("No new blocks received for 300 seconds, the keeper will terminate")
+                    self.logger.fatal("No new blocks received for 300 seconds, the keeper will terminate")
                     break
 
 
