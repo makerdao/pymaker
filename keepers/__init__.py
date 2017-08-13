@@ -46,12 +46,9 @@ class Keeper:
         parser.add_argument("--gas-price", help="Ethereum gas price in Wei", default=0, type=int)
         self.args(parser)
         self.arguments = parser.parse_args()
-        try:
-            if self.arguments.debug:
-                logging.getLogger("api").setLevel(logging.DEBUG)
-                logging.getLogger("keeper").setLevel(logging.DEBUG)
-        except:
-            pass
+        if self.arguments.debug:
+            logging.getLogger("api").setLevel(logging.DEBUG)
+            logging.getLogger("keeper").setLevel(logging.DEBUG)
         self.web3 = Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
         self.web3.eth.defaultAccount = self.arguments.eth_from #TODO allow to use ETH_FROM env variable
         self.our_address = Address(self.arguments.eth_from)
