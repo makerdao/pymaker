@@ -31,13 +31,18 @@ In order to install required third-party packages please execute:
 pip install -r requirements.txt
 ```
 
-In order for the requirements to install correctly on _macOS_, you may need to set
-some environment variables:
+### Known macOS issues
+
+In order for the requirements to install correctly on _macOS_, please install
+`openssl` and `libtool` using Homebrew:
+```
+brew install openssl libtool
+```
+
+and set the `LDFLAGS` environment variable before you run `pip install -r requirements.txt`:
 ```
 export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
 ```
-
-Also, installing `openssl` and `libtool` using Homebrew may help as well.
 
 ## Scope
 
