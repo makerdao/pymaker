@@ -36,19 +36,16 @@ class Keeper:
     logger = logging.getLogger('keeper')
 
     def __init__(self):
-        logging_format = '%(asctime)-15s %(levelname)-8s %(name)-7s %(message)s'
-        logging.basicConfig(format=logging_format, level=logging.INFO)
         parser = argparse.ArgumentParser(description=f"{type(self).__name__} keeper")
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
         parser.add_argument("--gas-price", help="Ethereum gas price in Wei", default=0, type=int)
         parser.add_argument("--debug", help="Enable debug output", dest='debug', action='store_true')
+        parser.add_argument("--trace", help="Enable trace output", dest='trace', action='store_true')
         self.args(parser)
         self.arguments = parser.parse_args()
-        if self.arguments.debug:
-            logging.getLogger("api").setLevel(logging.DEBUG)
-            logging.getLogger("keeper").setLevel(logging.DEBUG)
+        self._setup_logging()
         self.web3 = Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
         self.web3.eth.defaultAccount = self.arguments.eth_from #TODO allow to use ETH_FROM env variable
         self.our_address = Address(self.arguments.eth_from)
@@ -155,6 +152,18 @@ class Keeper:
             timer.daemon = True
             timer.start()
         func()
+
+    def _setup_logging(self):
+        # if `--trace` is enabled, we set DEBUG logging level for the root logger
+        # which will make us see a lot output from the `urllib3.connectionpool` library etc.
+        logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(name)-7s %(message)s',
+                            level=(logging.DEBUG if self.arguments.trace else logging.INFO))
+
+        # if only `--debug` is enabled, we set DEBUG logging level for our own loggers only
+        # this significantly limits the output comparing to when `--trace` is enabled
+        if self.arguments.debug and not self.arguments.trace:
+            logging.getLogger("api").setLevel(logging.DEBUG)
+            logging.getLogger("keeper").setLevel(logging.DEBUG)
 
     def _wait_for_init(self):
         # wait for the client to have at least one peer
