@@ -58,11 +58,35 @@ def hexstring_to_bytes(value: str) -> bytes:
 
 
 class AsyncCallback:
+    """Decouples callback invocation from the web3.py filter.
+
+    Decouples callback invocation from the web3.py filter by executing the callback
+    in a dedicated thread. If we make web3.py trigger the callback directly, and the callback
+    execution takes more than 60 seconds, the `eth_getFilterChanges` call also will not
+    get called for 60 seconds and more which will make the filter expire in Parity side.
+    It's 60 seconds for Parity, this could be a different value for other nodes,
+    but the filter will eventually expire sooner or later anyway.
+
+    Invoking the callback logic in a separate thread allows the web3.py Filter thread
+    to keep calling `eth_getFilterChanges` regularly, so the filter stays active.
+
+    Attributes:
+        callback: The callback function to be invoked in a separate thread.
+    """
     def __init__(self, callback):
         self.callback = callback
         self.thread = None
 
     def trigger(self) -> bool:
+        """Invokes the callback in a separate thread, unless one is already running.
+
+        If callback isn't currently running, invokes it in a separate thread and returns `True`.
+        If the previous callback invocation still hasn't finished, doesn't do anything
+        and returns `False`.
+
+        Returns:
+            `True` if callback has been invoked. `False` otherwise.
+        """
         if self.thread is None or not self.thread.is_alive():
             self.thread = threading.Thread(target=self.callback)
             self.thread.start()
@@ -71,5 +95,8 @@ class AsyncCallback:
             return False
 
     def wait(self):
+        """Waits for the currently running callback to finish.
+
+        If the callback isn't running or hasn't even been invoked once, returns instantly."""
         if self.thread is not None:
             self.thread.join()
