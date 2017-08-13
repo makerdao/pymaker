@@ -24,7 +24,7 @@ aiming to interact with these contracts.
 
 ## Installation
 
-The API and the keepers both use Python 3.6.1.
+This project uses *Python 3.6.1*.
 
 In order to install required third-party packages please execute:
 ```
