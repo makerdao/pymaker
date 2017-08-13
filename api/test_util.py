@@ -129,8 +129,8 @@ class TestAsyncCallback:
                 self.counter += 1
 
             def long_running_callback(self):
-                self.counter += 1
                 time.sleep(1)
+                self.counter += 1
 
         return Callbacks()
 
@@ -177,3 +177,15 @@ class TestAsyncCallback:
         assert result1
         assert result2
         assert callbacks.counter == 2
+
+    def test_should_wait_for_the_callback_to_finish(self, callbacks):
+        # given
+        async_callback = AsyncCallback(callbacks.long_running_callback)
+        async_callback.trigger()
+        assert callbacks.counter == 0
+
+        # when
+        async_callback.wait()
+
+        # then
+        assert callbacks.counter == 1

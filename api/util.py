@@ -69,3 +69,7 @@ class AsyncCallback:
             return True
         else:
             return False
+
+    def wait(self):
+        if self.thread is not None:
+            self.thread.join()
