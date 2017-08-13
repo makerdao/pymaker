@@ -29,6 +29,7 @@ from web3 import Web3, HTTPProvider
 from api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad
 from api.token import ERC20Token
+from api.util import AsyncCallback
 
 
 class Keeper:
@@ -79,9 +80,9 @@ class Keeper:
         if any_filter_thread_present():
             self.logger.info("Waiting for all threads to terminate...")
             stop_all_filter_threads()
-        if self._on_block_callback is not None and self._on_block_callback.is_alive():
+        if self._on_block_callback is not None:
             self.logger.info("Waiting for outstanding callback to terminate...")
-            self._on_block_callback.join()
+            self._on_block_callback.wait()
         self.logger.info("Executing keeper shutdown logic...")
         self.shutdown()
         self.logger.info("Keeper terminated")
@@ -133,16 +134,16 @@ class Keeper:
                 this_block_number = block['number']
                 last_block_number = self.web3.eth.blockNumber
                 if this_block_number == last_block_number:
-                    if self._on_block_callback is None or not self._on_block_callback.is_alive():
+                    if self._on_block_callback.trigger():
                         self.logger.debug(f"Processing block {block_hash}")
-                        self._on_block_callback = threading.Thread(target=callback)
-                        self._on_block_callback.start()
                     else:
                         self.logger.info(f"Ignoring block {block_hash} because previous callback is still running")
                 else:
                     self.logger.info(f"Ignoring block {block_hash} (as #{this_block_number} < #{last_block_number})")
             else:
                 self.logger.info(f"Ignoring block {block_hash} as the client is syncing")
+
+        self._on_block_callback = AsyncCallback(callback)
 
         block_filter = self.web3.eth.filter('latest')
         block_filter.watch(new_block_callback)
