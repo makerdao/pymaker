@@ -112,6 +112,9 @@ class Wad:
             return self.value < other.value
         else:
             raise ArithmeticError
+        
+    def __round__(self, ndigits):
+        return Wad(round(self.value, -18 + ndigits))
 
     @staticmethod
     def min(*args):
