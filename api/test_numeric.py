@@ -389,5 +389,3 @@ class TestRay:
             Ray.max(Ray(10), 20)
         with pytest.raises(ArithmeticError):
             Ray.max(15, Ray(25))
-        
-    
