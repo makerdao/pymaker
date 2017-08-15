@@ -16,18 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import datetime
 import json
-
 import logging
+import os
+import sys
 import threading
-
 import time
 
-import datetime
-
-import sys
-
-import os
 from web3 import Web3, HTTPProvider
 
 from api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
