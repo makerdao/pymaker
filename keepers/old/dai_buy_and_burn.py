@@ -28,8 +28,8 @@ from api.numeric import Wad
 from api.token import DSToken
 from api.token import ERC20Token
 from keepers import Config
-from keepers.auctions.AuctionEngine import AuctionEngine
-from keepers.auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
+from keepers.old.AuctionEngine import AuctionEngine
+from keepers.old.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
 
 parser = argparse.ArgumentParser(description='Dai Buy&Burn keeper. Buys DAI for MKR on forward auctions.')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
