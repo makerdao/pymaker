@@ -87,7 +87,7 @@ which can restart them if they fail. It could be _systemd_, but if you don't wan
 a simple `bin/run-forever` script has been provided. Its job is to simply restart the
 specified program as long as it's return code is non-zero.
 
-For example you could run the same `keeper-sai-bite` keeper like that: 
+For example you could run the same `keeper-sai-bite` keeper like that:
 ```bash
 bin/run-forever bin/keeper-sai-bite --eth-from 0x0101010101010101010101010101010101010101
 ```
