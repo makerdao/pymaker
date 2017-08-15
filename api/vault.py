@@ -36,4 +36,3 @@ class DSVault(Contract):
     def set_authority(self, address: Address) -> Transact:
         assert(isinstance(address, Address))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
-
