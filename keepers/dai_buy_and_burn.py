@@ -42,7 +42,7 @@ parser.add_argument("--step", help="Incremental step towards the maximum price (
 args = parser.parse_args()
 
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}"))
-web3.eth.defaultAccount = args.eth_from #TODO allow to use ETH_FROM env variable
+web3.eth.defaultAccount = args.eth_from
 
 config = Config(web3)
 

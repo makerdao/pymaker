@@ -47,7 +47,7 @@ class Keeper:
         self.arguments = parser.parse_args()
         self._setup_logging()
         self.web3 = Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
-        self.web3.eth.defaultAccount = self.arguments.eth_from #TODO allow to use ETH_FROM env variable
+        self.web3.eth.defaultAccount = self.arguments.eth_from
         self.our_address = Address(self.arguments.eth_from)
         self.config = Config(self.chain())
         self.terminated = False
