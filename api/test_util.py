@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+from unittest.mock import Mock, call
 
 import pytest
 import time
@@ -189,3 +190,17 @@ class TestAsyncCallback:
 
         # then
         assert callbacks.counter == 1
+
+    def test_should_call_on_start_and_on_finish_before_and_after_the_callback(self, callbacks):
+        # given
+        mock = Mock()
+        on_start = mock.on_start
+        callback = mock.callback
+        on_finish = mock.on_finish
+
+        # when
+        async_callback = AsyncCallback(callback)
+        async_callback.trigger(on_start, on_finish)
+
+        # then
+        assert mock.mock_calls == [call.on_start(), call.callback(), call.on_finish()]

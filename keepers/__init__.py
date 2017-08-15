@@ -128,9 +128,13 @@ class Keeper:
             if not self.web3.eth.syncing:
                 max_block_number = self.web3.eth.blockNumber
                 if block_number == max_block_number:
-                    if self._on_block_callback.trigger():
+                    def on_start():
                         self.logger.debug(f"Processing block #{block_number} ({block_hash})")
-                    else:
+
+                    def on_finish():
+                        self.logger.debug(f"Finished processing block #{block_number} ({block_hash})")
+
+                    if not self._on_block_callback.trigger(on_start, on_finish):
                         self.logger.info(f"Ignoring block #{block_number} ({block_hash}),"
                                          f" as previous callback is still running")
                 else:
