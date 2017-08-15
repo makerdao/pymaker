@@ -56,9 +56,8 @@ class Keeper:
         self._on_block_callback = None
 
     def start(self):
-        label = f"{type(self).__name__} keeper"
-        self.logger.info(f"{label}")
-        self.logger.info(f"{'-' * len(label)}")
+        self.logger.info(f"{self.executable_name()}")
+        self.logger.info(f"{'-' * len(self.executable_name())}")
         self._wait_for_init()
         self.logger.info(f"Keeper on {self.chain()}, connected to {self.web3.currentProvider.endpoint_uri}")
         self.logger.info(f"Keeper operating as {self.our_address}")
