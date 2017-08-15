@@ -135,7 +135,7 @@ class Keeper:
                 else:
                     self.logger.info(f"Ignoring block {block_hash} (as #{this_block_number} < #{last_block_number})")
             else:
-                self.logger.info(f"Ignoring block {block_hash} as the client is syncing")
+                self.logger.info(f"Ignoring block {block_hash} as the node is syncing")
 
         self._on_block_callback = AsyncCallback(callback)
 
@@ -168,14 +168,14 @@ class Keeper:
     def _wait_for_init(self):
         # wait for the client to have at least one peer
         if self.web3.net.peerCount == 0:
-            self.logger.info(f"Waiting for the client to have at least one peer...")
+            self.logger.info(f"Waiting for the node to have at least one peer...")
             while self.web3.net.peerCount == 0:
                 time.sleep(0.25)
 
         # wait for the client to sync completely,
         # as we do not want to apply keeper logic to stale blocks
         if self.web3.eth.syncing:
-            self.logger.info(f"Waiting for the client to sync...")
+            self.logger.info(f"Waiting for the node to sync...")
             while self.web3.eth.syncing:
                 time.sleep(0.25)
 
