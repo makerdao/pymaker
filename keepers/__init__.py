@@ -24,6 +24,10 @@ import threading
 import time
 
 import datetime
+
+import sys
+
+import os
 from web3 import Web3, HTTPProvider
 
 from api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
@@ -36,7 +40,7 @@ class Keeper:
     logger = logging.getLogger('keeper')
 
     def __init__(self):
-        parser = argparse.ArgumentParser()
+        parser = argparse.ArgumentParser(prog=self.executable_name())
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
@@ -94,6 +98,10 @@ class Keeper:
     
     def terminate(self):
         self.terminated = True
+
+    @staticmethod
+    def executable_name():
+        return "keeper-" + os.path.basename(sys.argv[0]).replace('_', '-').replace('.py', '')
 
     def chain(self) -> str:
         block_0 = self.web3.eth.getBlock(0)['hash']
