@@ -123,19 +123,21 @@ class Keeper:
     def on_block(self, callback):
         def new_block_callback(block_hash):
             self._last_block_time = datetime.datetime.now()
+            block = self.web3.eth.getBlock(block_hash)
+            block_number = block['number']
             if not self.web3.eth.syncing:
-                block = self.web3.eth.getBlock(block_hash)
-                this_block_number = block['number']
-                last_block_number = self.web3.eth.blockNumber
-                if this_block_number == last_block_number:
+                max_block_number = self.web3.eth.blockNumber
+                if block_number == max_block_number:
                     if self._on_block_callback.trigger():
-                        self.logger.debug(f"Processing block {block_hash}")
+                        self.logger.debug(f"Processing block #{block_number} ({block_hash})")
                     else:
-                        self.logger.info(f"Ignoring block {block_hash} because previous callback is still running")
+                        self.logger.info(f"Ignoring block #{block_number} ({block_hash}),"
+                                         f" as previous callback is still running")
                 else:
-                    self.logger.info(f"Ignoring block {block_hash} (as #{this_block_number} < #{last_block_number})")
+                    self.logger.info(f"Ignoring block #{block_number} ({block_hash}),"
+                                     f" as there is already block #{max_block_number} available")
             else:
-                self.logger.info(f"Ignoring block {block_hash} as the node is syncing")
+                self.logger.info(f"Ignoring block #{block_number} ({block_hash}), as the node is syncing")
 
         self._on_block_callback = AsyncCallback(callback)
 
