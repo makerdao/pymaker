@@ -16,10 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+from unittest.mock import Mock, call
 
 import pytest
+import time
 
-from api.util import synchronize, int_to_bytes32, bytes_to_int, bytes_to_hexstring, hexstring_to_bytes
+from api.util import synchronize, int_to_bytes32, bytes_to_int, bytes_to_hexstring, hexstring_to_bytes, AsyncCallback
 
 
 async def async_return(result):
@@ -116,3 +118,89 @@ def test_hexstring_to_bytes():
     assert hexstring_to_bytes('0x00') == bytes([0x00])
     assert hexstring_to_bytes('0x010203') == bytes([0x01, 0x02, 0x03])
     assert hexstring_to_bytes('0xffff') == bytes([0xff, 0xff])
+
+
+class TestAsyncCallback:
+    @pytest.fixture
+    def callbacks(self):
+        class Callbacks:
+            counter = 0
+
+            def short_running_callback(self):
+                self.counter += 1
+
+            def long_running_callback(self):
+                time.sleep(1)
+                self.counter += 1
+
+        return Callbacks()
+
+    def test_should_call_callback(self, callbacks):
+        # given
+        async_callback = AsyncCallback(callbacks.short_running_callback)
+
+        # when
+        result = async_callback.trigger()
+
+        # then
+        assert result
+        assert callbacks.counter == 1
+
+    def test_should_not_call_callback_if_previous_one_is_still_running(self, callbacks):
+        # given
+        async_callback = AsyncCallback(callbacks.long_running_callback)
+
+        # when
+        result1 = async_callback.trigger()
+        result2 = async_callback.trigger()
+
+        # and
+        time.sleep(2)
+
+        # then
+        assert result1
+        assert not result2
+        assert callbacks.counter == 1
+
+    def test_should_call_callback_again_if_previous_one_is_finished(self, callbacks):
+        # given
+        async_callback = AsyncCallback(callbacks.long_running_callback)
+
+        # when
+        result1 = async_callback.trigger()
+        time.sleep(2)
+
+        # and
+        result2 = async_callback.trigger()
+        time.sleep(2)
+
+        # then
+        assert result1
+        assert result2
+        assert callbacks.counter == 2
+
+    def test_should_wait_for_the_callback_to_finish(self, callbacks):
+        # given
+        async_callback = AsyncCallback(callbacks.long_running_callback)
+        async_callback.trigger()
+        assert callbacks.counter == 0
+
+        # when
+        async_callback.wait()
+
+        # then
+        assert callbacks.counter == 1
+
+    def test_should_call_on_start_and_on_finish_before_and_after_the_callback(self, callbacks):
+        # given
+        mock = Mock()
+        on_start = mock.on_start
+        callback = mock.callback
+        on_finish = mock.on_finish
+
+        # when
+        async_callback = AsyncCallback(callback)
+        async_callback.trigger(on_start, on_finish)
+
+        # then
+        assert mock.mock_calls == [call.on_start(), call.callback(), call.on_finish()]

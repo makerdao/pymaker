@@ -15,13 +15,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import math
+import typing
 from functools import total_ordering, reduce
 from decimal import *
 
 
 @total_ordering
-class Wad:
+class Wad(typing.SupportsRound):
     """Represents a number with 18 decimal places.
 
     `Wad` implements comparison, addition, subtraction, multiplication and division operators. Comparison, addition,
@@ -112,6 +112,9 @@ class Wad:
             return self.value < other.value
         else:
             raise ArithmeticError
+        
+    def __round__(self, ndigits: int = 0):
+        return Wad(round(self.value, -18 + ndigits))
 
     @staticmethod
     def min(*args):

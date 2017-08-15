@@ -25,11 +25,3 @@ Basic examples
    :maxdepth: 4
 
    examples-doc/index
-
-Reference keepers
------------------
-
-.. toctree::
-   :maxdepth: 4
-
-   keepers-doc/index

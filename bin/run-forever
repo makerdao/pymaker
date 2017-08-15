@@ -1,0 +1,7 @@
+#!/bin/sh
+
+DELAY=5
+until $@; do
+    echo "\n\nProcess terminated with an error (exit code $?).\nRespawning it in ${DELAY} seconds...\n\n" >&2
+    sleep ${DELAY}
+done

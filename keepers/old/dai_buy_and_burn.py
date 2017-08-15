@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 # This file is part of Maker Keeper Framework.
 #
 # Copyright (C) 2017 reverendus
@@ -28,8 +26,8 @@ from api.numeric import Wad
 from api.token import DSToken
 from api.token import ERC20Token
 from keepers import Config
-from keepers.auctions.AuctionEngine import AuctionEngine
-from keepers.auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
+from keepers.old.AuctionEngine import AuctionEngine
+from keepers.old.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
 
 parser = argparse.ArgumentParser(description='Dai Buy&Burn keeper. Buys DAI for MKR on forward auctions.')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
@@ -42,7 +40,7 @@ parser.add_argument("--step", help="Incremental step towards the maximum price (
 args = parser.parse_args()
 
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://{args.rpc_host}:{args.rpc_port}"))
-web3.eth.defaultAccount = args.eth_from #TODO allow to use ETH_FROM env variable
+web3.eth.defaultAccount = args.eth_from
 
 config = Config(web3)
 

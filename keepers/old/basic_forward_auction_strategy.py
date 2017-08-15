@@ -17,8 +17,8 @@
 
 from api.token import ERC20Token
 from api.numeric import Wad
-from keepers.auctions.Strategy import Strategy
-from keepers.auctions.StrategyResult import StrategyResult
+from keepers.old.Strategy import Strategy
+from keepers.old.StrategyResult import StrategyResult
 
 
 class BasicForwardAuctionStrategy(Strategy):

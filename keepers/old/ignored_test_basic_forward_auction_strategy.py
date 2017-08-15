@@ -23,8 +23,8 @@ from api import Address
 from api.auction import Auctionlet, Auction
 from api.numeric import Wad
 from api.token import ERC20Token
-from keepers.auctions.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
-from keepers.auctions.StrategyContext import StrategyContext
+from keepers.old.BasicForwardAuctionStrategy import BasicForwardAuctionStrategy
+from keepers.old.StrategyContext import StrategyContext
 
 
 class TestBasicForwardAuctionStrategy(unittest.TestCase):

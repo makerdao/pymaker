@@ -16,61 +16,56 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import datetime
 import json
-
 import logging
+import os
+import sys
 import threading
-
 import time
 
-import datetime
 from web3 import Web3, HTTPProvider
 
 from api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad
 from api.token import ERC20Token
+from api.util import AsyncCallback
 
 
 class Keeper:
     logger = logging.getLogger('keeper')
 
     def __init__(self):
-        logging_format = '%(asctime)-15s %(levelname)-8s %(name)-7s %(message)s'
-        logging.basicConfig(format=logging_format, level=logging.INFO)
-        parser = argparse.ArgumentParser(description=f"{type(self).__name__} keeper")
+        parser = argparse.ArgumentParser(prog=self.executable_name())
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
-        parser.add_argument("--debug", help="Enable debugging output", dest='debug', action='store_true')
         parser.add_argument("--gas-price", help="Ethereum gas price in Wei", default=0, type=int)
+        parser.add_argument("--debug", help="Enable debug output", dest='debug', action='store_true')
+        parser.add_argument("--trace", help="Enable trace output", dest='trace', action='store_true')
         self.args(parser)
         self.arguments = parser.parse_args()
-        try:
-            if self.arguments.debug:
-                logging.getLogger("api").setLevel(logging.DEBUG)
-                logging.getLogger("keeper").setLevel(logging.DEBUG)
-        except:
-            pass
+        self._setup_logging()
         self.web3 = Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
-        self.web3.eth.defaultAccount = self.arguments.eth_from #TODO allow to use ETH_FROM env variable
+        self.web3.eth.defaultAccount = self.arguments.eth_from
         self.our_address = Address(self.arguments.eth_from)
         self.config = Config(self.chain())
         self.terminated = False
+        self.fatal_termination = False
         self._last_block_time = None
         self._on_block_callback = None
 
     def start(self):
-        label = f"{type(self).__name__} keeper"
-        self.logger.info(f"{label}")
-        self.logger.info(f"{'-' * len(label)}")
+        self.logger.info(f"{self.executable_name()}")
+        self.logger.info(f"{'-' * len(self.executable_name())}")
         self._wait_for_init()
         self.logger.info(f"Keeper on {self.chain()}, connected to {self.web3.currentProvider.endpoint_uri}")
         self.logger.info(f"Keeper operating as {self.our_address}")
         if self.arguments.gas_price > 0:
-            self.logger.info(f"Using gas price of {self.arguments.gas_price} Wei"
-                             f" (default is {self.web3.eth.gasPrice} Wei)")
+            self.logger.info(f"Using gas price of {self.arguments.gas_price/10**9} GWei"
+                             f" (default is {self.web3.eth.gasPrice/10**9} GWei)")
         else:
-            self.logger.info(f"Using default gas price which is {self.web3.eth.gasPrice} Wei at the moment")
+            self.logger.info(f"Using default gas price which is {self.web3.eth.gasPrice/10**9} GWei at the moment")
         self._check_account_unlocked()
         self.logger.info("Keeper started")
         self.startup()
@@ -79,12 +74,13 @@ class Keeper:
         if any_filter_thread_present():
             self.logger.info("Waiting for all threads to terminate...")
             stop_all_filter_threads()
-        if self._on_block_callback is not None and self._on_block_callback.is_alive():
+        if self._on_block_callback is not None:
             self.logger.info("Waiting for outstanding callback to terminate...")
-            self._on_block_callback.join()
+            self._on_block_callback.wait()
         self.logger.info("Executing keeper shutdown logic...")
         self.shutdown()
         self.logger.info("Keeper terminated")
+        exit(10 if self.fatal_termination else 0)
 
     def args(self, parser: argparse.ArgumentParser):
         pass
@@ -97,6 +93,10 @@ class Keeper:
     
     def terminate(self):
         self.terminated = True
+
+    @staticmethod
+    def executable_name():
+        return "keeper-" + os.path.basename(sys.argv[0]).replace('_', '-').replace('.py', '')
 
     def chain(self) -> str:
         block_0 = self.web3.eth.getBlock(0)['hash']
@@ -128,21 +128,27 @@ class Keeper:
     def on_block(self, callback):
         def new_block_callback(block_hash):
             self._last_block_time = datetime.datetime.now()
+            block = self.web3.eth.getBlock(block_hash)
+            block_number = block['number']
             if not self.web3.eth.syncing:
-                block = self.web3.eth.getBlock(block_hash)
-                this_block_number = block['number']
-                last_block_number = self.web3.eth.blockNumber
-                if this_block_number == last_block_number:
-                    if self._on_block_callback is None or not self._on_block_callback.is_alive():
-                        self.logger.debug(f"Processing block {block_hash}")
-                        self._on_block_callback = threading.Thread(target=callback)
-                        self._on_block_callback.start()
-                    else:
-                        self.logger.info(f"Ignoring block {block_hash} because previous callback is still running")
+                max_block_number = self.web3.eth.blockNumber
+                if block_number == max_block_number:
+                    def on_start():
+                        self.logger.debug(f"Processing block #{block_number} ({block_hash})")
+
+                    def on_finish():
+                        self.logger.debug(f"Finished processing block #{block_number} ({block_hash})")
+
+                    if not self._on_block_callback.trigger(on_start, on_finish):
+                        self.logger.info(f"Ignoring block #{block_number} ({block_hash}),"
+                                         f" as previous callback is still running")
                 else:
-                    self.logger.info(f"Ignoring block {block_hash} (as #{this_block_number} < #{last_block_number})")
+                    self.logger.info(f"Ignoring block #{block_number} ({block_hash}),"
+                                     f" as there is already block #{max_block_number} available")
             else:
-                self.logger.info(f"Ignoring block {block_hash} as the client is syncing")
+                self.logger.info(f"Ignoring block #{block_number} ({block_hash}), as the node is syncing")
+
+        self._on_block_callback = AsyncCallback(callback)
 
         block_filter = self.web3.eth.filter('latest')
         block_filter.watch(new_block_callback)
@@ -158,17 +164,29 @@ class Keeper:
             timer.start()
         func()
 
+    def _setup_logging(self):
+        # if `--trace` is enabled, we set DEBUG logging level for the root logger
+        # which will make us see a lot output from the `urllib3.connectionpool` library etc.
+        logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(name)-7s %(message)s',
+                            level=(logging.DEBUG if self.arguments.trace else logging.INFO))
+
+        # if only `--debug` is enabled, we set DEBUG logging level for our own loggers only
+        # this significantly limits the output comparing to when `--trace` is enabled
+        if self.arguments.debug and not self.arguments.trace:
+            logging.getLogger("api").setLevel(logging.DEBUG)
+            logging.getLogger("keeper").setLevel(logging.DEBUG)
+
     def _wait_for_init(self):
         # wait for the client to have at least one peer
         if self.web3.net.peerCount == 0:
-            self.logger.info(f"Waiting for the client to have at least one peer...")
+            self.logger.info(f"Waiting for the node to have at least one peer...")
             while self.web3.net.peerCount == 0:
                 time.sleep(0.25)
 
         # wait for the client to sync completely,
         # as we do not want to apply keeper logic to stale blocks
         if self.web3.eth.syncing:
-            self.logger.info(f"Waiting for the client to sync...")
+            self.logger.info(f"Waiting for the node to sync...")
             while self.web3.eth.syncing:
                 time.sleep(0.25)
 
@@ -203,6 +221,7 @@ class Keeper:
             # the keeper so it can be restarted.
             if not all_filter_threads_alive():
                 self.logger.fatal("One of filter threads is dead, the keeper will terminate")
+                self.fatal_termination = True
                 break
 
             # if we are watching for new blocks and no new block has been reported during
@@ -217,6 +236,7 @@ class Keeper:
             if self._last_block_time and (datetime.datetime.now() - self._last_block_time).total_seconds() > 300:
                 if not self.web3.eth.syncing:
                     self.logger.fatal("No new blocks received for 300 seconds, the keeper will terminate")
+                    self.fatal_termination = True
                     break
 
 

@@ -21,7 +21,7 @@ import time
 import logging
 from sortedcontainers import SortedSet
 
-from keepers.auctions.StrategyContext import StrategyContext
+from keepers.old.StrategyContext import StrategyContext
 
 
 class AuctionEngine:
