@@ -51,6 +51,7 @@ class Keeper:
         self.our_address = Address(self.arguments.eth_from)
         self.config = Config(self.chain())
         self.terminated = False
+        self.fatal_termination = False
         self._last_block_time = None
         self._on_block_callback = None
 
@@ -80,6 +81,7 @@ class Keeper:
         self.logger.info("Executing keeper shutdown logic...")
         self.shutdown()
         self.logger.info("Keeper terminated")
+        exit(10 if self.fatal_termination else 0)
 
     def args(self, parser: argparse.ArgumentParser):
         pass
@@ -216,6 +218,7 @@ class Keeper:
             # the keeper so it can be restarted.
             if not all_filter_threads_alive():
                 self.logger.fatal("One of filter threads is dead, the keeper will terminate")
+                self.fatal_termination = True
                 break
 
             # if we are watching for new blocks and no new block has been reported during
@@ -230,6 +233,7 @@ class Keeper:
             if self._last_block_time and (datetime.datetime.now() - self._last_block_time).total_seconds() > 300:
                 if not self.web3.eth.syncing:
                     self.logger.fatal("No new blocks received for 300 seconds, the keeper will terminate")
+                    self.fatal_termination = True
                     break
 
 
