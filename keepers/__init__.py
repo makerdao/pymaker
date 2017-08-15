@@ -36,7 +36,7 @@ class Keeper:
     logger = logging.getLogger('keeper')
 
     def __init__(self):
-        parser = argparse.ArgumentParser(description=f"{type(self).__name__} keeper")
+        parser = argparse.ArgumentParser()
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
