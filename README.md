@@ -48,25 +48,50 @@ export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openss
 
 This sections lists and briefly describes a set of reference keepers present in this project.
 
-### `sai_bite.py`
+### `keeper-sai-bite`
+
+SAI keeper to bite undercollateralized cups.
+
+This keeper constantly looks for unsafe cups and bites them the moment they become
+unsafe. Ultimately, it should take into account the profit it can make by processing
+the resulting collateral via `bust` and only waste gas on `bite` if it can make it up
+by subsequent arbitrage. For now, it is a dumb keeper that just bites every cup
+that can be bitten.
+
+### `keeper-sai-arbitrage`
 
 TODO
 
-### `sai_arbitrage.py`
+### `keeper-sai-top-up`
 
 TODO
 
-### `sai_top_up.py`
+### `keeper-sai-maker-otc`
 
 TODO
 
-### `sai_maker_otc.py`
+### `keeper-sai-maker-etherdelta`
 
 TODO
 
-### `sai_maker_etherdelta.py`
+## Running keepers
 
-TODO
+An individual script in the `bin` directory is present for each keeper. For example, `keeper-sai-bite`
+can be run with:
+```bash
+bin/keeper-sai-bite --eth-from 0x0101010101010101010101010101010101010101
+```
+
+As keepers tend to die at times, in any serious environment they should be run by a tool
+which can restart them if they fail. It could be _systemd_, but if you don't want to set it up,
+a simple `bin/run-forever` script has been provided. Its job is to simply restart the
+specified program as long as it's return code is non-zero.
+
+For example you could run the same `keeper-sai-bite` keeper like that: 
+```bash
+bin/run-forever bin/keeper-sai-bite --eth-from 0x0101010101010101010101010101010101010101
+```
+so it gets automatically restarted every time it fails.
 
 ## APIs for smart contracts
 
