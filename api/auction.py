@@ -36,6 +36,9 @@ class AuctionManager(Contract):
       Auctionlets are the objects on which bidders place bids.
 
     Only forward and reverse auctions are supported. No two-way auctions support yet.
+
+    You can find the source code of the `AuctionManager` and `SplittingAuctionManager` contracts here:
+    <https://github.com/makerdao/token-auction>.
     """
     def __init__(self, web3, address, is_splitting):
         self.web3 = web3
