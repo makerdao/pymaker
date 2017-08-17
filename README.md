@@ -22,6 +22,19 @@ _SAI Stablecoin System_ contracts has been created. It can be used not only by
 keepers, but may also be found useful by authors of some other, unrelated utilities
 aiming to interact with these contracts.
 
+## Disclaimer
+
+This set of reference keepers is provided for demonstration purposes only. If you,
+by any chance, want to run them on the production network or provide them
+with any real money or tokens, you do it on your own responsibility only.
+
+As stated in the _GNU Affero General Public License_:
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
 ## Installation
 
 This project uses *Python 3.6.1*.
