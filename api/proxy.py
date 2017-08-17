@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
-
 from web3 import Web3
 
-from api import Contract, Address, Receipt, Transact
+from api import Contract, Address, Transact
 
 
 class DSProxy(Contract):
@@ -34,6 +32,7 @@ class DSProxy(Contract):
     """
 
     abi = Contract._load_abi(__name__, 'abi/DSProxy.abi')
+    bin = Contract._load_bin(__name__, 'abi/DSProxy.bin')
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
