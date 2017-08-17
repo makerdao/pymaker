@@ -21,6 +21,16 @@ from api import Contract, Address, Transact
 
 
 class DSVault(Contract):
+    """A client for the `DSVault` contract.
+
+    You can find the source code of the `DSVault` contract here:
+    <https://github.com/dapphub/ds-vault>.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `DSVault` contract.
+    """
+
     abi = Contract._load_abi(__name__, 'abi/DSVault.abi')
     bin = Contract._load_bin(__name__, 'abi/DSVault.bin')
 

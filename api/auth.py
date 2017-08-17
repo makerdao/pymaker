@@ -24,6 +24,16 @@ from api.util import bytes_to_hexstring, int_to_bytes32
 
 
 class DSGuard(Contract):
+    """A client for the `DSGuard` contract.
+
+    You can find the source code of the `DSGuard` contract here:
+    <https://github.com/dapphub/ds-guard>.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `DSGuard` contract.
+    """
+
     abi = Contract._load_abi(__name__, 'abi/DSGuard.abi')
     bin = Contract._load_bin(__name__, 'abi/DSGuard.bin')
 
@@ -67,6 +77,16 @@ class DSGuard(Contract):
 
 
 class DSRoles(Contract):
+    """A client for the `DSRoles` contract.
+
+    You can find the source code of the `DSRoles` contract here:
+    <https://github.com/dapphub/ds-roles>.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `DSRoles` contract.
+    """
+
     abi = Contract._load_abi(__name__, 'abi/DSRoles.abi')
     bin = Contract._load_bin(__name__, 'abi/DSRoles.bin')
 

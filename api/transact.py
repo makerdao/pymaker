@@ -38,6 +38,9 @@ class TxManager(Contract):
     to the caller at the end of it. In order to use this feature, ERC20 token allowances
     have to be granted to the `TxManager`.
 
+    You can find the source code of the `TxManager` contract here:
+    <https://github.com/reverendus/tx-manager>.
+
     Attributes:
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `TxManager` contract.
