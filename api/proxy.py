@@ -41,6 +41,15 @@ class DSProxy(Contract):
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
 
     def execute(self, contract: bytes, calldata: bytes) -> Transact:
+        """Create a new contract and call a function of it.
+
+        Creates a new contract using the bytecode (`contract`). Then does _delegatecall_ to the function
+        and arguments specified in the `calldata`.
+
+        Args:
+            contract: Contract bytecode.
+            calldata: Calldata to pass to _delegatecall_.
+        """
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'execute', [contract, calldata])
 
     def __repr__(self):
