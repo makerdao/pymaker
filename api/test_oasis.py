@@ -20,8 +20,10 @@ from web3 import Web3
 
 from api import Address, Wad
 from api.approval import directly
-from api.oasis import SimpleMarket, LogMake
+from api.oasis import SimpleMarket
 from api.token import DSToken
+
+PAST_BLOCKS = 100
 
 
 class TestSimpleMarket:
@@ -126,7 +128,7 @@ class TestSimpleMarket:
                       want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
 
         # then
-        past_make = self.otc.past_make(100)
+        past_make = self.otc.past_make(PAST_BLOCKS)
         assert len(past_make) == 1
         assert past_make[0].id == 1
         assert past_make[0].maker == self.our_address
@@ -147,7 +149,7 @@ class TestSimpleMarket:
         self.otc.take(1, Wad.from_number(0.5))
 
         # then
-        past_take = self.otc.past_take(100)
+        past_take = self.otc.past_take(PAST_BLOCKS)
         assert len(past_take) == 1
         assert past_take[0].id == 1
         assert past_take[0].maker == self.our_address
@@ -168,7 +170,7 @@ class TestSimpleMarket:
         self.otc.kill(1).transact()
 
         # then
-        past_kill = self.otc.past_kill(100)
+        past_kill = self.otc.past_kill(PAST_BLOCKS)
         assert len(past_kill) == 1
         assert past_kill[0].id == 1
         assert past_kill[0].maker == self.our_address
