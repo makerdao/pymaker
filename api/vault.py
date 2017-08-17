@@ -41,12 +41,30 @@ class DSVault(Contract):
 
     @staticmethod
     def deploy(web3: Web3):
+        """Deploy a new instance of the `DSVault` contract.
+
+        Args:
+            web3: An instance of `Web` from `web3.py`.
+
+        Returns:
+            A `DSVault` class instance.
+        """
         return DSVault(web3=web3, address=Contract._deploy(web3, DSVault.abi, DSVault.bin, []))
 
     def authority(self) -> Address:
+        """Return the current `authority` of a `DSAuth`-ed contract.
+
+        Returns:
+            The address of the current `authority`.
+        """
         return Address(self._contract.call().authority())
 
     def set_authority(self, address: Address) -> Transact:
+        """Set the `authority` of a `DSAuth`-ed contract.
+
+        Args:
+            address: The address of the new `authority`.
+        """
         assert(isinstance(address, Address))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
 

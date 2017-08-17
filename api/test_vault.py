@@ -30,7 +30,7 @@ class TestDSVault:
         self.dsvault = DSVault.deploy(self.web3)
 
     def test_authority(self):
-        #given
+        # given
         some_address = Address('0x0000000000111111111122222222223333333333')
 
         # when

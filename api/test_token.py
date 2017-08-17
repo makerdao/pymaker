@@ -111,6 +111,16 @@ class TestDSToken:
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.dstoken = DSToken.deploy(self.web3, 'ABC')
 
+    def test_authority(self):
+        # given
+        some_address = Address('0x4545454545676767676789898989890101010101')
+
+        # when
+        self.dstoken.set_authority(some_address).transact()
+
+        # then
+        assert self.dstoken.authority() == some_address
+
     def test_mint(self):
         # when
         self.dstoken.mint(Wad(100000)).transact()

@@ -141,15 +141,47 @@ class ERC20Token(Contract):
 
 
 class DSToken(ERC20Token):
+    """A client for the `DSToken` contract.
+
+    You can find the source code of the `DSToken` contract here:
+    <https://github.com/dapphub/ds-token>.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `DSToken` contract.
+    """
+
     abi = Contract._load_abi(__name__, 'abi/DSToken.abi')
     bin = Contract._load_bin(__name__, 'abi/DSToken.bin')
 
     @staticmethod
     def deploy(web3: Web3, symbol: str):
+        """Deploy a new instance of the `DSToken` contract.
+
+        Args:
+            web3: An instance of `Web` from `web3.py`.
+            symbol: Symbol of the new token.
+
+        Returns:
+            A `DSToken` class instance.
+        """
         assert(isinstance(symbol, str))
         return DSToken(web3=web3, address=Contract._deploy(web3, DSToken.abi, DSToken.bin, [symbol]))
 
+    def authority(self) -> Address:
+        """Return the current `authority` of a `DSAuth`-ed contract.
+
+        Returns:
+            The address of the current `authority`.
+        """
+        return Address(self._contract.call().authority())
+
     def set_authority(self, address: Address) -> Transact:
+        """Set the `authority` of a `DSAuth`-ed contract.
+
+        Args:
+            address: The address of the new `authority`.
+        """
         assert(isinstance(address, Address))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
 
@@ -166,11 +198,14 @@ class DSToken(ERC20Token):
 
 
 class DSEthToken(ERC20Token):
-    """A client for a the `DSEthToken` contract.
+    """A client for the `DSEthToken` contract.
 
     `DSEthToken`, also known as _ETH Wrapper_ or _W-ETH_, is a smart contract into which you can deposit
     raw ETH and then deal with it like with any other ERC20 token. In addition to the `deposit()`
     and `withdraw()` methods, it implements the standard ERC20 token API.
+
+    You can find the source code of the `DSEthToken` contract here:
+    <https://github.com/dapphub/ds-eth-token>.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
@@ -182,6 +217,14 @@ class DSEthToken(ERC20Token):
 
     @staticmethod
     def deploy(web3: Web3):
+        """Deploy a new instance of the `DSEthToken` contract.
+
+        Args:
+            web3: An instance of `Web` from `web3.py`.
+
+        Returns:
+            A `DSEthToken` class instance.
+        """
         return DSEthToken(web3=web3, address=Contract._deploy(web3, DSEthToken.abi, DSEthToken.bin, []))
 
     def __init__(self, web3, address):
