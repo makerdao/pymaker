@@ -211,5 +211,55 @@ class TestSimpleMarket:
         assert on_make.want_amount == Wad.from_number(2)
         assert on_make.timestamp != 0
 
+    @pytest.mark.timeout(5)
+    def test_on_take(self):
+        # given
+        on_take_mock = Mock()
+        self.otc.on_take(on_take_mock)
+
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # and
+        self.otc.approve([self.token2], directly())
+        self.otc.take(1, Wad.from_number(0.5))
+
+        # then
+        on_take = wait_until_mock_called(on_take_mock)[0]
+        assert on_take.id == 1
+        assert on_take.maker == self.our_address
+        assert on_take.taker == self.our_address
+        assert on_take.have_token == self.token1.address
+        assert on_take.take_amount == Wad.from_number(0.5)
+        assert on_take.want_token == self.token2.address
+        assert on_take.give_amount == Wad.from_number(1)
+        assert on_take.timestamp != 0
+
+    @pytest.mark.timeout(5)
+    def test_on_kill(self):
+        # given
+        on_kill_mock = Mock()
+        self.otc.on_kill(on_kill_mock)
+
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # and
+        self.otc.kill(1).transact()
+
+        # then
+        on_kill = wait_until_mock_called(on_kill_mock)[0]
+        assert on_kill.id == 1
+        assert on_kill.maker == self.our_address
+        assert on_kill.have_token == self.token1.address
+        assert on_kill.have_amount == Wad.from_number(1)
+        assert on_kill.want_token == self.token2.address
+        assert on_kill.want_amount == Wad.from_number(2)
+        assert on_kill.timestamp != 0
+
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"SimpleMarket('{self.otc.address}')"
