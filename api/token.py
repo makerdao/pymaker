@@ -181,15 +181,34 @@ class DSToken(ERC20Token):
 
         Args:
             address: The address of the new `authority`.
+
+        Returns:
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(address, Address))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
 
     def mint(self, amount: Wad) -> Transact:
+        """Increase the total supply of the token.
+
+        Args:
+            amount: The amount to increase the total supply by.
+
+        Returns:
+            A `Transact` instance, which can be used to trigger the transaction.
+        """
         assert(isinstance(amount, Wad))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'mint', [amount.value])
 
     def burn(self, amount: Wad) -> Transact:
+        """Decrease the total supply of the token.
+
+        Args:
+            amount: The amount to decrease the total supply by.
+
+        Returns:
+            A `Transact` instance, which can be used to trigger the transaction.
+        """
         assert(isinstance(amount, Wad))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'burn', [amount.value])
 

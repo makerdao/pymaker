@@ -64,6 +64,9 @@ class DSVault(Contract):
 
         Args:
             address: The address of the new `authority`.
+
+        Returns:
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(address, Address))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
