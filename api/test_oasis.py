@@ -15,11 +15,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from unittest.mock import Mock
+
+import pytest
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
 from api import Address, Wad
 from api.approval import directly
+from api.helpers import wait_until_mock_called
 from api.oasis import SimpleMarket
 from api.token import DSToken
 
@@ -185,6 +189,27 @@ class TestSimpleMarket:
         assert past_kill[0].want_token == self.token2.address
         assert past_kill[0].want_amount == Wad.from_number(2)
         assert past_kill[0].timestamp != 0
+
+    @pytest.mark.timeout(5)
+    def test_on_make(self):
+        # given
+        on_make_mock = Mock()
+        self.otc.on_make(on_make_mock)
+
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # then
+        on_make = wait_until_mock_called(on_make_mock)[0]
+        assert on_make.id == 1
+        assert on_make.maker == self.our_address
+        assert on_make.have_token == self.token1.address
+        assert on_make.have_amount == Wad.from_number(1)
+        assert on_make.want_token == self.token2.address
+        assert on_make.want_amount == Wad.from_number(2)
+        assert on_make.timestamp != 0
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"SimpleMarket('{self.otc.address}')"
