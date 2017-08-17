@@ -158,5 +158,25 @@ class TestSimpleMarket:
         assert past_take[0].give_amount == Wad.from_number(1)
         assert past_take[0].timestamp != 0
 
+    def test_past_kill(self):
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # and
+        self.otc.kill(1).transact()
+
+        # then
+        past_kill = self.otc.past_kill(100)
+        assert len(past_kill) == 1
+        assert past_kill[0].id == 1
+        assert past_kill[0].maker == self.our_address
+        assert past_kill[0].have_token == self.token1.address
+        assert past_kill[0].have_amount == Wad.from_number(1)
+        assert past_kill[0].want_token == self.token2.address
+        assert past_kill[0].want_amount == Wad.from_number(2)
+        assert past_kill[0].timestamp != 0
+
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"SimpleMarket('{self.otc.address}')"
