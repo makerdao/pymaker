@@ -50,7 +50,8 @@ class SaiArbitrage(SaiKeeper):
     Steps can be executed sequentially (each one as a separate Etheruem
     transaction, checking if one has been successful before executing the next
     one) or in one ago. The latter method requires a `TxManager` contract deployed,
-    also the contract has to be owned by the account the keeper operates from.
+    its address has to be passed as the `--tx-manager` argument. Also the `TxManager`
+    contract has to be owned by the account the keeper operates from.
 
     You can find the source code of the `TxManager` here:
     <https://github.com/reverendus/tx-manager>.
