@@ -18,8 +18,10 @@
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
-from api import Address
+from api import Address, Wad
+from api.approval import directly
 from api.oasis import SimpleMarket
+from api.token import DSToken
 
 
 class TestSimpleMarket:
@@ -28,9 +30,29 @@ class TestSimpleMarket:
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.otc = SimpleMarket.deploy(self.web3)
+        self.token1 = DSToken.deploy(self.web3, 'AAA')
+        self.token1.mint(Wad.from_number(100)).transact()
+        self.token2 = DSToken.deploy(self.web3, 'BBB')
 
-    def test_get_last_offer_id(self):
+    def test_approve_and_make_and_get_last_offer_id_and_get_offer(self):
+        # given
+        self.otc.approve([self.token1], directly())
+
+        # and
         assert self.otc.get_last_offer_id() == 0
+
+        # when
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # then
+        assert self.otc.get_last_offer_id() == 1
+        assert self.otc.get_offer(1).offer_id == 1
+        assert self.otc.get_offer(1).sell_which_token == self.token1.address
+        assert self.otc.get_offer(1).sell_how_much == Wad.from_number(1)
+        assert self.otc.get_offer(1).buy_which_token == self.token2.address
+        assert self.otc.get_offer(1).buy_how_much == Wad.from_number(2)
+        assert self.otc.get_offer(1).owner == self.our_address
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"SimpleMarket('{self.otc.address}')"
