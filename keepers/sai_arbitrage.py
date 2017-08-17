@@ -34,7 +34,7 @@ from keepers.transfer_formatter import TransferFormatter
 
 
 class SaiArbitrage(SaiKeeper):
-    """SAI keeper to arbitrage on OasisDEX, `join`, `exit`, `boom` and `boost.'
+    """SAI keeper to arbitrage on OasisDEX, `join`, `exit`, `boom` and `bust`.
 
     Keeper constantly looks for profitable enough arbitrage opportunities
     and executes them the moment they become available. It can make profit on:
