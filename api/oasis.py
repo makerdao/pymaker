@@ -119,6 +119,9 @@ class SimpleMarket(Contract):
     `SimpleMarket` is a simple on-chain OTC market for ERC20-compatible tokens.
     It powers the `OasisDEX` decentralized exchange.
 
+    You can also interact with `ExpiringMarket` contracts, as their API is
+    identical to `SimpleMarket`.
+
     You can find the source code of the `SimpleMarket` contract here:
     <https://github.com/makerdao/maker-otc>.
 
@@ -128,6 +131,7 @@ class SimpleMarket(Contract):
     """
 
     abi = Contract._load_abi(__name__, 'abi/SimpleMarket.abi')
+    bin = Contract._load_bin(__name__, 'abi/SimpleMarket.bin')
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
@@ -135,6 +139,18 @@ class SimpleMarket(Contract):
         self._assert_contract_exists(web3, address)
         self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
         self._none_offers = set()
+
+    @staticmethod
+    def deploy(web3: Web3):
+        """Deploy a new instance of the `SimpleMarket` contract.
+
+        Args:
+            web3: An instance of `Web` from `web3.py`.
+
+        Returns:
+            A `SimpleMarket` class instance.
+        """
+        return SimpleMarket(web3=web3, address=Contract._deploy(web3, SimpleMarket.abi, SimpleMarket.bin, []))
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         for token in tokens:
