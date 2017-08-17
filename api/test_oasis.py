@@ -121,6 +121,12 @@ class TestSimpleMarket:
         assert self.otc.active_offers() == []
         assert self.otc.get_last_offer_id() == 1
 
+    def test_no_past_events_on_startup(self):
+        assert self.otc.past_make(PAST_BLOCKS) == []
+        assert self.otc.past_bump(PAST_BLOCKS) == []
+        assert self.otc.past_take(PAST_BLOCKS) == []
+        assert self.otc.past_kill(PAST_BLOCKS) == []
+
     def test_past_make(self):
         # when
         self.otc.approve([self.token1], directly())
