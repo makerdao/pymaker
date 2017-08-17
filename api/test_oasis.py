@@ -20,7 +20,7 @@ from web3 import Web3
 
 from api import Address, Wad
 from api.approval import directly
-from api.oasis import SimpleMarket
+from api.oasis import SimpleMarket, LogMake
 from api.token import DSToken
 
 
@@ -54,6 +54,7 @@ class TestSimpleMarket:
         assert self.otc.get_offer(1).buy_which_token == self.token2.address
         assert self.otc.get_offer(1).buy_how_much == Wad.from_number(2)
         assert self.otc.get_offer(1).owner == self.our_address
+        assert self.otc.get_offer(1).timestamp != 0
 
         # and
         assert self.otc.active_offers() == [self.otc.get_offer(1)]
@@ -117,6 +118,45 @@ class TestSimpleMarket:
         assert self.otc.get_offer(1) is None
         assert self.otc.active_offers() == []
         assert self.otc.get_last_offer_id() == 1
+
+    def test_past_make(self):
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # then
+        past_make = self.otc.past_make(100)
+        assert len(past_make) == 1
+        assert past_make[0].id == 1
+        assert past_make[0].maker == self.our_address
+        assert past_make[0].have_token == self.token1.address
+        assert past_make[0].have_amount == Wad.from_number(1)
+        assert past_make[0].want_token == self.token2.address
+        assert past_make[0].want_amount == Wad.from_number(2)
+        assert past_make[0].timestamp != 0
+
+    def test_past_take(self):
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # and
+        self.otc.approve([self.token2], directly())
+        self.otc.take(1, Wad.from_number(0.5))
+
+        # then
+        past_take = self.otc.past_take(100)
+        assert len(past_take) == 1
+        assert past_take[0].id == 1
+        assert past_take[0].maker == self.our_address
+        assert past_take[0].taker == self.our_address
+        assert past_take[0].have_token == self.token1.address
+        assert past_take[0].take_amount == Wad.from_number(0.5)
+        assert past_take[0].want_token == self.token2.address
+        assert past_take[0].give_amount == Wad.from_number(1)
+        assert past_take[0].timestamp != 0
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"SimpleMarket('{self.otc.address}')"

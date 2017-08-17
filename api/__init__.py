@@ -142,7 +142,7 @@ class Contract:
             events.append(obj)
 
         block_number = contract.web3.eth.blockNumber
-        filter_params = {'fromBlock': block_number-number_of_past_blocks, 'toBlock': block_number-1}
+        filter_params = {'fromBlock': max(block_number-number_of_past_blocks, 0), 'toBlock': block_number}
         thread = contract.pastEvents(event, filter_params, self._event_callback(cls, handler, True))
         register_filter_thread(thread)
         thread.join()
