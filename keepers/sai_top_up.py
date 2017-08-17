@@ -29,10 +29,10 @@ class SaiTopUp(SaiKeeper):
     """SAI keeper to top-up cups before they reach the liquidation ratio.
 
     Kepper constantly monitors cups owned by the `--eth-from` account. If the
-    collateralization ratio falls under `mat` + `min-margin`, the cup will get
-    topped-up up to `mat` + `top-up-margin`.
+    collateralization ratio falls under `mat` + `--min-margin`, the cup will get
+    topped-up up to `mat` + `--top-up-margin`.
 
-    Cups owned by other addresses are ignored.
+    Cups owned by other accounts are ignored.
     """
     def __init__(self):
         super().__init__()
