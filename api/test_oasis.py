@@ -33,26 +33,90 @@ class TestSimpleMarket:
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1.mint(Wad.from_number(100)).transact()
         self.token2 = DSToken.deploy(self.web3, 'BBB')
+        self.token2.mint(Wad.from_number(100)).transact()
 
-    def test_approve_and_make_and_get_last_offer_id_and_get_offer(self):
+    def test_approve_and_make_and_getters(self):
         # given
-        self.otc.approve([self.token1], directly())
-
-        # and
         assert self.otc.get_last_offer_id() == 0
 
         # when
+        self.otc.approve([self.token1], directly())
         self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
                       want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
 
         # then
         assert self.otc.get_last_offer_id() == 1
+
+        # and
         assert self.otc.get_offer(1).offer_id == 1
         assert self.otc.get_offer(1).sell_which_token == self.token1.address
         assert self.otc.get_offer(1).sell_how_much == Wad.from_number(1)
         assert self.otc.get_offer(1).buy_which_token == self.token2.address
         assert self.otc.get_offer(1).buy_how_much == Wad.from_number(2)
         assert self.otc.get_offer(1).owner == self.our_address
+
+        # and
+        assert self.otc.active_offers() == [self.otc.get_offer(1)]
+
+    def test_offer_comparison(self):
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # and
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(3),
+                      want_token=self.token2.address, want_amount=Wad.from_number(4)).transact()
+
+        # then
+        assert self.otc.get_last_offer_id() == 2
+        assert self.otc.get_offer(1) == self.otc.get_offer(1)
+        assert self.otc.get_offer(1) != self.otc.get_offer(2)
+
+    def test_take_partial(self):
+        # given
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # when
+        self.otc.approve([self.token2], directly())
+        self.otc.take(1, Wad.from_number(0.25))
+
+        # then
+        assert self.otc.get_offer(1).sell_how_much == Wad.from_number(0.75)
+        assert self.otc.get_offer(1).buy_how_much == Wad.from_number(1.5)
+        assert self.otc.active_offers() == [self.otc.get_offer(1)]
+        assert self.otc.get_last_offer_id() == 1
+
+    def test_take_complete(self):
+        # given
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # when
+        self.otc.approve([self.token2], directly())
+        self.otc.take(1, Wad.from_number(1))
+
+        # then
+        assert self.otc.get_offer(1) is None
+        assert self.otc.active_offers() == []
+        assert self.otc.get_last_offer_id() == 1
+
+    def test_kill(self):
+        # given
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # when
+        self.otc.kill(1).transact()
+
+        # then
+        assert self.otc.get_offer(1) is None
+        assert self.otc.active_offers() == []
+        assert self.otc.get_last_offer_id() == 1
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"SimpleMarket('{self.otc.address}')"
