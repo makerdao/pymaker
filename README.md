@@ -149,10 +149,23 @@ so it gets automatically restarted every time it fails.
 
 ## APIs for smart contracts
 
-The current version provides APIs for `Tub`, `Lpc`, `ERC20Token`, `DSValue` and in addition
-also for `SimpleMarket` (OasisDEX/OTC). There is also a working API around `AuctionManager`
-and `SplittingAuctionManager`, but they will be used in _DAI Stablecoin System_, not in
-_SAI Stablecoin System_.
+In order simplify keeper development, a set of APIs has been developed around the core contracts
+of the _SAI Stablecoin_ ecosystem. The current version provides APIs around:
+* `ERC20Token`
+* `Tub`, `Tap`, `Top` and `Lpc` (<https://github.com/makerdao/sai>),
+* `SimpleMarket` and `ExpiringMarket` (<https://github.com/makerdao/maker-otc>),
+* `TxManager` (<https://github.com/reverendus/tx-manager>),
+* `DSGuard` (<https://github.com/dapphub/ds-guard>),
+* `DSProxy` (<https://github.com/dapphub/ds-proxy>),
+* `DSRoles` (<https://github.com/dapphub/ds-roles>),
+* `DSToken` (<https://github.com/dapphub/ds-token>),
+* `DSEthToken` (<https://github.com/dapphub/ds-eth-token>),
+* `DSValue` (<https://github.com/dapphub/ds-value>),
+* `DSVault` (<https://github.com/dapphub/ds-vault>).
+
+In addition to that, there are draft interfaces to:
+* `EtherDelta` (<https://github.com/etherdelta/etherdelta.github.io>),
+* `AuctionManager` and `SplittingAuctionManager` (<https://github.com/makerdao/token-auction>).
 
 You can find the full documentation of the APIs here: http://maker-keeper-docs.surge.sh.
 
