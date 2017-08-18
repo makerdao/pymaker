@@ -124,13 +124,13 @@ class TubBoomConversion(Conversion):
         return f"tub.boom('{self.source_amount}')"
 
     def execute(self):
-        return self.tap.boom(self.source_amount)
+        return self.tap.boom(self.source_amount).transact()
 
     def address(self) -> Address:
         return self.tap.address
 
     def calldata(self):
-        return self.tap.boom_calldata(self.source_amount)
+        return self.tap.boom(self.source_amount).invocation().calldata
 
 
 class TubBustConversion(Conversion):
@@ -159,13 +159,13 @@ class TubBustConversion(Conversion):
         return f"tub.bust('{self.target_amount}')"
 
     def execute(self):
-        return self.tap.bust(self.target_amount)
+        return self.tap.bust(self.target_amount).transact()
 
     def address(self) -> Address:
         return self.tap.address
 
     def calldata(self):
-        return self.tap.bust_calldata(self.target_amount)
+        return self.tap.bust(self.target_amount).invocation().calldata
 
 
 class LpcTakeRefConversion(Conversion):

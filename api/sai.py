@@ -751,19 +751,17 @@ class Tap(Contract):
         """
         return Wad(self._contract.call().gap())
 
-    def jump(self, new_gap: Wad) -> Optional[Receipt]:
+    def jump(self, new_gap: Wad) -> Transact:
         """Update the current spread (`gap`) for `boom` and `bust`.
 
         Args:
-            new_tax: The new value of the spread (`gap`). `1.0` means no spread, `1.01` means 1% spread.
+            new_gap: The new value of the spread (`gap`). `1.0` means no spread, `1.01` means 1% spread.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_gap, Wad)
-        return self._transact(self.web3, f"Tap('{self.address}').jump('{new_gap}')",
-                              lambda: self._contract.transact().jump(new_gap.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'jump', [new_gap.value])
 
     def s2s(self) -> Wad:
         """Get the current SKR per SAI rate (for `boom` and `bust`).
@@ -789,39 +787,29 @@ class Tap(Contract):
         """
         return Wad(self._contract.call().ask())
 
-    def boom(self, amount_in_skr: Wad) -> Optional[Receipt]:
+    def boom(self, amount_in_skr: Wad) -> Transact:
         """Buy some amount of SAI to process `joy` (surplus).
 
         Args:
             amount_in_skr: The amount of SKR we want to send in order to receive SAI.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(amount_in_skr, Wad)
-        return self._transact(self.web3, f"Tap('{self.address}').boom('{amount_in_skr}')",
-                              lambda: self._contract.transact().boom(amount_in_skr.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'boom', [amount_in_skr.value])
 
-    def boom_calldata(self, amount_in_skr: Wad) -> Calldata:
-        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('boom', [amount_in_skr]))
-
-    def bust(self, amount_in_skr: Wad) -> Optional[Receipt]:
+    def bust(self, amount_in_skr: Wad) -> Transact:
         """Sell some amount of SAI to process `woe` (bad debt).
 
         Args:
             amount_in_skr: The amount of SKR we want to receive in exchange for our SAI.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(amount_in_skr, Wad)
-        return self._transact(self.web3, f"Tap('{self.address}').bust('{amount_in_skr}')",
-                              lambda: self._contract.transact().bust(amount_in_skr.value))
-
-    def bust_calldata(self, amount_in_skr: Wad) -> Calldata:
-        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('bust', [amount_in_skr]))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'bust', [amount_in_skr.value])
 
     def __eq__(self, other):
         assert(isinstance(other, Tap))

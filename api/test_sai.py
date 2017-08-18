@@ -272,7 +272,7 @@ class TestTap:
         assert sai.tap.gap() == Wad.from_number(1)
 
         # when
-        sai.tap.jump(Wad.from_number(1.05))
+        sai.tap.jump(Wad.from_number(1.05)).transact()
 
         # then
         assert sai.tap.gap() == Wad.from_number(1.05)
@@ -289,7 +289,7 @@ class TestTap:
     def test_s2s_and_bid_and_ask(self, sai: SaiDeployment):
         # when
         DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
-        sai.tap.jump(Wad.from_number(1.05))
+        sai.tap.jump(Wad.from_number(1.05)).transact()
 
         # then
         assert sai.tap.bid() == Wad.from_number(475)
