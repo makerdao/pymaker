@@ -34,7 +34,7 @@ class TestTub:
         # then
         assert sai.tub.era() == old_era + 30
 
-    def test_join_and_exit(self, sai: SaiDeployment):
+    def test_join_and_pie_and_exit(self, sai: SaiDeployment):
         # given
         assert sai.skr.balance_of(sai.our_address) == Wad(0)
         assert sai.skr.total_supply() == Wad(0)
@@ -241,12 +241,14 @@ class TestTub:
 
         # then
         assert sai.tub.ink(1) == Wad.from_number(5)
+        assert sai.tub.air() == Wad.from_number(5)
 
         # when
         sai.tub.free(1, Wad.from_number(3)).transact()
 
         # then
         assert sai.tub.ink(1) == Wad.from_number(2)
+        assert sai.tub.air() == Wad.from_number(2)
 
     def test_draw_and_tab_wipe(self, sai: SaiDeployment):
         # given
