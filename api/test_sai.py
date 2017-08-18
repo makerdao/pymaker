@@ -219,7 +219,7 @@ class TestTub:
         sai.tub.open().transact()
 
         # when
-        sai.tub.shut(1)
+        sai.tub.shut(1).transact()
 
         # then
         assert sai.tub.lad(1) == Address('0x0000000000000000000000000000000000000000')

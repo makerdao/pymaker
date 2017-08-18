@@ -579,7 +579,7 @@ class Tub(Contract):
         """
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'open', [])
 
-    def shut(self, cup_id: int) -> Optional[Receipt]:
+    def shut(self, cup_id: int) -> Transact:
         """Close a cup.
 
         Involves calling `wipe()` and `free()` internally in order to clear all remaining SAI debt and free
@@ -589,12 +589,10 @@ class Tub(Contract):
             cup_id: Id of the cup to close.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
-        return self._transact(self.web3, f"Tub('{self.address}').shut('{cup_id}')",
-                              lambda: self._contractTub.transact().shut(int_to_bytes32(cup_id)))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'shut', [int_to_bytes32(cup_id)])
 
     def lock(self, cup_id: int, amount_in_skr: Wad) -> Optional[Receipt]:
         """Post additional SKR collateral to a cup.
