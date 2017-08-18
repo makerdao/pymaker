@@ -571,15 +571,13 @@ class Tub(Contract):
         return Calldata(self.web3.eth.contract(abi=self.abiTub).encodeABI('exit', [amount_in_skr]))
 
     #TODO make it return the id of the newly created cup
-    def open(self) -> Optional[Receipt]:
+    def open(self) -> Transact:
         """Create a new cup.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
-        return self._transact(self.web3, f"Tub('{self.address}').open()",
-                              lambda: self._contractTub.transact().open())
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'open', [])
 
     def shut(self, cup_id: int) -> Optional[Receipt]:
         """Close a cup.
@@ -662,7 +660,7 @@ class Tub(Contract):
         return self._transact(self.web3, f"Tub('{self.address}').wipe('{cup_id}', '{amount_in_sai}')",
                               lambda: self._contractTub.transact().wipe(int_to_bytes32(cup_id), amount_in_sai.value))
 
-    def give(self, cup_id: int, new_lad: Address) -> Optional[Receipt]:
+    def give(self, cup_id: int, new_lad: Address) -> Transact:
         """Transfer ownership of a cup.
 
         Args:
@@ -670,27 +668,24 @@ class Tub(Contract):
             new_lad: New owner of the cup.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         assert isinstance(new_lad, Address)
-        return self._transact(self.web3, f"Tub('{self.address}').give('{cup_id}', '{new_lad}')",
-                              lambda: self._contractTub.transact().give(int_to_bytes32(cup_id), new_lad.address))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'give',
+                        [int_to_bytes32(cup_id), new_lad.address])
 
-    def bite(self, cup_id: int) -> Optional[Receipt]:
+    def bite(self, cup_id: int) -> Transact:
         """Initiate liquidation of an undercollateralized cup.
 
         Args:
             cup_id: Id of the cup to liquidate.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
-        return self._transact(self.web3, f"Tub('{self.address}').bite('{cup_id}')",
-                              lambda: self._contractTub.transact().bite(int_to_bytes32(cup_id)))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'bite', [int_to_bytes32(cup_id)])
 
     def __eq__(self, other):
         assert(isinstance(other, Tub))

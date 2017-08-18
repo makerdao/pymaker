@@ -163,14 +163,14 @@ class TestTub:
 
     def test_open_and_cupi(self, sai: SaiDeployment):
         # when
-        sai.tub.open()
+        sai.tub.open().transact()
 
         # then
         assert sai.tub.cupi() == 1
 
     def test_cups(self, sai: SaiDeployment):
         # when
-        sai.tub.open()
+        sai.tub.open().transact()
 
         # then
         assert sai.tub.cups(1).art == Wad(0)
@@ -184,31 +184,31 @@ class TestTub:
         sai.tub.chop(Ray.from_number(1.2)).transact()
 
         # when
-        sai.tub.open()
+        sai.tub.open().transact()
 
         # then
         assert sai.tub.safe(1)
 
     def test_ink(self, sai: SaiDeployment):
         # when
-        sai.tub.open()
+        sai.tub.open().transact()
 
         # then
         assert sai.tub.ink(1) == Wad(0)
 
     def test_lad(self, sai: SaiDeployment):
         # when
-        sai.tub.open()
+        sai.tub.open().transact()
 
         # then
         assert sai.tub.lad(1) == sai.our_address
 
     def test_give(self, sai: SaiDeployment):
         # given
-        sai.tub.open()
+        sai.tub.open().transact()
 
         # when
-        sai.tub.give(1, Address('0x0101010101020202020203030303030404040404'))
+        sai.tub.give(1, Address('0x0101010101020202020203030303030404040404')).transact()
 
         # then
         assert sai.tub.lad(1) == Address('0x0101010101020202020203030303030404040404')
@@ -216,7 +216,7 @@ class TestTub:
     @pytest.mark.skip(reason="some issue with safe() - ethereum.tester.TransactionFailed")
     def test_shut(self, sai: SaiDeployment):
         # given
-        sai.tub.open()
+        sai.tub.open().transact()
 
         # when
         sai.tub.shut(1)
@@ -227,7 +227,7 @@ class TestTub:
     @pytest.mark.skip(reason="some issue with safe() - ethereum.tester.TransactionFailed")
     def test_lock_and_free(self, sai: SaiDeployment):
         # given
-        sai.tub.open()
+        sai.tub.open().transact()
         sai.tub.join(Wad.from_number(10)).transact()
 
         # when
@@ -250,7 +250,7 @@ class TestTub:
         DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250.45).value).transact()
 
         # and
-        sai.tub.open()
+        sai.tub.open().transact()
         sai.tub.lock(1, Wad.from_number(5))
 
         # when
