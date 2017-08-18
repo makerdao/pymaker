@@ -594,7 +594,7 @@ class Tub(Contract):
         assert isinstance(cup_id, int)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'shut', [int_to_bytes32(cup_id)])
 
-    def lock(self, cup_id: int, amount_in_skr: Wad) -> Optional[Receipt]:
+    def lock(self, cup_id: int, amount_in_skr: Wad) -> Transact:
         """Post additional SKR collateral to a cup.
 
         Args:
@@ -602,15 +602,14 @@ class Tub(Contract):
             amount_in_skr: The amount of collateral to post, in SKR.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
-        return self._transact(self.web3, f"Tub('{self.address}').lock('{cup_id}', '{amount_in_skr}')",
-                              lambda: self._contractTub.transact().lock(int_to_bytes32(cup_id), amount_in_skr.value))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'lock',
+                        [int_to_bytes32(cup_id), amount_in_skr.value])
 
-    def free(self, cup_id: int, amount_in_skr: Wad) -> Optional[Receipt]:
+    def free(self, cup_id: int, amount_in_skr: Wad) -> Transact:
         """Remove excess SKR collateral from a cup.
 
         Args:
@@ -618,15 +617,14 @@ class Tub(Contract):
             amount_in_skr: The amount of collateral to remove, in SKR.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
-        return self._transact(self.web3, f"Tub('{self.address}').free('{cup_id}', '{amount_in_skr}')",
-                              lambda: self._contractTub.transact().free(int_to_bytes32(cup_id), amount_in_skr.value))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'free',
+                        [int_to_bytes32(cup_id), amount_in_skr.value])
 
-    def draw(self, cup_id: int, amount_in_sai: Wad) -> Optional[Receipt]:
+    def draw(self, cup_id: int, amount_in_sai: Wad) -> Transact:
         """Issue the specified amount of SAI stablecoins.
 
         Args:
@@ -634,15 +632,14 @@ class Tub(Contract):
             amount_in_sai: The amount SAI to be issued.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
-        return self._transact(self.web3, f"Tub('{self.address}').draw('{cup_id}', '{amount_in_sai}')",
-                              lambda: self._contractTub.transact().draw(int_to_bytes32(cup_id), amount_in_sai.value))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'draw',
+                        [int_to_bytes32(cup_id), amount_in_sai.value])
 
-    def wipe(self, cup_id: int, amount_in_sai: Wad) -> Optional[Receipt]:
+    def wipe(self, cup_id: int, amount_in_sai: Wad) -> Transact:
         """Repay some portion of existing SAI debt.
 
         Args:
@@ -650,13 +647,12 @@ class Tub(Contract):
             amount_in_sai: The amount SAI to be repaid.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
-        return self._transact(self.web3, f"Tub('{self.address}').wipe('{cup_id}', '{amount_in_sai}')",
-                              lambda: self._contractTub.transact().wipe(int_to_bytes32(cup_id), amount_in_sai.value))
+        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'wipe',
+                        [int_to_bytes32(cup_id), amount_in_sai.value])
 
     def give(self, cup_id: int, new_lad: Address) -> Transact:
         """Transfer ownership of a cup.

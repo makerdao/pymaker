@@ -232,13 +232,13 @@ class TestTub:
 
         # when
         print(sai.tub.cupi())
-        sai.tub.lock(1, Wad.from_number(5))
+        sai.tub.lock(1, Wad.from_number(5)).transact()
 
         # then
         assert sai.tub.ink(1) == Wad.from_number(5)
 
         # when
-        sai.tub.free(1, Wad.from_number(3))
+        sai.tub.free(1, Wad.from_number(3)).transact()
 
         # then
         assert sai.tub.ink(1) == Wad.from_number(2)
@@ -251,16 +251,16 @@ class TestTub:
 
         # and
         sai.tub.open().transact()
-        sai.tub.lock(1, Wad.from_number(5))
+        sai.tub.lock(1, Wad.from_number(5)).transact()
 
         # when
-        sai.tub.draw(1, Wad.from_number(50))
+        sai.tub.draw(1, Wad.from_number(50)).transact()
 
         # then
         assert sai.sai.balance_of(sai.our_address) == Wad.from_number(50)
 
         # when
-        sai.tub.wipe(1, Wad.from_number(30))
+        sai.tub.wipe(1, Wad.from_number(30)).transact()
 
         # then
         assert sai.sai.balance_of(sai.our_address) == Wad.from_number(20)
