@@ -45,6 +45,7 @@ class TestTub:
         # then
         assert sai.skr.balance_of(sai.our_address) == Wad.from_number(5)
         assert sai.skr.total_supply() == Wad.from_number(5)
+        assert sai.tub.pie() == Wad.from_number(5)
 
         # when
         sai.tub.exit(Wad.from_number(4)).transact()
@@ -52,6 +53,7 @@ class TestTub:
         # then
         assert sai.skr.balance_of(sai.our_address) == Wad.from_number(1)
         assert sai.skr.total_supply() == Wad.from_number(1)
+        assert sai.tub.pie() == Wad.from_number(1)
 
     def test_cork_and_hat(self, sai: SaiDeployment):
         # given
