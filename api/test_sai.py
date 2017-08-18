@@ -275,6 +275,14 @@ class TestTub:
         # then
         assert sai.tub.jar_gap() == Wad.from_number(1.05)
 
+    def test_jar_bid_and_ask(self, sai: SaiDeployment):
+        # when
+        sai.tub.jar_jump(Wad.from_number(1.05)).transact()
+
+        # then
+        assert sai.tub.jar_bid() == Ray.from_number(0.95)
+        assert sai.tub.jar_ask() == Ray.from_number(1.05)
+
 
 class TestTap:
     def test_jump_and_gap(self, sai: SaiDeployment):
