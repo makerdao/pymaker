@@ -947,19 +947,17 @@ class Lpc(Contract):
         """
         return Address(self._contract.call().lps())
 
-    def jump(self, new_gap: Wad) -> Optional[Receipt]:
+    def jump(self, new_gap: Wad) -> Transact:
         """Update the spread.
 
         Args:
             new_gap: The new value of the spread (`gap`). `1.0` means no spread. `1.02` means 2% spread.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_gap, Wad)
-        return self._transact(self.web3, f"Lpc('{self.address}').jump('{new_gap}')",
-                              lambda: self._contract.transact().jump(new_gap.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'jump', [new_gap.value])
 
     def tag(self) -> Wad:
         """Get the current price (refs per alt).
@@ -999,7 +997,7 @@ class Lpc(Contract):
         """
         return Ray(self._contract.call().per())
 
-    def pool(self, token: Address, amount: Wad) -> Optional[Receipt]:
+    def pool(self, token: Address, amount: Wad) -> Transact:
         """Enter the pool, get LPS for ref or alt.
 
         The `amount` of token `token` will be transferred from your account to the pool.
@@ -1012,15 +1010,13 @@ class Lpc(Contract):
             amount: The value (in `token`) to enter the pool with.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(token, Address)
         assert isinstance(amount, Wad)
-        return self._transact(self.web3, f"Lpc('{self.address}').pool('{token}', '{amount}')",
-                              lambda: self._contract.transact().pool(token.address, amount.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'pool', [token.address, amount.value])
 
-    def exit(self, token: Address, amount: Wad) -> Optional[Receipt]:
+    def exit(self, token: Address, amount: Wad) -> Transact:
         """Exit the pool, exchange LPS for ref or alt.
 
         The `amount` of token `token` will be credited to your account, as long as there are tokens in the
@@ -1032,15 +1028,13 @@ class Lpc(Contract):
             amount: The value (in `token`) you want to receive from the pool.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(token, Address)
         assert isinstance(amount, Wad)
-        return self._transact(self.web3, f"Lpc('{self.address}').exit('{token}', '{amount}')",
-                              lambda: self._contract.transact().exit(token.address, amount.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'exit', [token.address, amount.value])
 
-    def take(self, token: Address, amount: Wad) -> Optional[Receipt]:
+    def take(self, token: Address, amount: Wad) -> Transact:
         """Perform an exchange.
 
         If `token` is ref, credits `amount` of ref to your account, taking the equivalent amount of alts from you.
@@ -1053,13 +1047,11 @@ class Lpc(Contract):
             amount: The value (in `token`) you want to get from the pool.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(token, Address)
         assert isinstance(amount, Wad)
-        return self._transact(self.web3, f"Lpc('{self.address}').take('{token}', '{amount}')",
-                              lambda: self._contract.transact().take(token.address, amount.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'take', [token.address, amount.value])
 
     def take_calldata(self, token: Address, amount: Wad) -> Calldata:
         return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('take', [token.address, amount.value]))
