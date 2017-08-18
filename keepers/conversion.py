@@ -232,13 +232,13 @@ class OasisTakeConversion(Conversion):
         return f"otc.take({self.offer.offer_id}, '{self.quantity()}')"
 
     def execute(self):
-        return self.otc.take(self.offer.offer_id, self.quantity())
+        return self.otc.take(self.offer.offer_id, self.quantity()).transact()
 
     def address(self) -> Address:
         return self.otc.address
 
     def calldata(self):
-        return self.otc.take_calldata(self.offer.offer_id, self.quantity())
+        return self.otc.take(self.offer.offer_id, self.quantity()).invocation().calldata
 
     def quantity(self):
         quantity = self.target_amount

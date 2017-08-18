@@ -88,7 +88,7 @@ class TestSimpleMarket:
 
         # when
         self.otc.approve([self.token2], directly())
-        self.otc.take(1, Wad.from_number(0.25))
+        self.otc.take(1, Wad.from_number(0.25)).transact()
 
         # then
         assert self.otc.get_offer(1).sell_how_much == Wad.from_number(0.75)
@@ -104,7 +104,7 @@ class TestSimpleMarket:
 
         # when
         self.otc.approve([self.token2], directly())
-        self.otc.take(1, Wad.from_number(1))
+        self.otc.take(1, Wad.from_number(1)).transact()
 
         # then
         assert self.otc.get_offer(1) is None
@@ -156,7 +156,7 @@ class TestSimpleMarket:
 
         # and
         self.otc.approve([self.token2], directly())
-        self.otc.take(1, Wad.from_number(0.5))
+        self.otc.take(1, Wad.from_number(0.5)).transact()
 
         # then
         past_take = self.otc.past_take(PAST_BLOCKS)
@@ -224,7 +224,7 @@ class TestSimpleMarket:
 
         # and
         self.otc.approve([self.token2], directly())
-        self.otc.take(1, Wad.from_number(0.5))
+        self.otc.take(1, Wad.from_number(0.5)).transact()
 
         # then
         on_take = wait_until_mock_called(on_take_mock)[0]

@@ -240,7 +240,7 @@ class SimpleMarket(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'make', [have_token.address, want_token.address, have_amount.value, want_amount.value])
 
-    def take(self, offer_id: int, quantity: Wad) -> Optional[Receipt]:
+    def take(self, offer_id: int, quantity: Wad) -> Transact:
         """Takes (buys) an offer.
 
         If `quantity` is equal to `sell_how_much`, the whole offer will be taken (bought) which will make it
@@ -252,14 +252,10 @@ class SimpleMarket(Contract):
             quantity: Quantity of `sell_which_token` that you want to buy.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the offer has been taken (bought).
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
-        return self._transact(self.web3, f"SimpleMarket('{self.address}').take('{offer_id}', '{quantity}')",
-                              lambda: self._contract.transact().take(int_to_bytes32(offer_id), quantity.value))
-
-    def take_calldata(self, offer_id: int, quantity: Wad) -> Calldata:
-        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('take', [int_to_bytes32(offer_id), quantity.value]))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'take',
+                        [int_to_bytes32(offer_id), quantity.value])
 
     def kill(self, offer_id: int) -> Transact:
         """Cancels an existing offer.
