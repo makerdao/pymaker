@@ -550,9 +550,6 @@ class Tub(Contract):
         assert isinstance(amount_in_gem, Wad)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'join', [amount_in_gem.value])
 
-    def join_calldata(self, amount_in_gem: Wad) -> Calldata:
-        return Calldata(self.web3.eth.contract(abi=self.abiTub).encodeABI('join', [amount_in_gem]))
-
     def exit(self, amount_in_skr: Wad) -> Transact:
         """Sell SKR for GEMs.
 
@@ -564,9 +561,6 @@ class Tub(Contract):
         """
         assert isinstance(amount_in_skr, Wad)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'exit', [amount_in_skr.value])
-
-    def exit_calldata(self, amount_in_skr: Wad) -> Calldata:
-        return Calldata(self.web3.eth.contract(abi=self.abiTub).encodeABI('exit', [amount_in_skr]))
 
     #TODO make it return the id of the newly created cup
     def open(self) -> Transact:

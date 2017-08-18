@@ -76,7 +76,7 @@ class TubJoinConversion(Conversion):
         return self.tub.address
 
     def calldata(self):
-        return self.tub.join_calldata(self.source_amount)
+        return self.tub.join(self.source_amount).invocation().calldata
 
 
 class TubExitConversion(Conversion):
@@ -98,7 +98,7 @@ class TubExitConversion(Conversion):
         return self.tub.address
 
     def calldata(self):
-        return self.tub.exit_calldata(self.source_amount)
+        return self.tub.exit(self.source_amount).invocation().calldata
 
 
 class TubBoomConversion(Conversion):
