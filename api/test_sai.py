@@ -270,7 +270,7 @@ class TestTub:
         assert sai.tub.jar_gap() == Wad.from_number(1)
 
         # when
-        sai.tub.jar_jump(Wad.from_number(1.05))
+        sai.tub.jar_jump(Wad.from_number(1.05)).transact()
 
         # then
         assert sai.tub.jar_gap() == Wad.from_number(1.05)

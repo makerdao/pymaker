@@ -439,19 +439,17 @@ class Tub(Contract):
         return Wad(self._contractJar.call().gap())
 
     # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
-    def jar_jump(self, new_gap: Wad) -> Optional[Receipt]:
+    def jar_jump(self, new_gap: Wad) -> Transact:
         """Update the current spread (`gap`) for `join` and `exit`.
 
         Args:
             new_tax: The new value of the spread (`gap`). `1.0` means no spread, `1.01` means 1% spread.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_gap, Wad)
-        return self._transact(self.web3, f"Jar('{self._contractTub.call().jar()}').jump('{new_gap}')",
-                              lambda: self._contractJar.transact().jump(new_gap.value))
+        return Transact(self, self.web3, self.abiJar, self.jar(), self._contractJar, 'jump', [new_gap.value])
 
     # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
     def jar_bid(self) -> Ray:
