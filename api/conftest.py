@@ -38,6 +38,7 @@ class SaiDeployment:
                  our_address: Address,
                  gem: DSToken,
                  sai: DSToken,
+                 sin: DSToken,
                  skr: DSToken,
                  tub: Tub,
                  tap: Tap,
@@ -46,6 +47,7 @@ class SaiDeployment:
         self.our_address = our_address
         self.gem = gem
         self.sai = sai
+        self.sin = sin
         self.skr = skr
         self.tub = tub
         self.tap = tap
@@ -91,7 +93,7 @@ def new_sai() -> SaiDeployment:
     gem.mint(Wad.from_number(1000000)).transact()
 
     web3.currentProvider.rpc_methods.evm_snapshot()
-    return SaiDeployment(web3, our_address, gem, sai, skr, tub, tap, top)
+    return SaiDeployment(web3, our_address, gem, sai, sin, skr, tub, tap, top)
 
 
 @pytest.fixture()

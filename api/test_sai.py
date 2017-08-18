@@ -107,6 +107,9 @@ class TestTub:
     def test_sai(self, sai: SaiDeployment):
         assert sai.tub.sai() == sai.sai.address
 
+    def test_sin(self, sai: SaiDeployment):
+        assert sai.tub.sin() == sai.sin.address
+
     def test_gem(self, sai: SaiDeployment):
         assert sai.tub.gem() == sai.gem.address
 
