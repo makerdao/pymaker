@@ -266,6 +266,7 @@ class TestTub:
         # then
         assert sai.sai.balance_of(sai.our_address) == Wad.from_number(50)
         assert sai.tub.tab(1) == Wad.from_number(50)
+        assert sai.tub.ice() == Wad.from_number(50)
 
         # when
         sai.tub.wipe(1, Wad.from_number(30)).transact()
@@ -273,6 +274,7 @@ class TestTub:
         # then
         assert sai.sai.balance_of(sai.our_address) == Wad.from_number(20)
         assert sai.tub.tab(1) == Wad.from_number(20)
+        assert sai.tub.ice() == Wad.from_number(20)
 
     def test_jar_jump_and_gap(self, sai: SaiDeployment):
         # given
