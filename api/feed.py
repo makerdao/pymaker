@@ -50,8 +50,8 @@ class DSValue(Contract):
     bin = Contract._load_bin(__name__, 'abi/DSValue.bin')
 
     @staticmethod
-    def deploy(web3: Web3, *args):
-        return DSValue(web3=web3, address=Contract._deploy(web3, DSValue.abi, DSValue.bin, args))
+    def deploy(web3: Web3):
+        return DSValue(web3=web3, address=Contract._deploy(web3, DSValue.abi, DSValue.bin, []))
 
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3

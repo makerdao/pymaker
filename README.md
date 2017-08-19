@@ -191,6 +191,29 @@ Below you can find some code snippets demonstrating how the API can be used both
 your own keepers and for creating some other utilities interacting with the _SAI Stablecoin_
 ecosystem contracts.
 
+### Token transfer
+
+This snippet demonstrates how to transfer some SAI from our default address. The SAI token address
+is discovered by querying the `Tub`, so all we need as a `Tub` address:
+
+```python
+from web3 import HTTPProvider, Web3
+
+from api import Address
+from api.token import ERC20Token
+from api.numeric import Wad
+from api.sai import Tub
+
+
+web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
+
+tub = Tub(web3=web3, address=Address('0xb7ae5ccabd002b5eebafe6a8fad5499394f67980'))
+sai = ERC20Token(web3=web3, address=tub.sai())
+
+sai.transfer(address=Address('0x0000000000111111111100000000001111111111'),
+             value=Wad.from_number(10)).transact()
+``` 
+
 ### Updating a DSValue
 
 This snippet demonstrates how to update a `DSValue` with the ETH/USD rate pulled from _CryptoCompare_: 
@@ -212,7 +235,7 @@ def cryptocompare_rate() -> Wad:
         return Wad.from_number(data['USD'])
 
 
-web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
+web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
 
 dsvalue = DSValue(web3=web3, address=Address('0x038b3d8288df582d57db9be2106a27be796b0daf'))
 dsvalue.poke_with_int(cryptocompare_rate().value).transact()
