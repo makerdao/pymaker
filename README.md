@@ -184,3 +184,36 @@ You can find the full documentation of the APIs here: http://maker-keeper-docs.s
 
 **Beware!** This is the first version of the APIs and they will definitely change
 and/or evolve in the future.
+
+## Code samples
+
+Below you can find some code snippets demonstrating how the API can be used both for developing
+your own keepers and for creating some other utilities interacting with the _SAI Stablecoin_
+ecosystem contracts.
+
+### Updating a DSValue
+
+This snippet demonstrates how to update a `DSValue` with the ETH/USD rate pulled from _CryptoCompare_: 
+
+```python
+import json
+import urllib.request
+
+from web3 import HTTPProvider, Web3
+
+from api import Address
+from api.feed import DSValue
+from api.numeric import Wad
+
+
+def cryptocompare_rate() -> Wad:
+    with urllib.request.urlopen("https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD") as url:
+        data = json.loads(url.read().decode())
+        return Wad.from_number(data['USD'])
+
+
+web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
+
+dsvalue = DSValue(web3=web3, address=Address('0x038b3d8288df582d57db9be2106a27be796b0daf'))
+dsvalue.poke_with_int(cryptocompare_rate().value).transact()
+```
