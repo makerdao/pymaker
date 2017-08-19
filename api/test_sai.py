@@ -351,6 +351,34 @@ class TestTap:
         assert sai.tap.s2s() == Wad.from_number(500)
         assert sai.tap.ask() == Wad.from_number(525)
 
+    def test_joy_and_boom(self, sai: SaiDeployment):
+        # given
+        sai.tub.join(Wad.from_number(10)).transact()
+        sai.tub.cork(Wad.from_number(100000)).transact()
+        sai.tub.crop(Ray(1000100000000000000000000000)).transact()
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
+
+        # and
+        sai.tub.open().transact()
+        sai.tub.lock(1, Wad.from_number(4)).transact()
+        sai.tub.draw(1, Wad.from_number(1000)).transact()
+
+        # when
+        sai.tub.drip().transact()
+        sai.tub.warp(3600).transact()
+        sai.tub.drip().transact()
+
+        # then
+        assert sai.skr.balance_of(sai.our_address) == Wad.from_number(6)
+        assert sai.tap.joy() == Wad(433303616582911495481)
+
+        # when
+        sai.tap.boom(Wad.from_number(1)).transact()
+
+        # then
+        assert sai.skr.balance_of(sai.our_address) == Wad.from_number(5)
+        assert sai.tap.joy() == Wad(183303616582911495481)
+
     def test_fog_and_woe_and_bust(self, sai: SaiDeployment):
         # given
         sai.tub.join(Wad.from_number(10)).transact()
