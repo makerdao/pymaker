@@ -300,3 +300,34 @@ for cup_id in range(1, tub.cupi()+1):
     cup = tub.cups(cup_id)
     print(f"Cup #{cup_id}, lad={cup.lad}, ink={cup.ink} SKR, tab={tub.tab(cup_id)} SAI, safe={tub.safe(cup_id)}")
 ```
+
+### Multiple invocations in one Ethereum transaction
+
+This snippet demonstrates how multiple token transfers can be executed in one Ethereum transaction.
+A `TxManager` instance has to be deployed and owned by the caller.
+
+```python
+from web3 import HTTPProvider
+from web3 import Web3
+
+from api import Address, Wad
+from api.approval import directly
+from api.sai import Tub
+from api.token import ERC20Token
+from api.transact import TxManager
+
+
+web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
+web3.eth.defaultAccount = "0x002ca7F9b416B2304cDd20c26882d1EF5c53F611"
+
+tub = Tub(web3=web3, address=Address('0xb7ae5ccabd002b5eebafe6a8fad5499394f67980'))
+sai = ERC20Token(web3=web3, address=tub.sai())
+skr = ERC20Token(web3=web3, address=tub.skr())
+
+tx = TxManager(web3=web3, address=Address('0x57bFE16ae8fcDbD46eDa9786B2eC1067cd7A8f48'))
+tx.approve([sai, skr], directly())
+
+tx.execute([sai.address, skr.address],
+           [sai.transfer(Address('0x0101010101020202020203030303030404040404'), Wad.from_number(1.5)).invocation(),
+            skr.transfer(Address('0x0303030303040404040405050505050606060606'), Wad.from_number(2.5)).invocation()]).transact()
+```
