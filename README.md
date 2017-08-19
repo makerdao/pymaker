@@ -302,6 +302,29 @@ for cup_id in range(1, tub.cupi()+1):
     print(f"Cup #{cup_id}, lad={cup.lad}, ink={cup.ink} SKR, tab={tub.tab(cup_id)} SAI, safe={tub.safe(cup_id)}")
 ```
 
+### Asynchronous invocation of Ethereum transactions
+
+This snippet demonstrates how multiple token transfers can be executed asynchronously:
+
+```python
+from web3 import HTTPProvider
+from web3 import Web3
+
+from api import Address, Wad, synchronize
+from api.sai import Tub
+from api.token import ERC20Token
+
+
+web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
+
+tub = Tub(web3=web3, address=Address('0xb7ae5ccabd002b5eebafe6a8fad5499394f67980'))
+sai = ERC20Token(web3=web3, address=tub.sai())
+skr = ERC20Token(web3=web3, address=tub.skr())
+
+synchronize([sai.transfer(Address('0x0101010101020202020203030303030404040404'), Wad.from_number(1.5)).transact_async(),
+             skr.transfer(Address('0x0303030303040404040405050505050606060606'), Wad.from_number(2.5)).transact_async()])
+```
+
 ### Multiple invocations in one Ethereum transaction
 
 This snippet demonstrates how multiple token transfers can be executed in one Ethereum transaction.
