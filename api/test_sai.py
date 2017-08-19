@@ -250,7 +250,7 @@ class TestTub:
         assert sai.tub.ink(1) == Wad.from_number(2)
         assert sai.tub.air() == Wad.from_number(2)
 
-    def test_draw_and_tab_wipe(self, sai: SaiDeployment):
+    def test_draw_and_tab_and_ice_and_wipe(self, sai: SaiDeployment):
         # given
         sai.tub.join(Wad.from_number(10)).transact()
         sai.tub.cork(Wad.from_number(100000)).transact()
