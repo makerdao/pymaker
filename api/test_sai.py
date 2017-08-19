@@ -182,11 +182,11 @@ class TestTub:
         assert sai.tub.cups(1).ink == Wad(0)
         assert sai.tub.cups(1).lad == sai.our_address
 
-    @pytest.mark.skip(reason="some issue with safe() - ethereum.tester.TransactionFailed")
     def test_safe(self, sai: SaiDeployment):
         # given
         sai.tub.cuff(Ray.from_number(1.5)).transact()
         sai.tub.chop(Ray.from_number(1.2)).transact()
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
 
         # when
         sai.tub.open().transact()
@@ -218,9 +218,9 @@ class TestTub:
         # then
         assert sai.tub.lad(1) == Address('0x0101010101020202020203030303030404040404')
 
-    @pytest.mark.skip(reason="some issue with safe() - ethereum.tester.TransactionFailed")
     def test_shut(self, sai: SaiDeployment):
         # given
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
         sai.tub.open().transact()
 
         # when
@@ -229,9 +229,9 @@ class TestTub:
         # then
         assert sai.tub.lad(1) == Address('0x0000000000000000000000000000000000000000')
 
-    @pytest.mark.skip(reason="some issue with safe() - ethereum.tester.TransactionFailed")
     def test_lock_and_free(self, sai: SaiDeployment):
         # given
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
         sai.tub.open().transact()
         sai.tub.join(Wad.from_number(10)).transact()
 
