@@ -276,6 +276,32 @@ class TestTub:
         assert sai.tub.tab(1) == Wad.from_number(20)
         assert sai.tub.ice() == Wad.from_number(20)
 
+    def test_bite_and_safe(self, sai: SaiDeployment):
+        # given
+        sai.tub.join(Wad.from_number(10)).transact()
+        sai.tub.cork(Wad.from_number(100000)).transact()
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
+
+        # when
+        sai.tub.open().transact()
+        sai.tub.lock(1, Wad.from_number(4)).transact()
+        sai.tub.draw(1, Wad.from_number(1000)).transact()
+
+        # then
+        assert sai.tub.safe(1)
+
+        # when
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(150).value).transact()
+
+        # then
+        assert not sai.tub.safe(1)
+
+        # when
+        sai.tub.bite(1).transact()
+
+        # then
+        assert sai.tub.safe(1)
+
     def test_jar_jump_and_gap(self, sai: SaiDeployment):
         # given
         assert sai.tub.jar_gap() == Wad.from_number(1)
@@ -324,3 +350,33 @@ class TestTap:
         assert sai.tap.bid() == Wad.from_number(475)
         assert sai.tap.s2s() == Wad.from_number(500)
         assert sai.tap.ask() == Wad.from_number(525)
+
+    def test_fog_and_woe_and_bust(self, sai: SaiDeployment):
+        # given
+        sai.tub.join(Wad.from_number(10)).transact()
+        sai.tub.cork(Wad.from_number(100000)).transact()
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
+
+        # and
+        sai.tub.open().transact()
+        sai.tub.lock(1, Wad.from_number(4)).transact()
+        sai.tub.draw(1, Wad.from_number(1000)).transact()
+
+        # and
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(150).value).transact()
+
+        # when
+        sai.tub.bite(1).transact()
+
+        # then
+        assert sai.tap.fog() == Wad.from_number(4)
+        assert sai.tap.woe() == Wad.from_number(1000)
+        assert sai.skr.balance_of(sai.our_address) == Wad.from_number(6)
+        assert sai.sai.balance_of(sai.our_address) == Wad.from_number(1000)
+
+        # when
+        sai.tap.bust(Wad.from_number(2)).transact()
+        assert sai.tap.fog() == Wad.from_number(2)
+        assert sai.tap.woe() == Wad.from_number(700)
+        assert sai.skr.balance_of(sai.our_address) == Wad.from_number(8)
+        assert sai.sai.balance_of(sai.our_address) == Wad.from_number(700)
