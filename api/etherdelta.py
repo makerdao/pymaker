@@ -27,7 +27,7 @@ from eth_abi.encoding import get_single_encoder
 from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
 
-from api import Contract, Address, Receipt
+from api import Contract, Address, Receipt, Transact
 from api.numeric import Wad
 from api.token import ERC20Token
 from api.util import bytes_to_hexstring, hexstring_to_bytes
@@ -215,8 +215,39 @@ class EtherDelta(Contract):
     """
 
     abi = Contract._load_abi(__name__, 'abi/EtherDelta.abi')
+    bin = Contract._load_bin(__name__, 'abi/EtherDelta.bin')
 
     ETH_TOKEN = Address('0x0000000000000000000000000000000000000000')
+
+    @staticmethod
+    def deploy(web3: Web3,
+               admin: Address,
+               fee_account: Address,
+               account_levels_addr: Address,
+               fee_make: Wad,
+               fee_take: Wad,
+               fee_rebate: Wad,
+               api_server: str):
+        """Deploy a new instance of the `EtherDelta` contract.
+
+        Args:
+            web3: An instance of `Web` from `web3.py`.
+            api_server: Base URL of the `EtherDelta` API server (for off-chain order support etc.).
+                `None` if no off-chain order support desired.
+
+        Returns:
+            A `EtherDelta` class instance.
+        """
+        return EtherDelta(web3=web3,
+                          address=Contract._deploy(web3, EtherDelta.abi, EtherDelta.bin, [
+                              admin.address,
+                              fee_account.address,
+                              account_levels_addr.address,
+                              fee_make.value,
+                              fee_take.value,
+                              fee_rebate.value
+                          ]),
+                          api_server=api_server)
 
     def __init__(self, web3: Web3, address: Address, api_server: str):
         assert(isinstance(address, Address))
@@ -274,21 +305,19 @@ class EtherDelta(Contract):
     def fee_rebate(self) -> Wad:
         return Wad(self._contract.call().feeRebate())
 
-    def deposit(self, amount: Wad) -> Optional[Receipt]:
+    def deposit(self, amount: Wad) -> Transact:
         """Deposits `amount` of raw ETH to EtherDelta.
 
         Args:
             amount: Amount of raw ETH to be deposited on EtherDelta.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the amount has been deposited.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(amount, Wad))
-        return self._transact(self.web3, f"EtherDelta('{self.address}').deposit() with value='{amount}'",
-                              lambda: self._contract.transact({'value': amount.value}).deposit())
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'deposit', [], {'value': amount.value})
 
-    def withdraw(self, amount: Wad) -> Optional[Receipt]:
+    def withdraw(self, amount: Wad) -> Transact:
         """Withdraws `amount` of raw ETH from EtherDelta.
 
         The withdrawn ETH will get transferred to the calling account.
@@ -297,12 +326,10 @@ class EtherDelta(Contract):
             amount: Amount of raw ETH to be withdrawn from EtherDelta.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the amount has been withdrawn.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(amount, Wad))
-        return self._transact(self.web3, f"EtherDelta('{self.address}').withdraw('{amount}')",
-                              lambda: self._contract.transact().withdraw(amount.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'withdraw', [amount.value])
 
     def balance_of(self, user: Address) -> Wad:
         """Returns the amount of raw ETH deposited by the specified user.
@@ -316,7 +343,7 @@ class EtherDelta(Contract):
         assert(isinstance(user, Address))
         return Wad(self._contract.call().balanceOf('0x0000000000000000000000000000000000000000', user.address))
 
-    def deposit_token(self, token: Address, amount: Wad) -> Optional[Receipt]:
+    def deposit_token(self, token: Address, amount: Wad) -> Transact:
         """Deposits `amount` of ERC20 token `token` to EtherDelta.
 
         Tokens will be pulled from the calling account, so the EtherDelta contract needs
@@ -325,18 +352,17 @@ class EtherDelta(Contract):
 
         Args:
             token: Address of the ERC20 token to be deposited.
-            amount: Amount of token `token` to be deposited on EtherDelta.
+            amount: Amount of token `token` to be deposited to EtherDelta.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the tokens have been deposited.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(token, Address))
         assert(isinstance(amount, Wad))
-        return self._transact(self.web3, f"EtherDelta('{self.address}').depositToken('{token}', '{amount}')",
-                              lambda: self._contract.transact().depositToken(token.address, amount.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'depositToken',
+                        [token.address, amount.value])
 
-    def withdraw_token(self, token: Address, amount: Wad) -> Optional[Receipt]:
+    def withdraw_token(self, token: Address, amount: Wad) -> Transact:
         """Withdraws `amount` of ERC20 token `token` from EtherDelta.
 
         Tokens will get transferred to the calling account.
@@ -346,13 +372,12 @@ class EtherDelta(Contract):
             amount: Amount of token `token` to be withdrawn from EtherDelta.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the tokens have been withdrawn.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(token, Address))
         assert(isinstance(amount, Wad))
-        return self._transact(self.web3, f"EtherDelta('{self.address}').withdrawToken('{token}', '{amount}')",
-                              lambda: self._contract.transact().withdrawToken(token.address, amount.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'withdrawToken',
+                        [token.address, amount.value])
 
     def balance_of_token(self, token: Address, user: Address) -> Wad:
         """Returns the amount of ERC20 token `token` deposited by the specified user.
@@ -585,7 +610,7 @@ class EtherDelta(Contract):
                                                       order.r if hasattr(order, 'r') else bytes(),
                                                       order.s if hasattr(order, 's') else bytes()))
 
-    def trade(self, order: Order, amount: Wad) -> Optional[Receipt]:
+    def trade(self, order: Order, amount: Wad) -> Transact:
         """Takes (buys) an order.
 
         `amount` is in `token_get` terms, it is the amount you want to buy with. It can not be higher
@@ -600,27 +625,23 @@ class EtherDelta(Contract):
                 in order to buy a corresponding amount of `token_have` tokens.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and so was the trade.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(order, Order))
         assert(isinstance(amount, Wad))
 
-        return self._transact(self.web3, f"EtherDelta('{self.address}').trade('{order.token_get}',"
-                                         f" '{order.amount_get}', '{order.token_give}', '{order.amount_give}',"
-                                         f" '{order.expires}', '{order.nonce}', '{order.user}', '0x...', '0x...',"
-                                         f" '0x...', '{amount}')",
-                              lambda: self._contract.transact().trade(order.token_get.address,
-                                                                      order.amount_get.value,
-                                                                      order.token_give.address,
-                                                                      order.amount_give.value,
-                                                                      order.expires,
-                                                                      order.nonce,
-                                                                      order.user.address,
-                                                                      order.v if hasattr(order, 'v') else 0,
-                                                                      order.r if hasattr(order, 'r') else bytes(),
-                                                                      order.s if hasattr(order, 's') else bytes(),
-                                                                      amount.value))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'trade',
+                        [order.token_get.address,
+                         order.amount_get.value,
+                         order.token_give.address,
+                         order.amount_give.value,
+                         order.expires,
+                         order.nonce,
+                         order.user.address,
+                         order.v if hasattr(order, 'v') else 0,
+                         order.r if hasattr(order, 'r') else bytes(),
+                         order.s if hasattr(order, 's') else bytes(),
+                         amount.value])
 
     def can_trade(self, order: Order, amount: Wad) -> bool:
         """Verifies whether a trade can be executed.
@@ -651,7 +672,7 @@ class EtherDelta(Contract):
                                                amount.value,
                                                self.web3.eth.defaultAccount)
 
-    def cancel_order(self, order: Order) -> Optional[Receipt]:
+    def cancel_order(self, order: Order) -> Transact:
         """Cancels an existing order.
 
         Orders can be cancelled only by their owners.
@@ -660,23 +681,20 @@ class EtherDelta(Contract):
             order: The order you want to cancel. Can be either an `OnChainOrder` or an `OffChainOrder`.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the order has been cancelled.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(order, Order))
 
-        return self._transact(self.web3, f"EtherDelta('{self.address}').cancelOrder('{order.token_get}',"
-                                         f" '{order.amount_get}', '{order.token_give}', '{order.amount_give}',"
-                                         f" '{order.expires}', '{order.nonce}', '0x...', '0x...', '0x...')",
-                              lambda: self._contract.transact().cancelOrder(order.token_get.address,
-                                                                            order.amount_get.value,
-                                                                            order.token_give.address,
-                                                                            order.amount_give.value,
-                                                                            order.expires,
-                                                                            order.nonce,
-                                                                            order.v if hasattr(order, 'v') else 0,
-                                                                            order.r if hasattr(order, 'r') else bytes(),
-                                                                            order.s if hasattr(order, 's') else bytes()))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'cancelOrder',
+                        [order.token_get.address,
+                         order.amount_get.value,
+                         order.token_give.address,
+                         order.amount_give.value,
+                         order.expires,
+                         order.nonce,
+                         order.v if hasattr(order, 'v') else 0,
+                         order.r if hasattr(order, 'r') else bytes(),
+                         order.s if hasattr(order, 's') else bytes()])
 
     @staticmethod
     def random_nonce():
