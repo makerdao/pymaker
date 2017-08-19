@@ -255,6 +255,7 @@ from api.sai import Tub, Tap
 
 
 web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
+
 tub = Tub(web3=web3, address=Address('0xb7ae5ccabd002b5eebafe6a8fad5499394f67980'))
 tap = Tap(web3=web3, address=Address('0xb9e0a196d2150a6393713e09bd79a0d39293ec13'))
 sai = ERC20Token(web3=web3, address=tub.sai())
@@ -318,7 +319,6 @@ from api.transact import TxManager
 
 
 web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
-web3.eth.defaultAccount = "0x002ca7F9b416B2304cDd20c26882d1EF5c53F611"
 
 tub = Tub(web3=web3, address=Address('0xb7ae5ccabd002b5eebafe6a8fad5499394f67980'))
 sai = ERC20Token(web3=web3, address=tub.sai())
