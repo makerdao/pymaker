@@ -58,15 +58,15 @@ class Keeper:
     def start(self):
         self.logger.info(f"{self.executable_name()}")
         self.logger.info(f"{'-' * len(self.executable_name())}")
-        self._wait_for_init()
         self.logger.info(f"Keeper on {self.chain()}, connected to {self.web3.currentProvider.endpoint_uri}")
+        self._check_account_unlocked()
         self.logger.info(f"Keeper operating as {self.our_address}")
         if self.arguments.gas_price > 0:
             self.logger.info(f"Using gas price of {self.arguments.gas_price/10**9} GWei"
                              f" (default is {self.web3.eth.gasPrice/10**9} GWei)")
         else:
             self.logger.info(f"Using default gas price which is {self.web3.eth.gasPrice/10**9} GWei at the moment")
-        self._check_account_unlocked()
+        self._wait_for_init()
         self.logger.info("Keeper started")
         self.startup()
         self._main_loop()
@@ -194,8 +194,8 @@ class Keeper:
         try:
             self.web3.eth.sign(self.web3.eth.defaultAccount, "test")
         except:
-            self.logger.fatal(f"Account {self.web3.eth.defaultAccount} is not unlocked.")
-            self.logger.fatal(f"Unlocking the account is necessary for the keeper to operate.")
+            self.logger.fatal(f"Account {self.web3.eth.defaultAccount} is not unlocked")
+            self.logger.fatal(f"Unlocking the account is necessary for the keeper to operate")
             exit(-1)
 
     def _main_loop(self):
