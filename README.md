@@ -41,8 +41,9 @@ As stated in the _GNU Affero General Public License_:
 
 This project uses *Python 3.6.1*.
 
-In order to install required third-party packages please execute:
+In order to clone the project and install required third-party packages please execute:
 ```
+git clone https://github.com/makerdao/keeper.git
 pip install -r requirements.txt
 ```
 
