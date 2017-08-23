@@ -57,6 +57,20 @@ and set the `LDFLAGS` environment variable before you run `pip install -r requir
 export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
 ```
 
+## Testing
+
+Maker Keeper Framework uses [pytest!](https://docs.pytest.org/en/latest/) for unit testing.
+
+In order to be able to run tests, please install development dependencies first by executing:
+```
+pip install -r dev-requirements.txt
+```
+
+You can then run all tests with:
+```
+pytest
+```
+
 ## Reference keepers
 
 This sections lists and briefly describes a set of reference keepers present in this project.
