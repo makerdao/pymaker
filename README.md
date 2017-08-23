@@ -93,6 +93,23 @@ the resulting collateral via `bust` and only waste gas on `bite` if it can make 
 by subsequent arbitrage. For now, it is a dumb keeper that just bites every cup
 that can be bitten.
 
+Usage:
+```
+usage: keeper-sai-bite [-h] [--rpc-host RPC_HOST] [--rpc-port RPC_PORT]
+                       --eth-from ETH_FROM [--gas-price GAS_PRICE] [--debug]
+                       [--trace]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --rpc-host RPC_HOST   JSON-RPC host (default: `localhost')
+  --rpc-port RPC_PORT   JSON-RPC port (default: `8545')
+  --eth-from ETH_FROM   Ethereum account from which to send transactions
+  --gas-price GAS_PRICE
+                        Ethereum gas price in Wei
+  --debug               Enable debug output
+  --trace               Enable trace output
+```
+
 ### `keeper-sai-arbitrage`
 
 SAI keeper to arbitrage on OasisDEX, `join`, `exit`, `boom` and `bust`.
