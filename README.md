@@ -7,6 +7,8 @@ Reference Maker Keeper Framework.
 [![Code Climate](https://codeclimate.com/github/makerdao/keeper/badges/gpa.svg)](https://codeclimate.com/github/makerdao/keeper)
 [![Issue Count](https://codeclimate.com/github/makerdao/keeper/badges/issue_count.svg)](https://codeclimate.com/github/makerdao/keeper)
 
+<https://chat.makerdao.com/channel/keeper>
+
 ## Introduction
 
 The _SAI Stablecoin System_, as well as the _DAI Stablecoin System_ in the future,
