@@ -50,7 +50,7 @@ pip install -r requirements.txt
 ### Known macOS issues
 
 In order for the requirements to install correctly on _macOS_, please install
-`openssl` and `libtool` using Homebrew:
+`openssl` and `libtool` using [Homebrew](https://brew.sh/):
 ```
 brew install openssl libtool
 ```
