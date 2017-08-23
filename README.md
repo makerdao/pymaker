@@ -59,7 +59,7 @@ export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openss
 
 ## Testing
 
-Maker Keeper Framework uses [pytest!](https://docs.pytest.org/en/latest/) for unit testing.
+Maker Keeper Framework uses [pytest](https://docs.pytest.org/en/latest/) for unit testing.
 
 In order to be able to run tests, please install development dependencies first by executing:
 ```
