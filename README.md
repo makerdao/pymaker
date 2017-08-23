@@ -140,6 +140,41 @@ back to SAI, aiming to end up with more SAI than it started with. The keeper is 
 of gas costs and takes a rough estimate of these costs while calculating arbitrage
 profitability.
 
+Usage:
+```
+usage: keeper-sai-arbitrage [-h] [--rpc-host RPC_HOST] [--rpc-port RPC_PORT]
+                            --eth-from ETH_FROM [--gas-price GAS_PRICE]
+                            [--debug] [--trace] --base-token BASE_TOKEN
+                            --min-profit MIN_PROFIT --max-engagement
+                            MAX_ENGAGEMENT [--max-errors MAX_ERRORS]
+                            [--tx-manager TX_MANAGER]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --rpc-host RPC_HOST   JSON-RPC host (default: `localhost')
+  --rpc-port RPC_PORT   JSON-RPC port (default: `8545')
+  --eth-from ETH_FROM   Ethereum account from which to send transactions
+  --gas-price GAS_PRICE
+                        Ethereum gas price in Wei
+  --debug               Enable debug output
+  --trace               Enable trace output
+  --base-token BASE_TOKEN
+                        The token all arbitrage sequences will start and end
+                        with
+  --min-profit MIN_PROFIT
+                        Minimum profit (in base token) from one arbitrage
+                        operation
+  --max-engagement MAX_ENGAGEMENT
+                        Maximum engagement (in base token) in one arbitrage
+                        operation
+  --max-errors MAX_ERRORS
+                        Maximum number of allowed errors before the keeper
+                        terminates (default: 100)
+  --tx-manager TX_MANAGER
+                        Address of the TxManager to use for multi-step
+                        arbitrage
+```
+
 ### `keeper-sai-top-up`
 
 SAI keeper to top-up cups before they reach the liquidation ratio.
@@ -149,6 +184,30 @@ collateralization ratio falls under `mat` + `--min-margin`, the cup will get
 topped-up up to `mat` + `--top-up-margin`.
 
 Cups owned by other accounts are ignored.
+
+Usage:
+```
+usage: keeper-sai-top-up [-h] [--rpc-host RPC_HOST] [--rpc-port RPC_PORT]
+                         --eth-from ETH_FROM [--gas-price GAS_PRICE] [--debug]
+                         [--trace] [--min-margin MIN_MARGIN]
+                         [--top-up-margin TOP_UP_MARGIN]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --rpc-host RPC_HOST   JSON-RPC host (default: `localhost')
+  --rpc-port RPC_PORT   JSON-RPC port (default: `8545')
+  --eth-from ETH_FROM   Ethereum account from which to send transactions
+  --gas-price GAS_PRICE
+                        Ethereum gas price in Wei
+  --debug               Enable debug output
+  --trace               Enable trace output
+  --min-margin MIN_MARGIN
+                        Margin between the liquidation ratio and the top-up
+                        threshold
+  --top-up-margin TOP_UP_MARGIN
+                        Margin between the liquidation ratio and the top-up
+                        target
+```
 
 ### `keeper-sai-maker-otc`
 
@@ -171,12 +230,66 @@ amount of orders is equal to `--max-sai-amount` / `--max-weth-amount`.
 This keeper will constantly use gas to move orders as the SAI/GEM price changes,
 but it can be limited by setting the margin and amount ranges wide enough.
 
+Usage:
+```
+usage: keeper-sai-maker-otc [-h] [--rpc-host RPC_HOST] [--rpc-port RPC_PORT]
+                            --eth-from ETH_FROM [--gas-price GAS_PRICE]
+                            [--debug] [--trace] --min-margin-buy
+                            MIN_MARGIN_BUY --avg-margin-buy AVG_MARGIN_BUY
+                            --max-margin-buy MAX_MARGIN_BUY --min-margin-sell
+                            MIN_MARGIN_SELL --avg-margin-sell AVG_MARGIN_SELL
+                            --max-margin-sell MAX_MARGIN_SELL
+                            --max-weth-amount MAX_WETH_AMOUNT
+                            --min-weth-amount MIN_WETH_AMOUNT --max-sai-amount
+                            MAX_SAI_AMOUNT --min-sai-amount MIN_SAI_AMOUNT
+                            [--sai-dust-cutoff SAI_DUST_CUTOFF]
+                            [--weth-dust-cutoff WETH_DUST_CUTOFF]
+                            [--round-places ROUND_PLACES]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --rpc-host RPC_HOST   JSON-RPC host (default: `localhost')
+  --rpc-port RPC_PORT   JSON-RPC port (default: `8545')
+  --eth-from ETH_FROM   Ethereum account from which to send transactions
+  --gas-price GAS_PRICE
+                        Ethereum gas price in Wei
+  --debug               Enable debug output
+  --trace               Enable trace output
+  --min-margin-buy MIN_MARGIN_BUY
+                        Minimum margin allowed (buy)
+  --avg-margin-buy AVG_MARGIN_BUY
+                        Target margin, used on new order creation (buy)
+  --max-margin-buy MAX_MARGIN_BUY
+                        Maximum margin allowed (buy)
+  --min-margin-sell MIN_MARGIN_SELL
+                        Minimum margin allowed (sell)
+  --avg-margin-sell AVG_MARGIN_SELL
+                        Target margin, used on new order creation (sell)
+  --max-margin-sell MAX_MARGIN_SELL
+                        Maximum margin allowed (sell)
+  --max-weth-amount MAX_WETH_AMOUNT
+                        Maximum value of open WETH sell orders
+  --min-weth-amount MIN_WETH_AMOUNT
+                        Minimum value of open WETH sell orders
+  --max-sai-amount MAX_SAI_AMOUNT
+                        Maximum value of open SAI sell orders
+  --min-sai-amount MIN_SAI_AMOUNT
+                        Minimum value of open SAI sell orders
+  --sai-dust-cutoff SAI_DUST_CUTOFF
+                        Minimum order value (SAI) for buy orders
+  --weth-dust-cutoff WETH_DUST_CUTOFF
+                        Minimum order value (WETH) for sell orders
+  --round-places ROUND_PLACES
+                        Number of decimal places to round order prices to
+                        (default=2)
+```
+
 ### `keeper-sai-maker-etherdelta`
 
 SAI keeper to act as a market maker on EtherDelta, on the ETH/SAI pair.
 
-Due to limitations of EtherDelta, the development of this keeper has been
-discontinued. It works most of the time, but due to the fact that EtherDelta
+Due to limitations of EtherDelta, **the development of this keeper has been
+discontinued**. It works most of the time, but due to the fact that EtherDelta
 was a bit unpredictable in terms of placing orders at the time this keeper
 was developed, we abandoned it and decided to stick to SaiMakerOtc for now.
 
