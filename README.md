@@ -346,10 +346,10 @@ is discovered by querying the `Tub`, so all we need as a `Tub` address:
 ```python
 from web3 import HTTPProvider, Web3
 
-from api import Address
-from api.token import ERC20Token
-from api.numeric import Wad
-from api.sai import Tub
+from keeper.api import Address
+from keeper.api.token import ERC20Token
+from keeper.api.numeric import Wad
+from keeper.api.sai import Tub
 
 
 web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
@@ -371,9 +371,9 @@ import urllib.request
 
 from web3 import HTTPProvider, Web3
 
-from api import Address
-from api.feed import DSValue
-from api.numeric import Wad
+from keeper.api import Address
+from keeper.api.feed import DSValue
+from keeper.api.numeric import Wad
 
 
 def cryptocompare_rate() -> Wad:
@@ -395,10 +395,10 @@ This snippet demonstrates how to fetch data from `Tub` and `Tap` contracts:
 ```python
 from web3 import HTTPProvider, Web3
 
-from api import Address
-from api.token import ERC20Token
-from api.numeric import Ray
-from api.sai import Tub, Tap
+from keeper.api import Address
+from keeper.api.token import ERC20Token
+from keeper.api.numeric import Ray
+from keeper.api.sai import Tub, Tap
 
 
 web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
@@ -457,9 +457,9 @@ This snippet demonstrates how multiple token transfers can be executed asynchron
 from web3 import HTTPProvider
 from web3 import Web3
 
-from api import Address, Wad, synchronize
-from api.sai import Tub
-from api.token import ERC20Token
+from keeper.api import Address, Wad, synchronize
+from keeper.api.sai import Tub
+from keeper.api.token import ERC20Token
 
 
 web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
@@ -481,11 +481,11 @@ A `TxManager` instance has to be deployed and owned by the caller.
 from web3 import HTTPProvider
 from web3 import Web3
 
-from api import Address, Wad
-from api.approval import directly
-from api.sai import Tub
-from api.token import ERC20Token
-from api.transact import TxManager
+from keeper.api import Address, Wad
+from keeper.api.approval import directly
+from keeper.api.sai import Tub
+from keeper.api.token import ERC20Token
+from keeper.api.transact import TxManager
 
 
 web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
