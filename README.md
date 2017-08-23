@@ -60,19 +60,24 @@ and set the `LDFLAGS` environment variable before you run `pip install -r requir
 export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
 ```
 
-## Testing
+## Running keepers
 
-Maker Keeper Framework uses [pytest](https://docs.pytest.org/en/latest/) for unit testing.
+An individual script in the `bin` directory is present for each keeper. For example, `keeper-sai-bite`
+can be run with:
+```bash
+bin/keeper-sai-bite --eth-from 0x0101010101010101010101010101010101010101
+```
 
-In order to be able to run tests, please install development dependencies first by executing:
-```
-pip install -r dev-requirements.txt
-```
+As keepers tend to die at times, in any serious environment they should be run by a tool
+which can restart them if they fail. It could be _systemd_, but if you don't want to set it up,
+a simple `bin/run-forever` script has been provided. Its job is to simply restart the
+specified program as long as it's return code is non-zero.
 
-You can then run all tests with:
+For example you could run the same `keeper-sai-bite` keeper like that:
+```bash
+bin/run-forever bin/keeper-sai-bite --eth-from 0x0101010101010101010101010101010101010101
 ```
-pytest
-```
+so it gets automatically restarted every time it fails.
 
 ## Reference keepers
 
@@ -158,24 +163,19 @@ discontinued. It works most of the time, but due to the fact that EtherDelta
 was a bit unpredictable in terms of placing orders at the time this keeper
 was developed, we abandoned it and decided to stick to SaiMakerOtc for now.
 
-## Running keepers
+## Testing
 
-An individual script in the `bin` directory is present for each keeper. For example, `keeper-sai-bite`
-can be run with:
-```bash
-bin/keeper-sai-bite --eth-from 0x0101010101010101010101010101010101010101
+Maker Keeper Framework uses [pytest](https://docs.pytest.org/en/latest/) for unit testing.
+
+In order to be able to run tests, please install development dependencies first by executing:
+```
+pip install -r dev-requirements.txt
 ```
 
-As keepers tend to die at times, in any serious environment they should be run by a tool
-which can restart them if they fail. It could be _systemd_, but if you don't want to set it up,
-a simple `bin/run-forever` script has been provided. Its job is to simply restart the
-specified program as long as it's return code is non-zero.
-
-For example you could run the same `keeper-sai-bite` keeper like that:
-```bash
-bin/run-forever bin/keeper-sai-bite --eth-from 0x0101010101010101010101010101010101010101
+You can then run all tests with:
 ```
-so it gets automatically restarted every time it fails.
+pytest
+```
 
 ## APIs for smart contracts
 
