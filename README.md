@@ -501,3 +501,7 @@ tx.execute([sai.address, skr.address],
            [sai.transfer(Address('0x0101010101020202020203030303030404040404'), Wad.from_number(1.5)).invocation(),
             skr.transfer(Address('0x0303030303040404040405050505050606060606'), Wad.from_number(2.5)).invocation()]).transact()
 ```
+
+## License
+
+See [COPYING](https://github.com/makerdao/keeper/blob/master/COPYING) file.
