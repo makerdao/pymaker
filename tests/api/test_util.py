@@ -16,12 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import time
 from unittest.mock import Mock, call
 
 import pytest
-import time
 
-from keeper.api.util import synchronize, int_to_bytes32, bytes_to_int, bytes_to_hexstring, hexstring_to_bytes, AsyncCallback
+from keeper.api.util import synchronize, int_to_bytes32, bytes_to_int, bytes_to_hexstring, hexstring_to_bytes, \
+    AsyncCallback
 
 
 async def async_return(result):

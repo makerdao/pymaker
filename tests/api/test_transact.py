@@ -15,14 +15,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from keeper.api import Address
-from keeper.api import Wad
-from keeper.api.approval import directly
-from keeper.api.transact import TxManager
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
+from keeper.api import Address
+from keeper.api import Wad
+from keeper.api.approval import directly
 from keeper.api.token import DSToken
+from keeper.api.transact import TxManager
 
 
 class TestTxManager:

@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from keeper.api import Address
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
+from keeper.api import Address
 from keeper.api.vault import DSVault
 
 
