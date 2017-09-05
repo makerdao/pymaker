@@ -19,7 +19,6 @@ import asyncio
 import json
 import logging
 import sys
-import time
 from functools import total_ordering
 from typing import Optional
 
