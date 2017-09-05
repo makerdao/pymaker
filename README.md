@@ -50,9 +50,9 @@ pip3 install -r requirements.txt
 ### Known macOS issues
 
 In order for the requirements to install correctly on _macOS_, please install
-`openssl` and `libtool` using [Homebrew](https://brew.sh/):
+`openssl`, `libtool` and `pkg-config` using [Homebrew](https://brew.sh/):
 ```
-brew install openssl libtool
+brew install openssl libtool pkg-config
 ```
 
 and set the `LDFLAGS` environment variable before you run `pip3 install -r requirements.txt`:
