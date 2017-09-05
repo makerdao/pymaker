@@ -445,7 +445,7 @@ class EtherDelta(Contract):
                             amount_get: Wad,
                             token_give: Address,
                             amount_give: Wad,
-                            expires: int) -> Optional[Receipt]:
+                            expires: int) -> Transact:
         """Creates a new on-chain order.
 
         Although it's not necessary to have any amount of `token_give` deposited to EtherDelta
@@ -463,15 +463,11 @@ class EtherDelta(Contract):
             expires: The block number after which the order will expire.
 
         Returns:
-            A `Receipt` if the Ethereum transaction was successful and the order has been placed.
-            `None` if the Ethereum transaction failed.
+            A `Transact` instance, which can be used to trigger the transaction.
         """
         nonce = self.random_nonce()
-        result = self._transact(self.web3, f"EtherDelta('{self.address}').order('{token_get}', '{amount_get}',"
-                                         f" '{token_give}', '{amount_give}', '{expires}', '{nonce}')",
-                              lambda: self._contract.transact().order(token_get.address, amount_get.value,
-                                                                      token_give.address, amount_give.value,
-                                                                      expires, nonce))
+        result = Transact(self, self.web3, self.abi, self.address, self._contract, 'order',
+                          [token_get.address, amount_get.value, token_give.address, amount_give.value, expires, nonce])
 
         # in order to avoid delay between order creation and the Order event,
         # which would cause `active_orders()` to return a stale list,
@@ -479,10 +475,11 @@ class EtherDelta(Contract):
         #
         # as the collection is a set, if the event arrives later,
         # no duplicate will get added
-        if result is not None and self._onchain_orders is not None:
+        if self._onchain_orders is not None:
             onchain_order = OnChainOrder(token_get, amount_get, token_give, amount_give,
                                          expires, nonce, Address(self.web3.eth.defaultAccount))
 
+            # TODO we shouldn't actually do it if we do not know the transaction went through
             self._onchain_orders.add(onchain_order)
 
         return result

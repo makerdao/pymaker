@@ -117,7 +117,7 @@ class AuctionManager(Contract):
         """
         try:
             tx_hash = self._contract.transact().claim(auctionlet_id)
-            receipt = self._wait_for_receipt(tx_hash)
+            receipt = self._wait_for_receipt(tx_hash) #TODO switch to Transact approach
             receipt_logs = receipt['logs']
             return (receipt_logs is not None) and (len(receipt_logs) > 0)
         except:
@@ -201,7 +201,7 @@ class Auctionlet:
                 else:
                     tx_hash = self._auction_manager._contract.transact().bid(self.auctionlet_id, int(how_much.value), int(quantity.value))
             # self._our_tx_hashes.add(tx_hash)
-            receipt = self._auction_manager._wait_for_receipt(tx_hash)
+            receipt = self._auction_manager._wait_for_receipt(tx_hash) #TODO switch to Transact approach
             receipt_logs = receipt['logs']
             return (receipt_logs is not None) and (len(receipt_logs) > 0)
         except:
