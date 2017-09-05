@@ -406,7 +406,7 @@ class EtherDelta(Contract):
 
         return list(self._onchain_orders)
 
-    def active_offchain_orders(self, token1: Address, token2: Address) -> List[OnChainOrder]:
+    def active_offchain_orders(self, token1: Address, token2: Address) -> List[OffChainOrder]:
         assert(isinstance(token1, Address))
         assert(isinstance(token2, Address))
 
