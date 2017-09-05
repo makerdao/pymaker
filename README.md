@@ -44,7 +44,7 @@ This project uses *Python 3.6.1*.
 In order to clone the project and install required third-party packages please execute:
 ```
 git clone https://github.com/makerdao/keeper.git
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 ### Known macOS issues
@@ -55,7 +55,7 @@ In order for the requirements to install correctly on _macOS_, please install
 brew install openssl libtool
 ```
 
-and set the `LDFLAGS` environment variable before you run `pip install -r requirements.txt`:
+and set the `LDFLAGS` environment variable before you run `pip3 install -r requirements.txt`:
 ```
 export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
 ```
@@ -299,7 +299,7 @@ Maker Keeper Framework uses [pytest](https://docs.pytest.org/en/latest/) for uni
 
 In order to be able to run tests, please install development dependencies first by executing:
 ```
-pip install -r dev-requirements.txt
+pip3 install -r dev-requirements.txt
 ```
 
 You can then run all tests with:
