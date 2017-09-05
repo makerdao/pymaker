@@ -20,9 +20,10 @@ import time
 from unittest.mock import Mock, call
 
 import pytest
+from web3 import Web3
 
 from keeper.api.util import synchronize, int_to_bytes32, bytes_to_int, bytes_to_hexstring, hexstring_to_bytes, \
-    AsyncCallback
+    AsyncCallback, chain
 
 
 async def async_return(result):
@@ -32,6 +33,70 @@ async def async_return(result):
 async def async_exception():
     await asyncio.sleep(0.1)
     raise Exception("Exception to be passed further down")
+
+
+def mocked_web3(block_0_hash: str, block_1920000_hash: str = "") -> Web3:
+    def side_effect(block_number):
+        if block_number == 0:
+            return {'hash': block_0_hash}
+        elif block_number == 1920000:
+            return {'hash': block_1920000_hash}
+        else:
+            raise Exception("Unknown block number queried")
+
+    web3 = Mock(Web3)
+    web3.eth = Mock()
+    web3.eth.getBlock = Mock(side_effect=side_effect)
+    return web3
+
+
+def test_chain_should_recognize_ethlive():
+    # given
+    web3 = mocked_web3(block_0_hash="0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3")
+
+    # expect
+    assert chain(web3) == "ethlive"
+
+
+def test_chain_should_recognize_etclive():
+    # given
+    web3 = mocked_web3(block_0_hash="0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
+                       block_1920000_hash="0x94365e3a8c0b35089c1d1195081fe7489b528a84b22199c916180db8b28ade7f")
+
+    # expect
+    assert chain(web3) == "etclive"
+
+
+def test_chain_should_recognize_kovan():
+    # given
+    web3 = mocked_web3(block_0_hash="0xa3c565fc15c7478862d50ccd6561e3c06b24cc509bf388941c25ea985ce32cb9")
+
+    # expect
+    assert chain(web3) == "kovan"
+
+
+def test_chain_should_recognize_ropsten():
+    # given
+    web3 = mocked_web3(block_0_hash="0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d")
+
+    # expect
+    assert chain(web3) == "ropsten"
+
+
+def test_chain_should_recognize_morden():
+    # given
+    web3 = mocked_web3(block_0_hash="0x0cd786a2425d16f152c658316c423e6ce1181e15c3295826d7c9904cba9ce303")
+
+    # expect
+    assert chain(web3) == "morden"
+
+
+def test_chain_should_report_unknown_chains_as_unknown():
+    # given
+    web3 = mocked_web3(block_0_hash="0x0000000000011111111222222333333333333555555555555666666444444333")
+
+    # expect
+    assert chain(web3) == "unknown"
 
 
 def test_synchronize_should_return_empty_list_for_no_futures():

@@ -26,7 +26,7 @@ import time
 
 from keeper.api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad
-from keeper.api.util import AsyncCallback
+from keeper.api.util import AsyncCallback, chain
 from web3 import Web3, HTTPProvider
 
 from keeper.api.token import ERC20Token
@@ -49,7 +49,8 @@ class Keeper:
         self.web3 = Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
         self.web3.eth.defaultAccount = self.arguments.eth_from
         self.our_address = Address(self.arguments.eth_from)
-        self.config = Config(self.chain())
+        self.chain = chain(self.web3)
+        self.config = Config(self.chain)
         self.terminated = False
         self.fatal_termination = False
         self._last_block_time = None
@@ -58,7 +59,7 @@ class Keeper:
     def start(self):
         self.logger.info(f"{self.executable_name()}")
         self.logger.info(f"{'-' * len(self.executable_name())}")
-        self.logger.info(f"Keeper on {self.chain()}, connected to {self.web3.currentProvider.endpoint_uri}")
+        self.logger.info(f"Keeper on {self.chain}, connected to {self.web3.currentProvider.endpoint_uri}")
         self._check_account_unlocked()
         self._wait_for_init()
         self.logger.info(f"Keeper operating as {self.our_address}")
@@ -98,23 +99,6 @@ class Keeper:
     @staticmethod
     def executable_name():
         return "keeper-" + os.path.basename(sys.argv[0]).replace('_', '-').replace('.py', '')
-
-    def chain(self) -> str:
-        block_0 = self.web3.eth.getBlock(0)['hash']
-        if block_0 == "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3":
-            block_1920000 = self.web3.eth.getBlock(1920000)['hash']
-            if block_1920000 == "0x94365e3a8c0b35089c1d1195081fe7489b528a84b22199c916180db8b28ade7f":
-                return "etclive"
-            else:
-                return "ethlive"
-        elif block_0 == "0xa3c565fc15c7478862d50ccd6561e3c06b24cc509bf388941c25ea985ce32cb9":
-            return "kovan"
-        elif block_0 == "0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d":
-            return "ropsten"
-        elif block_0 == "0x0cd786a2425d16f152c658316c423e6ce1181e15c3295826d7c9904cba9ce303":
-            return "morden"
-        else:
-            return "unknown"
 
     def eth_balance(self, address: Address) -> Wad:
         assert(isinstance(address, Address))
