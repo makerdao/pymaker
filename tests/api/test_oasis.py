@@ -23,23 +23,23 @@ from web3 import Web3
 
 from keeper.api import Address, Wad
 from keeper.api.approval import directly
-from keeper.api.oasis import SimpleMarket
+from keeper.api.oasis import SimpleMarket, ExpiringMarket, MatchingMarket
 from keeper.api.token import DSToken
 from tests.api.helpers import wait_until_mock_called
 
 PAST_BLOCKS = 100
 
 
-class TestSimpleMarket:
+class GeneralMarketTest:
     def setup_method(self):
         self.web3 = Web3(EthereumTesterProvider())
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
-        self.otc = SimpleMarket.deploy(self.web3)
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1.mint(Wad.from_number(100)).transact()
         self.token2 = DSToken.deploy(self.web3, 'BBB')
         self.token2.mint(Wad.from_number(100)).transact()
+        self.otc = None
 
     def test_approve_and_make_and_getters(self):
         # given
@@ -118,7 +118,7 @@ class TestSimpleMarket:
                       want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
 
         # when
-        self.otc.kill(1).transact()
+        self.otc.kill(1).transact({'gas': 4000000})
 
         # then
         assert self.otc.get_offer(1) is None
@@ -142,10 +142,10 @@ class TestSimpleMarket:
         assert len(past_make) == 1
         assert past_make[0].id == 1
         assert past_make[0].maker == self.our_address
-        assert past_make[0].have_token == self.token1.address
-        assert past_make[0].have_amount == Wad.from_number(1)
-        assert past_make[0].want_token == self.token2.address
-        assert past_make[0].want_amount == Wad.from_number(2)
+        assert past_make[0].pay_token == self.token1.address
+        assert past_make[0].pay_amount == Wad.from_number(1)
+        assert past_make[0].buy_token == self.token2.address
+        assert past_make[0].buy_amount == Wad.from_number(2)
         assert past_make[0].timestamp != 0
 
     def test_past_take(self):
@@ -164,9 +164,9 @@ class TestSimpleMarket:
         assert past_take[0].id == 1
         assert past_take[0].maker == self.our_address
         assert past_take[0].taker == self.our_address
-        assert past_take[0].have_token == self.token1.address
+        assert past_take[0].pay_token == self.token1.address
+        assert past_take[0].buy_token == self.token2.address
         assert past_take[0].take_amount == Wad.from_number(0.5)
-        assert past_take[0].want_token == self.token2.address
         assert past_take[0].give_amount == Wad.from_number(1)
         assert past_take[0].timestamp != 0
 
@@ -184,10 +184,10 @@ class TestSimpleMarket:
         assert len(past_kill) == 1
         assert past_kill[0].id == 1
         assert past_kill[0].maker == self.our_address
-        assert past_kill[0].have_token == self.token1.address
-        assert past_kill[0].have_amount == Wad.from_number(1)
-        assert past_kill[0].want_token == self.token2.address
-        assert past_kill[0].want_amount == Wad.from_number(2)
+        assert past_kill[0].pay_token == self.token1.address
+        assert past_kill[0].pay_amount == Wad.from_number(1)
+        assert past_kill[0].buy_token == self.token2.address
+        assert past_kill[0].buy_amount == Wad.from_number(2)
         assert past_kill[0].timestamp != 0
 
     @pytest.mark.timeout(5)
@@ -205,10 +205,10 @@ class TestSimpleMarket:
         on_make = wait_until_mock_called(on_make_mock)[0]
         assert on_make.id == 1
         assert on_make.maker == self.our_address
-        assert on_make.have_token == self.token1.address
-        assert on_make.have_amount == Wad.from_number(1)
-        assert on_make.want_token == self.token2.address
-        assert on_make.want_amount == Wad.from_number(2)
+        assert on_make.pay_token == self.token1.address
+        assert on_make.pay_amount == Wad.from_number(1)
+        assert on_make.buy_token == self.token2.address
+        assert on_make.buy_amount == Wad.from_number(2)
         assert on_make.timestamp != 0
 
     @pytest.mark.timeout(5)
@@ -231,9 +231,9 @@ class TestSimpleMarket:
         assert on_take.id == 1
         assert on_take.maker == self.our_address
         assert on_take.taker == self.our_address
-        assert on_take.have_token == self.token1.address
+        assert on_take.pay_token == self.token1.address
+        assert on_take.buy_token == self.token2.address
         assert on_take.take_amount == Wad.from_number(0.5)
-        assert on_take.want_token == self.token2.address
         assert on_take.give_amount == Wad.from_number(1)
         assert on_take.timestamp != 0
 
@@ -255,11 +255,37 @@ class TestSimpleMarket:
         on_kill = wait_until_mock_called(on_kill_mock)[0]
         assert on_kill.id == 1
         assert on_kill.maker == self.our_address
-        assert on_kill.have_token == self.token1.address
-        assert on_kill.have_amount == Wad.from_number(1)
-        assert on_kill.want_token == self.token2.address
-        assert on_kill.want_amount == Wad.from_number(2)
+        assert on_kill.pay_token == self.token1.address
+        assert on_kill.pay_amount == Wad.from_number(1)
+        assert on_kill.buy_token == self.token2.address
+        assert on_kill.buy_amount == Wad.from_number(2)
         assert on_kill.timestamp != 0
+
+
+class TestSimpleMarket(GeneralMarketTest):
+    def setup_method(self):
+        GeneralMarketTest.setup_method(self)
+        self.otc = SimpleMarket.deploy(self.web3)
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"SimpleMarket('{self.otc.address}')"
+
+
+class TestExpiringMarket(GeneralMarketTest):
+    def setup_method(self):
+        GeneralMarketTest.setup_method(self)
+        self.otc = ExpiringMarket.deploy(self.web3, 2500000000)
+
+    def test_should_have_printable_representation(self):
+        assert repr(self.otc) == f"ExpiringMarket('{self.otc.address}')"
+
+
+class TestMatchingMarket(GeneralMarketTest):
+    def setup_method(self):
+        GeneralMarketTest.setup_method(self)
+        self.otc = MatchingMarket.deploy(self.web3, 2500000000)
+        self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
+        self.otc.set_matching_enabled(False).transact()
+
+    def test_should_have_printable_representation(self):
+        assert repr(self.otc) == f"MatchingMarket('{self.otc.address}')"

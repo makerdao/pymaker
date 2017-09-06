@@ -60,10 +60,10 @@ class LogMake:
     def __init__(self, args):
         self.id = bytes_to_int(args['id'])
         self.maker = Address(args['maker'])
-        self.have_token = Address(args['haveToken'])
-        self.have_amount = Wad(args['haveAmount'])
-        self.want_token = Address(args['wantToken'])
-        self.want_amount = Wad(args['wantAmount'])
+        self.pay_token = Address(args['pay_gem'])
+        self.pay_amount = Wad(args['pay_amt'])
+        self.buy_token = Address(args['buy_gem'])
+        self.buy_amount = Wad(args['buy_amt'])
         self.timestamp = args['timestamp']
 
     def __repr__(self):
@@ -74,10 +74,10 @@ class LogBump:
     def __init__(self, args):
         self.id = bytes_to_int(args['id'])
         self.maker = Address(args['maker'])
-        self.have_token = Address(args['haveToken'])
-        self.have_amount = Wad(args['haveAmount'])
-        self.want_token = Address(args['wantToken'])
-        self.want_amount = Wad(args['wantAmount'])
+        self.pay_token = Address(args['pay_gem'])
+        self.pay_amount = Wad(args['pay_amt'])
+        self.buy_token = Address(args['buy_gem'])
+        self.buy_amount = Wad(args['buy_amt'])
         self.timestamp = args['timestamp']
 
     def __repr__(self):
@@ -89,10 +89,10 @@ class LogTake:
         self.id = bytes_to_int(args['id'])
         self.maker = Address(args['maker'])
         self.taker = Address(args['taker'])
-        self.have_token = Address(args['haveToken'])
-        self.take_amount = Wad(args['takeAmount'])
-        self.want_token = Address(args['wantToken'])
-        self.give_amount = Wad(args['giveAmount'])
+        self.pay_token = Address(args['pay_gem'])
+        self.take_amount = Wad(args['take_amt'])
+        self.buy_token = Address(args['buy_gem'])
+        self.give_amount = Wad(args['give_amt'])
         self.timestamp = args['timestamp']
 
     def __repr__(self):
@@ -103,10 +103,10 @@ class LogKill:
     def __init__(self, args):
         self.id = bytes_to_int(args['id'])
         self.maker = Address(args['maker'])
-        self.have_token = Address(args['haveToken'])
-        self.have_amount = Wad(args['haveAmount'])
-        self.want_token = Address(args['wantToken'])
-        self.want_amount = Wad(args['wantAmount'])
+        self.pay_token = Address(args['pay_gem'])
+        self.pay_amount = Wad(args['pay_amt'])
+        self.buy_token = Address(args['buy_gem'])
+        self.buy_amount = Wad(args['buy_amt'])
         self.timestamp = args['timestamp']
 
     def __repr__(self):
@@ -273,3 +273,87 @@ class SimpleMarket(Contract):
 
     def __repr__(self):
         return f"SimpleMarket('{self.address}')"
+
+
+class ExpiringMarket(SimpleMarket):
+    """A client for a `ExpiringMarket` contract.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `ExpiringMarket` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/ExpiringMarket.abi')
+    bin = Contract._load_bin(__name__, 'abi/ExpiringMarket.bin')
+
+    @staticmethod
+    def deploy(web3: Web3, close_time: int):
+        """Deploy a new instance of the `ExpiringMarket` contract.
+
+        Args:
+            web3: An instance of `Web` from `web3.py`.
+
+        Returns:
+            A `ExpiringMarket` class instance.
+        """
+        return ExpiringMarket(web3=web3, address=Contract._deploy(web3, ExpiringMarket.abi, ExpiringMarket.bin,
+                                                                  [close_time]))
+
+    def __repr__(self):
+        return f"ExpiringMarket('{self.address}')"
+
+
+class MatchingMarket(ExpiringMarket):
+    """A client for a `MatchingMarket` contract.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `MatchingMarket` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/MatchingMarket.abi')
+    bin = Contract._load_bin(__name__, 'abi/MatchingMarket.bin')
+
+    @staticmethod
+    def deploy(web3: Web3, close_time: int):
+        """Deploy a new instance of the `MatchingMarket` contract.
+
+        Args:
+            web3: An instance of `Web` from `web3.py`.
+
+        Returns:
+            A `MatchingMarket` class instance.
+        """
+        return MatchingMarket(web3=web3, address=Contract._deploy(web3, MatchingMarket.abi, MatchingMarket.bin,
+                                                                  [close_time]))
+
+    def set_buy_enabled(self, buy_enabled: bool) -> Transact:
+        assert(isinstance(buy_enabled, bool))
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'setBuyEnabled', [buy_enabled])
+
+    def set_matching_enabled(self, matching_enabled: bool) -> Transact:
+        assert(isinstance(matching_enabled, bool))
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'setMatchingEnabled', [matching_enabled])
+
+    def add_token_pair_whitelist(self, base_token: Address, quote_token: Address) -> Transact:
+        """Function is used to add a token pair to the whitelist.
+
+        All incoming offers are checked against the whitelist.
+
+        Args:
+            base_token: Address of the ERC20 token.
+            quote_token: Address of the ERC20 token.
+
+        Returns:
+            A `Transact` instance, which can be used to trigger the transaction.
+        """
+        assert(isinstance(base_token, Address))
+        assert(isinstance(quote_token, Address))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'addTokenPairWhitelist', [base_token.address, quote_token.address])
+
+    def __repr__(self):
+        return f"MatchingMarket('{self.address}')"
