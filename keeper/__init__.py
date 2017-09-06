@@ -26,7 +26,7 @@ import time
 
 from keeper.api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad
-from keeper.api.util import AsyncCallback, chain
+from keeper.api.util import AsyncCallback, chain, are_any_transactions_pending
 from web3 import Web3, HTTPProvider
 
 from keeper.api.token import ERC20Token
@@ -69,6 +69,7 @@ class Keeper:
                              f" (default is {self.web3.eth.gasPrice/10**9} GWei)")
         else:
             self.logger.info(f"Using default gas price which is {self.web3.eth.gasPrice/10**9} GWei at the moment")
+        self._wait_for_last_tx()
         self.logger.info("Keeper started")
         self.startup()
         self._main_loop()
@@ -173,6 +174,13 @@ class Keeper:
         if self.web3.eth.syncing:
             self.logger.info(f"Waiting for the node to sync...")
             while self.web3.eth.syncing:
+                time.sleep(0.25)
+
+    def _wait_for_last_tx(self):
+        # if there are transactions pending, wait for them to get confirmed
+        if are_any_transactions_pending(self.web3, self.our_address):
+            self.logger.info(f"Waiting for the pending transactions to get confirmed...")
+            while are_any_transactions_pending(self.web3, self.our_address):
                 time.sleep(0.25)
 
     def _check_account_unlocked(self):
