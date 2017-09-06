@@ -281,9 +281,42 @@ class Transact:
         return name if self.extra is None else name + f" with {self.extra}"
 
     def transact(self, options=None) -> Optional[Receipt]:
+        """Executes the Ethereum transaction synchronously.
+
+        Executes the Ethereum transaction synchronously. The method will return when either
+        the transaction execution succeeded or failed. In case of the former, a `Receipt`
+        object will be returned.
+
+        Out-of-gas exceptions are automatically recognized as transaction failures.
+
+        Args:
+            options: Additional options impacting how the Ethereum transaction gets executed.
+                If present, should be a dictionary with the following keys allowed: `gas`,
+                `gasPrice`, `nonce`, ... .
+
+        Returns:
+            A `Receipt` object if the transaction invocation was successful. `None` otherwise.
+        """
         return synchronize([self.transact_async(options)])[0]
 
     async def transact_async(self, options=None) -> Optional[Receipt]:
+        """Executes the Ethereum transaction asynchronously.
+
+        Executes the Ethereum transaction asynchronously. The method will return immediately.
+        Ultimately, its future value will become either a `Receipt` or `None`, depending on
+        wherher the transaction execution successfully or failed.
+
+        Out-of-gas exceptions are automatically recognized as transaction failures.
+
+        Args:
+            options: Additional options impacting how the Ethereum transaction gets executed.
+                If present, should be a dictionary with the following keys allowed: `gas`,
+                `gasPrice`, `nonce`, ... .
+
+        Returns:
+            A future value of either a `Receipt` object if the transaction invocation
+            was successful, or `None` if it failed.
+        """
         return await self._async_transact(self.web3, self.name(), self._func(options))
 
     def invocation(self) -> Invocation:
