@@ -27,7 +27,7 @@ from keeper.api.token import ERC20Token
 
 
 class OfferInfo:
-    """Represents a single offer on `SimpleMarket` (`OasisDEX`).
+    """Represents a single offer on `OasisDEX`.
 
     Attributes:
         offer_id: Id of the offer.
@@ -119,10 +119,10 @@ class SimpleMarket(Contract):
     `SimpleMarket` is a simple on-chain OTC market for ERC20-compatible tokens.
     It powers the `OasisDEX` decentralized exchange.
 
-    You can also interact with `ExpiringMarket` contracts, as their API is
-    identical to `SimpleMarket`.
+    You can also interact with `ExpiringMarket` and `MatchingMarket` contracts,
+    as their APIs are compatible.
 
-    You can find the source code of the `SimpleMarket` contract here:
+    You can find the source code of the `OasisDEX` contracts here:
     <https://github.com/makerdao/maker-otc>.
 
     Attributes:
@@ -278,6 +278,12 @@ class SimpleMarket(Contract):
 class ExpiringMarket(SimpleMarket):
     """A client for a `ExpiringMarket` contract.
 
+    You can also interact with `SimpleMarket` and `MatchingMarket` contracts,
+    as their APIs are compatible.
+
+    You can find the source code of the `OasisDEX` contracts here:
+    <https://github.com/makerdao/maker-otc>.
+
     Attributes:
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `ExpiringMarket` contract.
@@ -306,6 +312,12 @@ class ExpiringMarket(SimpleMarket):
 class MatchingMarket(ExpiringMarket):
     """A client for a `MatchingMarket` contract.
 
+    You can also interact with `SimpleMarket` and `ExpiringMarket` contracts,
+    as their APIs are compatible.
+
+    You can find the source code of the `OasisDEX` contracts here:
+    <https://github.com/makerdao/maker-otc>.
+
     Attributes:
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `MatchingMarket` contract.
@@ -328,17 +340,33 @@ class MatchingMarket(ExpiringMarket):
                                                                   [close_time]))
 
     def set_buy_enabled(self, buy_enabled: bool) -> Transact:
+        """Enables or disables direct buy.
+
+        Args:
+            buy_enabled: Whether direct buy should be enabled or disabled.
+
+        Returns:
+            A `Transact` instance, which can be used to trigger the transaction.
+        """
         assert(isinstance(buy_enabled, bool))
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'setBuyEnabled', [buy_enabled])
 
     def set_matching_enabled(self, matching_enabled: bool) -> Transact:
+        """Enables or disables order matching.
+
+        Args:
+            matching_enabled: Whether order matching should be enabled or disabled.
+
+        Returns:
+            A `Transact` instance, which can be used to trigger the transaction.
+        """
         assert(isinstance(matching_enabled, bool))
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'setMatchingEnabled', [matching_enabled])
 
     def add_token_pair_whitelist(self, base_token: Address, quote_token: Address) -> Transact:
-        """Function is used to add a token pair to the whitelist.
+        """Adds a token pair to the whitelist.
 
         All incoming offers are checked against the whitelist.
 
