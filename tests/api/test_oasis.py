@@ -285,7 +285,6 @@ class TestMatchingMarket(GeneralMarketTest):
         GeneralMarketTest.setup_method(self)
         self.otc = MatchingMarket.deploy(self.web3, 2500000000)
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
-        self.otc.set_matching_enabled(False).transact()
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"MatchingMarket('{self.otc.address}')"
