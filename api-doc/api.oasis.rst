@@ -1,5 +1,5 @@
 OasisDEX API
 ============
 
-.. automodule:: api.oasis
+.. automodule:: keeper.api.oasis
     :members:

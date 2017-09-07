@@ -1,5 +1,5 @@
 EtherDelta API
 ==============
 
-.. automodule:: api.etherdelta
+.. automodule:: keeper.api.etherdelta
     :members:

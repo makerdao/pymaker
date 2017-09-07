@@ -1,5 +1,5 @@
 SAI Stablecoin API
 ==================
 
-.. automodule:: api.sai
+.. automodule:: keeper.api.sai
     :members:

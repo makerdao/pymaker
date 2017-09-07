@@ -1,5 +1,5 @@
 ERC20 API
 =========
 
-.. automodule:: api.token
+.. automodule:: keeper.api.token
     :members:

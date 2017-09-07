@@ -61,18 +61,18 @@ Numeric types
 Most of the numeric data throughout the entire platform is kept as either `Wad` (18-digit precision type) or `Ray`
 (27-digit precision type).
 
-.. automodule:: api.numeric
+.. automodule:: keeper.api.numeric
     :members:
 
 
 Other classes
 -------------
 
-.. automodule:: api
+.. automodule:: keeper.api
     :members:
 
-.. automodule:: api.approval
+.. automodule:: keeper.api.approval
     :members:
 
-.. automodule:: api.transact
+.. automodule:: keeper.api.transact
     :members:

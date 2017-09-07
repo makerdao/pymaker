@@ -1,5 +1,5 @@
 Data feeds API
 ==============
 
-.. automodule:: api.feed
+.. automodule:: keeper.api.feed
     :members:
