@@ -219,7 +219,7 @@ class DSToken(ERC20Token):
 class DSEthToken(ERC20Token):
     """A client for the `DSEthToken` contract.
 
-    `DSEthToken`, also known as _ETH Wrapper_ or _W-ETH_, is a smart contract into which you can deposit
+    `DSEthToken`, also known as ETH Wrapper or W-ETH, is a contract into which you can deposit
     raw ETH and then deal with it like with any other ERC20 token. In addition to the `deposit()`
     and `withdraw()` methods, it implements the standard ERC20 token API.
 
