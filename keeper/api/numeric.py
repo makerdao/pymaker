@@ -112,7 +112,10 @@ class Wad:
             return self.value < other.value
         else:
             raise ArithmeticError
-        
+
+    def __int__(self):
+        return int(self.value / 10**18)
+
     def __round__(self, ndigits: int = 0):
         return Wad(round(self.value, -18 + ndigits))
 
