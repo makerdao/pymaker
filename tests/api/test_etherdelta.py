@@ -32,7 +32,7 @@ class TestEtherDelta:
         self.etherdelta = EtherDelta.deploy(self.web3,
                                             admin=Address('0x1111100000999998888877777666665555544444'),
                                             fee_account=Address('0x8888877777666665555544444111110000099999'),
-                                            account_levels_addr=self.our_address,
+                                            account_levels_addr=Address('0x6666655555444441111188888777770000099999'),
                                             fee_make=Wad.from_number(0.01),
                                             fee_take=Wad.from_number(0.02),
                                             fee_rebate=Wad.from_number(0.03),
@@ -44,6 +44,7 @@ class TestEtherDelta:
         # expect
         assert self.etherdelta.admin() == Address('0x1111100000999998888877777666665555544444')
         assert self.etherdelta.fee_account() == Address('0x8888877777666665555544444111110000099999')
+        assert self.etherdelta.account_levels_addr() == Address('0x6666655555444441111188888777770000099999')
 
     def test_fees(self):
         # expect

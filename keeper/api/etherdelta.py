@@ -296,6 +296,14 @@ class EtherDelta(Contract):
         """
         return Address(self._contract.call().feeAccount())
 
+    def account_levels_addr(self) -> Address:
+        """Returns the address of the AccountLevels contract.
+
+        Returns:
+            The address of the AccountLevels contract.
+        """
+        return Address(self._contract.call().accountLevelsAddr())
+
     def fee_make(self) -> Wad:
         return Wad(self._contract.call().feeMake())
 
