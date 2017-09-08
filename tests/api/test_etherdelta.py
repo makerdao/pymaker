@@ -33,12 +33,18 @@ class TestEtherDelta:
                                             admin=self.our_address,
                                             fee_account=self.our_address,
                                             account_levels_addr=self.our_address,
-                                            fee_make=Wad(0),
-                                            fee_take=Wad(0),
-                                            fee_rebate=Wad(0),
+                                            fee_make=Wad.from_number(0.01),
+                                            fee_take=Wad.from_number(0.02),
+                                            fee_rebate=Wad.from_number(0.03),
                                             api_server='http://none.invalid')
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1.mint(Wad.from_number(100)).transact()
+
+    def test_fees(self):
+        # expect
+        assert self.etherdelta.fee_make() == Wad.from_number(0.01)
+        assert self.etherdelta.fee_take() == Wad.from_number(0.02)
+        assert self.etherdelta.fee_rebate() == Wad.from_number(0.03)
 
     def test_deposit_and_withdraw_eth(self):
         # when
