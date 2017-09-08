@@ -162,7 +162,7 @@ class Ray:
 
     @classmethod
     def from_number(cls, number):
-        assert(number >= 0)
+        # assert(number >= 0)
         pwr = Decimal(10) ** 27
         dec = Decimal(str(number)) * pwr
         return Ray(int(dec.quantize(1)))
