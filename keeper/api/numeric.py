@@ -21,7 +21,7 @@ from decimal import *
 
 
 @total_ordering
-class Wad(typing.SupportsRound):
+class Wad:
     """Represents a number with 18 decimal places.
 
     `Wad` implements comparison, addition, subtraction, multiplication and division operators. Comparison, addition,
@@ -218,6 +218,9 @@ class Ray:
             return self.value < other.value
         else:
             raise ArithmeticError
+
+    def __round__(self, ndigits: int = 0):
+        return Ray(round(self.value, -27 + ndigits))
 
     @staticmethod
     def min(*args):

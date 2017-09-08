@@ -217,6 +217,7 @@ class TestWad:
         round_distance = Wad(abs(round_difference.value))
         assert round_distance <= Wad.from_number(0.5 * 10**(-ndigits))    
 
+
 class TestRay:
     def test_should_support_negative_values(self):
         Ray(-1)
@@ -389,3 +390,9 @@ class TestRay:
             Ray.max(Ray(10), 20)
         with pytest.raises(ArithmeticError):
             Ray.max(15, Ray(25))
+
+    def test_round(self):
+        assert round(Ray.from_number(123.4567), 2) == Ray.from_number(123.46)
+        assert round(Ray.from_number(123.4567), 0) == Ray.from_number(123.0)
+        assert round(Ray.from_number(123.4567), -2) == Ray.from_number(100.0)
+
