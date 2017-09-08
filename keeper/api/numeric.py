@@ -222,6 +222,9 @@ class Ray:
         else:
             raise ArithmeticError
 
+    def __int__(self):
+        return int(self.value / 10**27)
+
     def __round__(self, ndigits: int = 0):
         return Ray(round(self.value, -27 + ndigits))
 

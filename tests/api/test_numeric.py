@@ -361,6 +361,13 @@ class TestRay:
         with pytest.raises(ArithmeticError):
             assert Ray(1000) >= 999
 
+    def test_should_cast_to_int(self):
+        assert int(Ray.from_number(-4.5)) == -4
+        assert int(Ray.from_number(0.99)) == 0
+        assert int(Ray.from_number(1.0)) == 1
+        assert int(Ray.from_number(1.5)) == 1
+        assert int(Ray.from_number(1.9999999999)) == 1
+
     def test_should_be_hashable(self):
         assert is_hashable(Ray(123))
 
