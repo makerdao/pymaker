@@ -30,8 +30,8 @@ class TestEtherDelta:
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.etherdelta = EtherDelta.deploy(self.web3,
-                                            admin=self.our_address,
-                                            fee_account=self.our_address,
+                                            admin=Address('0x1111100000999998888877777666665555544444'),
+                                            fee_account=Address('0x8888877777666665555544444111110000099999'),
                                             account_levels_addr=self.our_address,
                                             fee_make=Wad.from_number(0.01),
                                             fee_take=Wad.from_number(0.02),
@@ -39,6 +39,11 @@ class TestEtherDelta:
                                             api_server='http://none.invalid')
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1.mint(Wad.from_number(100)).transact()
+
+    def test_addresses(self):
+        # expect
+        assert self.etherdelta.admin() == Address('0x1111100000999998888877777666665555544444')
+        assert self.etherdelta.fee_account() == Address('0x8888877777666665555544444111110000099999')
 
     def test_fees(self):
         # expect
