@@ -395,4 +395,3 @@ class TestRay:
         assert round(Ray.from_number(123.4567), 2) == Ray.from_number(123.46)
         assert round(Ray.from_number(123.4567), 0) == Ray.from_number(123.0)
         assert round(Ray.from_number(123.4567), -2) == Ray.from_number(100.0)
-
