@@ -170,9 +170,18 @@ class TestWad:
     def test_should_cast_to_int(self):
         assert int(Wad.from_number(-4.5)) == -4
         assert int(Wad.from_number(0.99)) == 0
+        assert int(Wad.from_number(1)) == 1
         assert int(Wad.from_number(1.0)) == 1
         assert int(Wad.from_number(1.5)) == 1
         assert int(Wad.from_number(1.9999999999)) == 1
+
+    def test_should_cast_to_float(self):
+        assert float(Wad.from_number(-4.5)) == -4.5
+        assert float(Wad.from_number(0.99)) == 0.99
+        assert float(Wad.from_number(1)) == 1.0
+        assert float(Wad.from_number(1.0)) == 1.0
+        assert float(Wad.from_number(1.5)) == 1.5
+        assert float(Wad.from_number(1.9999999999)) == 1.9999999999
 
     def test_should_be_hashable(self):
         assert is_hashable(Wad(123))
@@ -364,9 +373,18 @@ class TestRay:
     def test_should_cast_to_int(self):
         assert int(Ray.from_number(-4.5)) == -4
         assert int(Ray.from_number(0.99)) == 0
+        assert int(Ray.from_number(1)) == 1
         assert int(Ray.from_number(1.0)) == 1
         assert int(Ray.from_number(1.5)) == 1
         assert int(Ray.from_number(1.9999999999)) == 1
+
+    def test_should_cast_to_float(self):
+        assert float(Ray.from_number(-4.5)) == -4.5
+        assert float(Ray.from_number(0.99)) == 0.99
+        assert float(Ray.from_number(1)) == 1.0
+        assert float(Ray.from_number(1.0)) == 1.0
+        assert float(Ray.from_number(1.5)) == 1.5
+        assert float(Ray.from_number(1.9999999999)) == 1.9999999999
 
     def test_should_be_hashable(self):
         assert is_hashable(Ray(123))

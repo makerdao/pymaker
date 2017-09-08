@@ -116,6 +116,9 @@ class Wad:
     def __int__(self):
         return int(self.value / 10**18)
 
+    def __float__(self):
+        return self.value / 10**18
+
     def __round__(self, ndigits: int = 0):
         return Wad(round(self.value, -18 + ndigits))
 
@@ -224,6 +227,9 @@ class Ray:
 
     def __int__(self):
         return int(self.value / 10**27)
+
+    def __float__(self):
+        return self.value / 10**27
 
     def __round__(self, ndigits: int = 0):
         return Ray(round(self.value, -27 + ndigits))
