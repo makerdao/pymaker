@@ -299,7 +299,7 @@ Maker Keeper Framework uses [pytest](https://docs.pytest.org/en/latest/) for uni
 
 In order to be able to run tests, please install development dependencies first by executing:
 ```
-pip3 install -r dev-requirements.txt
+pip3 install -r requirements-dev.txt
 ```
 
 You can then run all tests with:
