@@ -25,36 +25,59 @@ The two core smart contracts of the `SAI Stablecoin System` are ``Tub`` and ``Lp
 ERC20
 ~~~~~
 
-`SAI Stablecoin System` utilizes regular ERC20 tokens. An API has been provided for easy interaction with them.
+ERC20Token
+""""""""""
 
-.. toctree::
-    api.token
+.. automodule:: keeper.api.token
+    :members: ERC20Token
 
-Data feeds
-~~~~~~~~~~
+DSToken
+"""""""
 
-`SAI Stablecoin System` revolves around ``DSValue`` and its descendants, ``DSCache`` and ``Medianizer``.
+.. automodule:: keeper.api.token
+    :members: DSToken
 
-.. toctree::
-    api.feed
+DSEthToken
+""""""""""
+
+.. automodule:: keeper.api.token
+    :members: DSEthToken
+
+
+Exchanges
+~~~~~~~~~
+
+Both `OsaisDEX` and `EtherDelta` are independent of `SAI Stablecoin System`, but as a decentralized exchanges
+they provide arbitrage opportunities for profit-seeking agents, so an API has been created around them as well.
 
 OasisDEX
-~~~~~~~~
+""""""""
 
-`OsaisDEX` is independent of `SAI Stablecoin System`, but as a decentralized exchange provides arbitraging
-opportunities for profit-seeking agents, so an API has been created around it as well.
-
-.. toctree::
-    api.oasis
+.. automodule:: keeper.api.oasis
+    :members:
 
 EtherDelta
-~~~~~~~~~~
+""""""""""
 
-`EtherDelta` is independent of `SAI Stablecoin System`, but as a decentralized exchange provides arbitraging
-opportunities for profit-seeking agents, so an API has been created around it as well.
+.. automodule:: keeper.api.etherdelta
+    :members:
 
-.. toctree::
-    api.etherdelta
+
+DSValue
+~~~~~~~
+
+.. automodule:: keeper.api.feed
+    :members: DSValue
+
+
+
+Atomic transactions
+-------------------
+
+.. automodule:: keeper.api.transact
+    :members:
+
+
 
 Numeric types
 -------------
@@ -75,6 +98,7 @@ Ray
     :members: Ray
 
 
+
 Other classes
 -------------
 
@@ -82,7 +106,4 @@ Other classes
     :members:
 
 .. automodule:: keeper.api.approval
-    :members:
-
-.. automodule:: keeper.api.transact
     :members:
