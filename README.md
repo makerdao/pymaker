@@ -39,7 +39,7 @@ As stated in the _GNU Affero General Public License_:
 
 ## Installation
 
-This project uses *Python 3.6.1*.
+This project uses *Python 3.6.2*.
 
 In order to clone the project and install required third-party packages please execute:
 ```
