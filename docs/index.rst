@@ -1,25 +1,15 @@
-Maker Keeper Framework
-======================
+Maker Keeper API
+================
 
-This projects consists of two parts:
-
-* a set of APIs around smart contacts of the `SAI Stablecoin System` and some other related smart contracts,
-* a set of reference keepers i.e. profit-seeking bots, executing certain operations automatically.
-
-**Beware!** These APIs are still in a very early stage of development and they will very likely change
-and/or evolve together with the `SAI Stablecoin System`.
-
-API Documentation
-=================
-
-The `maker.py` API exists to provide a simple way of interacting with a set of smart contracts that create
+The Maker Keeper API exists to provide a simple way of interacting with a set of smart contracts that create
 the `SAI Stablecoin System`. It is meant to evolve towards the `DAI Stablecoin System` in the future.
 
-The API been designed to simplify and facilitate creation of external profit-seeking agents, usually called keepers,
+They were designed to simplify and facilitate creation of external profit-seeking agents, usually called keepers,
 that operate around the stablecoin set of smart contracts. The API can also be used to automate certain tasks for
 other entities involved in the `Sai Stablecoin System`, like SAI issuers or traders.
 
-You can find some basic keepers and also some other examples bundled in this project.
+**Beware!** These APIs are still in a very early stage of development and they will very likely change
+and/or evolve together with the `SAI Stablecoin System`.
 
 Smart contracts
 ---------------
@@ -69,11 +59,20 @@ opportunities for profit-seeking agents, so an API has been created around it as
 Numeric types
 -------------
 
-Most of the numeric data throughout the entire platform is kept as either `Wad` (18-digit precision type) or `Ray`
-(27-digit precision type).
+Most of the numeric data throughout the entire platform is kept as either `Wad` (18-digit precision type)
+or `Ray` (27-digit precision type).
+
+Wad
+~~~
 
 .. automodule:: keeper.api.numeric
-    :members:
+    :members: Wad
+
+Ray
+~~~
+
+.. automodule:: keeper.api.numeric
+    :members: Ray
 
 
 Other classes
