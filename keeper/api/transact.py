@@ -19,9 +19,9 @@ import operator
 from functools import reduce
 from typing import List
 
-from keeper.api import Contract, Address, Invocation, Transact
 from web3 import Web3
 
+from keeper.api import Contract, Address, Invocation, Transact
 from keeper.api.token import ERC20Token
 
 
