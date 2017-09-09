@@ -63,11 +63,23 @@ EtherDelta
     :members:
 
 
+DSProxy
+~~~~~~~
+
+.. automodule:: keeper.api.proxy
+    :members: DSProxy
+
 DSValue
 ~~~~~~~
 
 .. automodule:: keeper.api.feed
     :members: DSValue
+
+DSVault
+~~~~~~~
+
+.. automodule:: keeper.api.vault
+    :members: DSVault
 
 
 
