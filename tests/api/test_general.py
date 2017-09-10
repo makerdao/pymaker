@@ -73,3 +73,19 @@ class TestAddress:
         assert address1a == address1b
         assert address1a != address2
         assert address1b != address2
+
+    def test_ordering(self):
+        # given
+        address1 = Address('0x0000011111000001111100000111110000011111')
+        address2 = Address('0x0000011111000001111100000111110000022222')
+        address3 = Address('0x0000011111000001111100000111110000033333')
+
+        # expect
+        assert address1 < address2
+        assert not address1 > address2
+        assert address2 > address1
+        assert not address2 < address1
+        assert address1 <= address2
+        assert address2 >= address1
+        assert address1 < address3
+        assert address1 <= address3
