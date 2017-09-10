@@ -210,6 +210,8 @@ class Receipt:
 
 
 class Transact:
+    """Represents an Ethereum transaction before it gets executed."""
+
     logger = logging.getLogger('api')
 
     def __init__(self, origin, web3, abi, address, contract, function, parameters, extra=None):
