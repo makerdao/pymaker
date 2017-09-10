@@ -94,7 +94,7 @@ class TestAddress:
 class TestCalldata:
     def test_creation(self):
         # expect
-        assert Calldata('0xa9059cbb').str == '0xa9059cbb'
+        assert Calldata('0xa9059cbb').value == '0xa9059cbb'
 
     def test_should_fail_creation_from_invalid_calldata(self):
         # expect

@@ -159,24 +159,24 @@ class Calldata:
     def __init__(self, value):
         assert(isinstance(value, str))
         assert(value.startswith('0x'))
-        self.str = value
+        self.value = value
 
     def as_bytes(self) -> bytes:
         """Return the calldata as a byte array."""
-        return bytes.fromhex(self.str.replace('0x', ''))
+        return bytes.fromhex(self.value.replace('0x', ''))
 
     def __str__(self):
-        return f"{self.str}"
+        return f"{self.value}"
 
     def __repr__(self):
-        return f"Calldata('{self.str}')"
+        return f"Calldata('{self.value}')"
 
     def __hash__(self):
-        return self.str.__hash__()
+        return self.value.__hash__()
 
     def __eq__(self, other):
         assert(isinstance(other, Calldata))
-        return self.str == other.str
+        return self.value == other.value
 
 
 class Invocation(object):
