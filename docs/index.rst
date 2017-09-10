@@ -63,6 +63,22 @@ EtherDelta
     :members:
 
 
+Authentication
+~~~~~~~~~~~~~~
+
+DSGuard
+"""""""
+
+.. automodule:: keeper.api.auth
+    :members: DSGuard
+
+DSRoles
+"""""""
+
+.. automodule:: keeper.api.auth
+    :members: DSRoles
+
+
 DSProxy
 ~~~~~~~
 
@@ -85,6 +101,9 @@ DSVault
 
 Atomic transactions
 -------------------
+
+TxManager
+~~~~~~~~~
 
 .. automodule:: keeper.api.transact
     :members:
