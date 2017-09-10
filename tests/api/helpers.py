@@ -18,6 +18,15 @@
 from unittest.mock import Mock
 
 
+def is_hashable(v):
+    """Determine whether `v` can be hashed."""
+    try:
+        hash(v)
+    except TypeError:
+        return False
+    return True
+
+
 def wait_until_mock_called(mock: Mock):
     while not mock.called:
         pass

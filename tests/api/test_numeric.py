@@ -18,15 +18,7 @@
 import pytest
 
 from keeper.api.numeric import Wad, Ray
-
-
-def is_hashable(v):
-    """Determine whether `v` can be hashed."""
-    try:
-        hash(v)
-    except TypeError:
-        return False
-    return True
+from tests.api.helpers import is_hashable
 
 
 class TestWad:
