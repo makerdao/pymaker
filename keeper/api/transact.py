@@ -28,7 +28,7 @@ from keeper.api.token import ERC20Token
 class TxManager(Contract):
     """A client for the `TxManager` contract.
 
-    `TxManager` allows to invoke multiple smart contract methods in one Ethereum transaction.
+    `TxManager` allows to invoke multiple contract methods in one Ethereum transaction.
     Each invocation is represented as an instance of the `Invocation` class, containing a
     contract address and a calldata.
 
@@ -67,11 +67,11 @@ class TxManager(Contract):
         return Address(self._contract.call().owner())
 
     def execute(self, tokens: List[Address], invocations: List[Invocation]) -> Transact:
-        """Executes multiple smart contract methods in one Ethereum transaction.
+        """Executes multiple contract methods in one Ethereum transaction.
 
         Args:
             tokens: List of addresses of ERC20 token the invocations should be able to access.
-            invocations: A list of invocations (smart contract methods) to be executed.
+            invocations: A list of invocations (contract methods) to be executed.
 
         Returns:
             A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.

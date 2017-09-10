@@ -180,10 +180,10 @@ class Calldata:
 
 
 class Invocation(object):
-    """Single smart contract method invocation, to be used together with `TxManager`.
+    """Single contract method invocation, to be used together with `TxManager`.
 
     Attributes:
-        address: Smart contract address.
+        address: Contract address.
         calldata: The calldata of the invocation.
     """
     def __init__(self, address: Address, calldata: Calldata):
@@ -333,7 +333,7 @@ class Transact:
 class Transfer:
     """Represents an ERC20 token transfer.
 
-    Designed to enable monitoring transfers resulting from smart contract method execution.
+    Designed to enable monitoring transfers resulting from contract method execution.
     A list of transfers can be found in the `Receipt` class.
 
     Attributes:
