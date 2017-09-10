@@ -11,8 +11,65 @@ other entities involved in the `Sai Stablecoin System`, like SAI issuers or trad
 **Beware!** These APIs are still in a very early stage of development and they will very likely change
 and/or evolve together with the `SAI Stablecoin System`.
 
-Smart contracts
----------------
+
+General
+-------
+
+Address
+~~~~~~~
+
+.. automodule:: keeper.api
+    :members: Address
+
+Transact
+~~~~~~~~
+
+.. automodule:: keeper.api
+    :members: Transact
+
+Calldata
+~~~~~~~~
+
+.. automodule:: keeper.api
+    :members: Calldata
+
+Invocation
+~~~~~~~~~~
+
+.. automodule:: keeper.api
+    :members: Invocation
+
+Receipt
+~~~~~~~
+
+.. automodule:: keeper.api
+    :members: Receipt
+
+.. automodule:: keeper.api.approval
+    :members:
+
+
+Numeric types
+-------------
+
+Most of the numeric data throughout the entire platform is kept as either `Wad` (18-digit precision type)
+or `Ray` (27-digit precision type).
+
+Wad
+~~~
+
+.. automodule:: keeper.api.numeric
+    :members: Wad
+
+Ray
+~~~
+
+.. automodule:: keeper.api.numeric
+    :members: Ray
+
+
+Contracts
+---------
 
 SAI Stablecoin
 ~~~~~~~~~~~~~~
@@ -106,35 +163,4 @@ TxManager
 ~~~~~~~~~
 
 .. automodule:: keeper.api.transact
-    :members:
-
-
-
-Numeric types
--------------
-
-Most of the numeric data throughout the entire platform is kept as either `Wad` (18-digit precision type)
-or `Ray` (27-digit precision type).
-
-Wad
-~~~
-
-.. automodule:: keeper.api.numeric
-    :members: Wad
-
-Ray
-~~~
-
-.. automodule:: keeper.api.numeric
-    :members: Ray
-
-
-
-Other classes
--------------
-
-.. automodule:: keeper.api
-    :members:
-
-.. automodule:: keeper.api.approval
     :members:
