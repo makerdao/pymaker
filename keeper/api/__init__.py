@@ -151,7 +151,11 @@ class Contract:
 
 
 class Calldata:
-    """Represents Ethereum calldata."""
+    """Represents Ethereum calldata.
+
+    Attributes:
+        value: Calldata as a string starting with `0x`.
+    """
     def __init__(self, value):
         assert(isinstance(value, str))
         assert(value.startswith('0x'))
