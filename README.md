@@ -81,6 +81,12 @@ bin/run-forever bin/keeper-sai-bite --eth-from 0x0101010101010101010101010101010
 ```
 so it gets automatically restarted every time it fails.
 
+### Individual keeper accounts
+
+Due to gas management techniques which will be implemented in the framework in the near future,
+it is recommended to run each keeper on his own Ethereum account. Techniques mentioned may
+involve resending transactions which got stuck with higher gas prices etc.
+
 ## Reference keepers
 
 This sections lists and briefly describes a set of reference keepers present in this project.
