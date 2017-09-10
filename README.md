@@ -327,6 +327,9 @@ In addition to that, there are draft interfaces to:
 * `EtherDelta` (<https://github.com/etherdelta/etherdelta.github.io>),
 * `AuctionManager` and `SplittingAuctionManager` (<https://github.com/makerdao/token-auction>).
 
+There is also a _Setzer_ class which provides a simple interface to the `setzer` commandline
+tool (<https://github.com/makerdao/setzer>).
+
 You can find the full documentation of the APIs here: http://maker-keeper-docs.surge.sh.
 
 **Beware!** This is the first version of the APIs and they will definitely change
