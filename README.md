@@ -68,6 +68,8 @@ can be run with:
 bin/keeper-sai-bite --eth-from 0x0101010101010101010101010101010101010101
 ```
 
+### Restarting dying keepers
+
 As keepers tend to die at times, in any serious environment they should be run by a tool
 which can restart them if they fail. It could be _systemd_, but if you don't want to set it up,
 a simple `bin/run-forever` script has been provided. Its job is to simply restart the
