@@ -17,7 +17,7 @@
 
 import pytest
 
-from keeper.api import Address
+from keeper.api import Address, Calldata
 from tests.api.helpers import is_hashable
 
 
@@ -89,3 +89,44 @@ class TestAddress:
         assert address2 >= address1
         assert address1 < address3
         assert address1 <= address3
+
+
+class TestCalldata:
+    def test_creation(self):
+        # expect
+        assert Calldata('0xa9059cbb').str == '0xa9059cbb'
+
+    def test_should_fail_creation_from_invalid_calldata(self):
+        # expect
+        with pytest.raises(Exception):
+            Calldata('a9059cbb')  # without `0x`
+
+        # expect
+        with pytest.raises(Exception):
+            Calldata(b'\xa9\x05\x9c\xbb')  # from bytes
+
+    def test_as_bytes(self):
+        # expect
+        assert Calldata('0xa9059cbb').as_bytes() == b'\xa9\x05\x9c\xbb'
+
+    def test_string_value(self):
+        # expect
+        assert str(Calldata('0xa9059cbb')) == '0xa9059cbb'
+
+    def test_repr(self):
+        # expect
+        assert repr(Calldata('0xa9059cbb')) == "Calldata('0xa9059cbb')"
+
+    def test_should_be_hashable(self):
+        assert is_hashable(Calldata('0xa9059cbb'))
+
+    def test_equality(self):
+        # given
+        calldata1a = Calldata('0xa9059cbb')
+        calldata1b = Calldata('0xa9059cbb')
+        calldata2 = Calldata('0xa9059ccc')
+
+        # expect
+        assert calldata1a == calldata1b
+        assert calldata1a != calldata2
+        assert calldata1b != calldata2
