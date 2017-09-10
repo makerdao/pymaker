@@ -320,7 +320,7 @@ class EtherDelta(Contract):
             amount: Amount of raw ETH to be deposited on EtherDelta.
 
         Returns:
-            A `Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(amount, Wad))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'deposit', [], {'value': amount.value})
@@ -334,7 +334,7 @@ class EtherDelta(Contract):
             amount: Amount of raw ETH to be withdrawn from EtherDelta.
 
         Returns:
-            A `Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(amount, Wad))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'withdraw', [amount.value])
@@ -363,7 +363,7 @@ class EtherDelta(Contract):
             amount: Amount of token `token` to be deposited to EtherDelta.
 
         Returns:
-            A `Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(token, Address))
         assert(isinstance(amount, Wad))
@@ -380,7 +380,7 @@ class EtherDelta(Contract):
             amount: Amount of token `token` to be withdrawn from EtherDelta.
 
         Returns:
-            A `Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(token, Address))
         assert(isinstance(amount, Wad))
@@ -471,7 +471,7 @@ class EtherDelta(Contract):
             expires: The block number after which the order will expire.
 
         Returns:
-            A `Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
         nonce = self.random_nonce()
         result = Transact(self, self.web3, self.abi, self.address, self._contract, 'order',
@@ -630,7 +630,7 @@ class EtherDelta(Contract):
                 in order to buy a corresponding amount of `token_have` tokens.
 
         Returns:
-            A `Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(order, Order))
         assert(isinstance(amount, Wad))
@@ -686,7 +686,7 @@ class EtherDelta(Contract):
             order: The order you want to cancel. Can be either an `OnChainOrder` or an `OffChainOrder`.
 
         Returns:
-            A `Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(order, Order))
 

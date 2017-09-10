@@ -108,7 +108,7 @@ class DSValue(Contract):
             new_value: A 32-byte array with the new value to be set.
 
         Returns:
-            A `Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(new_value, bytes))
         assert(len(new_value) == 32)
@@ -126,7 +126,7 @@ class DSValue(Contract):
             new_value: A non-negative integer with the new value to be set.
 
         Returns:
-            A `Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(new_value, int))
         assert(new_value >= 0)
@@ -136,7 +136,7 @@ class DSValue(Contract):
         """Removes the current value from this instance.
 
         Returns:
-            A `Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'void', [])
 

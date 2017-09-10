@@ -74,7 +74,7 @@ class TxManager(Contract):
             invocations: A list of invocations (smart contract methods) to be executed.
 
         Returns:
-            A `Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
         def token_addresses() -> list:
             return list(map(lambda address: address.address, tokens))
