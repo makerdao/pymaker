@@ -36,9 +36,9 @@ class GeneralMarketTest:
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.token1 = DSToken.deploy(self.web3, 'AAA')
-        self.token1.mint(Wad.from_number(100)).transact()
+        self.token1.mint(Wad.from_number(10000)).transact()
         self.token2 = DSToken.deploy(self.web3, 'BBB')
-        self.token2.mint(Wad.from_number(100)).transact()
+        self.token2.mint(Wad.from_number(10000)).transact()
         self.otc = None
 
     def test_approve_and_make_and_getters(self):
@@ -285,6 +285,24 @@ class TestMatchingMarket(GeneralMarketTest):
         GeneralMarketTest.setup_method(self)
         self.otc = MatchingMarket.deploy(self.web3, 2500000000)
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
+
+    def test_simple_matching(self):
+        # given
+        self.otc.approve([self.token1, self.token2], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # when
+        self.otc.make(have_token=self.token2.address, have_amount=Wad.from_number(2.5),
+                      want_token=self.token1.address, want_amount=Wad.from_number(1)).transact()
+
+
+        # then
+        assert self.otc.get_offer(1) is None
+        assert self.otc.get_offer(2) is None
+
+        # and
+        assert self.otc.get_last_offer_id() == 1
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"MatchingMarket('{self.otc.address}')"
