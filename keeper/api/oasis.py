@@ -383,5 +383,24 @@ class MatchingMarket(ExpiringMarket):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'addTokenPairWhitelist', [base_token.address, quote_token.address])
 
+    def make(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> Transact:
+        """Create a new offer.
+
+        The `have_amount` of `have_token` token will be taken from you on offer creation and deposited
+        in the market contract. Allowance needs to be set first. Refer to the `approve()` method
+        in the `ERC20Token` class.
+
+        Args:
+            have_token: Address of the ERC20 token you want to put on sale.
+            have_amount: Amount of the `have_token` token you want to put on sale.
+            want_token: Address of the ERC20 token you want to be paid with.
+            want_amount: Amount of the `want_token` you want to receive.
+
+        Returns:
+            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+        """
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'offer', [have_amount.value, have_token.address, want_amount.value, want_token.address, 0])
+
     def __repr__(self):
         return f"MatchingMarket('{self.address}')"

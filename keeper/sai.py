@@ -15,12 +15,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from keeper.api import Address
-from keeper.api.oasis import SimpleMarket
-from keeper.api.token import ERC20Token, DSEthToken
-
 from keeper import Keeper
+from keeper.api import Address
+from keeper.api.oasis import MatchingMarket
 from keeper.api.sai import Tub, Top, Tap
+from keeper.api.token import ERC20Token, DSEthToken
 
 
 class SaiKeeper(Keeper):
@@ -33,7 +32,7 @@ class SaiKeeper(Keeper):
         self.top_address = Address(self.config.get_contract_address("saiTop"))
         self.top = Top(web3=self.web3, address=self.top_address)
         self.otc_address = Address(self.config.get_contract_address("otc"))
-        self.otc = SimpleMarket(web3=self.web3, address=self.otc_address)
+        self.otc = MatchingMarket(web3=self.web3, address=self.otc_address)
 
         self.skr = ERC20Token(web3=self.web3, address=self.tub.skr())
         self.sai = ERC20Token(web3=self.web3, address=self.tub.sai())
