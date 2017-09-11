@@ -296,13 +296,49 @@ class TestMatchingMarket(GeneralMarketTest):
         self.otc.make(have_token=self.token2.address, have_amount=Wad.from_number(2.5),
                       want_token=self.token1.address, want_amount=Wad.from_number(1)).transact()
 
-
         # then
         assert self.otc.get_offer(1) is None
         assert self.otc.get_offer(2) is None
 
         # and
         assert self.otc.get_last_offer_id() == 1
+
+    def test_advanced_matching(self):
+        # given
+        self.otc.approve([self.token1, self.token2], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2.2)).transact()
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(1.8)).transact()
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2.1)).transact()
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(1.9)).transact()
+
+        # when
+        self.otc.make(have_token=self.token2.address, have_amount=Wad.from_number(20.1),
+                      want_token=self.token1.address, want_amount=Wad.from_number(10)).transact({'gas': 4000000})
+
+        # then
+        assert self.otc.get_offer(1) is None
+        assert self.otc.get_offer(2) is not None
+        assert self.otc.get_offer(3) is None
+        assert self.otc.get_offer(4) is not None
+        assert self.otc.get_offer(5) is None
+
+        # and
+        assert self.otc.get_last_offer_id() == 6
+
+        # and
+        assert self.otc.get_offer(6).offer_id == 6
+        assert self.otc.get_offer(6).sell_which_token == self.token2.address
+        assert self.otc.get_offer(6).sell_how_much == Wad.from_number(14.07)
+        assert self.otc.get_offer(6).buy_which_token == self.token1.address
+        assert self.otc.get_offer(6).buy_how_much == Wad.from_number(7)
+        assert self.otc.get_offer(6).owner == self.our_address
+        assert self.otc.get_offer(6).timestamp != 0
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"MatchingMarket('{self.otc.address}')"
