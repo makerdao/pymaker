@@ -25,14 +25,10 @@ from keeper.api.token import ERC20Token, DSEthToken
 class SaiKeeper(Keeper):
     def __init__(self):
         super().__init__()
-        self.tub_address = Address(self.config.get_contract_address("saiTub"))
-        self.tub = Tub(web3=self.web3, address=self.tub_address)
-        self.tap_address = Address(self.config.get_contract_address("saiTap"))
-        self.tap = Tap(web3=self.web3, address=self.tap_address)
-        self.top_address = Address(self.config.get_contract_address("saiTop"))
-        self.top = Top(web3=self.web3, address=self.top_address)
-        self.otc_address = Address(self.config.get_contract_address("otc"))
-        self.otc = MatchingMarket(web3=self.web3, address=self.otc_address)
+        self.tub = Tub(web3=self.web3, address=Address(self.config.get_contract_address("saiTub")))
+        self.tap = Tap(web3=self.web3, address=Address(self.config.get_contract_address("saiTap")))
+        self.top = Top(web3=self.web3, address=Address(self.config.get_contract_address("saiTop")))
+        self.otc = MatchingMarket(web3=self.web3, address=Address(self.config.get_contract_address("otc")))
 
         self.skr = ERC20Token(web3=self.web3, address=self.tub.skr())
         self.sai = ERC20Token(web3=self.web3, address=self.tub.sai())
