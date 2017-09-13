@@ -202,10 +202,12 @@ class Receipt:
             of this Ethereum transaction. Each transfer is an instance of the
             `Transfer` class.
     """
-    def __init__(self, transaction_hash: str, transfers: list):
+    def __init__(self, transaction_hash: str, gas_used: int, transfers: list):
         assert(isinstance(transaction_hash, str))
+        assert(isinstance(gas_used, int))
         assert(isinstance(transfers, list))
         self.transaction_hash = transaction_hash
+        self.gas_used = gas_used
         self.transfers = transfers
 
 
@@ -260,7 +262,7 @@ class Transact:
                                               from_address=Address(event_data['args']['from']),
                                               to_address=Address(event_data['args']['to']),
                                               value=Wad(event_data['args']['value'])))
-            return Receipt(transaction_hash=transaction_hash, transfers=transfers)
+            return Receipt(transaction_hash=transaction_hash, gas_used=receipt['gasUsed'], transfers=transfers)
         else:
             return None
 
