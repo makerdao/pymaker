@@ -383,7 +383,7 @@ class MatchingMarket(ExpiringMarket):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'addTokenPairWhitelist', [base_token.address, quote_token.address])
 
-    def make(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> Transact:
+    def make(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad, pos: int = None) -> Transact:
         """Create a new offer.
 
         The `have_amount` of `have_token` token will be taken from you on offer creation and deposited
@@ -395,12 +395,28 @@ class MatchingMarket(ExpiringMarket):
             have_amount: Amount of the `have_token` token you want to put on sale.
             want_token: Address of the ERC20 token you want to be paid with.
             want_amount: Amount of the `want_token` you want to receive.
+            pos: The position to insert the order at in the sorted list.
+                If `None`, the optimal position will automatically get calculated.
 
         Returns:
             A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
+        if pos is None:
+            pos = self.position(have_token=have_token,
+                                have_amount=have_amount,
+                                want_token=want_token,
+                                want_amount=want_amount)
+
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'offer', [have_amount.value, have_token.address, want_amount.value, want_token.address, 0])
+                        'offer', [have_amount.value, have_token.address, want_amount.value, want_token.address, pos])
+
+    def position(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> int:
+        """Calculate the positon (`pos`) new order should be inserted at to minimize gas costs."""
+        offers = self.active_offers()
+        offers = filter(lambda o: o.sell_which_token == have_token and o.buy_which_token == want_token, offers)
+        offers = filter(lambda o: o.sell_how_much / o.buy_how_much >= have_amount / want_amount, offers)
+        offers = sorted(offers, key=lambda o: o.sell_how_much / o.buy_how_much)
+        return offers[0].offer_id if len(offers) > 0 else 0
 
     def __repr__(self):
         return f"MatchingMarket('{self.address}')"

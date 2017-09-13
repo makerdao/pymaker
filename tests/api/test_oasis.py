@@ -342,3 +342,67 @@ class TestMatchingMarket(GeneralMarketTest):
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"MatchingMarket('{self.otc.address}')"
+
+
+class TestMatchingMarketPosition:
+    def setup_method(self):
+        self.web3 = Web3(EthereumTesterProvider())
+        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
+        self.our_address = Address(self.web3.eth.defaultAccount)
+        self.token1 = DSToken.deploy(self.web3, 'AAA')
+        self.token1.mint(Wad.from_number(10000)).transact()
+        self.token2 = DSToken.deploy(self.web3, 'BBB')
+        self.token2.mint(Wad.from_number(10000)).transact()
+        self.otc = MatchingMarket.deploy(self.web3, 2500000000)
+        self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
+        self.otc.approve([self.token1, self.token2], directly())
+        for amount in [11,55,44,34,36,21,45,51,15]:
+            self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                          want_token=self.token2.address, want_amount=Wad.from_number(amount)).transact()
+
+    def test_should_calculate_correct_order_position(self):
+        # expect
+        assert self.otc.position(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                                 want_token=self.token2.address, want_amount=Wad.from_number(35)) == 4
+
+    def test_should_use_correct_order_position_by_default(self):
+        # when
+        explicit_position = self.otc.position(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                                              want_token=self.token2.address, want_amount=Wad.from_number(35))
+        explicit_receipt = self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                                         want_token=self.token2.address, want_amount=Wad.from_number(35),
+                                         pos=explicit_position).transact()
+        explicit_gas_used = explicit_receipt.gas_used
+
+        # and
+        self.setup_method()
+        implicit_receipt = self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                                         want_token=self.token2.address, want_amount=Wad.from_number(35)).transact()
+        implicit_gas_used = implicit_receipt.gas_used
+
+        # then
+        assert explicit_gas_used == implicit_gas_used
+
+    def test_calculated_order_position_should_bring_gas_savings(self):
+        # when
+        position = self.otc.position(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                                     want_token=self.token2.address, want_amount=Wad.from_number(35))
+        gas_used_optimal = self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                                         want_token=self.token2.address, want_amount=Wad.from_number(35),
+                                         pos=position).transact().gas_used
+
+        # and
+        self.setup_method()
+        gas_used_minus_1 = self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                                         want_token=self.token2.address, want_amount=Wad.from_number(35),
+                                         pos=position-1).transact().gas_used
+
+        # and
+        self.setup_method()
+        gas_used_plus_1 = self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                                        want_token=self.token2.address, want_amount=Wad.from_number(35),
+                                        pos=position+1).transact().gas_used
+
+        # then
+        assert gas_used_optimal < gas_used_minus_1
+        assert gas_used_optimal < gas_used_plus_1
