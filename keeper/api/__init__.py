@@ -351,7 +351,7 @@ class Transfer:
     """Represents an ERC20 token transfer.
 
     Designed to enable monitoring transfers resulting from contract method execution.
-    A list of transfers can be found in the `Receipt` class.
+    A list of transfers can be found in the :py:class:`keeper.api.Receipt` class.
 
     Attributes:
         token_address: Address of the ERC20 token that has been transferred.
