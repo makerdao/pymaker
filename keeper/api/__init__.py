@@ -285,6 +285,11 @@ class Transact:
             __getattr__(self.function)(*self.parameters)
 
     def name(self) -> str:
+        """Returns the nicely formatted name (description) of this pending Ethereum transaction.
+
+        Returns:
+            Nicely formatted name (description) of this pending Ethereum transaction.
+        """
         name = f"{repr(self.origin)}.{self.function}({self.parameters})"
         return name if self.extra is None else name + f" with {self.extra}"
 
@@ -328,6 +333,16 @@ class Transact:
         return await self._async_transact(self.web3, self.name(), self._func(options))
 
     def invocation(self) -> Invocation:
+        """Returns the `Invocation` object for this pending Ethereum transaction.
+
+        The :py:class:`keeper.api.Invocation` object may be used with :py:class:`keeper.api.transact.TxManager`
+        to invoke multiple contract calls in one Ethereum transaction.
+
+        Please see :py:class:`keeper.api.transact.TxManager` documentation for more details.
+
+        Returns:
+            :py:class:`keeper.api.Invocation` object for this pending Ethereum transaction.
+        """
         return Invocation(self.address,
                           Calldata(self.web3.eth.contract(abi=self.abi).encodeABI(self.function, self.parameters)))
 
