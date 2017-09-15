@@ -458,11 +458,12 @@ class MatchingMarket(ExpiringMarket):
         assert(isinstance(want_token, Address))
         assert(isinstance(want_amount, Wad))
 
-        offers = self.active_offers()
-        offers = filter(lambda o: o.sell_which_token == have_token and o.buy_which_token == want_token, offers)
-        offers = filter(lambda o: o.sell_how_much / o.buy_how_much >= have_amount / want_amount, offers)
-        offers = sorted(offers, key=lambda o: o.sell_how_much / o.buy_how_much)
-        return offers[0].offer_id if len(offers) > 0 else 0
+        offers = filter(lambda o: o.sell_which_token == have_token and
+                                  o.buy_which_token == want_token and
+                                  o.sell_how_much / o.buy_how_much >= have_amount / want_amount, self.active_offers())
+
+        sorted_offers = sorted(offers, key=lambda o: o.sell_how_much / o.buy_how_much)
+        return sorted_offers[0].offer_id if len(sorted_offers) > 0 else 0
 
     def __repr__(self):
         return f"MatchingMarket('{self.address}')"
