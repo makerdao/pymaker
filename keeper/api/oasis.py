@@ -390,6 +390,15 @@ class MatchingMarket(ExpiringMarket):
         in the market contract. Allowance needs to be set first. Refer to the `approve()` method
         in the `ERC20Token` class.
 
+        The `MatchingMarket` contract maintains an internal ordered linked list of offers, which allows the contract
+        to do automated matching. Client placing a new offer can either let the contract find the correct
+        position in the linked list (by passing `0` as the `pos` argument of `make`) or calculate the position
+        itself and just pass the right value to the contract (this will happen if you omit the `pos`
+        argument of `make`). The latter should always use less gas. If the client decides not to calculate the
+        position or it does get it wrong and the number of open orders is high at the same time, the new offer
+        may not even be placed at all as the attempt to calculate the position by the contract will likely fail
+        due to high gas usage.
+
         Args:
             have_token: Address of the ERC20 token you want to put on sale.
             have_amount: Amount of the `have_token` token you want to put on sale.
@@ -421,7 +430,29 @@ class MatchingMarket(ExpiringMarket):
                         'offer', [have_amount.value, have_token.address, want_amount.value, want_token.address, pos])
 
     def position(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> int:
-        """Calculate the positon (`pos`) new order should be inserted at to minimize gas costs."""
+        """Calculate the position (`pos`) new offer should be inserted at to minimize gas costs.
+
+        The `MatchingMarket` contract maintains an internal ordered linked list of offers, which allows the contract
+        to do automated matching. Client placing a new offer can either let the contract find the correct
+        position in the linked list (by passing `0` as the `pos` argument of `make`) or calculate the position
+        itself and just pass the right value to the contract (this will happen if you omit the `pos`
+        argument of `make`). The latter should always use less gas. If the client decides not to calculate the
+        position or it does get it wrong and the number of open orders is high at the same time, the new offer
+        may not even be placed at all as the attempt to calculate the position by the contract will likely fail
+        due to high gas usage.
+
+        This method is responsible for calculating the correct insertion position. It is used internally
+        by `make` when `pos` argument is omitted (or is `None`).
+
+        Args:
+            have_token: Address of the ERC20 token you want to put on sale.
+            have_amount: Amount of the `have_token` token you want to put on sale.
+            want_token: Address of the ERC20 token you want to be paid with.
+            want_amount: Amount of the `want_token` you want to receive.
+
+        Returns:
+            The position (`pos`) new offer should be inserted at.
+        """
         assert(isinstance(have_token, Address))
         assert(isinstance(have_amount, Wad))
         assert(isinstance(want_token, Address))
