@@ -291,9 +291,9 @@ class Transact:
     def transact(self, options=None) -> Optional[Receipt]:
         """Executes the Ethereum transaction synchronously.
 
-        Executes the Ethereum transaction synchronously. The method will return when either
-        the transaction execution succeeded or failed. In case of the former, a `Receipt`
-        object will be returned.
+        Executes the Ethereum transaction synchronously. The method will block until the
+        transaction gets mined i.e. it will return when either the transaction execution
+        succeeded or failed. In case of the former, a `Receipt` object will be returned.
 
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
@@ -312,7 +312,7 @@ class Transact:
 
         Executes the Ethereum transaction asynchronously. The method will return immediately.
         Ultimately, its future value will become either a `Receipt` or `None`, depending on
-        wherher the transaction execution successfully or failed.
+        whether the transaction execution was successful or not.
 
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
