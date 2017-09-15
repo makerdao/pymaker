@@ -36,9 +36,11 @@ class TestEtherDelta:
                                             fee_make=Wad.from_number(0.01),
                                             fee_take=Wad.from_number(0.02),
                                             fee_rebate=Wad.from_number(0.03),
-                                            api_server='http://none.invalid')
+                                            api_server=None)
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1.mint(Wad.from_number(100)).transact()
+        self.token2 = DSToken.deploy(self.web3, 'BBB')
+        self.token2.mint(Wad.from_number(100)).transact()
 
     def test_addresses(self):
         # expect
@@ -80,6 +82,59 @@ class TestEtherDelta:
 
         # then
         assert self.etherdelta.balance_of_token(self.token1.address, self.our_address) == Wad.from_number(1.3)
+
+    def test_onchain_order_happy_path(self):
+        # given
+        self.etherdelta.approve([self.token1, self.token2], directly())
+        self.etherdelta.deposit_token(self.token1.address, Wad.from_number(10)).transact()
+        self.etherdelta.deposit_token(self.token2.address, Wad.from_number(10)).transact()
+
+        # when
+        self.etherdelta.place_order_onchain(token_get=self.token2.address, amount_get=Wad.from_number(4),
+                                            token_give=self.token1.address, amount_give=Wad.from_number(2),
+                                            expires=100000000).transact()
+
+        # then
+        assert len(self.etherdelta.active_onchain_orders()) == 1
+
+        # and
+        order = self.etherdelta.active_onchain_orders()[0]
+        assert order.token_get == self.token2.address
+        assert order.amount_get == Wad.from_number(4)
+        assert order.token_give == self.token1.address
+        assert order.amount_give == Wad.from_number(2)
+        assert order.expires == 100000000
+        assert order.user == self.our_address
+
+        # and
+        assert self.etherdelta.amount_available(order) == Wad.from_number(4)
+        assert self.etherdelta.amount_filled(order) == Wad.from_number(0)
+
+        # and
+        assert self.etherdelta.can_trade(order, Wad.from_number(1.5))
+        assert not self.etherdelta.can_trade(order, Wad.from_number(5.5))
+
+        # TODO apparently taking onchain orders does not work in this unit test for some reason
+        # # when
+        # self.etherdelta.trade(order, Wad.from_number(1.5)).transact()
+        #
+        # # then
+        # assert self.etherdelta.amount_available(order) == Wad.from_number(2.5)
+        # assert self.etherdelta.amount_filled(order) == Wad.from_number(1.5)
+        #
+        # # when
+        # self.etherdelta.withdraw_token(self.token2.address, Wad.from_number(9.25)).transact()
+        #
+        # # then
+        # assert self.etherdelta.amount_available(order) == Wad.from_number(0.75)
+        # assert self.etherdelta.amount_filled(order) == Wad.from_number(1.5)
+        #
+        # # when
+        # self.etherdelta.cancel_order(order).transact()
+        #
+        # # then
+        # assert self.etherdelta.amount_available(order) == Wad.from_number(0)
+        # assert self.etherdelta.amount_filled(order) == Wad.from_number(4)
 
     def test_should_have_printable_representation(self):
         assert repr(self.etherdelta) == f"EtherDelta('{self.etherdelta.address}')"
