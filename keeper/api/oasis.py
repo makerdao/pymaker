@@ -401,6 +401,12 @@ class MatchingMarket(ExpiringMarket):
         Returns:
             A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
+        assert(isinstance(have_token, Address))
+        assert(isinstance(have_amount, Wad))
+        assert(isinstance(want_token, Address))
+        assert(isinstance(want_amount, Wad))
+        assert(isinstance(pos, int) or (pos is None))
+
         if pos is None:
             pos = self.position(have_token=have_token,
                                 have_amount=have_amount,
