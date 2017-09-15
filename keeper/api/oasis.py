@@ -298,6 +298,7 @@ class ExpiringMarket(SimpleMarket):
 
         Args:
             web3: An instance of `Web` from `web3.py`.
+            close_time: Unix timestamp of when the market will close.
 
         Returns:
             A `ExpiringMarket` class instance.
@@ -332,6 +333,7 @@ class MatchingMarket(ExpiringMarket):
 
         Args:
             web3: An instance of `Web` from `web3.py`.
+            close_time: Unix timestamp of when the market will close.
 
         Returns:
             A `MatchingMarket` class instance.
