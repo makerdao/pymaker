@@ -406,18 +406,27 @@ class MatchingMarket(ExpiringMarket):
         assert(isinstance(want_token, Address))
         assert(isinstance(want_amount, Wad))
         assert(isinstance(pos, int) or (pos is None))
+        assert(have_amount > Wad(0))
+        assert(want_amount > Wad(0))
 
         if pos is None:
             pos = self.position(have_token=have_token,
                                 have_amount=have_amount,
                                 want_token=want_token,
                                 want_amount=want_amount)
+        else:
+            assert(pos >= 0)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'offer', [have_amount.value, have_token.address, want_amount.value, want_token.address, pos])
 
     def position(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> int:
         """Calculate the positon (`pos`) new order should be inserted at to minimize gas costs."""
+        assert(isinstance(have_token, Address))
+        assert(isinstance(have_amount, Wad))
+        assert(isinstance(want_token, Address))
+        assert(isinstance(want_amount, Wad))
+
         offers = self.active_offers()
         offers = filter(lambda o: o.sell_which_token == have_token and o.buy_which_token == want_token, offers)
         offers = filter(lambda o: o.sell_how_much / o.buy_how_much >= have_amount / want_amount, offers)
