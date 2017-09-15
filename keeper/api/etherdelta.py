@@ -619,7 +619,7 @@ class EtherDelta(Contract):
         """Takes (buys) an order.
 
         `amount` is in `token_get` terms, it is the amount you want to buy with. It can not be higher
-        than `available_volume(order)`.
+        than `amount_available(order)`.
 
         The 'amount' of `token_get` tokens will get deducted from your EtherDelta balance if the trade was
         successful. The corresponding amount of `token_have` tokens will be added to your EtherDelta balance.
