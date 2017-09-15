@@ -119,9 +119,6 @@ class SimpleMarket(Contract):
     `SimpleMarket` is a simple on-chain OTC market for ERC20-compatible tokens.
     It powers the `OasisDEX` decentralized exchange.
 
-    You can also interact with `ExpiringMarket` and `MatchingMarket` contracts,
-    as their APIs are compatible.
-
     You can find the source code of the `OasisDEX` contracts here:
     <https://github.com/makerdao/maker-otc>.
 
@@ -278,9 +275,6 @@ class SimpleMarket(Contract):
 class ExpiringMarket(SimpleMarket):
     """A client for a `ExpiringMarket` contract.
 
-    You can also interact with `SimpleMarket` and `MatchingMarket` contracts,
-    as their APIs are compatible.
-
     You can find the source code of the `OasisDEX` contracts here:
     <https://github.com/makerdao/maker-otc>.
 
@@ -312,9 +306,6 @@ class ExpiringMarket(SimpleMarket):
 
 class MatchingMarket(ExpiringMarket):
     """A client for a `MatchingMarket` contract.
-
-    You can also interact with `SimpleMarket` and `ExpiringMarket` contracts,
-    as their APIs are compatible.
 
     You can find the source code of the `OasisDEX` contracts here:
     <https://github.com/makerdao/maker-otc>.
