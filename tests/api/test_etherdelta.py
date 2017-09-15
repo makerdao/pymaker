@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import pytest
 
 from keeper.api import Address, Wad
 from keeper.api.approval import directly
@@ -135,6 +136,56 @@ class TestEtherDelta:
         # # then
         # assert self.etherdelta.amount_available(order) == Wad.from_number(0)
         # assert self.etherdelta.amount_filled(order) == Wad.from_number(4)
+
+    @pytest.mark.skip(reason='eth_sign is not implemented yet in eth-testrpc')
+    # see
+    def test_offchain_order_happy_path(self):
+        # given
+        self.etherdelta.approve([self.token1, self.token2], directly())
+        self.etherdelta.deposit_token(self.token1.address, Wad.from_number(10)).transact()
+        self.etherdelta.deposit_token(self.token2.address, Wad.from_number(10)).transact()
+
+        # when
+        order = self.etherdelta.place_order_offchain(token_get=self.token2.address, amount_get=Wad.from_number(4),
+                                                     token_give=self.token1.address, amount_give=Wad.from_number(2),
+                                                     expires=100000000)
+
+        # then
+        assert order.token_get == self.token2.address
+        assert order.amount_get == Wad.from_number(4)
+        assert order.token_give == self.token1.address
+        assert order.amount_give == Wad.from_number(2)
+        assert order.expires == 100000000
+        assert order.user == self.our_address
+
+        # and
+        assert self.etherdelta.amount_available(order) == Wad.from_number(4)
+        assert self.etherdelta.amount_filled(order) == Wad.from_number(0)
+
+        # and
+        assert self.etherdelta.can_trade(order, Wad.from_number(1.5))
+        assert not self.etherdelta.can_trade(order, Wad.from_number(5.5))
+
+        # when
+        self.etherdelta.trade(order, Wad.from_number(1.5)).transact()
+
+        # then
+        assert self.etherdelta.amount_available(order) == Wad.from_number(2.5)
+        assert self.etherdelta.amount_filled(order) == Wad.from_number(1.5)
+
+        # when
+        self.etherdelta.withdraw_token(self.token2.address, Wad.from_number(9.25)).transact()
+
+        # then
+        assert self.etherdelta.amount_available(order) == Wad.from_number(0.75)
+        assert self.etherdelta.amount_filled(order) == Wad.from_number(1.5)
+
+        # when
+        self.etherdelta.cancel_order(order).transact()
+
+        # then
+        assert self.etherdelta.amount_available(order) == Wad.from_number(0)
+        assert self.etherdelta.amount_filled(order) == Wad.from_number(4)
 
     def test_should_have_printable_representation(self):
         assert repr(self.etherdelta) == f"EtherDelta('{self.etherdelta.address}')"
