@@ -18,7 +18,7 @@
 from keeper.api import Address
 from keeper.api.feed import DSValue
 from keeper.api.numeric import Wad, Ray
-from tests.api.conftest import SaiDeployment
+from tests.conftest import SaiDeployment
 
 
 class TestTub:
