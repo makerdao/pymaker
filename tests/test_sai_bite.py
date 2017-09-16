@@ -26,7 +26,8 @@ from tests.conftest import SaiDeployment
 
 
 class TestSaiBite:
-    def test_should_bite_unsafe_cups_only(self, sai: SaiDeployment):
+    @staticmethod
+    def setup_keeper(sai: SaiDeployment):
         # for Keeper
         keeper = SaiBite.__new__(SaiBite)
         keeper.web3 = Web3(EthereumTesterProvider())
@@ -44,17 +45,19 @@ class TestSaiBite:
         keeper.tap = sai.tap
         keeper.top = sai.top
         keeper.otc = SimpleMarket.deploy(keeper.web3)
-
         keeper.skr = ERC20Token(web3=keeper.web3, address=keeper.tub.skr())
         keeper.sai = ERC20Token(web3=keeper.web3, address=keeper.tub.sai())
         keeper.gem = DSEthToken(web3=keeper.web3, address=keeper.tub.gem())
         ERC20Token.register_token(keeper.tub.skr(), 'SKR')
         ERC20Token.register_token(keeper.tub.sai(), 'SAI')
         ERC20Token.register_token(keeper.tub.gem(), 'WETH')
+        return keeper
 
-
-
+    def test_should_bite_unsafe_cups_only(self, sai: SaiDeployment):
         # given
+        keeper = self.setup_keeper(sai)
+
+        # and
         sai.tub.join(Wad.from_number(10)).transact()
         sai.tub.cork(Wad.from_number(100000)).transact()
         DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
@@ -86,3 +89,5 @@ class TestSaiBite:
         # then
         assert sai.tub.safe(1)
         assert sai.tub.tab(1) == Wad.from_number(0)
+
+
