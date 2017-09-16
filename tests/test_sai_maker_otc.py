@@ -20,16 +20,17 @@ from web3 import Web3, EthereumTesterProvider
 from keeper import Address, ERC20Token, Wad
 from keeper.api.feed import DSValue
 from keeper.api.oasis import SimpleMarket
-from keeper.api.token import DSEthToken
+from keeper.api.token import DSEthToken, DSToken
 from keeper.sai_bite import SaiBite
+from keeper.sai_maker_otc import SaiMakerOtc
 from tests.conftest import SaiDeployment
 
 
-class TestSaiBite:
+class TestSaiMakerOtc:
     @staticmethod
     def setup_keeper(sai: SaiDeployment):
         # for Keeper
-        keeper = SaiBite.__new__(SaiBite)
+        keeper = SaiMakerOtc.__new__(SaiMakerOtc)
         keeper.web3 = sai.web3
         keeper.web3.eth.defaultAccount = keeper.web3.eth.accounts[0]
         keeper.our_address = Address(keeper.web3.eth.defaultAccount)
@@ -53,41 +54,36 @@ class TestSaiBite:
         ERC20Token.register_token(keeper.tub.gem(), 'WETH')
         return keeper
 
-    def test_should_bite_unsafe_cups_only(self, sai: SaiDeployment):
+    def test_should_create_offers_on_startup(self, sai: SaiDeployment):
         # given
         keeper = self.setup_keeper(sai)
+        keeper.max_weth_amount = Wad.from_number(10)
+        keeper.min_weth_amount = Wad.from_number(5)
+        keeper.max_sai_amount = Wad.from_number(100)
+        keeper.min_sai_amount = Wad.from_number(50)
+        keeper.sai_dust_cutoff = Wad.from_number(0)
+        keeper.weth_dust_cutoff = Wad.from_number(0)
+        keeper.min_margin_buy = 0.01
+        keeper.avg_margin_buy = 0.02
+        keeper.max_margin_buy = 0.03
+        keeper.min_margin_sell = 0.02
+        keeper.avg_margin_sell = 0.03
+        keeper.max_margin_sell = 0.04
+        keeper.round_places = 2
+        keeper.arguments = lambda: None
+        keeper.arguments.gas_price = 0
 
         # and
-        sai.tub.join(Wad.from_number(10)).transact()
-        sai.tub.cork(Wad.from_number(100000)).transact()
+        DSToken(web3=sai.web3, address=sai.tub.gem()).mint(Wad.from_number(1000)).transact()
+        DSToken(web3=sai.web3, address=sai.tub.sai()).mint(Wad.from_number(1000)).transact()
+
+        # and
+        print(sai.tub.pip())
         DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
 
-        # and
-        sai.tub.open().transact()
-        sai.tub.lock(1, Wad.from_number(4)).transact()
-        sai.tub.draw(1, Wad.from_number(1000)).transact()
-
-        # and
-        assert sai.tub.safe(1)
-
         # when
-        keeper.check_all_cups()
+        keeper.approve()
+        keeper.synchronize_offers()
 
         # then
-        assert sai.tub.safe(1)
-        assert sai.tub.tab(1) == Wad.from_number(1000)
-
-        # when
-        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(150).value).transact()
-
-        # and
-        assert not sai.tub.safe(1)
-
-        # and
-        keeper.check_all_cups()
-
-        # then
-        assert sai.tub.safe(1)
-        assert sai.tub.tab(1) == Wad.from_number(0)
-
-
+        assert len(keeper.otc.active_offers()) == 2
