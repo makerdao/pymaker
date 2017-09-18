@@ -25,8 +25,8 @@ from typing import Optional
 import eth_utils
 import pkg_resources
 from keeper.api.numeric import Wad
-from keeper.api.util import synchronize
-from web3 import Web3
+from keeper.api.util import synchronize, next_nonce
+from web3 import Web3, EthereumTesterProvider
 from web3.utils.events import get_event_data
 
 filter_threads = []
@@ -234,18 +234,41 @@ class Transact:
         self.parameters = parameters
         self.extra = extra
 
-    async def _async_transact(self, web3, log_message, func):
+    async def _async_transact(self, web3, options):
         try:
-            self.logger.info(f"Transaction {log_message} in progress...")
-            tx_hash = func()
+            # First we try to estimate the gas usage of the transaction. If gas estimation fails
+            # it means there is no point in sending the transaction, thus we fail instantly and
+            # do not increment the nonce. If the estimation is successful, we pass the calculated
+            # gas value (plus some `gas_buffer`) to the subsequent `transact` calls so it does not
+            # try to estimate it again. If it would try to estimate it again it could turn out
+            # this transaction will fail (another block might have been mined in the meantime for
+            # example), which would mean we incremented the nonce but never used it.
+            #
+            # This is why gas estimation has to happen first and before the nonce gets incremented.
+            gas_estimate = self.estimated_gas()
+            nonce = next_nonce(self.web3, Address(self.web3.eth.defaultAccount))
+
+            try:
+                gas = options['gas']
+            except:
+                gas = gas_estimate + 100000
+
+            try:
+                gas_price = options['gasPrice']
+            except:
+                gas_price = None
+
+            self.logger.info(f"Sending transaction {self.name()} with nonce={nonce}, gas={gas},"
+                             f" gas_price={gas_price if gas_price is not None else 'default'}")
+            tx_hash = self._func(nonce, gas, gas_price)
             receipt = await self._async_prepare_receipt(web3, tx_hash)
             if receipt:
-                self.logger.info(f"Transaction {log_message} was successful (tx_hash={receipt.transaction_hash})")
+                self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
             else:
-                self.logger.warning(f"Transaction {log_message} failed")
+                self.logger.warning(f"Transaction {self.name()} failed")
             return receipt
         except:
-            self.logger.warning(f"Transaction {log_message} failed ({sys.exc_info()[1]})")
+            self.logger.warning(f"Transaction {self.name()} failed ({sys.exc_info()[1]})")
             return None
 
     async def _async_prepare_receipt(self, web3, transaction_hash):
@@ -279,10 +302,27 @@ class Transact:
         else:
             return dict(**dict_or_none)
 
-    def _func(self, options):
-        return lambda: self.contract.\
-            transact({**self.as_dict(options), **self.as_dict(self.extra)}).\
+    def _func(self, nonce, gas, gas_price):
+        if gas_price is None:
+            gas_price_dict = {}
+        else:
+            gas_price_dict = {'gasPrice': gas_price}
+
+        # Until https://github.com/pipermerriam/eth-testrpc/issues/98 issue is not resolved,
+        # `eth-testrpc` does not handle the `nonce` parameter properly so we do have to
+        # ignore it otherwise unit-tests will not pass. Hopefully we will be able to get
+        # rid of it once the above issue is solved.
+        if isinstance(self.web3.currentProvider, EthereumTesterProvider):
+            nonce_dict = {}
+        else:
+            nonce_dict = {'nonce': nonce}
+
+        return self.contract.\
+            transact({**{'gas': gas}, **gas_price_dict, **nonce_dict, **self.as_dict(self.extra)}).\
             __getattr__(self.function)(*self.parameters)
+
+    def estimated_gas(self):
+        return self.contract.estimateGas(self.as_dict(self.extra)).__getattr__(self.function)(*self.parameters)
 
     def name(self) -> str:
         """Returns the nicely formatted name (description) of this pending Ethereum transaction.
@@ -330,7 +370,7 @@ class Transact:
             A future value of either a `Receipt` object if the transaction invocation
             was successful, or `None` if it failed.
         """
-        return await self._async_transact(self.web3, self.name(), self._func(options))
+        return await self._async_transact(self.web3, options)
 
     def invocation(self) -> Invocation:
         """Returns the `Invocation` object for this pending Ethereum transaction.

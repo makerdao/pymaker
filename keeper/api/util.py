@@ -18,7 +18,11 @@
 import asyncio
 import threading
 
-from web3 import Web3
+from typing import Optional
+from web3 import Web3, EthereumTesterProvider
+
+_next_nonce_lock = threading.Lock()
+_next_nonce_values = {}
 
 
 def chain(web3: Web3) -> str:
@@ -46,6 +50,22 @@ def are_any_transactions_pending(web3: Web3, address) -> bool:
     latest_transaction = web3.eth.getTransactionCount(address.address, 'latest')
     pending_transaction = web3.eth.getTransactionCount(address.address, 'pending')
     return pending_transaction > latest_transaction
+
+
+def next_nonce(web3: Web3, address) -> Optional[int]:
+    with _next_nonce_lock:
+        if isinstance(web3.currentProvider, EthereumTesterProvider):
+            provider_id = 'unittest'
+        else:
+            provider_id = web3.currentProvider.endpoint_uri
+
+        try:
+            next_value = _next_nonce_values[provider_id]+1
+        except:
+            next_value = web3.eth.getTransactionCount(address.address)
+
+        _next_nonce_values[provider_id] = next_value
+        return next_value
 
 
 def synchronize(futures) -> list:
