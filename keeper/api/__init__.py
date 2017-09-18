@@ -285,15 +285,20 @@ class Transact:
             __getattr__(self.function)(*self.parameters)
 
     def name(self) -> str:
+        """Returns the nicely formatted name (description) of this pending Ethereum transaction.
+
+        Returns:
+            Nicely formatted name (description) of this pending Ethereum transaction.
+        """
         name = f"{repr(self.origin)}.{self.function}({self.parameters})"
         return name if self.extra is None else name + f" with {self.extra}"
 
     def transact(self, options=None) -> Optional[Receipt]:
         """Executes the Ethereum transaction synchronously.
 
-        Executes the Ethereum transaction synchronously. The method will return when either
-        the transaction execution succeeded or failed. In case of the former, a `Receipt`
-        object will be returned.
+        Executes the Ethereum transaction synchronously. The method will block until the
+        transaction gets mined i.e. it will return when either the transaction execution
+        succeeded or failed. In case of the former, a `Receipt` object will be returned.
 
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
@@ -312,7 +317,7 @@ class Transact:
 
         Executes the Ethereum transaction asynchronously. The method will return immediately.
         Ultimately, its future value will become either a `Receipt` or `None`, depending on
-        wherher the transaction execution successfully or failed.
+        whether the transaction execution was successful or not.
 
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
@@ -328,6 +333,16 @@ class Transact:
         return await self._async_transact(self.web3, self.name(), self._func(options))
 
     def invocation(self) -> Invocation:
+        """Returns the `Invocation` object for this pending Ethereum transaction.
+
+        The :py:class:`keeper.api.Invocation` object may be used with :py:class:`keeper.api.transact.TxManager`
+        to invoke multiple contract calls in one Ethereum transaction.
+
+        Please see :py:class:`keeper.api.transact.TxManager` documentation for more details.
+
+        Returns:
+            :py:class:`keeper.api.Invocation` object for this pending Ethereum transaction.
+        """
         return Invocation(self.address,
                           Calldata(self.web3.eth.contract(abi=self.abi).encodeABI(self.function, self.parameters)))
 
@@ -336,7 +351,7 @@ class Transfer:
     """Represents an ERC20 token transfer.
 
     Designed to enable monitoring transfers resulting from contract method execution.
-    A list of transfers can be found in the `Receipt` class.
+    A list of transfers can be found in the :py:class:`keeper.api.Receipt` class.
 
     Attributes:
         token_address: Address of the ERC20 token that has been transferred.

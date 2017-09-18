@@ -524,9 +524,6 @@ class EtherDelta(Contract):
         def encode_uint256(value: int) -> bytes:
             return get_single_encoder("uint", 256, None)(value)
 
-        if not self.supports_offchain_orders():
-            raise Exception("Off-chain orders not supported for this EtherDelta instance")
-
         nonce = self.random_nonce()
         order_hash = hashlib.sha256(encode_address(self.address) +
                                     encode_address(token_get) +
@@ -543,26 +540,29 @@ class EtherDelta(Contract):
         off_chain_order = OffChainOrder(token_get, amount_get, token_give, amount_give, expires, nonce,
                                         Address(self.web3.eth.defaultAccount), v, r, s)
 
-        log_signature = f"('{token_get}', '{amount_get}', '{token_give}', '{amount_give}', '{expires}', '{nonce}')"
+        if self.supports_offchain_orders():
+            log_signature = f"('{token_get}', '{amount_get}', '{token_give}', '{amount_give}', '{expires}', '{nonce}')"
 
-        try:
-            self.logger.info(f"Creating off-chain EtherDelta order {log_signature} in progress...")
-            self.logger.debug(json.dumps(off_chain_order.to_json(self.address)))
-            res = requests.post(f"{self.api_server}/message",
-                                data={'message': json.dumps(off_chain_order.to_json(self.address))},
-                                timeout=30)
+            try:
+                self.logger.info(f"Creating off-chain EtherDelta order {log_signature} in progress...")
+                self.logger.debug(json.dumps(off_chain_order.to_json(self.address)))
+                res = requests.post(f"{self.api_server}/message",
+                                    data={'message': json.dumps(off_chain_order.to_json(self.address))},
+                                    timeout=30)
 
-            if '"success"' in res.text:
-                self.logger.info(f"Created off-chain EtherDelta order {log_signature} successfully")
-                self._offchain_orders.add(off_chain_order)
-                return off_chain_order
-            else:
-                self.logger.warning(f"Creating off-chain EtherDelta order {log_signature} failed ({res.text})")
+                if '"success"' in res.text:
+                    self.logger.info(f"Created off-chain EtherDelta order {log_signature} successfully")
+                    self._offchain_orders.add(off_chain_order)
+                    return off_chain_order
+                else:
+                    self.logger.warning(f"Creating off-chain EtherDelta order {log_signature} failed ({res.text})")
+                    return None
+            except:
+                self.logger.warning(f"Creating off-chain EtherDelta order {log_signature} failed ({sys.exc_info()[1]})")
                 return None
-        except:
-            self.logger.warning(f"Creating off-chain EtherDelta order {log_signature} failed ({sys.exc_info()[1]})")
-            return None
-
+        else:
+            self.logger.warning(f"No EtherDelta API server configured, off-chain order has not been published")
+            return off_chain_order
 
     def amount_available(self, order: Order) -> Wad:
         """Returns the amount that is still available (tradeable) for an order.
@@ -619,7 +619,7 @@ class EtherDelta(Contract):
         """Takes (buys) an order.
 
         `amount` is in `token_get` terms, it is the amount you want to buy with. It can not be higher
-        than `available_volume(order)`.
+        than `amount_available(order)`.
 
         The 'amount' of `token_get` tokens will get deducted from your EtherDelta balance if the trade was
         successful. The corresponding amount of `token_have` tokens will be added to your EtherDelta balance.

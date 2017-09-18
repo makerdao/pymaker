@@ -119,9 +119,6 @@ class SimpleMarket(Contract):
     `SimpleMarket` is a simple on-chain OTC market for ERC20-compatible tokens.
     It powers the `OasisDEX` decentralized exchange.
 
-    You can also interact with `ExpiringMarket` and `MatchingMarket` contracts,
-    as their APIs are compatible.
-
     You can find the source code of the `OasisDEX` contracts here:
     <https://github.com/makerdao/maker-otc>.
 
@@ -278,9 +275,6 @@ class SimpleMarket(Contract):
 class ExpiringMarket(SimpleMarket):
     """A client for a `ExpiringMarket` contract.
 
-    You can also interact with `SimpleMarket` and `MatchingMarket` contracts,
-    as their APIs are compatible.
-
     You can find the source code of the `OasisDEX` contracts here:
     <https://github.com/makerdao/maker-otc>.
 
@@ -298,6 +292,7 @@ class ExpiringMarket(SimpleMarket):
 
         Args:
             web3: An instance of `Web` from `web3.py`.
+            close_time: Unix timestamp of when the market will close.
 
         Returns:
             A `ExpiringMarket` class instance.
@@ -311,9 +306,6 @@ class ExpiringMarket(SimpleMarket):
 
 class MatchingMarket(ExpiringMarket):
     """A client for a `MatchingMarket` contract.
-
-    You can also interact with `SimpleMarket` and `ExpiringMarket` contracts,
-    as their APIs are compatible.
 
     You can find the source code of the `OasisDEX` contracts here:
     <https://github.com/makerdao/maker-otc>.
@@ -332,6 +324,7 @@ class MatchingMarket(ExpiringMarket):
 
         Args:
             web3: An instance of `Web` from `web3.py`.
+            close_time: Unix timestamp of when the market will close.
 
         Returns:
             A `MatchingMarket` class instance.
@@ -390,6 +383,15 @@ class MatchingMarket(ExpiringMarket):
         in the market contract. Allowance needs to be set first. Refer to the `approve()` method
         in the `ERC20Token` class.
 
+        The `MatchingMarket` contract maintains an internal ordered linked list of offers, which allows the contract
+        to do automated matching. Client placing a new offer can either let the contract find the correct
+        position in the linked list (by passing `0` as the `pos` argument of `make`) or calculate the position
+        itself and just pass the right value to the contract (this will happen if you omit the `pos`
+        argument of `make`). The latter should always use less gas. If the client decides not to calculate the
+        position or it does get it wrong and the number of open orders is high at the same time, the new offer
+        may not even be placed at all as the attempt to calculate the position by the contract will likely fail
+        due to high gas usage.
+
         Args:
             have_token: Address of the ERC20 token you want to put on sale.
             have_amount: Amount of the `have_token` token you want to put on sale.
@@ -401,22 +403,60 @@ class MatchingMarket(ExpiringMarket):
         Returns:
             A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
         """
+        assert(isinstance(have_token, Address))
+        assert(isinstance(have_amount, Wad))
+        assert(isinstance(want_token, Address))
+        assert(isinstance(want_amount, Wad))
+        assert(isinstance(pos, int) or (pos is None))
+        assert(have_amount > Wad(0))
+        assert(want_amount > Wad(0))
+
         if pos is None:
             pos = self.position(have_token=have_token,
                                 have_amount=have_amount,
                                 want_token=want_token,
                                 want_amount=want_amount)
+        else:
+            assert(pos >= 0)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'offer', [have_amount.value, have_token.address, want_amount.value, want_token.address, pos])
 
     def position(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> int:
-        """Calculate the positon (`pos`) new order should be inserted at to minimize gas costs."""
-        offers = self.active_offers()
-        offers = filter(lambda o: o.sell_which_token == have_token and o.buy_which_token == want_token, offers)
-        offers = filter(lambda o: o.sell_how_much / o.buy_how_much >= have_amount / want_amount, offers)
-        offers = sorted(offers, key=lambda o: o.sell_how_much / o.buy_how_much)
-        return offers[0].offer_id if len(offers) > 0 else 0
+        """Calculate the position (`pos`) new offer should be inserted at to minimize gas costs.
+
+        The `MatchingMarket` contract maintains an internal ordered linked list of offers, which allows the contract
+        to do automated matching. Client placing a new offer can either let the contract find the correct
+        position in the linked list (by passing `0` as the `pos` argument of `make`) or calculate the position
+        itself and just pass the right value to the contract (this will happen if you omit the `pos`
+        argument of `make`). The latter should always use less gas. If the client decides not to calculate the
+        position or it does get it wrong and the number of open orders is high at the same time, the new offer
+        may not even be placed at all as the attempt to calculate the position by the contract will likely fail
+        due to high gas usage.
+
+        This method is responsible for calculating the correct insertion position. It is used internally
+        by `make` when `pos` argument is omitted (or is `None`).
+
+        Args:
+            have_token: Address of the ERC20 token you want to put on sale.
+            have_amount: Amount of the `have_token` token you want to put on sale.
+            want_token: Address of the ERC20 token you want to be paid with.
+            want_amount: Amount of the `want_token` you want to receive.
+
+        Returns:
+            The position (`pos`) new offer should be inserted at.
+        """
+        assert(isinstance(have_token, Address))
+        assert(isinstance(have_amount, Wad))
+        assert(isinstance(want_token, Address))
+        assert(isinstance(want_amount, Wad))
+
+        offers = filter(lambda o: o.sell_which_token == have_token and
+                                  o.buy_which_token == want_token and
+                                  o.sell_how_much / o.buy_how_much >= have_amount / want_amount, self.active_offers())
+
+        sorted_offers = sorted(offers, key=lambda o: o.sell_how_much / o.buy_how_much)
+        return sorted_offers[0].offer_id if len(sorted_offers) > 0 else 0
 
     def __repr__(self):
         return f"MatchingMarket('{self.address}')"
