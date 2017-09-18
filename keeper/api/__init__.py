@@ -246,8 +246,12 @@ class Transact:
             #
             # This is why gas estimation has to happen first and before the nonce gets incremented.
             gas_estimate = self.estimated_gas()
-            gas = gas_estimate + 100000  # TODO use options here
             nonce = next_nonce(self.web3, Address(self.web3.eth.defaultAccount))
+
+            try:
+                gas = options['gas']
+            except:
+                gas = gas_estimate + 100000
 
             try:
                 gas_price = options['gasPrice']
