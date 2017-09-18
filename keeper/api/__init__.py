@@ -26,7 +26,7 @@ import eth_utils
 import pkg_resources
 from keeper.api.numeric import Wad
 from keeper.api.util import synchronize, next_nonce
-from web3 import Web3
+from web3 import Web3, EthereumTesterProvider
 from web3.utils.events import get_event_data
 
 filter_threads = []
@@ -308,8 +308,17 @@ class Transact:
         else:
             gas_price_dict = {'gasPrice': gas_price}
 
+        # Until https://github.com/pipermerriam/eth-testrpc/issues/98 issue is not resolved,
+        # `eth-testrpc` does not handle the `nonce` parameter properly so we do have to
+        # ignore it otherwise unit-tests will not pass. Hopefully we will be able to get
+        # rid of it once the above issue is solved.
+        if isinstance(self.web3.currentProvider, EthereumTesterProvider):
+            nonce_dict = {}
+        else:
+            nonce_dict = {'nonce': nonce}
+
         return self.contract.\
-            transact({**{'nonce': nonce, 'gas': gas}, **gas_price_dict, **self.as_dict(self.extra)}).\
+            transact({**{'gas': gas}, **gas_price_dict, **nonce_dict, **self.as_dict(self.extra)}).\
             __getattr__(self.function)(*self.parameters)
 
     def estimated_gas(self):
