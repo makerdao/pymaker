@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
+
 from keeper.api.gas import FixedGasPrice, IncreasingGasPrice
 
 
@@ -48,3 +50,17 @@ class TestIncreasingGasPrice:
         assert increasing_gas_price.get_gas_price(119) == 1100
         assert increasing_gas_price.get_gas_price(120) == 1200
         assert increasing_gas_price.get_gas_price(1200) == 3000
+
+    def test_should_require_positive_increase_by_value(self):
+        with pytest.raises(Exception):
+            IncreasingGasPrice(1000, 0, 60)
+
+        with pytest.raises(Exception):
+            IncreasingGasPrice(1000, -1, 60)
+
+    def test_should_require_positive_every_secs_value(self):
+        with pytest.raises(Exception):
+            IncreasingGasPrice(1000, 100, 0)
+
+        with pytest.raises(Exception):
+            IncreasingGasPrice(1000, 100, -1)
