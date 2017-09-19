@@ -246,13 +246,19 @@ class Transact:
             #
             # This is why gas estimation has to happen first and before the nonce gets incremented.
             gas_estimate = self.estimated_gas()
+
+            # Get the next available nonce. `next_nonce()` takes pending transactions into account.
             nonce = next_nonce(self.web3, Address(self.web3.eth.defaultAccount))
 
-            try:
+            # Determine `gas`
+            if 'gas' in kwargs:
                 gas = kwargs['gas']
-            except:
+            elif 'gas_buffer' in kwargs:
+                gas = gas_estimate + kwargs['gas_buffer']
+            else:
                 gas = gas_estimate + 100000
 
+            # Determine `gas_price`
             try:
                 gas_price = kwargs['gas_price']
             except:
