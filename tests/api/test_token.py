@@ -54,6 +54,10 @@ class TestERC20Token:
         with pytest.raises(Exception):
             ERC20Token.token_address_by_name('XXX')
 
+    def test_fail_when_no_token_with_that_address(self):
+        with pytest.raises(Exception):
+            ERC20Token(web3=self.web3, address=Address('0x0123456789012345678901234567890123456789'))
+
     def test_total_supply(self):
         assert self.token.total_supply() == Wad(1000000)
 
