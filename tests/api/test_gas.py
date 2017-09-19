@@ -17,7 +17,18 @@
 
 import pytest
 
-from keeper.api.gas import FixedGasPrice, IncreasingGasPrice
+from keeper.api.gas import DefaultGasPrice, FixedGasPrice, IncreasingGasPrice
+
+
+class TestDefaultGasPrice:
+    def test_should_always_be_default(self):
+        # given
+        default_gas_price = DefaultGasPrice()
+
+        # expect
+        assert default_gas_price.get_gas_price(0) is None
+        assert default_gas_price.get_gas_price(1) is None
+        assert default_gas_price.get_gas_price(1000000) is None
 
 
 class TestFixedGasPrice:

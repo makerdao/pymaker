@@ -15,10 +15,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
+
 
 class GasPrice(object):
-    def get_gas_price(self, time_elapsed: int) -> int:
+    def get_gas_price(self, time_elapsed: int) -> Optional[int]:
         raise NotImplementedError("Please implement this method")
+
+
+class DefaultGasPrice(GasPrice):
+    def get_gas_price(self, time_elapsed: int) -> Optional[int]:
+        return None
 
 
 class FixedGasPrice(GasPrice):
@@ -26,7 +33,7 @@ class FixedGasPrice(GasPrice):
         assert(isinstance(gas_price, int))
         self.gas_price = gas_price
 
-    def get_gas_price(self, time_elapsed: int) -> int:
+    def get_gas_price(self, time_elapsed: int) -> Optional[int]:
         assert(isinstance(time_elapsed, int))
         return self.gas_price
 
@@ -42,6 +49,6 @@ class IncreasingGasPrice(GasPrice):
         self.increase_by = increase_by
         self.every_secs = every_secs
 
-    def get_gas_price(self, time_elapsed: int) -> int:
+    def get_gas_price(self, time_elapsed: int) -> Optional[int]:
         assert(isinstance(time_elapsed, int))
         return self.initial_price + int(time_elapsed/self.every_secs)*self.increase_by
