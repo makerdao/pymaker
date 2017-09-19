@@ -211,3 +211,28 @@ class TestReceipt:
         # expect
         assert Receipt(receipt_success).successful is True
         assert Receipt(receipt_failed).successful is False
+
+
+class TestTransfer:
+    def test_equality(self):
+        # given
+        transfer1a = Transfer(token_address=Address('0x0000011111222223333344444555556666677777'),
+                              from_address=Address('0x0000000000111111111100000000001111111111'),
+                              to_address=Address('0x1111111111000000000011111111110000000000'),
+                              value=Wad.from_number(20))
+        transfer1b = Transfer(token_address=Address('0x0000011111222223333344444555556666677777'),
+                              from_address=Address('0x0000000000111111111100000000001111111111'),
+                              to_address=Address('0x1111111111000000000011111111110000000000'),
+                              value=Wad.from_number(20))
+        transfer2 = Transfer(token_address=Address('0x0000011111222223333344444555556666677777'),
+                             from_address=Address('0x0000000000111111111100000000001111111111'),
+                             to_address=Address('0x1111111111000000000011111111112222222222'),
+                             value=Wad.from_number(20))
+
+        # expect
+        assert transfer1a == transfer1b
+        assert transfer1b == transfer1a
+        assert transfer1a != transfer2
+        assert transfer1b != transfer2
+        assert transfer2 != transfer1a
+        assert transfer2 != transfer1b
