@@ -39,6 +39,8 @@ class TestSaiBite:
         keeper.fatal_termination = False
         keeper._last_block_time = None
         keeper._on_block_callback = None
+        keeper.arguments = lambda: None
+        keeper.arguments.gas_price = 0
 
         # for SaiKeeper
         keeper.tub = sai.tub

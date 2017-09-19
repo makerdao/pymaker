@@ -118,7 +118,7 @@ class GeneralMarketTest:
                       want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
 
         # when
-        self.otc.kill(1).transact({'gas': 4000000})
+        self.otc.kill(1).transact(gas=4000000)
 
         # then
         assert self.otc.get_offer(1) is None
@@ -319,7 +319,7 @@ class TestMatchingMarket(GeneralMarketTest):
 
         # when
         self.otc.make(have_token=self.token2.address, have_amount=Wad.from_number(20.1),
-                      want_token=self.token1.address, want_amount=Wad.from_number(10)).transact({'gas': 4000000})
+                      want_token=self.token1.address, want_amount=Wad.from_number(10)).transact(gas=4000000)
 
         # then
         assert self.otc.get_offer(1) is None

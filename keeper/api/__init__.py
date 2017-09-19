@@ -234,7 +234,7 @@ class Transact:
         self.parameters = parameters
         self.extra = extra
 
-    async def _async_transact(self, web3, options):
+    async def _async_transact(self, **kwargs):
         try:
             # First we try to estimate the gas usage of the transaction. If gas estimation fails
             # it means there is no point in sending the transaction, thus we fail instantly and
@@ -249,19 +249,19 @@ class Transact:
             nonce = next_nonce(self.web3, Address(self.web3.eth.defaultAccount))
 
             try:
-                gas = options['gas']
+                gas = kwargs['gas']
             except:
                 gas = gas_estimate + 100000
 
             try:
-                gas_price = options['gasPrice']
+                gas_price = kwargs['gasPrice']
             except:
                 gas_price = None
 
             self.logger.info(f"Sending transaction {self.name()} with nonce={nonce}, gas={gas},"
                              f" gas_price={gas_price if gas_price is not None else 'default'}")
             tx_hash = self._func(nonce, gas, gas_price)
-            receipt = await self._async_prepare_receipt(web3, tx_hash)
+            receipt = await self._async_prepare_receipt(self.web3, tx_hash)
             if receipt:
                 self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
             else:
@@ -334,7 +334,7 @@ class Transact:
         name = f"{repr(self.origin)}.{self.function}({self.parameters})"
         return name if self.extra is None else name + f" with {self.extra}"
 
-    def transact(self, options=None) -> Optional[Receipt]:
+    def transact(self, **kwargs) -> Optional[Receipt]:
         """Executes the Ethereum transaction synchronously.
 
         Executes the Ethereum transaction synchronously. The method will block until the
@@ -344,16 +344,15 @@ class Transact:
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
         Args:
-            options: Additional options impacting how the Ethereum transaction gets executed.
-                If present, should be a dictionary with the following keys allowed: `gas`,
-                `gasPrice`, `nonce`, ... .
+            Additional arguments impacting how the Ethereum transaction gets executed.
+            Allowed arguments are: `gas`, `gas_buffer`, `gas_price`.
 
         Returns:
             A `Receipt` object if the transaction invocation was successful. `None` otherwise.
         """
-        return synchronize([self.transact_async(options)])[0]
+        return synchronize([self.transact_async(**kwargs)])[0]
 
-    async def transact_async(self, options=None) -> Optional[Receipt]:
+    async def transact_async(self, **kwargs) -> Optional[Receipt]:
         """Executes the Ethereum transaction asynchronously.
 
         Executes the Ethereum transaction asynchronously. The method will return immediately.
@@ -363,15 +362,14 @@ class Transact:
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
         Args:
-            options: Additional options impacting how the Ethereum transaction gets executed.
-                If present, should be a dictionary with the following keys allowed: `gas`,
-                `gasPrice`, `nonce`, ... .
+            Additional arguments impacting how the Ethereum transaction gets executed.
+            Allowed arguments are: `gas`, `gas_buffer`, `gas_price`.
 
         Returns:
             A future value of either a `Receipt` object if the transaction invocation
             was successful, or `None` if it failed.
         """
-        return await self._async_transact(self.web3, options)
+        return await self._async_transact(**kwargs)
 
     def invocation(self) -> Invocation:
         """Returns the `Invocation` object for this pending Ethereum transaction.

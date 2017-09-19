@@ -107,7 +107,7 @@ class Keeper:
 
     def default_options(self):
         if self.arguments.gas_price > 0:
-            return {'gasPrice': self.arguments.gas_price}
+            return {'gas_price': self.arguments.gas_price}
         else:
             return {}
 
