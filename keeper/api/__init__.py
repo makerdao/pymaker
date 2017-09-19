@@ -265,7 +265,8 @@ class Transact:
             if receipt:
                 self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
             else:
-                self.logger.warning(f"Transaction {self.name()} failed")
+                self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single log"
+                                    f" entry, assuming it has failed (tx_hash={tx_hash})")
             return receipt
         except:
             self.logger.warning(f"Transaction {self.name()} failed ({sys.exc_info()[1]})")
