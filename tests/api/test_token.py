@@ -63,19 +63,39 @@ class TestERC20Token:
 
     def test_transfer(self):
         # when
-        self.token.transfer(self.second_address, Wad(500)).transact()
+        receipt = self.token.transfer(self.second_address, Wad(500)).transact()
 
         # then
+        assert receipt is not None
         assert self.token.balance_of(self.our_address) == Wad(999500)
         assert self.token.balance_of(self.second_address) == Wad(500)
 
     def test_transfer_async(self):
         # when
-        synchronize([self.token.transfer(self.second_address, Wad(750)).transact_async()])
+        receipt = synchronize([self.token.transfer(self.second_address, Wad(750)).transact_async()])
 
         # then
+        assert receipt is not None
         assert self.token.balance_of(self.our_address) == Wad(999250)
         assert self.token.balance_of(self.second_address) == Wad(750)
+
+    def test_transfer_failed(self):
+        # when
+        receipt = self.token.transfer(self.second_address, Wad(5000000)).transact()
+
+        # then
+        assert receipt is None
+        assert self.token.balance_of(self.our_address) == Wad(1000000)
+        assert self.token.balance_of(self.second_address) == Wad(0)
+
+    def test_transfer_failed_async(self):
+        # when
+        receipt = synchronize([self.token.transfer(self.second_address, Wad(5000000)).transact_async()])[0]
+
+        # then
+        assert receipt is None
+        assert self.token.balance_of(self.our_address) == Wad(1000000)
+        assert self.token.balance_of(self.second_address) == Wad(0)
 
     def test_allowance_of(self):
         assert self.token.allowance_of(self.our_address, self.second_address) == Wad(0)
