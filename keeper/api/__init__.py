@@ -254,7 +254,7 @@ class Transact:
                 gas = gas_estimate + 100000
 
             try:
-                gas_price = kwargs['gasPrice']
+                gas_price = kwargs['gas_price']
             except:
                 gas_price = None
 
