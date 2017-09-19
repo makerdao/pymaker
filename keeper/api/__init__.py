@@ -24,6 +24,8 @@ from typing import Optional
 
 import eth_utils
 import pkg_resources
+
+from keeper.api.gas import DefaultGasPrice, GasPrice
 from keeper.api.numeric import Wad
 from keeper.api.util import synchronize, next_nonce
 from web3 import Web3, EthereumTesterProvider
@@ -259,14 +261,17 @@ class Transact:
                 gas = gas_estimate + 100000
 
             # Determine `gas_price`
-            try:
+            if 'gas_price' in kwargs:
                 gas_price = kwargs['gas_price']
-            except:
-                gas_price = None
+                assert(isinstance(gas_price, GasPrice))
+            else:
+                gas_price = DefaultGasPrice()
+
+            gas_price_value = gas_price.get_gas_price(0)
 
             self.logger.info(f"Sending transaction {self.name()} with nonce={nonce}, gas={gas},"
-                             f" gas_price={gas_price if gas_price is not None else 'default'}")
-            tx_hash = self._func(nonce, gas, gas_price)
+                             f" gas_price={gas_price_value if gas_price_value is not None else 'default'}")
+            tx_hash = self._func(nonce, gas, gas_price_value)
             receipt = await self._async_prepare_receipt(self.web3, tx_hash)
             if receipt:
                 self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")

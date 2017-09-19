@@ -37,7 +37,7 @@ class SaiBite(SaiKeeper):
 
     def check_cup(self, cup_id):
         if not self.tub.safe(cup_id):
-            self.tub.bite(cup_id).transact(**self.default_options())
+            self.tub.bite(cup_id).transact(gas_price=self.gas_price())
 
 
 if __name__ == '__main__':

@@ -26,6 +26,7 @@ import time
 
 from keeper.api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad
+from keeper.api.gas import FixedGasPrice, DefaultGasPrice, GasPrice
 from keeper.api.util import AsyncCallback, chain, are_any_transactions_pending
 from web3 import Web3, HTTPProvider
 
@@ -105,11 +106,11 @@ class Keeper:
         assert(isinstance(address, Address))
         return Wad(self.web3.eth.getBalance(address.address))
 
-    def default_options(self):
+    def gas_price(self) -> GasPrice:
         if self.arguments.gas_price > 0:
-            return {'gas_price': self.arguments.gas_price}
+            return FixedGasPrice(self.arguments.gas_price)
         else:
-            return {}
+            return DefaultGasPrice()
 
     def on_block(self, callback):
         def new_block_callback(block_hash):
