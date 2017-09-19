@@ -196,21 +196,37 @@ class Invocation(object):
 
 
 class Receipt:
-    """Represents a confirmation of a successful Ethereum transaction.
+    """Represents a receipt for an Ethereum transaction.
 
     Attributes:
         transaction_hash: Hash of the Ethereum transaction.
+        gas_used: Amount of gas used by the Ethereum transaction.
         transfers: A list of ERC20 token transfers resulting from the execution
             of this Ethereum transaction. Each transfer is an instance of the
             `Transfer` class.
+        successful: Boolean flag which is `True` if the Ethereum transaction
+            was successful. We consider transaction successful if the contract
+            method has been executed without throwing.
     """
-    def __init__(self, transaction_hash: str, gas_used: int, transfers: list):
-        assert(isinstance(transaction_hash, str))
-        assert(isinstance(gas_used, int))
-        assert(isinstance(transfers, list))
-        self.transaction_hash = transaction_hash
-        self.gas_used = gas_used
-        self.transfers = transfers
+    def __init__(self, receipt):
+        self.transaction_hash = receipt['transactionHash']
+        self.gas_used = receipt['gasUsed']
+        self.transfers = []
+
+        receipt_logs = receipt['logs']
+        if (receipt_logs is not None) and (len(receipt_logs) > 0):
+            self.successful = True
+            for receipt_log in receipt_logs:
+                if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
+                    from keeper.api.token import ERC20Token
+                    transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
+                    event_data = get_event_data(transfer_abi, receipt_log)
+                    self.transfers.append(Transfer(token_address=Address(event_data['address']),
+                                                   from_address=Address(event_data['args']['from']),
+                                                   to_address=Address(event_data['args']['to']),
+                                                   value=Wad(event_data['args']['value'])))
+        else:
+            self.successful = False
 
 
 class Transact:
@@ -284,22 +300,9 @@ class Transact:
             return None
 
     async def _async_prepare_receipt(self, web3, transaction_hash):
-        receipt = await self._async_wait_for_receipt(web3, transaction_hash)
-        receipt_logs = receipt['logs']
-        if (receipt_logs is not None) and (len(receipt_logs) > 0):
-            transfers = []
-            for receipt_log in receipt_logs:
-                if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
-                    from keeper.api.token import ERC20Token
-                    transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
-                    event_data = get_event_data(transfer_abi, receipt_log)
-                    transfers.append(Transfer(token_address=Address(event_data['address']),
-                                              from_address=Address(event_data['args']['from']),
-                                              to_address=Address(event_data['args']['to']),
-                                              value=Wad(event_data['args']['value'])))
-            return Receipt(transaction_hash=transaction_hash, gas_used=receipt['gasUsed'], transfers=transfers)
-        else:
-            return None
+        receipt_data = await self._async_wait_for_receipt(web3, transaction_hash)
+        receipt = Receipt(receipt_data)
+        return receipt if receipt.successful else None
 
     async def _async_wait_for_receipt(self, web3, transaction_hash):
         while True:
@@ -418,6 +421,13 @@ class Transfer:
         self.from_address = from_address
         self.to_address = to_address
         self.value = value
+
+    def __eq__(self, other):
+        assert(isinstance(other, Transfer))
+        return self.token_address == other.token_address and \
+               self.from_address == other.from_address and \
+               self.to_address == other.to_address and \
+               self.value == other.value
 
     @staticmethod
     def incoming(our_address: Address):
