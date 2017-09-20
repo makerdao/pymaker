@@ -24,6 +24,7 @@ from typing import Optional
 
 import eth_utils
 import pkg_resources
+import time
 
 from keeper.api.gas import DefaultGasPrice, GasPrice
 from keeper.api.numeric import Wad
@@ -283,33 +284,56 @@ class Transact:
             else:
                 gas_price = DefaultGasPrice()
 
-            gas_price_value = gas_price.get_gas_price(0)
+            tx_hashes = []
+            initial_time = time.time()
+            gas_price_last = 0
 
-            self.logger.info(f"Sending transaction {self.name()} with nonce={nonce}, gas={gas},"
-                             f" gas_price={gas_price_value if gas_price_value is not None else 'default'}")
-            tx_hash = self._func(nonce, gas, gas_price_value)
-            receipt = await self._async_prepare_receipt(self.web3, tx_hash)
-            if receipt:
-                self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
-            else:
-                self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single log"
-                                    f" entry, assuming it has failed (tx_hash={tx_hash})")
-            return receipt
+            while True:
+                # Check if any transaction sent so far was mined (has a receipt).
+                # If it has, we return either the receipt (if if was successful) or `None`.
+                for tx_hash in tx_hashes:
+                    receipt = self._get_receipt(tx_hash)
+                    if receipt:
+                        if receipt.successful:
+                            self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
+                            return receipt
+                        else:
+                            self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
+                                                f" log entry, assuming it has failed (tx_hash={tx_hash})")
+                            return None
+
+                # Send a transaction if:
+                # - no transaction has been sent yet, or
+                # - the gas price requested has changed since the last transaction has been sent
+                seconds_elapsed = int(time.time() - initial_time)
+                gas_price_value = gas_price.get_gas_price(seconds_elapsed)
+                if len(tx_hashes) == 0 or gas_price_value != gas_price_last:
+                    gas_price_last = gas_price_value
+                    try:
+                        tx_hash = self._func(nonce, gas, gas_price_value)
+                        tx_hashes.append(tx_hash)
+
+                        self.logger.info(f"Sent transaction {self.name()} with nonce={nonce}, gas={gas},"
+                                         f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
+                                         f" (tx_hash={tx_hash})")
+                    except:
+                        self.logger.warning(f"Failed to send transaction {self.name()} with nonce={nonce}, gas={gas},"
+                                            f" gas_price={gas_price_value if gas_price_value is not None else 'default'}")
+
+                        if len(tx_hashes) == 0:
+                            raise
+
+                await asyncio.sleep(0.25)
         except:
             self.logger.warning(f"Transaction {self.name()} failed ({sys.exc_info()[1]})")
             return None
 
-    async def _async_prepare_receipt(self, web3, transaction_hash):
-        receipt_data = await self._async_wait_for_receipt(web3, transaction_hash)
-        receipt = Receipt(receipt_data)
-        return receipt if receipt.successful else None
-
-    async def _async_wait_for_receipt(self, web3, transaction_hash):
-        while True:
-            receipt = web3.eth.getTransactionReceipt(transaction_hash)
-            if receipt is not None and receipt['blockNumber'] is not None:
-                return receipt
-            await asyncio.sleep(0.25)
+    def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
+        receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
+        if receipt is not None and receipt['blockNumber'] is not None:
+            return Receipt(receipt)
+        else:
+            return None
 
     def as_dict(self, dict_or_none):
         if dict_or_none is None:

@@ -26,7 +26,7 @@ import time
 
 from keeper.api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad
-from keeper.api.gas import FixedGasPrice, DefaultGasPrice, GasPrice
+from keeper.api.gas import FixedGasPrice, DefaultGasPrice, GasPrice, IncreasingGasPrice
 from keeper.api.util import AsyncCallback, chain, are_any_transactions_pending
 from web3 import Web3, HTTPProvider
 
