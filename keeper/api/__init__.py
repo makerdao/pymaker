@@ -235,13 +235,13 @@ class Transact:
 
     logger = logging.getLogger('api')
 
-    def __init__(self, origin, web3, abi, address, contract, function, parameters, extra=None):
+    def __init__(self, origin, web3, abi, address, contract, function_name, parameters, extra=None):
         assert(isinstance(origin, object))
         assert(isinstance(web3, Web3))
         assert(isinstance(abi, object))
         assert(isinstance(address, Address))
         assert(isinstance(contract, object))
-        assert(isinstance(function, str))
+        assert(isinstance(function_name, str))
         assert(isinstance(parameters, list))
 
         self.origin = origin
@@ -249,7 +249,7 @@ class Transact:
         self.abi = abi
         self.address = address
         self.contract = contract
-        self.function = function
+        self.function_name = function_name
         self.parameters = parameters
         self.extra = extra
 
@@ -283,7 +283,7 @@ class Transact:
 
         return self.contract.\
             transact({**{'gas': gas}, **gas_price_dict, **nonce_dict, **self.as_dict(self.extra)}).\
-            __getattr__(self.function)(*self.parameters)
+            __getattr__(self.function_name)(*self.parameters)
 
     def name(self) -> str:
         """Returns the nicely formatted name (description) of this pending Ethereum transaction.
@@ -291,11 +291,11 @@ class Transact:
         Returns:
             Nicely formatted name (description) of this pending Ethereum transaction.
         """
-        name = f"{repr(self.origin)}.{self.function}({self.parameters})"
+        name = f"{repr(self.origin)}.{self.function_name}({self.parameters})"
         return name if self.extra is None else name + f" with {self.extra}"
 
     def estimated_gas(self):
-        return self.contract.estimateGas(self.as_dict(self.extra)).__getattr__(self.function)(*self.parameters)
+        return self.contract.estimateGas(self.as_dict(self.extra)).__getattr__(self.function_name)(*self.parameters)
 
     def transact(self, **kwargs) -> Optional[Receipt]:
         """Executes the Ethereum transaction synchronously.
@@ -420,7 +420,7 @@ class Transact:
             :py:class:`keeper.api.Invocation` object for this pending Ethereum transaction.
         """
         return Invocation(self.address,
-                          Calldata(self.web3.eth.contract(abi=self.abi).encodeABI(self.function, self.parameters)))
+                          Calldata(self.web3.eth.contract(abi=self.abi).encodeABI(self.function_name, self.parameters)))
 
 
 class Transfer:
