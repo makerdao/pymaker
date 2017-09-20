@@ -104,8 +104,11 @@ that can be bitten.
 Usage:
 ```
 usage: keeper-sai-bite [-h] [--rpc-host RPC_HOST] [--rpc-port RPC_PORT]
-                       --eth-from ETH_FROM [--gas-price GAS_PRICE] [--debug]
-                       [--trace]
+                       --eth-from ETH_FROM [--gas-price GAS_PRICE]
+                       [--initial-gas-price INITIAL_GAS_PRICE]
+                       [--increase-gas-price-by INCREASE_GAS_PRICE_BY]
+                       [--increase-gas-price-every INCREASE_GAS_PRICE_EVERY]
+                       [--debug] [--trace]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -113,7 +116,14 @@ optional arguments:
   --rpc-port RPC_PORT   JSON-RPC port (default: `8545')
   --eth-from ETH_FROM   Ethereum account from which to send transactions
   --gas-price GAS_PRICE
-                        Ethereum gas price in Wei
+                        Static gas pricing: Gas price in Wei
+  --initial-gas-price INITIAL_GAS_PRICE
+                        Increasing gas pricing: Initial gas price in Wei
+  --increase-gas-price-by INCREASE_GAS_PRICE_BY
+                        Increasing gas pricing: Gas price increase in Wei
+  --increase-gas-price-every INCREASE_GAS_PRICE_EVERY
+                        Increasing gas pricing: Gas price increase interval in
+                        seconds
   --debug               Enable debug output
   --trace               Enable trace output
 ```
@@ -152,6 +162,9 @@ Usage:
 ```
 usage: keeper-sai-arbitrage [-h] [--rpc-host RPC_HOST] [--rpc-port RPC_PORT]
                             --eth-from ETH_FROM [--gas-price GAS_PRICE]
+                            [--initial-gas-price INITIAL_GAS_PRICE]
+                            [--increase-gas-price-by INCREASE_GAS_PRICE_BY]
+                            [--increase-gas-price-every INCREASE_GAS_PRICE_EVERY]
                             [--debug] [--trace] --base-token BASE_TOKEN
                             --min-profit MIN_PROFIT --max-engagement
                             MAX_ENGAGEMENT [--max-errors MAX_ERRORS]
@@ -163,7 +176,14 @@ optional arguments:
   --rpc-port RPC_PORT   JSON-RPC port (default: `8545')
   --eth-from ETH_FROM   Ethereum account from which to send transactions
   --gas-price GAS_PRICE
-                        Ethereum gas price in Wei
+                        Static gas pricing: Gas price in Wei
+  --initial-gas-price INITIAL_GAS_PRICE
+                        Increasing gas pricing: Initial gas price in Wei
+  --increase-gas-price-by INCREASE_GAS_PRICE_BY
+                        Increasing gas pricing: Gas price increase in Wei
+  --increase-gas-price-every INCREASE_GAS_PRICE_EVERY
+                        Increasing gas pricing: Gas price increase interval in
+                        seconds
   --debug               Enable debug output
   --trace               Enable trace output
   --base-token BASE_TOKEN
@@ -196,8 +216,11 @@ Cups owned by other accounts are ignored.
 Usage:
 ```
 usage: keeper-sai-top-up [-h] [--rpc-host RPC_HOST] [--rpc-port RPC_PORT]
-                         --eth-from ETH_FROM [--gas-price GAS_PRICE] [--debug]
-                         [--trace] [--min-margin MIN_MARGIN]
+                         --eth-from ETH_FROM [--gas-price GAS_PRICE]
+                         [--initial-gas-price INITIAL_GAS_PRICE]
+                         [--increase-gas-price-by INCREASE_GAS_PRICE_BY]
+                         [--increase-gas-price-every INCREASE_GAS_PRICE_EVERY]
+                         [--debug] [--trace] [--min-margin MIN_MARGIN]
                          [--top-up-margin TOP_UP_MARGIN]
 
 optional arguments:
@@ -206,7 +229,14 @@ optional arguments:
   --rpc-port RPC_PORT   JSON-RPC port (default: `8545')
   --eth-from ETH_FROM   Ethereum account from which to send transactions
   --gas-price GAS_PRICE
-                        Ethereum gas price in Wei
+                        Static gas pricing: Gas price in Wei
+  --initial-gas-price INITIAL_GAS_PRICE
+                        Increasing gas pricing: Initial gas price in Wei
+  --increase-gas-price-by INCREASE_GAS_PRICE_BY
+                        Increasing gas pricing: Gas price increase in Wei
+  --increase-gas-price-every INCREASE_GAS_PRICE_EVERY
+                        Increasing gas pricing: Gas price increase interval in
+                        seconds
   --debug               Enable debug output
   --trace               Enable trace output
   --min-margin MIN_MARGIN
@@ -242,6 +272,9 @@ Usage:
 ```
 usage: keeper-sai-maker-otc [-h] [--rpc-host RPC_HOST] [--rpc-port RPC_PORT]
                             --eth-from ETH_FROM [--gas-price GAS_PRICE]
+                            [--initial-gas-price INITIAL_GAS_PRICE]
+                            [--increase-gas-price-by INCREASE_GAS_PRICE_BY]
+                            [--increase-gas-price-every INCREASE_GAS_PRICE_EVERY]
                             [--debug] [--trace] --min-margin-buy
                             MIN_MARGIN_BUY --avg-margin-buy AVG_MARGIN_BUY
                             --max-margin-buy MAX_MARGIN_BUY --min-margin-sell
@@ -260,7 +293,14 @@ optional arguments:
   --rpc-port RPC_PORT   JSON-RPC port (default: `8545')
   --eth-from ETH_FROM   Ethereum account from which to send transactions
   --gas-price GAS_PRICE
-                        Ethereum gas price in Wei
+                        Static gas pricing: Gas price in Wei
+  --initial-gas-price INITIAL_GAS_PRICE
+                        Increasing gas pricing: Initial gas price in Wei
+  --increase-gas-price-by INCREASE_GAS_PRICE_BY
+                        Increasing gas pricing: Gas price increase in Wei
+  --increase-gas-price-every INCREASE_GAS_PRICE_EVERY
+                        Increasing gas pricing: Gas price increase interval in
+                        seconds
   --debug               Enable debug output
   --trace               Enable trace output
   --min-margin-buy MIN_MARGIN_BUY
