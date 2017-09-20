@@ -253,7 +253,87 @@ class Transact:
         self.parameters = parameters
         self.extra = extra
 
-    async def _async_transact(self, **kwargs):
+    def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
+        receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
+        if receipt is not None and receipt['blockNumber'] is not None:
+            return Receipt(receipt)
+        else:
+            return None
+
+    def as_dict(self, dict_or_none):
+        if dict_or_none is None:
+            return {}
+        else:
+            return dict(**dict_or_none)
+
+    def _func(self, nonce, gas, gas_price):
+        if gas_price is None:
+            gas_price_dict = {}
+        else:
+            gas_price_dict = {'gasPrice': gas_price}
+
+        # Until https://github.com/pipermerriam/eth-testrpc/issues/98 issue is not resolved,
+        # `eth-testrpc` does not handle the `nonce` parameter properly so we do have to
+        # ignore it otherwise unit-tests will not pass. Hopefully we will be able to get
+        # rid of it once the above issue is solved.
+        if isinstance(self.web3.currentProvider, EthereumTesterProvider):
+            nonce_dict = {}
+        else:
+            nonce_dict = {'nonce': nonce}
+
+        return self.contract.\
+            transact({**{'gas': gas}, **gas_price_dict, **nonce_dict, **self.as_dict(self.extra)}).\
+            __getattr__(self.function)(*self.parameters)
+
+    def name(self) -> str:
+        """Returns the nicely formatted name (description) of this pending Ethereum transaction.
+
+        Returns:
+            Nicely formatted name (description) of this pending Ethereum transaction.
+        """
+        name = f"{repr(self.origin)}.{self.function}({self.parameters})"
+        return name if self.extra is None else name + f" with {self.extra}"
+
+    def estimated_gas(self):
+        return self.contract.estimateGas(self.as_dict(self.extra)).__getattr__(self.function)(*self.parameters)
+
+    def transact(self, **kwargs) -> Optional[Receipt]:
+        """Executes the Ethereum transaction synchronously.
+
+        Executes the Ethereum transaction synchronously. The method will block until the
+        transaction gets mined i.e. it will return when either the transaction execution
+        succeeded or failed. In case of the former, a `Receipt` object will be returned.
+
+        Out-of-gas exceptions are automatically recognized as transaction failures.
+
+        Args:
+            Additional arguments impacting how the Ethereum transaction gets executed.
+            Allowed arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
+            to be an instance of a class inheriting from `GasPrice`.
+
+        Returns:
+            A `Receipt` object if the transaction invocation was successful. `None` otherwise.
+        """
+        return synchronize([self.transact_async(**kwargs)])[0]
+
+    async def transact_async(self, **kwargs) -> Optional[Receipt]:
+        """Executes the Ethereum transaction asynchronously.
+
+        Executes the Ethereum transaction asynchronously. The method will return immediately.
+        Ultimately, its future value will become either a `Receipt` or `None`, depending on
+        whether the transaction execution was successful or not.
+
+        Out-of-gas exceptions are automatically recognized as transaction failures.
+
+        Args:
+            Additional arguments impacting how the Ethereum transaction gets executed.
+            Allowed arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
+            to be an instance of a class inheriting from `GasPrice`.
+
+        Returns:
+            A future value of either a `Receipt` object if the transaction invocation
+            was successful, or `None` if it failed.
+        """
         try:
             # First we try to estimate the gas usage of the transaction. If gas estimation fails
             # it means there is no point in sending the transaction, thus we fail instantly and
@@ -327,87 +407,6 @@ class Transact:
         except:
             self.logger.warning(f"Transaction {self.name()} failed ({sys.exc_info()[1]})")
             return None
-
-    def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
-        receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
-        if receipt is not None and receipt['blockNumber'] is not None:
-            return Receipt(receipt)
-        else:
-            return None
-
-    def as_dict(self, dict_or_none):
-        if dict_or_none is None:
-            return {}
-        else:
-            return dict(**dict_or_none)
-
-    def _func(self, nonce, gas, gas_price):
-        if gas_price is None:
-            gas_price_dict = {}
-        else:
-            gas_price_dict = {'gasPrice': gas_price}
-
-        # Until https://github.com/pipermerriam/eth-testrpc/issues/98 issue is not resolved,
-        # `eth-testrpc` does not handle the `nonce` parameter properly so we do have to
-        # ignore it otherwise unit-tests will not pass. Hopefully we will be able to get
-        # rid of it once the above issue is solved.
-        if isinstance(self.web3.currentProvider, EthereumTesterProvider):
-            nonce_dict = {}
-        else:
-            nonce_dict = {'nonce': nonce}
-
-        return self.contract.\
-            transact({**{'gas': gas}, **gas_price_dict, **nonce_dict, **self.as_dict(self.extra)}).\
-            __getattr__(self.function)(*self.parameters)
-
-    def estimated_gas(self):
-        return self.contract.estimateGas(self.as_dict(self.extra)).__getattr__(self.function)(*self.parameters)
-
-    def name(self) -> str:
-        """Returns the nicely formatted name (description) of this pending Ethereum transaction.
-
-        Returns:
-            Nicely formatted name (description) of this pending Ethereum transaction.
-        """
-        name = f"{repr(self.origin)}.{self.function}({self.parameters})"
-        return name if self.extra is None else name + f" with {self.extra}"
-
-    def transact(self, **kwargs) -> Optional[Receipt]:
-        """Executes the Ethereum transaction synchronously.
-
-        Executes the Ethereum transaction synchronously. The method will block until the
-        transaction gets mined i.e. it will return when either the transaction execution
-        succeeded or failed. In case of the former, a `Receipt` object will be returned.
-
-        Out-of-gas exceptions are automatically recognized as transaction failures.
-
-        Args:
-            Additional arguments impacting how the Ethereum transaction gets executed.
-            Allowed arguments are: `gas`, `gas_buffer`, `gas_price`.
-
-        Returns:
-            A `Receipt` object if the transaction invocation was successful. `None` otherwise.
-        """
-        return synchronize([self.transact_async(**kwargs)])[0]
-
-    async def transact_async(self, **kwargs) -> Optional[Receipt]:
-        """Executes the Ethereum transaction asynchronously.
-
-        Executes the Ethereum transaction asynchronously. The method will return immediately.
-        Ultimately, its future value will become either a `Receipt` or `None`, depending on
-        whether the transaction execution was successful or not.
-
-        Out-of-gas exceptions are automatically recognized as transaction failures.
-
-        Args:
-            Additional arguments impacting how the Ethereum transaction gets executed.
-            Allowed arguments are: `gas`, `gas_buffer`, `gas_price`.
-
-        Returns:
-            A future value of either a `Receipt` object if the transaction invocation
-            was successful, or `None` if it failed.
-        """
-        return await self._async_transact(**kwargs)
 
     def invocation(self) -> Invocation:
         """Returns the `Invocation` object for this pending Ethereum transaction.
