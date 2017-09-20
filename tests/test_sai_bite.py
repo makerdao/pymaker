@@ -17,7 +17,7 @@
 
 from web3 import Web3, EthereumTesterProvider
 
-from keeper import Address, ERC20Token, Wad
+from keeper import Address, ERC20Token, Wad, DefaultGasPrice
 from keeper.api.feed import DSValue
 from keeper.api.oasis import SimpleMarket
 from keeper.api.token import DSEthToken
@@ -39,8 +39,7 @@ class TestSaiBite:
         keeper.fatal_termination = False
         keeper._last_block_time = None
         keeper._on_block_callback = None
-        keeper.arguments = lambda: None
-        keeper.arguments.gas_price = 0
+        keeper.gas_price = DefaultGasPrice()
 
         # for SaiKeeper
         keeper.tub = sai.tub
