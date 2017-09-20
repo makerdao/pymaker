@@ -24,6 +24,9 @@ from typing import Optional
 
 import eth_utils
 import pkg_resources
+import time
+
+from keeper.api.gas import DefaultGasPrice, GasPrice
 from keeper.api.numeric import Wad
 from keeper.api.util import synchronize, next_nonce
 from web3 import Web3, EthereumTesterProvider
@@ -194,21 +197,37 @@ class Invocation(object):
 
 
 class Receipt:
-    """Represents a confirmation of a successful Ethereum transaction.
+    """Represents a receipt for an Ethereum transaction.
 
     Attributes:
         transaction_hash: Hash of the Ethereum transaction.
+        gas_used: Amount of gas used by the Ethereum transaction.
         transfers: A list of ERC20 token transfers resulting from the execution
             of this Ethereum transaction. Each transfer is an instance of the
             `Transfer` class.
+        successful: Boolean flag which is `True` if the Ethereum transaction
+            was successful. We consider transaction successful if the contract
+            method has been executed without throwing.
     """
-    def __init__(self, transaction_hash: str, gas_used: int, transfers: list):
-        assert(isinstance(transaction_hash, str))
-        assert(isinstance(gas_used, int))
-        assert(isinstance(transfers, list))
-        self.transaction_hash = transaction_hash
-        self.gas_used = gas_used
-        self.transfers = transfers
+    def __init__(self, receipt):
+        self.transaction_hash = receipt['transactionHash']
+        self.gas_used = receipt['gasUsed']
+        self.transfers = []
+
+        receipt_logs = receipt['logs']
+        if (receipt_logs is not None) and (len(receipt_logs) > 0):
+            self.successful = True
+            for receipt_log in receipt_logs:
+                if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
+                    from keeper.api.token import ERC20Token
+                    transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
+                    event_data = get_event_data(transfer_abi, receipt_log)
+                    self.transfers.append(Transfer(token_address=Address(event_data['address']),
+                                                   from_address=Address(event_data['args']['from']),
+                                                   to_address=Address(event_data['args']['to']),
+                                                   value=Wad(event_data['args']['value'])))
+        else:
+            self.successful = False
 
 
 class Transact:
@@ -216,13 +235,13 @@ class Transact:
 
     logger = logging.getLogger('api')
 
-    def __init__(self, origin, web3, abi, address, contract, function, parameters, extra=None):
+    def __init__(self, origin, web3, abi, address, contract, function_name, parameters, extra=None):
         assert(isinstance(origin, object))
         assert(isinstance(web3, Web3))
         assert(isinstance(abi, object))
         assert(isinstance(address, Address))
         assert(isinstance(contract, object))
-        assert(isinstance(function, str))
+        assert(isinstance(function_name, str))
         assert(isinstance(parameters, list))
 
         self.origin = origin
@@ -230,11 +249,99 @@ class Transact:
         self.abi = abi
         self.address = address
         self.contract = contract
-        self.function = function
+        self.function_name = function_name
         self.parameters = parameters
         self.extra = extra
 
-    async def _async_transact(self, web3, options):
+    def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
+        receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
+        if receipt is not None and receipt['blockNumber'] is not None:
+            return Receipt(receipt)
+        else:
+            return None
+
+    def _as_dict(self, dict_or_none) -> dict:
+        if dict_or_none is None:
+            return {}
+        else:
+            return dict(**dict_or_none)
+
+    def _gas(self, gas_estimate: int, **kwargs) -> int:
+        if 'gas' in kwargs:
+            return kwargs['gas']
+        elif 'gas_buffer' in kwargs:
+            return gas_estimate + kwargs['gas_buffer']
+        else:
+            return gas_estimate + 100000
+
+    def _func(self, nonce: int, gas: int, gas_price: Optional[int]):
+        # Until https://github.com/pipermerriam/eth-testrpc/issues/98 issue is not resolved,
+        # `eth-testrpc` does not handle the `nonce` parameter properly so we do have to
+        # ignore it otherwise unit-tests will not pass. Hopefully we will be able to get
+        # rid of it once the above issue is solved.
+        nonce_dict = {'nonce': nonce} if not isinstance(self.web3.currentProvider, EthereumTesterProvider) else {}
+        gas_price_dict = {'gasPrice': gas_price} if gas_price is not None else {}
+
+        return self.contract.\
+            transact({**{'gas': gas}, **nonce_dict, **gas_price_dict, **self._as_dict(self.extra)}).\
+            __getattr__(self.function_name)(*self.parameters)
+
+    def name(self) -> str:
+        """Returns the nicely formatted name (description) of this pending Ethereum transaction.
+
+        Returns:
+            Nicely formatted name (description) of this pending Ethereum transaction.
+        """
+        name = f"{repr(self.origin)}.{self.function_name}({self.parameters})"
+        return name if self.extra is None else name + f" with {self.extra}"
+
+    def estimated_gas(self) -> int:
+        """Return an estimated amount of gas which will get consumed by this Ethereum transaction.
+
+        May throw an exception if the actual transaction will fail as well.
+
+        Returns:
+            Amount of gas as an integer.
+        """
+        return self.contract.estimateGas(self._as_dict(self.extra)).__getattr__(self.function_name)(*self.parameters)
+
+    def transact(self, **kwargs) -> Optional[Receipt]:
+        """Executes the Ethereum transaction synchronously.
+
+        Executes the Ethereum transaction synchronously. The method will block until the
+        transaction gets mined i.e. it will return when either the transaction execution
+        succeeded or failed. In case of the former, a `Receipt` object will be returned.
+
+        Out-of-gas exceptions are automatically recognized as transaction failures.
+
+        Args:
+            Additional arguments impacting how the Ethereum transaction gets executed.
+            Allowed arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
+            to be an instance of a class inheriting from `GasPrice`.
+
+        Returns:
+            A `Receipt` object if the transaction invocation was successful. `None` otherwise.
+        """
+        return synchronize([self.transact_async(**kwargs)])[0]
+
+    async def transact_async(self, **kwargs) -> Optional[Receipt]:
+        """Executes the Ethereum transaction asynchronously.
+
+        Executes the Ethereum transaction asynchronously. The method will return immediately.
+        Ultimately, its future value will become either a `Receipt` or `None`, depending on
+        whether the transaction execution was successful or not.
+
+        Out-of-gas exceptions are automatically recognized as transaction failures.
+
+        Args:
+            Additional arguments impacting how the Ethereum transaction gets executed.
+            Allowed arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
+            to be an instance of a class inheriting from `GasPrice`.
+
+        Returns:
+            A future value of either a `Receipt` object if the transaction invocation
+            was successful, or `None` if it failed.
+        """
         try:
             # First we try to estimate the gas usage of the transaction. If gas estimation fails
             # it means there is no point in sending the transaction, thus we fail instantly and
@@ -246,131 +353,57 @@ class Transact:
             #
             # This is why gas estimation has to happen first and before the nonce gets incremented.
             gas_estimate = self.estimated_gas()
+
+            # Get the next available nonce. `next_nonce()` takes pending transactions into account.
+            # Get or calculate `gas`. Get `gas_price`, which in fact refers to a gas pricing algorithm.
             nonce = next_nonce(self.web3, Address(self.web3.eth.defaultAccount))
+            gas = self._gas(gas_estimate, **kwargs)
+            gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
 
-            try:
-                gas = options['gas']
-            except:
-                gas = gas_estimate + 100000
+            # Initialize variables which will be used in the main loop.
+            tx_hashes = []
+            initial_time = time.time()
+            gas_price_last = 0
 
-            try:
-                gas_price = options['gasPrice']
-            except:
-                gas_price = None
+            while True:
+                # Check if any transaction sent so far has been mined (has a receipt).
+                # If it has, we return either the receipt (if if was successful) or `None`.
+                for tx_hash in tx_hashes:
+                    receipt = self._get_receipt(tx_hash)
+                    if receipt:
+                        if receipt.successful:
+                            self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
+                            return receipt
+                        else:
+                            self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
+                                                f" log entry, assuming it has failed (tx_hash={tx_hash})")
+                            return None
 
-            self.logger.info(f"Sending transaction {self.name()} with nonce={nonce}, gas={gas},"
-                             f" gas_price={gas_price if gas_price is not None else 'default'}")
-            tx_hash = self._func(nonce, gas, gas_price)
-            receipt = await self._async_prepare_receipt(web3, tx_hash)
-            if receipt:
-                self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
-            else:
-                self.logger.warning(f"Transaction {self.name()} failed")
-            return receipt
+                # Send a transaction if:
+                # - no transaction has been sent yet, or
+                # - the gas price requested has changed since the last transaction has been sent
+                seconds_elapsed = int(time.time() - initial_time)
+                gas_price_value = gas_price.get_gas_price(seconds_elapsed)
+                if len(tx_hashes) == 0 or gas_price_value != gas_price_last:
+                    gas_price_last = gas_price_value
+                    try:
+                        tx_hash = self._func(nonce, gas, gas_price_value)
+                        tx_hashes.append(tx_hash)
+
+                        self.logger.info(f"Sent transaction {self.name()} with nonce={nonce}, gas={gas},"
+                                         f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
+                                         f" (tx_hash={tx_hash})")
+                    except:
+                        self.logger.warning(f"Failed to send transaction {self.name()} with nonce={nonce}, gas={gas},"
+                                            f" gas_price={gas_price_value if gas_price_value is not None else 'default'}")
+
+                        if len(tx_hashes) == 0:
+                            raise
+
+                await asyncio.sleep(0.25)
         except:
             self.logger.warning(f"Transaction {self.name()} failed ({sys.exc_info()[1]})")
             return None
-
-    async def _async_prepare_receipt(self, web3, transaction_hash):
-        receipt = await self._async_wait_for_receipt(web3, transaction_hash)
-        receipt_logs = receipt['logs']
-        if (receipt_logs is not None) and (len(receipt_logs) > 0):
-            transfers = []
-            for receipt_log in receipt_logs:
-                if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
-                    from keeper.api.token import ERC20Token
-                    transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
-                    event_data = get_event_data(transfer_abi, receipt_log)
-                    transfers.append(Transfer(token_address=Address(event_data['address']),
-                                              from_address=Address(event_data['args']['from']),
-                                              to_address=Address(event_data['args']['to']),
-                                              value=Wad(event_data['args']['value'])))
-            return Receipt(transaction_hash=transaction_hash, gas_used=receipt['gasUsed'], transfers=transfers)
-        else:
-            return None
-
-    async def _async_wait_for_receipt(self, web3, transaction_hash):
-        while True:
-            receipt = web3.eth.getTransactionReceipt(transaction_hash)
-            if receipt is not None and receipt['blockNumber'] is not None:
-                return receipt
-            await asyncio.sleep(0.25)
-
-    def as_dict(self, dict_or_none):
-        if dict_or_none is None:
-            return {}
-        else:
-            return dict(**dict_or_none)
-
-    def _func(self, nonce, gas, gas_price):
-        if gas_price is None:
-            gas_price_dict = {}
-        else:
-            gas_price_dict = {'gasPrice': gas_price}
-
-        # Until https://github.com/pipermerriam/eth-testrpc/issues/98 issue is not resolved,
-        # `eth-testrpc` does not handle the `nonce` parameter properly so we do have to
-        # ignore it otherwise unit-tests will not pass. Hopefully we will be able to get
-        # rid of it once the above issue is solved.
-        if isinstance(self.web3.currentProvider, EthereumTesterProvider):
-            nonce_dict = {}
-        else:
-            nonce_dict = {'nonce': nonce}
-
-        return self.contract.\
-            transact({**{'gas': gas}, **gas_price_dict, **nonce_dict, **self.as_dict(self.extra)}).\
-            __getattr__(self.function)(*self.parameters)
-
-    def estimated_gas(self):
-        return self.contract.estimateGas(self.as_dict(self.extra)).__getattr__(self.function)(*self.parameters)
-
-    def name(self) -> str:
-        """Returns the nicely formatted name (description) of this pending Ethereum transaction.
-
-        Returns:
-            Nicely formatted name (description) of this pending Ethereum transaction.
-        """
-        name = f"{repr(self.origin)}.{self.function}({self.parameters})"
-        return name if self.extra is None else name + f" with {self.extra}"
-
-    def transact(self, options=None) -> Optional[Receipt]:
-        """Executes the Ethereum transaction synchronously.
-
-        Executes the Ethereum transaction synchronously. The method will block until the
-        transaction gets mined i.e. it will return when either the transaction execution
-        succeeded or failed. In case of the former, a `Receipt` object will be returned.
-
-        Out-of-gas exceptions are automatically recognized as transaction failures.
-
-        Args:
-            options: Additional options impacting how the Ethereum transaction gets executed.
-                If present, should be a dictionary with the following keys allowed: `gas`,
-                `gasPrice`, `nonce`, ... .
-
-        Returns:
-            A `Receipt` object if the transaction invocation was successful. `None` otherwise.
-        """
-        return synchronize([self.transact_async(options)])[0]
-
-    async def transact_async(self, options=None) -> Optional[Receipt]:
-        """Executes the Ethereum transaction asynchronously.
-
-        Executes the Ethereum transaction asynchronously. The method will return immediately.
-        Ultimately, its future value will become either a `Receipt` or `None`, depending on
-        whether the transaction execution was successful or not.
-
-        Out-of-gas exceptions are automatically recognized as transaction failures.
-
-        Args:
-            options: Additional options impacting how the Ethereum transaction gets executed.
-                If present, should be a dictionary with the following keys allowed: `gas`,
-                `gasPrice`, `nonce`, ... .
-
-        Returns:
-            A future value of either a `Receipt` object if the transaction invocation
-            was successful, or `None` if it failed.
-        """
-        return await self._async_transact(self.web3, options)
 
     def invocation(self) -> Invocation:
         """Returns the `Invocation` object for this pending Ethereum transaction.
@@ -384,7 +417,7 @@ class Transact:
             :py:class:`keeper.api.Invocation` object for this pending Ethereum transaction.
         """
         return Invocation(self.address,
-                          Calldata(self.web3.eth.contract(abi=self.abi).encodeABI(self.function, self.parameters)))
+                          Calldata(self.web3.eth.contract(abi=self.abi).encodeABI(self.function_name, self.parameters)))
 
 
 class Transfer:
@@ -408,6 +441,13 @@ class Transfer:
         self.from_address = from_address
         self.to_address = to_address
         self.value = value
+
+    def __eq__(self, other):
+        assert(isinstance(other, Transfer))
+        return self.token_address == other.token_address and \
+               self.from_address == other.from_address and \
+               self.to_address == other.to_address and \
+               self.value == other.value
 
     @staticmethod
     def incoming(our_address: Address):

@@ -59,7 +59,7 @@ class SaiTopUp(SaiKeeper):
         top_up_amount = self.required_top_up(cup)
         if top_up_amount:
             if top_up_amount >= self.skr.balance_of(self.our_address):
-                self.tub.lock(cup.cup_id, top_up_amount).transact()
+                self.tub.lock(cup.cup_id, top_up_amount).transact(gas_price=self.gas_price)
             else:
                 self.logger.info(f"Cannot top-up as our balance is less than {top_up_amount} SKR.")
 

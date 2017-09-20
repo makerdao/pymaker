@@ -26,6 +26,7 @@ import time
 
 from keeper.api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad
+from keeper.api.gas import FixedGasPrice, DefaultGasPrice, GasPrice, IncreasingGasPrice
 from keeper.api.util import AsyncCallback, chain, are_any_transactions_pending
 from web3 import Web3, HTTPProvider
 
@@ -40,7 +41,10 @@ class Keeper:
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
-        parser.add_argument("--gas-price", help="Ethereum gas price in Wei", default=0, type=int)
+        parser.add_argument("--gas-price", help="Static gas pricing: Gas price in Wei", default=0, type=int)
+        parser.add_argument("--initial-gas-price", help="Increasing gas pricing: Initial gas price in Wei", default=0, type=int)
+        parser.add_argument("--increase-gas-price-by", help="Increasing gas pricing: Gas price increase in Wei", default=0, type=int)
+        parser.add_argument("--increase-gas-price-every", help="Increasing gas pricing: Gas price increase interval in seconds", default=0, type=int)
         parser.add_argument("--debug", help="Enable debug output", dest='debug', action='store_true')
         parser.add_argument("--trace", help="Enable trace output", dest='trace', action='store_true')
         self.args(parser)
@@ -51,6 +55,7 @@ class Keeper:
         self.our_address = Address(self.arguments.eth_from)
         self.chain = chain(self.web3)
         self.config = Config(self.chain)
+        self.gas_price = self._get_gas_price()
         self.terminated = False
         self.fatal_termination = False
         self._last_block_time = None
@@ -64,11 +69,6 @@ class Keeper:
         self._wait_for_init()
         self.logger.info(f"Keeper operating as {self.our_address}")
         self.logger.info(f"Keeper account balance is {self.eth_balance(self.our_address)} ETH")
-        if self.arguments.gas_price > 0:
-            self.logger.info(f"Using gas price of {self.arguments.gas_price/10**9} GWei"
-                             f" (default is {self.web3.eth.gasPrice/10**9} GWei)")
-        else:
-            self.logger.info(f"Using default gas price which is {self.web3.eth.gasPrice/10**9} GWei at the moment")
         self._wait_for_last_tx()
         self.logger.info("Keeper started")
         self.startup()
@@ -104,12 +104,6 @@ class Keeper:
     def eth_balance(self, address: Address) -> Wad:
         assert(isinstance(address, Address))
         return Wad(self.web3.eth.getBalance(address.address))
-
-    def default_options(self):
-        if self.arguments.gas_price > 0:
-            return {'gasPrice': self.arguments.gas_price}
-        else:
-            return {}
 
     def on_block(self, callback):
         def new_block_callback(block_hash):
@@ -161,6 +155,28 @@ class Keeper:
         if self.arguments.debug and not self.arguments.trace:
             logging.getLogger("api").setLevel(logging.DEBUG)
             logging.getLogger("keeper").setLevel(logging.DEBUG)
+
+    def _get_gas_price(self) -> GasPrice:
+        if self.arguments.gas_price > 0:
+            if self.arguments.initial_gas_price > 0 \
+                    or self.arguments.increase_gas_price_by > 0 \
+                    or self.arguments.increase_gas_price_every > 0:
+                raise Exception("Cannot use 'Static gas pricing' and 'Increasing gas pricing' arguments at the same time")
+
+            return FixedGasPrice(self.arguments.gas_price)
+        elif self.arguments.initial_gas_price > 0 \
+                or self.arguments.increase_gas_price_by > 0 \
+                or self.arguments.increase_gas_price_every > 0:
+            if self.arguments.initial_gas_price > 0 \
+                    and self.arguments.increase_gas_price_by > 0 \
+                    and self.arguments.increase_gas_price_every > 0:
+                return IncreasingGasPrice(initial_price=self.arguments.initial_gas_price,
+                                          increase_by=self.arguments.increase_gas_price_by,
+                                          every_secs=self.arguments.increase_gas_price_every)
+            else:
+                raise Exception("For 'Increasing gas pricing' all three arguments have to be specified")
+        else:
+            return DefaultGasPrice()
 
     def _wait_for_init(self):
         # wait for the client to have at least one peer
