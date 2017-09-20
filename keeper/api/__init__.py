@@ -260,29 +260,30 @@ class Transact:
         else:
             return None
 
-    def as_dict(self, dict_or_none):
+    def _as_dict(self, dict_or_none) -> dict:
         if dict_or_none is None:
             return {}
         else:
             return dict(**dict_or_none)
 
-    def _func(self, nonce, gas, gas_price):
-        if gas_price is None:
-            gas_price_dict = {}
+    def _gas(self, gas_estimate: int, **kwargs) -> int:
+        if 'gas' in kwargs:
+            return kwargs['gas']
+        elif 'gas_buffer' in kwargs:
+            return gas_estimate + kwargs['gas_buffer']
         else:
-            gas_price_dict = {'gasPrice': gas_price}
+            return gas_estimate + 100000
 
+    def _func(self, nonce: int, gas: int, gas_price: Optional[int]):
         # Until https://github.com/pipermerriam/eth-testrpc/issues/98 issue is not resolved,
         # `eth-testrpc` does not handle the `nonce` parameter properly so we do have to
         # ignore it otherwise unit-tests will not pass. Hopefully we will be able to get
         # rid of it once the above issue is solved.
-        if isinstance(self.web3.currentProvider, EthereumTesterProvider):
-            nonce_dict = {}
-        else:
-            nonce_dict = {'nonce': nonce}
+        nonce_dict = {'nonce': nonce} if not isinstance(self.web3.currentProvider, EthereumTesterProvider) else {}
+        gas_price_dict = {'gasPrice': gas_price} if gas_price is not None else {}
 
         return self.contract.\
-            transact({**{'gas': gas}, **gas_price_dict, **nonce_dict, **self.as_dict(self.extra)}).\
+            transact({**{'gas': gas}, **nonce_dict, **gas_price_dict, **self._as_dict(self.extra)}).\
             __getattr__(self.function_name)(*self.parameters)
 
     def name(self) -> str:
@@ -294,8 +295,15 @@ class Transact:
         name = f"{repr(self.origin)}.{self.function_name}({self.parameters})"
         return name if self.extra is None else name + f" with {self.extra}"
 
-    def estimated_gas(self):
-        return self.contract.estimateGas(self.as_dict(self.extra)).__getattr__(self.function_name)(*self.parameters)
+    def estimated_gas(self) -> int:
+        """Return an estimated amount of gas which will get consumed by this Ethereum transaction.
+
+        May throw an exception if the actual transaction will fail as well.
+
+        Returns:
+            Amount of gas as an integer.
+        """
+        return self.contract.estimateGas(self._as_dict(self.extra)).__getattr__(self.function_name)(*self.parameters)
 
     def transact(self, **kwargs) -> Optional[Receipt]:
         """Executes the Ethereum transaction synchronously.
@@ -347,29 +355,18 @@ class Transact:
             gas_estimate = self.estimated_gas()
 
             # Get the next available nonce. `next_nonce()` takes pending transactions into account.
+            # Get or calculate `gas`. Get `gas_price`, which in fact refers to a gas pricing algorithm.
             nonce = next_nonce(self.web3, Address(self.web3.eth.defaultAccount))
+            gas = self._gas(gas_estimate, **kwargs)
+            gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
 
-            # Determine `gas`
-            if 'gas' in kwargs:
-                gas = kwargs['gas']
-            elif 'gas_buffer' in kwargs:
-                gas = gas_estimate + kwargs['gas_buffer']
-            else:
-                gas = gas_estimate + 100000
-
-            # Determine `gas_price`
-            if 'gas_price' in kwargs:
-                gas_price = kwargs['gas_price']
-                assert(isinstance(gas_price, GasPrice))
-            else:
-                gas_price = DefaultGasPrice()
-
+            # Initialize variables which will be used in the main loop.
             tx_hashes = []
             initial_time = time.time()
             gas_price_last = 0
 
             while True:
-                # Check if any transaction sent so far was mined (has a receipt).
+                # Check if any transaction sent so far has been mined (has a receipt).
                 # If it has, we return either the receipt (if if was successful) or `None`.
                 for tx_hash in tx_hashes:
                     receipt = self._get_receipt(tx_hash)
