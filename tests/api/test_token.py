@@ -101,6 +101,24 @@ class TestERC20Token:
         assert self.token.balance_of(self.our_address) == Wad(1000000)
         assert self.token.balance_of(self.second_address) == Wad(0)
 
+    def test_transfer_out_of_gas(self):
+        # when
+        receipt = self.token.transfer(self.second_address, Wad(500)).transact(gas=15000)
+
+        # then
+        assert receipt is None
+        assert self.token.balance_of(self.our_address) == Wad(1000000)
+        assert self.token.balance_of(self.second_address) == Wad(0)
+
+    def test_transfer_out_of_gas_async(self):
+        # when
+        receipt = synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas=15000)])[0]
+
+        # then
+        assert receipt is None
+        assert self.token.balance_of(self.our_address) == Wad(1000000)
+        assert self.token.balance_of(self.second_address) == Wad(0)
+
     def test_allowance_of(self):
         assert self.token.allowance_of(self.our_address, self.second_address) == Wad(0)
 
