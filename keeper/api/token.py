@@ -34,7 +34,7 @@ class ERC20Token(Contract):
     abi = Contract._load_abi(__name__, 'abi/ERC20Token.abi')
     registry = {}
 
-    def __init__(self, web3, address):
+    def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)

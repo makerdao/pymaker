@@ -161,7 +161,7 @@ class Calldata:
     Attributes:
         value: Calldata as a string starting with `0x`.
     """
-    def __init__(self, value):
+    def __init__(self, value: str):
         assert(isinstance(value, str))
         assert(value.startswith('0x'))
         self.value = value
