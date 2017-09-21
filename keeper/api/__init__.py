@@ -312,17 +312,19 @@ class Transact:
 
         Executes the Ethereum transaction synchronously. The method will block until the
         transaction gets mined i.e. it will return when either the transaction execution
-        succeeded or failed. In case of the former, a `Receipt` object will be returned.
+        succeeded or failed. In case of the former, a :py:class:`keeper.api.Receipt`
+        object will be returned.
 
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
         Args:
             Additional arguments impacting how the Ethereum transaction gets executed.
             Allowed arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
-            to be an instance of a class inheriting from `GasPrice`.
+            to be an instance of a class inheriting from :py:class:`keeper.api.gas.GasPrice`.
 
         Returns:
-            A `Receipt` object if the transaction invocation was successful. `None` otherwise.
+            A :py:class:`keeper.api.Receipt` object if the transaction invocation was successful.
+            `None` otherwise.
         """
         return synchronize([self.transact_async(**kwargs)])[0]
 
@@ -330,19 +332,19 @@ class Transact:
         """Executes the Ethereum transaction asynchronously.
 
         Executes the Ethereum transaction asynchronously. The method will return immediately.
-        Ultimately, its future value will become either a `Receipt` or `None`, depending on
-        whether the transaction execution was successful or not.
+        Ultimately, its future value will become either a :py:class:`keeper.api.Receipt` or `None`,
+        depending on whether the transaction execution was successful or not.
 
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
         Args:
             Additional arguments impacting how the Ethereum transaction gets executed.
             Allowed arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
-            to be an instance of a class inheriting from `GasPrice`.
+            to be an instance of a class inheriting from :py:class:`keeper.api.gas.GasPrice`.
 
         Returns:
-            A future value of either a `Receipt` object if the transaction invocation
-            was successful, or `None` if it failed.
+            A future value of either a :py:class:`keeper.api.Receipt` object if the transaction
+            invocation was successful, or `None` if it failed.
         """
         try:
             # First we try to estimate the gas usage of the transaction. If gas estimation fails
