@@ -24,11 +24,24 @@ class GasPrice(object):
 
 
 class DefaultGasPrice(GasPrice):
+    """Default gas price.
+
+    Uses the default gas price i.e. gas price will be decided by the Ethereum node
+    the keeper is connected to.
+    """
     def get_gas_price(self, time_elapsed: int) -> Optional[int]:
         return None
 
 
 class FixedGasPrice(GasPrice):
+    """Fixed gas price.
+
+    Uses specified gas price instead of the default price suggested by the Ethereum
+    node the keeper is connected to.
+
+    Attributes:
+        gas_price: Gas price to be used (in Wei).
+    """
     def __init__(self, gas_price: int):
         assert(isinstance(gas_price, int))
         self.gas_price = gas_price

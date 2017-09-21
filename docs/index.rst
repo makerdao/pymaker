@@ -71,6 +71,40 @@ Ray
     :members:
 
 
+Gas price
+---------
+
+.. autoclass:: keeper.api.gas.GasPrice
+    :members:
+
+The following implementations of `GasPrice` are available:
+
+DefaultGasPrice
+~~~~~~~~~~~~~~~
+
+.. autoclass:: keeper.api.gas.DefaultGasPrice
+    :members:
+
+FixedGasPrice
+~~~~~~~~~~~~~
+
+.. autoclass:: keeper.api.gas.FixedGasPrice
+    :members:
+
+IncreasingGasPrice
+~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: keeper.api.gas.IncreasingGasPrice
+    :members:
+
+
+Approvals
+---------
+
+.. automodule:: keeper.api.approval
+    :members:
+
+
 Contracts
 ---------
 
@@ -158,12 +192,6 @@ DSVault
     :members:
 
 
-
-Approvals
----------
-
-.. automodule:: keeper.api.approval
-    :members:
 
 Atomic transactions
 -------------------

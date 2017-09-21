@@ -317,10 +317,8 @@ class Transact:
 
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
-        Args:
-            Additional arguments impacting how the Ethereum transaction gets executed.
-            Allowed arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
-            to be an instance of a class inheriting from :py:class:`keeper.api.gas.GasPrice`.
+        Allowed keyword arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
+        to be an instance of a class inheriting from :py:class:`keeper.api.gas.GasPrice`.
 
         Returns:
             A :py:class:`keeper.api.Receipt` object if the transaction invocation was successful.
@@ -337,10 +335,8 @@ class Transact:
 
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
-        Args:
-            Additional arguments impacting how the Ethereum transaction gets executed.
-            Allowed arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
-            to be an instance of a class inheriting from :py:class:`keeper.api.gas.GasPrice`.
+        Allowed keyword arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
+        to be an instance of a class inheriting from :py:class:`keeper.api.gas.GasPrice`.
 
         Returns:
             A future value of either a :py:class:`keeper.api.Receipt` object if the transaction
