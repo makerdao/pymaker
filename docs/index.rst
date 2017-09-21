@@ -45,6 +45,12 @@ Receipt
 .. automodule:: keeper.api
     :members: Receipt
 
+Transfer
+~~~~~~~~
+
+.. automodule:: keeper.api
+    :members: Transfer
+
 .. automodule:: keeper.api.approval
     :members:
 

@@ -206,7 +206,7 @@ class Receipt:
         gas_used: Amount of gas used by the Ethereum transaction.
         transfers: A list of ERC20 token transfers resulting from the execution
             of this Ethereum transaction. Each transfer is an instance of the
-            `Transfer` class.
+            :py:class:`keeper.api.Transfer` class.
         successful: Boolean flag which is `True` if the Ethereum transaction
             was successful. We consider transaction successful if the contract
             method has been executed without throwing.
@@ -425,7 +425,7 @@ class Transact:
 class Transfer:
     """Represents an ERC20 token transfer.
 
-    Designed to enable monitoring transfers resulting from contract method execution.
+    Represents an ERC20 token transfer resulting from contract method execution.
     A list of transfers can be found in the :py:class:`keeper.api.Receipt` class.
 
     Attributes:
