@@ -185,13 +185,13 @@ class LpcTakeRefConversion(Conversion):
         return f"lpc.take(ref, '{self.target_amount}')"
 
     def execute(self):
-        return self.lpc.take(self.lpc.ref(), self.target_amount)
+        return self.lpc.take(self.lpc.ref(), self.target_amount).transact()
 
     def address(self) -> Address:
         return self.lpc.address
 
     def calldata(self):
-        return self.lpc.take_calldata(self.lpc.ref(), self.target_amount)
+        return self.lpc.take(self.lpc.ref(), self.target_amount).invocation().calldata
 
 
 class LpcTakeAltConversion(Conversion):
@@ -210,13 +210,13 @@ class LpcTakeAltConversion(Conversion):
         return f"lpc.take(alt, '{self.target_amount}')"
 
     def execute(self):
-        return self.lpc.take(self.lpc.alt(), self.target_amount)
+        return self.lpc.take(self.lpc.alt(), self.target_amount).transact()
 
     def address(self) -> Address:
         return self.lpc.address
 
     def calldata(self):
-        return self.lpc.take_calldata(self.lpc.alt(), self.target_amount)
+        return self.lpc.take(self.lpc.alt(), self.target_amount).invocation().calldata
 
 
 class OasisTakeConversion(Conversion):

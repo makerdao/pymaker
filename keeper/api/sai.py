@@ -1039,9 +1039,6 @@ class Lpc(Contract):
         assert isinstance(amount, Wad)
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'take', [token.address, amount.value])
 
-    def take_calldata(self, token: Address, amount: Wad) -> Calldata:
-        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('take', [token.address, amount.value]))
-
     def __eq__(self, other):
         return self.address == other.address
 
