@@ -42,7 +42,7 @@ class DSGuard(Contract):
     def __init__(self, web3, address):
         self.web3 = web3
         self.address = address
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contract = self._get_contract(web3, self.abi, address)
 
     @staticmethod
     def deploy(web3: Web3):
@@ -93,7 +93,7 @@ class DSRoles(Contract):
     def __init__(self, web3, address):
         self.web3 = web3
         self.address = address
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contract = self._get_contract(web3, self.abi, address)
 
     @staticmethod
     def deploy(web3: Web3):

@@ -112,10 +112,12 @@ class Contract:
         receipt = web3.eth.getTransactionReceipt(tx_hash)
         return Address(receipt['contractAddress'])
 
-    def _assert_contract_exists(self, web3, address):
+    def _get_contract(self, web3: Web3, abi: dict, address: Address):
         code = web3.eth.getCode(address.address)
         if (code == "0x") or (code is None):
             raise Exception(f"No contract found at {address}")
+
+        return web3.eth.contract(abi=abi)(address=address.address)
 
     def _on_event(self, contract, event, cls, handler):
         register_filter_thread(contract.on(event, None, self._event_callback(cls, handler, False)))

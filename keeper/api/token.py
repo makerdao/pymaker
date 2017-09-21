@@ -37,8 +37,7 @@ class ERC20Token(Contract):
     def __init__(self, web3, address):
         self.web3 = web3
         self.address = address
-        self._assert_contract_exists(web3, address)
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contract = self._get_contract(web3, self.abi, address)
 
     def name(self):
         return ERC20Token.registry.get(self.address, '???')
@@ -249,7 +248,7 @@ class DSEthToken(ERC20Token):
 
     def __init__(self, web3, address):
         super().__init__(web3, address)
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contract = self._get_contract(web3, self.abi, address)
 
     def deposit(self, amount: Wad) -> Transact:
         """Deposits `amount` of raw ETH to `DSEthToken`.
