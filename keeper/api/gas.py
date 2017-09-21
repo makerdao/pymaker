@@ -19,7 +19,38 @@ from typing import Optional
 
 
 class GasPrice(object):
+    """Abstract class, which can be inherited for implementing different gas price strategies.
+
+    `GasPrice` class contains only one method, `get_gas_price`, which is responsible for
+    returning the gas price (in Wei) for a specific point in time. It is possible to build
+    custom gas price strategies by implementing this method so the gas price returned
+    increases over time. The piece of code responsible for sending Ethereum transactions
+    (please see :py:class:`keeper.api.Transact`) will in this case overwrite the transaction
+    with another one, using the same `nonce` but increasing gas price. If the value returned
+    by `get_gas_price` does not go up, no new transaction gets submitted to the network.
+
+    An example custom gas price strategy my be: start with 10 GWei. If transaction has not been
+    confirmed within 10 minutes, try again with 15 GWei. If still no confirmation, increase
+    to 30 GWei and then wait indefinitely for confirmation.
+    """
+
     def get_gas_price(self, time_elapsed: int) -> Optional[int]:
+        """Return gas price applicable for a given point in time.
+
+        Bear in mind that Parity (don't know about other Ethereum nodes) requires the gas
+        price for overwritten transactions to go up by at least 10%. Also, you may return
+        `None` which will make the node use the default gas price, but once you returned
+        a numeric value (gas price in Wei), you shouldn't switch back to `None` as such
+        transaction also may not ger properly overwritten.
+
+        Args:
+            time_elapsed: Number of seconds since this specific Ethereum transaction
+                has been originally sent for the first time.
+
+        Returns:
+            Gas price in Wei, or `None` if default gas price should be used. Default gas price
+            means it's the Ethereum node the keeper is connected to will decide on the gas price.
+        """
         raise NotImplementedError("Please implement this method")
 
 
@@ -29,6 +60,7 @@ class DefaultGasPrice(GasPrice):
     Uses the default gas price i.e. gas price will be decided by the Ethereum node
     the keeper is connected to.
     """
+
     def get_gas_price(self, time_elapsed: int) -> Optional[int]:
         return None
 
@@ -52,6 +84,17 @@ class FixedGasPrice(GasPrice):
 
 
 class IncreasingGasPrice(GasPrice):
+    """Constantly increasing gas price.
+
+    Start with `initial_price`, then increase it by `increase_by` every `every_secs` seconds
+    until the transaction gets confirmed. There is no upper limit.
+
+    Attributes:
+        initial_price: The initial gas price in Wei i.e. the price the transaction
+            is originally sent with.
+        increase_by: Gas price increase in Wei, which will happen every `every_secs` seconds.
+        every_secs: Gas price increase interval (in seconds).
+    """
     def __init__(self, initial_price: int, increase_by: int, every_secs: int):
         assert(isinstance(initial_price, int))
         assert(isinstance(increase_by, int))
