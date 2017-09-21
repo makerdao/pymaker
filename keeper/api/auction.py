@@ -18,6 +18,8 @@
 import datetime
 from pprint import pformat
 
+from web3 import Web3
+
 from keeper.api import Contract, Address
 from keeper.api.numeric import Wad
 
@@ -41,12 +43,12 @@ class AuctionManager(Contract):
     You can find the source code of the `AuctionManager` and `SplittingAuctionManager` contracts here:
     <https://github.com/makerdao/token-auction>.
     """
-    def __init__(self, web3, address, is_splitting):
+    def __init__(self, web3: Web3, address: Address, is_splitting: bool):
         self.web3 = web3
         self.address = address
         self.is_splitting = is_splitting
         abi_name = 'abi/SplittingAuctionManager.abi' if is_splitting else 'abi/AuctionManager.abi'
-        self._contract = web3.eth.contract(abi=self._load_abi(__name__, abi_name))(address=address.address)
+        self._contract = self._get_contract(web3, self._load_abi(__name__, abi_name), address)
         self._our_tx_hashes = set()
 
         self._on_new_auction_handler = None

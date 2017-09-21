@@ -39,10 +39,10 @@ class DSGuard(Contract):
 
     ANY = int_to_bytes32(2 ** 256 - 1)
 
-    def __init__(self, web3, address):
+    def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
         self.address = address
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contract = self._get_contract(web3, self.abi, address)
 
     @staticmethod
     def deploy(web3: Web3):
@@ -90,10 +90,10 @@ class DSRoles(Contract):
     abi = Contract._load_abi(__name__, 'abi/DSRoles.abi')
     bin = Contract._load_bin(__name__, 'abi/DSRoles.bin')
 
-    def __init__(self, web3, address):
+    def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
         self.address = address
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contract = self._get_contract(web3, self.abi, address)
 
     @staticmethod
     def deploy(web3: Web3):

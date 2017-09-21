@@ -256,8 +256,7 @@ class EtherDelta(Contract):
         self.web3 = web3
         self.address = address
         self.api_server = api_server
-        self._assert_contract_exists(web3, address)
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contract = self._get_contract(web3, self.abi, address)
         self._onchain_orders = None
         self._offchain_orders = set()
 

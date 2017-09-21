@@ -77,11 +77,10 @@ class Tub(Contract):
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
         self.address = address
-        self._assert_contract_exists(web3, address)
-        self._contractTub = web3.eth.contract(abi=self.abiTub)(address=address.address)
-        self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contractTub.call().tip())
-        self._contractJar = web3.eth.contract(abi=self.abiJar)(address=self._contractTub.call().jar())
-        self._contractJug = web3.eth.contract(abi=self.abiJug)(address=self._contractTub.call().jug())
+        self._contractTub = self._get_contract(web3, self.abiTub, address)
+        self._contractTip = self._get_contract(web3, self.abiTip, Address(self._contractTub.call().tip()))
+        self._contractJar = self._get_contract(web3, self.abiJar, Address(self._contractTub.call().jar()))
+        self._contractJug = self._get_contract(web3, self.abiJug, Address(self._contractTub.call().jug()))
 
     @staticmethod
     def deploy(web3: Web3, jar: Address, jug: Address, pot: Address, pit: Address, tip: Address):
@@ -693,8 +692,7 @@ class Tap(Contract):
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
         self.address = address
-        self._assert_contract_exists(web3, address)
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contract = self._get_contract(web3, self.abi, address)
 
     @staticmethod
     def deploy(web3: Web3, tub: Address, pit: Address):
@@ -823,8 +821,7 @@ class Top(Contract):
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
         self.address = address
-        self._assert_contract_exists(web3, address)
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
+        self._contract = self._get_contract(web3, self.abi, address)
 
     @staticmethod
     def deploy(web3: Web3, tub: Address, tap: Address):
@@ -879,9 +876,8 @@ class Lpc(Contract):
     def __init__(self, web3: Web3, address: Address):
         self.web3 = web3
         self.address = address
-        self._assert_contract_exists(web3, address)
-        self._contract = web3.eth.contract(abi=self.abi)(address=address.address)
-        self._contractTip = web3.eth.contract(abi=self.abiTip)(address=self._contract.call().tip())
+        self._contract = self._get_contract(web3, self.abi, address)
+        self._contractTip = self._get_contract(web3, self.abiTip, Address(self._contract.call().tip()))
 
     def approve(self, approval_function):
         approval_function(ERC20Token(web3=self.web3, address=self.ref()), self.address, 'Lpc')
@@ -1042,9 +1038,6 @@ class Lpc(Contract):
         assert isinstance(token, Address)
         assert isinstance(amount, Wad)
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'take', [token.address, amount.value])
-
-    def take_calldata(self, token: Address, amount: Wad) -> Calldata:
-        return Calldata(self.web3.eth.contract(abi=self.abi).encodeABI('take', [token.address, amount.value]))
 
     def __eq__(self, other):
         return self.address == other.address

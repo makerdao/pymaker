@@ -139,7 +139,7 @@ class Ray:
 
     `Ray` implements comparison, addition, subtraction, multiplication and division operators. Comparison, addition,
     subtraction and division only work with other instances of `Ray`. Multiplication works with instances
-    of `Ray` and `And` and also with `int` numbers. The result of multiplication is always a `Ray`.
+    of `Ray` and `Wad` and also with `int` numbers. The result of multiplication is always a `Ray`.
 
     `Ray`, along with `Wad`, are the two basic numeric types used by Maker contracts.
 

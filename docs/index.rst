@@ -18,34 +18,37 @@ General
 Address
 ~~~~~~~
 
-.. automodule:: keeper.api
-    :members: Address
+.. autoclass:: keeper.api.Address
+    :members:
 
 Transact
 ~~~~~~~~
 
-.. automodule:: keeper.api
-    :members: Transact
+.. autoclass:: keeper.api.Transact
+    :members:
 
 Calldata
 ~~~~~~~~
 
-.. automodule:: keeper.api
-    :members: Calldata
+.. autoclass:: keeper.api.Calldata
+    :members:
 
 Invocation
 ~~~~~~~~~~
 
-.. automodule:: keeper.api
-    :members: Invocation
+.. autoclass:: keeper.api.Invocation
+    :members:
 
 Receipt
 ~~~~~~~
 
-.. automodule:: keeper.api
-    :members: Receipt
+.. autoclass:: keeper.api.Receipt
+    :members:
 
-.. automodule:: keeper.api.approval
+Transfer
+~~~~~~~~
+
+.. autoclass:: keeper.api.Transfer
     :members:
 
 
@@ -58,14 +61,48 @@ or `Ray` (27-digit precision type).
 Wad
 ~~~
 
-.. automodule:: keeper.api.numeric
-    :members: Wad
+.. autoclass:: keeper.api.numeric.Wad
+    :members:
 
 Ray
 ~~~
 
-.. automodule:: keeper.api.numeric
-    :members: Ray
+.. autoclass:: keeper.api.numeric.Ray
+    :members:
+
+
+Gas price
+---------
+
+.. autoclass:: keeper.api.gas.GasPrice
+    :members:
+
+The following implementations of `GasPrice` are available:
+
+DefaultGasPrice
+~~~~~~~~~~~~~~~
+
+.. autoclass:: keeper.api.gas.DefaultGasPrice
+    :members:
+
+FixedGasPrice
+~~~~~~~~~~~~~
+
+.. autoclass:: keeper.api.gas.FixedGasPrice
+    :members:
+
+IncreasingGasPrice
+~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: keeper.api.gas.IncreasingGasPrice
+    :members:
+
+
+Approvals
+---------
+
+.. automodule:: keeper.api.approval
+    :members:
 
 
 Contracts
@@ -85,20 +122,20 @@ ERC20
 ERC20Token
 """"""""""
 
-.. automodule:: keeper.api.token
-    :members: ERC20Token
+.. autoclass:: keeper.api.token.ERC20Token
+    :members:
 
 DSToken
 """""""
 
-.. automodule:: keeper.api.token
-    :members: DSToken
+.. autoclass:: keeper.api.token.DSToken
+    :members:
 
 DSEthToken
 """"""""""
 
-.. automodule:: keeper.api.token
-    :members: DSEthToken
+.. autoclass:: keeper.api.token.DSEthToken
+    :members:
 
 
 Exchanges
@@ -126,33 +163,33 @@ Authentication
 DSGuard
 """""""
 
-.. automodule:: keeper.api.auth
-    :members: DSGuard
+.. autoclass:: keeper.api.auth.DSGuard
+    :members:
 
 DSRoles
 """""""
 
-.. automodule:: keeper.api.auth
-    :members: DSRoles
+.. autoclass:: keeper.api.auth.DSRoles
+    :members:
 
 
 DSProxy
 ~~~~~~~
 
-.. automodule:: keeper.api.proxy
-    :members: DSProxy
+.. autoclass:: keeper.api.proxy.DSProxy
+    :members:
 
 DSValue
 ~~~~~~~
 
-.. automodule:: keeper.api.feed
-    :members: DSValue
+.. autoclass:: keeper.api.feed.DSValue
+    :members:
 
 DSVault
 ~~~~~~~
 
-.. automodule:: keeper.api.vault
-    :members: DSVault
+.. autoclass:: keeper.api.vault.DSVault
+    :members:
 
 
 
@@ -162,5 +199,5 @@ Atomic transactions
 TxManager
 ~~~~~~~~~
 
-.. automodule:: keeper.api.transact
+.. autoclass:: keeper.api.transact.TxManager
     :members:
