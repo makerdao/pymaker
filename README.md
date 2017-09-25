@@ -252,21 +252,35 @@ optional arguments:
 SAI keeper to act as a market maker on OasisDEX, on the W-ETH/SAI pair.
 
 Keeper continuously monitors and adjusts its positions in order to act as a market maker.
-It aims to have open SAI sell orders for at least `--min-sai-amount` and open WETH sell
-orders for at least `--min-weth-amount`, with their price in the <min-margin,max-margin>
-range from the current SAI/W-ETH price.
+It maintains buy and sell orders in multiple bands at the same time. In each buy band,
+it aims to have open SAI sell orders for at least `minSaiAmount`. In each sell band
+it aims to have open WETH sell orders for at least `minWEthAmount`. In both cases,
+it will ensure the price of open orders stays within the <minMargin,maxMargin> range
+from the current SAI/W-ETH price.
 
-When started, the keeper places orders for the maximum allowed amounts (`--max-sai-amount`
-and `--max-weth-amount`) and uses `avg-margin` to calculate the order price.
+When started, the keeper places orders for the average amounts (`avgSaiAmount`
+and `avgWEthAmount`) in each band and uses `avgMargin` to calculate the order price.
 
-As long as the price of existing orders is within the <min-margin,max-margin> range,
-the keeper keeps them open. If they fall outside that range, they get cancelled.
-If the total amount of open orders falls below either `--min-sai-amount` or
-`--min-weth-amount`, a new order gets created for the remaining amount so the total
-amount of orders is equal to `--max-sai-amount` / `--max-weth-amount`.
+As long as the price of orders stays within the band (i.e. is in the <minMargin,maxMargin>
+range from the current SAI/W-ETH price, which is of course constantly moving), the keeper
+keeps them open. If they leave the band, they either enter another adjacent band
+or fall outside all bands. In case of the latter, they get immediately cancelled. In case of
+the former, the keeper can keep these orders open as long as their amount is within the
+<minSaiAmount,maxSaiAmount> (for buy bands) or <minWEthAmount,maxWEthAmount> (for sell bands)
+ranges for the band they just entered. If it is above the maximum, all open orders will get
+cancelled and a new one will be created (for the `avgSaiAmount` / `avgWEthAmount`). If it is below
+the minimum, a new order gets created for the remaining amount so the total amount of orders
+in this band is equal to `avgSaiAmount` or `avgWEthAmount`.
 
-This keeper will constantly use gas to move orders as the SAI/GEM price changes,
-but it can be limited by setting the margin and amount ranges wide enough.
+The same thing will happen if the total amount of open orders in a band falls below either
+`minSaiAmount` or `minWEthAmount` as a result of other market participants taking these orders.
+In this case also a new order gets created for the remaining amount so the total
+amount of orders in this band is equal to `avgSaiAmount` / `avgWEthAmount`.
+
+This keeper will constantly use gas to move orders as the SAI/GEM price changes. Gas usage
+can be limited by setting the margin and amount ranges wide enough and also by making
+sure that bands are always adjacent to each other and that their <min,max> amount ranges
+overlap.
 
 Usage:
 ```
@@ -275,16 +289,7 @@ usage: keeper-sai-maker-otc [-h] [--rpc-host RPC_HOST] [--rpc-port RPC_PORT]
                             [--initial-gas-price INITIAL_GAS_PRICE]
                             [--increase-gas-price-by INCREASE_GAS_PRICE_BY]
                             [--increase-gas-price-every INCREASE_GAS_PRICE_EVERY]
-                            [--debug] [--trace] --min-margin-buy
-                            MIN_MARGIN_BUY --avg-margin-buy AVG_MARGIN_BUY
-                            --max-margin-buy MAX_MARGIN_BUY --min-margin-sell
-                            MIN_MARGIN_SELL --avg-margin-sell AVG_MARGIN_SELL
-                            --max-margin-sell MAX_MARGIN_SELL
-                            --max-weth-amount MAX_WETH_AMOUNT
-                            --min-weth-amount MIN_WETH_AMOUNT --max-sai-amount
-                            MAX_SAI_AMOUNT --min-sai-amount MIN_SAI_AMOUNT
-                            [--sai-dust-cutoff SAI_DUST_CUTOFF]
-                            [--weth-dust-cutoff WETH_DUST_CUTOFF]
+                            [--debug] [--trace] --config CONFIG
                             [--round-places ROUND_PLACES]
 
 optional arguments:
@@ -303,33 +308,57 @@ optional arguments:
                         seconds
   --debug               Enable debug output
   --trace               Enable trace output
-  --min-margin-buy MIN_MARGIN_BUY
-                        Minimum margin allowed (buy)
-  --avg-margin-buy AVG_MARGIN_BUY
-                        Target margin, used on new order creation (buy)
-  --max-margin-buy MAX_MARGIN_BUY
-                        Maximum margin allowed (buy)
-  --min-margin-sell MIN_MARGIN_SELL
-                        Minimum margin allowed (sell)
-  --avg-margin-sell AVG_MARGIN_SELL
-                        Target margin, used on new order creation (sell)
-  --max-margin-sell MAX_MARGIN_SELL
-                        Maximum margin allowed (sell)
-  --max-weth-amount MAX_WETH_AMOUNT
-                        Maximum value of open WETH sell orders
-  --min-weth-amount MIN_WETH_AMOUNT
-                        Minimum value of open WETH sell orders
-  --max-sai-amount MAX_SAI_AMOUNT
-                        Maximum value of open SAI sell orders
-  --min-sai-amount MIN_SAI_AMOUNT
-                        Minimum value of open SAI sell orders
-  --sai-dust-cutoff SAI_DUST_CUTOFF
-                        Minimum order value (SAI) for buy orders
-  --weth-dust-cutoff WETH_DUST_CUTOFF
-                        Minimum order value (WETH) for sell orders
+  --config CONFIG       Buy/sell bands configuration file
   --round-places ROUND_PLACES
                         Number of decimal places to round order prices to
                         (default=2)
+```
+
+Sample buy/sell bands configuration file:
+
+```json
+{
+    "buyBands": [
+        {
+            "minMargin": 0.005,
+            "avgMargin": 0.01,
+            "maxMargin": 0.02,
+            "minSaiAmount": 20.0,
+            "avgSaiAmount": 30.0,
+            "maxSaiAmount": 40.0,
+            "dustCutoff": 0.0
+        },
+        {
+            "minMargin": 0.02,
+            "avgMargin": 0.025,
+            "maxMargin": 0.03,
+            "minSaiAmount": 40.0,
+            "avgSaiAmount": 60.0,
+            "maxSaiAmount": 80.0,
+            "dustCutoff": 0.0
+        }
+    ],
+    "sellBands": [
+        {
+            "minMargin": 0.005,
+            "avgMargin": 0.01,
+            "maxMargin": 0.02,
+            "minWEthAmount": 2.5,
+            "avgWEthAmount": 5.0,
+            "maxWEthAmount": 7.5,
+            "dustCutoff": 0.0
+        },
+        {
+            "minMargin": 0.02,
+            "avgMargin": 0.025,
+            "maxMargin": 0.03,
+            "minWEthAmount": 4.0,
+            "avgWEthAmount": 6.0,
+            "maxWEthAmount": 8.0,
+            "dustCutoff": 0.0
+        }
+    ]
+}
 ```
 
 ### `keeper-sai-maker-etherdelta`
