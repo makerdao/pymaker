@@ -43,15 +43,6 @@ def chain(web3: Web3) -> str:
         return "unknown"
 
 
-def are_any_transactions_pending(web3: Web3, address) -> bool:
-    from keeper.api import Address
-    assert(isinstance(web3, Web3))
-    assert(isinstance(address, Address))
-    latest_transaction = web3.eth.getTransactionCount(address.address, 'latest')
-    pending_transaction = web3.eth.getTransactionCount(address.address, 'pending')
-    return pending_transaction > latest_transaction
-
-
 def next_nonce(web3: Web3, address) -> Optional[int]:
     with _next_nonce_lock:
         if isinstance(web3.currentProvider, EthereumTesterProvider):

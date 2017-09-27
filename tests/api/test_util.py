@@ -24,7 +24,7 @@ from web3 import Web3
 
 from keeper.api import Address
 from keeper.api.util import synchronize, int_to_bytes32, bytes_to_int, bytes_to_hexstring, hexstring_to_bytes, \
-    AsyncCallback, chain, are_any_transactions_pending, next_nonce
+    AsyncCallback, chain, next_nonce
 
 
 async def async_return(result):
@@ -114,24 +114,6 @@ def mocked_web3_transaction_count(address: Address, latest: int, pending: int) -
     web3.eth = Mock()
     web3.eth.getTransactionCount = Mock(side_effect=side_effect)
     return web3
-
-
-def test_should_detect_pending_transactions():
-    # given
-    some_account = Address('0x0000000000111111111122222222223333333333')
-    web3 = mocked_web3_transaction_count(address=some_account, latest=2, pending=3)
-
-    # expect
-    assert are_any_transactions_pending(web3, some_account) is True
-
-
-def test_should_not_detect_pending_transactions_if_there_are_none():
-    # given
-    some_account = Address('0x0000000000111111111122222222223333333333')
-    web3 = mocked_web3_transaction_count(address=some_account, latest=3, pending=3)
-
-    # expect
-    assert are_any_transactions_pending(web3, some_account) is False
 
 
 def test_next_nonce_should_generate_nonces_starting_from_last_transactions_nonce():
