@@ -14,15 +14,26 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import pytest
 
 from keeper import Wad
 from keeper.api.feed import DSValue
 from keeper.sai_bite import SaiBite
 from tests.conftest import SaiDeployment
-from tests.helper import args
+from tests.helper import args, captured_output
 
 
 class TestSaiBite:
+    def test_should_not_start_without_eth_from_argument(self, sai: SaiDeployment):
+        # when
+        with captured_output() as (out, err):
+            with pytest.raises(SystemExit):
+                SaiBite(args=args(f""),
+                        web3=sai.web3, config=sai.get_config())
+
+        # then
+        assert "error: the following arguments are required: --eth-from" in err.getvalue()
+
     def test_should_bite_unsafe_cups_only(self, sai: SaiDeployment):
         # given
         keeper = SaiBite(args=args(f"--eth-from {sai.web3.eth.defaultAccount}"),
