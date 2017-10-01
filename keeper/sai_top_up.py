@@ -43,8 +43,8 @@ class SaiTopUp(SaiKeeper):
         self.target_ratio = self.liquidation_ratio + Ray.from_number(self.arguments.top_up_margin)
 
     def args(self, parser: argparse.ArgumentParser):
-        parser.add_argument("--min-margin", help="Margin between the liquidation ratio and the top-up threshold", type=float)
-        parser.add_argument("--top-up-margin", help="Margin between the liquidation ratio and the top-up target", type=float)
+        parser.add_argument("--min-margin", help="Margin between the liquidation ratio and the top-up threshold", type=float, required=True)
+        parser.add_argument("--top-up-margin", help="Margin between the liquidation ratio and the top-up target", type=float, required=True)
 
     def startup(self):
         self.approve()
