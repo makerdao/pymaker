@@ -36,7 +36,7 @@ from keeper.api.token import ERC20Token
 class Keeper:
     logger = logging.getLogger('keeper')
 
-    def __init__(self):
+    def __init__(self, args: list, **kwargs):
         parser = argparse.ArgumentParser(prog=self.executable_name())
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
@@ -48,13 +48,13 @@ class Keeper:
         parser.add_argument("--debug", help="Enable debug output", dest='debug', action='store_true')
         parser.add_argument("--trace", help="Enable trace output", dest='trace', action='store_true')
         self.args(parser)
-        self.arguments = parser.parse_args()
+        self.arguments = parser.parse_args(args)
         self._setup_logging()
-        self.web3 = Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
+        self.web3 = kwargs['web3'] if 'web3' in kwargs else Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
         self.web3.eth.defaultAccount = self.arguments.eth_from
         self.our_address = Address(self.arguments.eth_from)
         self.chain = chain(self.web3)
-        self.config = Config(self.chain)
+        self.config = kwargs['config'] if 'config' in kwargs else Config.load_config(self.chain)
         self.gas_price = self._get_gas_price()
         self.terminated = False
         self.fatal_termination = False
@@ -242,16 +242,17 @@ class Keeper:
 
 
 class Config:
-    def __init__(self, chain: str):
+    def __init__(self, config: dict):
+        self.config = config
+
+    @classmethod
+    def load_config(cls, chain: str):
         with open('keeper/config.json') as data_file:
-            self.chain = chain
-            self.config = json.load(data_file)
-        for key, value in self.config[self.chain]["tokens"].items():
-            ERC20Token.register_token(Address(value), key)
+            return Config(json.load(data_file)[chain])
 
     def get_config(self):
-        return self.config[self.chain]
+        return self.config
 
     def get_contract_address(self, name):
-        return self.config[self.chain]["contracts"].get(name, None)
+        return self.config["contracts"].get(name, None)
 

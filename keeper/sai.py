@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from web3 import Web3
 
 from keeper import Keeper
 from keeper.api import Address
@@ -23,8 +24,8 @@ from keeper.api.token import ERC20Token, DSEthToken
 
 
 class SaiKeeper(Keeper):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, args: list, **kwargs):
+        super().__init__(args, **kwargs)
         self.tub = Tub(web3=self.web3, address=Address(self.config.get_contract_address("saiTub")))
         self.tap = Tap(web3=self.web3, address=Address(self.config.get_contract_address("saiTap")))
         self.top = Top(web3=self.web3, address=Address(self.config.get_contract_address("saiTop")))

@@ -15,48 +15,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from web3 import Web3, EthereumTesterProvider
-
-from keeper import Address, ERC20Token, Wad, DefaultGasPrice
+from keeper import Wad
 from keeper.api.feed import DSValue
-from keeper.api.oasis import SimpleMarket
-from keeper.api.token import DSEthToken
 from keeper.sai_bite import SaiBite
 from tests.conftest import SaiDeployment
+from tests.helper import args
 
 
 class TestSaiBite:
-    @staticmethod
-    def setup_keeper(sai: SaiDeployment):
-        # for Keeper
-        keeper = SaiBite.__new__(SaiBite)
-        keeper.web3 = sai.web3
-        keeper.web3.eth.defaultAccount = keeper.web3.eth.accounts[0]
-        keeper.our_address = Address(keeper.web3.eth.defaultAccount)
-        keeper.chain = 'unittest'
-        keeper.config = None  # intentional, don't know how to deal with config in unit tests yet
-        keeper.terminated = False
-        keeper.fatal_termination = False
-        keeper._last_block_time = None
-        keeper._on_block_callback = None
-        keeper.gas_price = DefaultGasPrice()
-
-        # for SaiKeeper
-        keeper.tub = sai.tub
-        keeper.tap = sai.tap
-        keeper.top = sai.top
-        keeper.otc = SimpleMarket.deploy(keeper.web3)
-        keeper.skr = ERC20Token(web3=keeper.web3, address=keeper.tub.skr())
-        keeper.sai = ERC20Token(web3=keeper.web3, address=keeper.tub.sai())
-        keeper.gem = DSEthToken(web3=keeper.web3, address=keeper.tub.gem())
-        ERC20Token.register_token(keeper.tub.skr(), 'SKR')
-        ERC20Token.register_token(keeper.tub.sai(), 'SAI')
-        ERC20Token.register_token(keeper.tub.gem(), 'WETH')
-        return keeper
-
     def test_should_bite_unsafe_cups_only(self, sai: SaiDeployment):
         # given
-        keeper = self.setup_keeper(sai)
+        keeper = SaiBite(args=args(f"--eth-from {sai.web3.eth.defaultAccount}"),
+                         web3=sai.web3, config=sai.get_config())
 
         # and
         sai.tub.join(Wad.from_number(10)).transact()
@@ -90,5 +60,3 @@ class TestSaiBite:
         # then
         assert sai.tub.safe(1)
         assert sai.tub.tab(1) == Wad.from_number(0)
-
-

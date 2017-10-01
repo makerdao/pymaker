@@ -19,6 +19,8 @@ import argparse
 
 import logging
 
+import sys
+
 from keeper.api.approval import directly
 from keeper.api.numeric import Ray
 from keeper.api.numeric import Wad
@@ -34,8 +36,8 @@ class SaiTopUp(SaiKeeper):
 
     Cups owned by other accounts are ignored.
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, args: list, **kwargs):
+        super().__init__(args, **kwargs)
         self.liquidation_ratio = self.tub.mat()
         self.minimum_ratio = self.liquidation_ratio + Ray.from_number(self.arguments.min_margin)
         self.target_ratio = self.liquidation_ratio + Ray.from_number(self.arguments.top_up_margin)
@@ -83,4 +85,4 @@ class SaiTopUp(SaiKeeper):
 
 
 if __name__ == '__main__':
-    SaiTopUp().start()
+    SaiTopUp(sys.argv[1:]).start()

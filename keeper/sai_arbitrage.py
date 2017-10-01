@@ -18,6 +18,8 @@
 import argparse
 from typing import List
 
+import sys
+
 from keeper.api import Address, Transfer
 from keeper.api.approval import via_tx_manager, directly
 from keeper.api.numeric import Ray
@@ -63,8 +65,8 @@ class SaiArbitrage(SaiKeeper):
     profitability.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, args, **kwargs):
+        super().__init__(args, **kwargs)
         self.base_token = ERC20Token(web3=self.web3,
                                      address=ERC20Token.token_address_by_name(self.arguments.base_token))
         self.min_profit = Wad.from_number(self.arguments.min_profit)
@@ -210,4 +212,4 @@ class SaiArbitrage(SaiKeeper):
 
 
 if __name__ == '__main__':
-    SaiArbitrage().start()
+    SaiArbitrage(sys.argv[1:]).start()
