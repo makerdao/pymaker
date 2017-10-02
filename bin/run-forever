@@ -20,6 +20,12 @@ while true; do
         exit 0
     fi
 
-    echo "\n\nProcess terminated with an error (exit code ${EXIT_CODE}).\nRespawning it in ${DELAY} seconds...\n\n" >&2
+    echo "" >&2
+    echo "" >&2
+    echo "Process terminated with an error (exit code ${EXIT_CODE})." >&2
+    echo "Respawning it in ${DELAY} seconds..." >&2
+    echo "" >&2
+    echo "" >&2
+
     sleep ${DELAY}
 done
