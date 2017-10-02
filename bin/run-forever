@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -z "$@" ]
+if [ "$#" -lt 1 ]
 then
     echo "Run a keeper, restarting it every time it fails."
     echo ""
