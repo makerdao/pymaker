@@ -2,7 +2,7 @@
 
 if [ -z "$2" ]
 then
-    echo "Usage: $0 signal keeper-name"
+    echo "Usage: $0 <signal> <keeper-name>"
     exit 1
 fi
 

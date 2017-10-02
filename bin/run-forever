@@ -1,5 +1,15 @@
 #!/bin/bash
 
+if [ -z "$@" ]
+then
+    echo "Run a keeper, restarting it every time it fails."
+    echo ""
+    echo "Usage: $0 <keeper-script> [keeper-script-parameters]"
+    echo "  e.g. $0 bin/keeper-sai-bite --eth-from 0x0000...000"
+
+    exit 1
+fi
+
 # Ignore SIGINT and SIGTERM received by the script itself
 exit_script() {
     :
