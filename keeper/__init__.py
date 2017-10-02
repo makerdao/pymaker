@@ -20,6 +20,7 @@ import datetime
 import json
 import logging
 import os
+import signal
 import sys
 import threading
 import time
@@ -56,7 +57,8 @@ class Keeper:
         self.chain = chain(self.web3)
         self.config = kwargs['config'] if 'config' in kwargs else Config.load_config(self.chain)
         self.gas_price = self._get_gas_price()
-        self.terminated = False
+        self.terminated_internally = False
+        self.terminated_externally = False
         self.fatal_termination = False
         self._last_block_time = None
         self._on_block_callback = None
@@ -94,7 +96,14 @@ class Keeper:
         pass
     
     def terminate(self):
-        self.terminated = True
+        self.terminated_internally = True
+
+    def sigint_sigterm_handler(self, sig, frame):
+        if self.terminated_externally:
+            self.logger.warning("Graceful keeper termination due to SIGINT/SIGTERM already in progress")
+        else:
+            self.logger.warning("Keeper received SIGINT/SIGTERM signal, will terminate gracefully")
+            self.terminated_externally = True
 
     @staticmethod
     def executable_name():
@@ -200,20 +209,24 @@ class Keeper:
             exit(-1)
 
     def _main_loop(self):
+        # terminate gracefully on either SIGINT or SIGTERM
+        signal.signal(signal.SIGINT, self.sigint_sigterm_handler)
+        signal.signal(signal.SIGTERM, self.sigint_sigterm_handler)
+
         # in case at least one filter has been set up, we enter an infinite loop and let
         # the callbacks do the job. in case of no filters, we will not enter this loop
         # and the keeper will terminate soon after it started
         while any_filter_thread_present():
-            # we watch for KeyboardInterrupt in order to detect SIGINT signals
-            # capturing this event allows the keeper to shutdown gracefully
-            try:
-                time.sleep(1)
-            except KeyboardInterrupt:
-                break
+            time.sleep(1)
 
             # if the keeper logic asked us to terminate, we do so
-            if self.terminated:
+            if self.terminated_internally:
                 self.logger.warning("Keeper logic asked for termination, the keeper will terminate")
+                break
+
+            # if SIGINT/SIGTERM asked us to terminate, we do so
+            if self.terminated_externally:
+                self.logger.warning("The keeper is terminating due do SIGINT/SIGTERM signal received")
                 break
 
             # if any exception is raised in filter handling thread (could be an HTTP exception
