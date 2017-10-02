@@ -10,12 +10,6 @@ then
     exit 1
 fi
 
-# Ignore SIGINT and SIGTERM received by the script itself
-exit_script() {
-    :
-}
-trap exit_script SIGINT SIGTERM
-
 DELAY=5
 while true; do
     $@
