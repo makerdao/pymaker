@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ -z "$1" ]
+then
+    echo "Gracefully terminate a keeper (by sending a TERM signal)."
+    echo ""
+    echo "Usage: $0 <keeper-name>"
+    echo "  e.g. $0 keeper-sai-bite"
+
+    exit 1
+fi
+
+cd "$(dirname "$0")"
+./_signal TERM $1

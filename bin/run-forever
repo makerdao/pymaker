@@ -1,7 +1,35 @@
-#!/bin/sh
+#!/bin/bash
+
+exit_script() {
+    TERMINATED=1
+##    echo "Printing something special!"
+##    echo "Maybe executing other commands!"
+#    trap - SIGINT SIGTERM # clear the trap
+##    kill -- -$$ # Sends SIGTERM to child/sub processes
+##    kill -INT $PID # Sends SIGTERM to child/sub processes
+}
+
+trap exit_script SIGINT SIGTERM
 
 DELAY=5
-until $@; do
-    echo "\n\nProcess terminated with an error (exit code $?).\nRespawning it in ${DELAY} seconds...\n\n" >&2
+while true; do
+#    $@ &
+#    PID=$!
+#    wait "$PID"
+#    wait "$PID"
+    $@
+    EXIT_CODE=$?
+
+#    if [ -n "$TERMINATED" ]
+#    then
+#        exit 1
+#    fi
+
+    if [ "${EXIT_CODE}" -eq 0 ]
+    then
+        exit 0
+    fi
+
+    echo "\n\nProcess terminated with an error (exit code ${EXIT_CODE}).\nRespawning it in ${DELAY} seconds...\n\n" >&2
     sleep ${DELAY}
 done
