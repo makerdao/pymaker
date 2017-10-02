@@ -11,7 +11,7 @@ while true; do
     $@
     EXIT_CODE=$?
 
-    if [ "${EXIT_CODE}" -eq 0 ]
+    if [[ "${EXIT_CODE}" -eq 0 || "${EXIT_CODE}" -eq 137 ]]
     then
         exit 0
     fi
