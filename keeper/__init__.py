@@ -145,16 +145,20 @@ class Keeper:
         self.logger.info("Watching for new blocks")
 
     def every(self, time_in_seconds, callback):
+        def setup_timer(time):
+            timer = threading.Timer(time, func)
+            timer.daemon = True
+            timer.start()
+
         def func():
             try:
                 callback()
             except:
-                pass
+                setup_timer(time_in_seconds)
+                raise
+            setup_timer(time_in_seconds)
 
-            timer = threading.Timer(time_in_seconds, func)
-            timer.daemon = True
-            timer.start()
-        func()
+        setup_timer(1)
 
     def _setup_logging(self):
         # if `--trace` is enabled, we set DEBUG logging level for the root logger
