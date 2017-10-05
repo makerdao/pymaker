@@ -60,6 +60,7 @@ class Keeper:
         self.terminated_internally = False
         self.terminated_externally = False
         self.fatal_termination = False
+        self._at_least_one_every = False
         self._last_block_time = None
         self._on_block_callback = None
 
@@ -144,9 +145,9 @@ class Keeper:
 
         self.logger.info("Watching for new blocks")
 
-    def every(self, time_in_seconds, callback):
-        def setup_timer(time):
-            timer = threading.Timer(time, func)
+    def every(self, frequency_in_seconds: int, callback):
+        def setup_timer(delay):
+            timer = threading.Timer(delay, func)
             timer.daemon = True
             timer.start()
 
@@ -154,11 +155,12 @@ class Keeper:
             try:
                 callback()
             except:
-                setup_timer(time_in_seconds)
+                setup_timer(frequency_in_seconds)
                 raise
-            setup_timer(time_in_seconds)
+            setup_timer(frequency_in_seconds)
 
         setup_timer(1)
+        self._at_least_one_every = True
 
     def _setup_logging(self):
         # if `--trace` is enabled, we set DEBUG logging level for the root logger
@@ -224,7 +226,7 @@ class Keeper:
         # in case at least one filter has been set up, we enter an infinite loop and let
         # the callbacks do the job. in case of no filters, we will not enter this loop
         # and the keeper will terminate soon after it started
-        while any_filter_thread_present():
+        while any_filter_thread_present() or self._at_least_one_every:
             time.sleep(1)
 
             # if the keeper logic asked us to terminate, we do so
