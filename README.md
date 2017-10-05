@@ -88,6 +88,12 @@ dynamic gas management works, **it is essential to run each keeper on his own Et
 Otherwise the keepers will compete for the same nonces, which will effectively stop them
 from working.
 
+### Unlocking accounts
+
+Keepers will fail to start if the Ethereum accounts they are configured to operate on are not unlocked.
+This post <https://ethereum.stackexchange.com/questions/15349/parity-unlock-multiple-accounts-at-startup/15351#15351>
+describes how to unlock multiple accounts in Parity on startup.
+
 ## Reference keepers
 
 This sections lists and briefly describes a set of reference keepers present in this project.
