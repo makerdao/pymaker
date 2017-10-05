@@ -146,7 +146,11 @@ class Keeper:
 
     def every(self, time_in_seconds, callback):
         def func():
-            callback()
+            try:
+                callback()
+            except:
+                pass
+
             timer = threading.Timer(time_in_seconds, func)
             timer.daemon = True
             timer.start()
