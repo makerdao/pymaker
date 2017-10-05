@@ -402,8 +402,7 @@ of the _SAI Stablecoin_ ecosystem. The current version provides APIs around:
 * `DSVault` (<https://github.com/dapphub/ds-vault>).
 
 In addition to that, there are draft interfaces to:
-* `EtherDelta` (<https://github.com/etherdelta/etherdelta.github.io>),
-* `AuctionManager` and `SplittingAuctionManager` (<https://github.com/makerdao/token-auction>).
+* `EtherDelta` (<https://github.com/etherdelta/etherdelta.github.io>).
 
 There is also a _Setzer_ class which provides a simple interface to the `setzer` commandline
 tool (<https://github.com/makerdao/setzer>).
