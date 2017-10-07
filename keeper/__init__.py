@@ -96,7 +96,10 @@ class Keeper:
     def shutdown(self):
         pass
     
-    def terminate(self):
+    def terminate(self, message=None):
+        if message is not None:
+            self.logger.warning(message)
+
         self.terminated_internally = True
 
     def sigint_sigterm_handler(self, sig, frame):
