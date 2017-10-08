@@ -25,6 +25,8 @@ import sys
 import threading
 import time
 
+import zlib
+
 from keeper.api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad
 from keeper.api.gas import FixedGasPrice, DefaultGasPrice, GasPrice, IncreasingGasPrice
@@ -63,6 +65,7 @@ class Keeper:
         self._at_least_one_every = False
         self._last_block_time = None
         self._on_block_callback = None
+        self._config_checksum = {}
 
     def start(self):
         self.logger.info(f"{self.executable_name()}")
@@ -116,6 +119,21 @@ class Keeper:
     def eth_balance(self, address: Address) -> Wad:
         assert(isinstance(address, Address))
         return Wad(self.web3.eth.getBalance(address.address))
+
+    def get_config(self, filename):
+        with open(filename) as data_file:
+            content = data_file.read()
+            result = json.loads(content)
+
+            # Report if file has been newly loaded or reloaded
+            checksum = zlib.crc32(content.encode('utf-8'))
+            if filename not in self._config_checksum:
+                self.logger.info(f"Loaded configuration from '{filename}'")
+            elif self._config_checksum[filename] != checksum:
+                self.logger.info(f"Reloaded configuration from '{filename}'")
+            self._config_checksum[filename] = checksum
+
+            return result
 
     def on_block(self, callback):
         def new_block_callback(block_hash):
