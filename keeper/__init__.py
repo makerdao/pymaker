@@ -320,22 +320,20 @@ class Config:
 class Database:
     def __init__(self, filename: str):
         self.lock = threading.Lock()
-        self.filename = filename
+        self.db = TinyDB(filename)
 
     def open(self):
         class ReturnProxy(object):
-            def __init__(self, lock: threading.Lock, filename: str):
+            def __init__(self, lock: threading.Lock, db: TinyDB):
                 self.lock = lock
-                self.filename = filename
+                self.db = db
 
             def __enter__(self):
                 self.lock.acquire()
-                self.db = TinyDB(self.filename)
                 return self.db
 
             def __exit__(self, exc_type, exc_value, traceback):
-                self.db.close()
                 self.lock.release()
                 return None
 
-        return ReturnProxy(lock=self.lock, filename=self.filename)
+        return ReturnProxy(lock=self.lock, db=self.db)
