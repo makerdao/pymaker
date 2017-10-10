@@ -346,87 +346,87 @@ class Transact:
             A future value of either a :py:class:`keeper.api.Receipt` object if the transaction
             invocation was successful, or `None` if it failed.
         """
+        # First we try to estimate the gas usage of the transaction. If gas estimation fails
+        # it means there is no point in sending the transaction, thus we fail instantly and
+        # do not increment the nonce. If the estimation is successful, we pass the calculated
+        # gas value (plus some `gas_buffer`) to the subsequent `transact` calls so it does not
+        # try to estimate it again. If it would try to estimate it again it could turn out
+        # this transaction will fail (another block might have been mined in the meantime for
+        # example), which would mean we incremented the nonce but never used it.
+        #
+        # This is why gas estimation has to happen first and before the nonce gets incremented.
         try:
-            # First we try to estimate the gas usage of the transaction. If gas estimation fails
-            # it means there is no point in sending the transaction, thus we fail instantly and
-            # do not increment the nonce. If the estimation is successful, we pass the calculated
-            # gas value (plus some `gas_buffer`) to the subsequent `transact` calls so it does not
-            # try to estimate it again. If it would try to estimate it again it could turn out
-            # this transaction will fail (another block might have been mined in the meantime for
-            # example), which would mean we incremented the nonce but never used it.
-            #
-            # This is why gas estimation has to happen first and before the nonce gets incremented.
             gas_estimate = self.estimated_gas()
-
-            # Get the next available nonce. `next_nonce()` takes pending transactions into account.
-            # Get or calculate `gas`. Get `gas_price`, which in fact refers to a gas pricing algorithm.
-            nonce = next_nonce(self.web3, Address(self.web3.eth.defaultAccount))
-            gas = self._gas(gas_estimate, **kwargs)
-            gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
-
-            # Initialize variables which will be used in the main loop.
-            tx_hashes = []
-            initial_time = time.time()
-            gas_price_last = 0
-
-            while True:
-                # Check if any transaction sent so far has been mined (has a receipt).
-                # If it has, we return either the receipt (if if was successful) or `None`.
-                for tx_hash in tx_hashes:
-                    receipt = self._get_receipt(tx_hash)
-                    if receipt:
-                        tx_data = self.web3.eth.getTransaction(tx_hash)
-
-                        self._register_event({
-                            'type': 'mined',
-                            'timestamp': datetime.now(tz=pytz.utc).isoformat(),
-                            'blockNumber': receipt.raw_receipt['blockNumber'],
-                            'transaction': tx_data.__dict__,
-                            'receipt': {k: v for k, v in receipt.raw_receipt.__dict__.items() if not k.startswith('logs')},
-                            'successful': receipt.successful
-                        })
-
-                        if receipt.successful:
-                            self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
-                            return receipt
-                        else:
-                            self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
-                                                f" log entry, assuming it has failed (tx_hash={tx_hash})")
-                            return None
-
-                # Send a transaction if:
-                # - no transaction has been sent yet, or
-                # - the gas price requested has changed since the last transaction has been sent
-                seconds_elapsed = int(time.time() - initial_time)
-                gas_price_value = gas_price.get_gas_price(seconds_elapsed)
-                if len(tx_hashes) == 0 or gas_price_value != gas_price_last:
-                    gas_price_last = gas_price_value
-                    try:
-                        tx_hash = self._func(nonce, gas, gas_price_value)
-                        tx_data = self.web3.eth.getTransaction(tx_hash)
-                        tx_hashes.append(tx_hash)
-
-                        self._register_event({
-                            'type': 'sent',
-                            'timestamp': datetime.now(tz=pytz.utc).isoformat(),
-                            'blockNumber': self.web3.eth.blockNumber,
-                            'transaction': tx_data.__dict__
-                        })
-
-                        self.logger.info(f"Sent transaction {self.name()} with nonce={nonce}, gas={gas},"
-                                         f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
-                                         f" (tx_hash={tx_hash})")
-                    except:
-                        self.logger.warning(f"Failed to send transaction {self.name()} with nonce={nonce}, gas={gas},"
-                                            f" gas_price={gas_price_value if gas_price_value is not None else 'default'}")
-
-                        if len(tx_hashes) == 0:
-                            raise
-
-                await asyncio.sleep(0.25)
         except:
-            self.logger.warning(f"Transaction {self.name()} failed ({sys.exc_info()[1]})")
+            self.logger.warning(f"Transaction {self.name()} will fail, refusing to send ({sys.exc_info()[1]})")
             return None
+
+        # Get the next available nonce. `next_nonce()` takes pending transactions into account.
+        # Get or calculate `gas`. Get `gas_price`, which in fact refers to a gas pricing algorithm.
+        nonce = next_nonce(self.web3, Address(self.web3.eth.defaultAccount))
+        gas = self._gas(gas_estimate, **kwargs)
+        gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
+
+        # Initialize variables which will be used in the main loop.
+        tx_hashes = []
+        initial_time = time.time()
+        gas_price_last = 0
+
+        while True:
+            # Check if any transaction sent so far has been mined (has a receipt).
+            # If it has, we return either the receipt (if if was successful) or `None`.
+            for tx_hash in tx_hashes:
+                receipt = self._get_receipt(tx_hash)
+                if receipt:
+                    tx_data = self.web3.eth.getTransaction(tx_hash)
+
+                    self._register_event({
+                        'type': 'mined',
+                        'timestamp': datetime.now(tz=pytz.utc).isoformat(),
+                        'blockNumber': receipt.raw_receipt['blockNumber'],
+                        'transaction': tx_data.__dict__,
+                        'receipt': {k: v for k, v in receipt.raw_receipt.__dict__.items() if not k.startswith('logs')},
+                        'successful': receipt.successful
+                    })
+
+                    if receipt.successful:
+                        self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
+                        return receipt
+                    else:
+                        self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
+                                            f" log entry, assuming it has failed (tx_hash={tx_hash})")
+                        return None
+
+            # Send a transaction if:
+            # - no transaction has been sent yet, or
+            # - the gas price requested has changed since the last transaction has been sent
+            seconds_elapsed = int(time.time() - initial_time)
+            gas_price_value = gas_price.get_gas_price(seconds_elapsed)
+            if len(tx_hashes) == 0 or gas_price_value != gas_price_last:
+                gas_price_last = gas_price_value
+                try:
+                    tx_hash = self._func(nonce, gas, gas_price_value)
+                    tx_data = self.web3.eth.getTransaction(tx_hash)
+                    tx_hashes.append(tx_hash)
+
+                    self._register_event({
+                        'type': 'sent',
+                        'timestamp': datetime.now(tz=pytz.utc).isoformat(),
+                        'blockNumber': self.web3.eth.blockNumber,
+                        'transaction': tx_data.__dict__
+                    })
+
+                    self.logger.info(f"Sent transaction {self.name()} with nonce={nonce}, gas={gas},"
+                                     f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
+                                     f" (tx_hash={tx_hash})")
+                except:
+                    self.logger.warning(f"Failed to send transaction {self.name()} with nonce={nonce}, gas={gas},"
+                                        f" gas_price={gas_price_value if gas_price_value is not None else 'default'}")
+
+                    if len(tx_hashes) == 0:
+                        raise
+
+            await asyncio.sleep(0.25)
 
     def invocation(self) -> Invocation:
         """Returns the `Invocation` object for this pending Ethereum transaction.
