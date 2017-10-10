@@ -186,7 +186,7 @@ class Keeper:
     def _setup_logging(self):
         # if `--trace` is enabled, we set DEBUG logging level for the root logger
         # which will make us see a lot output from the `urllib3.connectionpool` library etc.
-        logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(name)-7s %(message)s',
+        logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(name)-9s %(message)s',
                             level=(logging.DEBUG if self.arguments.trace else logging.INFO))
 
         # if only `--debug` is enabled, we set DEBUG logging level for our own loggers only
