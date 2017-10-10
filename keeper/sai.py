@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from web3 import Web3
 
 from keeper import Keeper
 from keeper.api import Address
