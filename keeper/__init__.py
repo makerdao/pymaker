@@ -209,6 +209,7 @@ class Keeper:
         if self.arguments.debug and not self.arguments.trace:
             logging.getLogger("api").setLevel(logging.DEBUG)
             logging.getLogger("keeper").setLevel(logging.DEBUG)
+            logging.getLogger("filelock").setLevel(logging.DEBUG)
 
     def _get_gas_price(self) -> GasPrice:
         if self.arguments.gas_price > 0:
