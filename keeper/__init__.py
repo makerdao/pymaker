@@ -27,8 +27,12 @@ import time
 
 import zlib
 
+import filelock
+import pkg_resources
+from tinydb import TinyDB, Query
+
 from keeper.api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
-    any_filter_thread_present, Wad
+    any_filter_thread_present, Wad, Contract
 from keeper.api.gas import FixedGasPrice, DefaultGasPrice, GasPrice, IncreasingGasPrice
 from keeper.api.util import AsyncCallback, chain
 from web3 import Web3, HTTPProvider
@@ -66,29 +70,40 @@ class Keeper:
         self._last_block_time = None
         self._on_block_callback = None
         self._config_checksum = {}
+        core_path = os.path.abspath(pkg_resources.resource_filename(__name__, f"../data/{self.executable_name()}_{self.chain}_{self.our_address}".lower()))
+        self._data_file = f"{core_path}.db"
+        self._lock_file = f"{core_path}.lock"
+        self.database = Database(self._data_file)
+        Contract.database = self.database
 
     def start(self):
         self.logger.info(f"{self.executable_name()}")
         self.logger.info(f"{'-' * len(self.executable_name())}")
         self.logger.info(f"Keeper on {self.chain}, connected to {self.web3.currentProvider.endpoint_uri}")
-        self._check_account_unlocked()
-        self._wait_for_init()
         self.logger.info(f"Keeper operating as {self.our_address}")
-        self.logger.info(f"Keeper account balance is {self.eth_balance(self.our_address)} ETH")
-        self.logger.info("Keeper started")
-        self.startup()
-        self._main_loop()
-        self.logger.info("Shutting down the keeper")
-        if any_filter_thread_present():
-            self.logger.info("Waiting for all threads to terminate...")
-            stop_all_filter_threads()
-        if self._on_block_callback is not None:
-            self.logger.info("Waiting for outstanding callback to terminate...")
-            self._on_block_callback.wait()
-        self.logger.info("Executing keeper shutdown logic...")
-        self.shutdown()
-        self.logger.info("Keeper terminated")
-        exit(10 if self.fatal_termination else 0)
+        self._check_account_unlocked()
+        try:
+            with filelock.FileLock(self._lock_file).acquire(timeout=0):
+                self._wait_for_init()
+                self.logger.info(f"Keeper account balance is {self.eth_balance(self.our_address)} ETH")
+                self.logger.info("Keeper started")
+                self.startup()
+                self._main_loop()
+                self.logger.info("Shutting down the keeper")
+                if any_filter_thread_present():
+                    self.logger.info("Waiting for all threads to terminate...")
+                    stop_all_filter_threads()
+                if self._on_block_callback is not None:
+                    self.logger.info("Waiting for outstanding callback to terminate...")
+                    self._on_block_callback.wait()
+                self.logger.info("Executing keeper shutdown logic...")
+                self.shutdown()
+                self.logger.info("Keeper terminated")
+                exit(10 if self.fatal_termination else 0)
+        except filelock.Timeout:
+            self.logger.fatal(f"Unable to acquire lock on {self._lock_file}")
+            self.logger.fatal(f"Another instance of this keeper may be already running")
+            exit(10)
 
     def args(self, parser: argparse.ArgumentParser):
         pass
@@ -300,3 +315,26 @@ class Config:
     def get_contract_address(self, name):
         return self.config["contracts"].get(name, None)
 
+
+class Database:
+    def __init__(self, filename: str):
+        self.lock = threading.Lock()
+        self.filename = filename
+
+    def open(self):
+        class ReturnProxy(object):
+            def __init__(self, lock: threading.Lock, filename: str):
+                self.lock = lock
+                self.filename = filename
+
+            def __enter__(self):
+                self.lock.acquire()
+                self.db = TinyDB(self.filename)
+                return self.db
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                self.db.close()
+                self.lock.release()
+                return None
+
+        return ReturnProxy(lock=self.lock, filename=self.filename)
