@@ -75,7 +75,7 @@ class DSValue(Contract):
             A 32-byte array with the current value of this instance.
         """
         read_value = self._contract.call().read()
-        return array.array('B', [ord(x) for x in read_value]).tostring()
+        return array.array('B', [ord(x) for x in read_value]).tobytes()
 
     def read_as_hex(self) -> str:
         """Reads the current value from this instance and converts it to a hex string.
