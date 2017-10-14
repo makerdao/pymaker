@@ -285,7 +285,7 @@ class Transact:
         # `eth-testrpc` does not handle the `nonce` parameter properly so we do have to
         # ignore it otherwise unit-tests will not pass. Hopefully we will be able to get
         # rid of it once the above issue is solved.
-        nonce_dict = {'nonce': nonce} if not isinstance(self.web3.currentProvider, EthereumTesterProvider) else {}
+        nonce_dict = {'nonce': nonce} if not isinstance(self.web3.providers[0], EthereumTesterProvider) else {}
         gas_price_dict = {'gasPrice': gas_price} if gas_price is not None else {}
 
         return self.contract.\

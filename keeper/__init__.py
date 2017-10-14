@@ -79,7 +79,7 @@ class Keeper:
     def start(self):
         self.logger.info(f"{self.executable_name()}")
         self.logger.info(f"{'-' * len(self.executable_name())}")
-        self.logger.info(f"Keeper on {self.chain}, connected to {self.web3.currentProvider.endpoint_uri}")
+        self.logger.info(f"Keeper on {self.chain}, connected to {self.web3.providers[0].endpoint_uri}")
         self.logger.info(f"Keeper operating as {self.our_address}")
         self._check_account_unlocked()
         try:
