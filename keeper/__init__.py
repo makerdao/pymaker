@@ -146,8 +146,10 @@ class Keeper:
             checksum = zlib.crc32(content_config.encode('utf-8'))
             if filename not in self._config_checksum:
                 self.logger.info(f"Loaded configuration from '{filename}'")
+                self.logger.debug(f"Config file is: " + json.dumps(result, indent=4))
             elif self._config_checksum[filename] != checksum:
                 self.logger.info(f"Reloaded configuration from '{filename}'")
+                self.logger.debug(f"Reloded config file is: " + json.dumps(result, indent=4))
             self._config_checksum[filename] = checksum
 
             return result
