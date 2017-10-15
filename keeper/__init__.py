@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import _jsonnet
 import argparse
 import datetime
 import json
@@ -137,11 +138,12 @@ class Keeper:
 
     def get_config(self, filename):
         with open(filename) as data_file:
-            content = data_file.read()
-            result = json.loads(content)
+            content_file = data_file.read()
+            content_config = _jsonnet.evaluate_snippet("snippet", content_file, ext_vars={})
+            result = json.loads(content_config)
 
             # Report if file has been newly loaded or reloaded
-            checksum = zlib.crc32(content.encode('utf-8'))
+            checksum = zlib.crc32(content_config.encode('utf-8'))
             if filename not in self._config_checksum:
                 self.logger.info(f"Loaded configuration from '{filename}'")
             elif self._config_checksum[filename] != checksum:
