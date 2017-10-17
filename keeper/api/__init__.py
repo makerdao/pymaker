@@ -17,20 +17,18 @@
 
 import asyncio
 import json
-import logging
 import sys
 import time
-from datetime import datetime
 from functools import total_ordering
 from typing import Optional
 
 import eth_utils
 import pkg_resources
-import pytz
 from web3 import Web3, EthereumTesterProvider
 from web3.utils.events import get_event_data
 
 from keeper.api.gas import DefaultGasPrice, GasPrice
+from keeper.api.logger import Logger, Event
 from keeper.api.numeric import Wad
 from keeper.api.util import synchronize, next_nonce
 
@@ -105,8 +103,7 @@ class Address:
 
 
 class Contract:
-    logger = logging.getLogger('api')
-    database = None
+    logger = Logger('-', '-')
 
     @staticmethod
     def _deploy(web3: Web3, abi: dict, bytecode: str, args) -> Address:
@@ -142,10 +139,10 @@ class Contract:
         def callback(log):
             if past:
                 self.logger.debug(f"Past event {log['event']} discovered, block_number={log['blockNumber']},"
-                                 f" tx_hash={log['transactionHash']}")
+                                  f" tx_hash={log['transactionHash']}")
             else:
                 self.logger.debug(f"Event {log['event']} discovered, block_number={log['blockNumber']},"
-                                 f" tx_hash={log['transactionHash']}")
+                                  f" tx_hash={log['transactionHash']}")
             handler(cls(log['args']))
         return callback
 
@@ -239,8 +236,6 @@ class Receipt:
 class Transact:
     """Represents an Ethereum transaction before it gets executed."""
 
-    logger = logging.getLogger('api')
-
     def __init__(self, origin, web3, abi, address, contract, function_name, parameters, extra=None):
         assert(isinstance(origin, object))
         assert(isinstance(web3, Web3))
@@ -251,6 +246,7 @@ class Transact:
         assert(isinstance(parameters, list))
 
         self.origin = origin
+        self.logger = origin.logger
         self.web3 = web3
         self.abi = abi
         self.address = address
@@ -370,6 +366,7 @@ class Transact:
         # Initialize variables which will be used in the main loop.
         tx_hashes = []
         initial_time = time.time()
+        last_time = initial_time
         gas_price_last = 0
 
         while True:
@@ -379,22 +376,14 @@ class Transact:
                 receipt = self._get_receipt(tx_hash)
                 if receipt:
                     tx_data = self.web3.eth.getTransaction(tx_hash)
-
-                    self._register_event({
-                        'type': 'mined',
-                        'timestamp': datetime.now(tz=pytz.utc).isoformat(),
-                        'blockNumber': receipt.raw_receipt['blockNumber'],
-                        'transaction': tx_data.__dict__,
-                        'receipt': {k: v for k, v in receipt.raw_receipt.__dict__.items() if not k.startswith('logs')},
-                        'successful': receipt.successful
-                    })
+                    event = Event.transaction_mined(self.name(), tx_data, receipt, initial_time, last_time)
 
                     if receipt.successful:
-                        self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
+                        self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})", event)
                         return receipt
                     else:
                         self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
-                                            f" log entry, assuming it has failed (tx_hash={tx_hash})")
+                                            f" log entry, assuming it has failed (tx_hash={tx_hash})", event)
                         return None
 
             # Send a transaction if:
@@ -404,17 +393,20 @@ class Transact:
             gas_price_value = gas_price.get_gas_price(seconds_elapsed)
             if len(tx_hashes) == 0 or gas_price_value != gas_price_last:
                 gas_price_last = gas_price_value
+                if len(tx_hashes) > 0:
+                    last_time = time.time()
+
                 try:
                     tx_hash = self._func(nonce, gas, gas_price_value)
                     tx_data = self.web3.eth.getTransaction(tx_hash)
                     tx_hashes.append(tx_hash)
 
-                    self._register_event({
-                        'type': 'sent',
-                        'timestamp': datetime.now(tz=pytz.utc).isoformat(),
-                        'blockNumber': self.web3.eth.blockNumber,
-                        'transaction': tx_data.__dict__
-                    })
+                    # self._register_event({
+                    #     'type': 'sent',
+                    #     'timestamp': datetime.now(tz=pytz.utc).isoformat(),
+                    #     'blockNumber': self.web3.eth.blockNumber,
+                    #     'transaction': tx_data.__dict__
+                    # })
 
                     self.logger.info(f"Sent transaction {self.name()} with nonce={nonce}, gas={gas},"
                                      f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
@@ -441,13 +433,6 @@ class Transact:
         """
         return Invocation(self.address,
                           Calldata(self.web3.eth.contract(abi=self.abi).encodeABI(self.function_name, self.parameters)))
-
-    def _register_event(self, event: dict):
-        try:
-            with Contract.database.open() as db:
-                db.table('transaction_events').insert(event)
-        except:
-            self.logger.warning(f"Failed to register a transaction event in the keeper database")
 
 
 class Transfer:

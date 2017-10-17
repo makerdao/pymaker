@@ -19,7 +19,6 @@ import _jsonnet
 import argparse
 import datetime
 import json
-import logging
 import os
 import signal
 import sys
@@ -28,13 +27,12 @@ import time
 
 import zlib
 
-import filelock
 import pkg_resources
-from tinydb import TinyDB, Query
 
 from keeper.api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad, Contract
 from keeper.api.gas import FixedGasPrice, DefaultGasPrice, GasPrice, IncreasingGasPrice
+from keeper.api.logger import Logger
 from keeper.api.util import AsyncCallback, chain
 from web3 import Web3, HTTPProvider
 
@@ -42,8 +40,6 @@ from keeper.api.token import ERC20Token
 
 
 class Keeper:
-    logger = logging.getLogger('keeper')
-
     def __init__(self, args: list, **kwargs):
         parser = argparse.ArgumentParser(prog=self.executable_name())
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
@@ -57,7 +53,6 @@ class Keeper:
         parser.add_argument("--trace", help="Enable trace output", dest='trace', action='store_true')
         self.args(parser)
         self.arguments = parser.parse_args(args)
-        self._setup_logging()
         self.web3 = kwargs['web3'] if 'web3' in kwargs else Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
         self.web3.eth.defaultAccount = self.arguments.eth_from
         self.our_address = Address(self.arguments.eth_from)
@@ -71,11 +66,9 @@ class Keeper:
         self._last_block_time = None
         self._on_block_callback = None
         self._config_checksum = {}
-        core_path = os.path.abspath(pkg_resources.resource_filename(__name__, f"../data/{self.executable_name()}_{self.chain}_{self.our_address}".lower()))
-        self._data_file = f"{core_path}.db"
-        self._lock_file = f"{core_path}.lock"
-        self.database = Database(self._data_file)
-        Contract.database = self.database
+        _json_log = os.path.abspath(pkg_resources.resource_filename(__name__, f"../logs/{self.executable_name()}_{self.chain}_{self.our_address}.json.log".lower()))
+        self.logger = Logger(self.keeper_name(), self.chain, _json_log, self.arguments.debug, self.arguments.trace)
+        Contract.logger = self.logger
 
     def start(self):
         self.logger.info(f"{self.executable_name()}")
@@ -83,28 +76,22 @@ class Keeper:
         self.logger.info(f"Keeper on {self.chain}, connected to {self.web3.providers[0].endpoint_uri}")
         self.logger.info(f"Keeper operating as {self.our_address}")
         self._check_account_unlocked()
-        try:
-            with filelock.FileLock(self._lock_file).acquire(timeout=0):
-                self._wait_for_init()
-                self.logger.info(f"Keeper account balance is {self.eth_balance(self.our_address)} ETH")
-                self.logger.info("Keeper started")
-                self.startup()
-                self._main_loop()
-                self.logger.info("Shutting down the keeper")
-                if any_filter_thread_present():
-                    self.logger.info("Waiting for all threads to terminate...")
-                    stop_all_filter_threads()
-                if self._on_block_callback is not None:
-                    self.logger.info("Waiting for outstanding callback to terminate...")
-                    self._on_block_callback.wait()
-                self.logger.info("Executing keeper shutdown logic...")
-                self.shutdown()
-                self.logger.info("Keeper terminated")
-                exit(10 if self.fatal_termination else 0)
-        except filelock.Timeout:
-            self.logger.fatal(f"Unable to acquire lock on {self._lock_file}")
-            self.logger.fatal(f"Another instance of this keeper may be already running")
-            exit(10)
+        self._wait_for_init()
+        self.logger.info(f"Keeper account balance is {self.eth_balance(self.our_address)} ETH") #TODO balance
+        self.logger.info("Keeper started")
+        self.startup()
+        self._main_loop()
+        self.logger.info("Shutting down the keeper")
+        if any_filter_thread_present():
+            self.logger.info("Waiting for all threads to terminate...")
+            stop_all_filter_threads()
+        if self._on_block_callback is not None:
+            self.logger.info("Waiting for outstanding callback to terminate...")
+            self._on_block_callback.wait()
+        self.logger.info("Executing keeper shutdown logic...")
+        self.shutdown()
+        self.logger.info("Keeper terminated")
+        exit(10 if self.fatal_termination else 0)
 
     def args(self, parser: argparse.ArgumentParser):
         pass
@@ -129,8 +116,11 @@ class Keeper:
             self.terminated_externally = True
 
     @staticmethod
-    def executable_name():
-        return "keeper-" + os.path.basename(sys.argv[0]).replace('_', '-').replace('.py', '')
+    def keeper_name():
+        return os.path.basename(sys.argv[0]).replace('_', '-').replace('.py', '')
+
+    def executable_name(self):
+        return "keeper-" + self.keeper_name()
 
     def eth_balance(self, address: Address) -> Wad:
         assert(isinstance(address, Address))
@@ -201,19 +191,6 @@ class Keeper:
 
         setup_timer(1)
         self._at_least_one_every = True
-
-    def _setup_logging(self):
-        # if `--trace` is enabled, we set DEBUG logging level for the root logger
-        # which will make us see a lot output from the `urllib3.connectionpool` library etc.
-        logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(name)-9s %(message)s',
-                            level=(logging.DEBUG if self.arguments.trace else logging.INFO))
-
-        # if only `--debug` is enabled, we set DEBUG logging level for our own loggers only
-        # this significantly limits the output comparing to when `--trace` is enabled
-        if self.arguments.debug and not self.arguments.trace:
-            logging.getLogger("api").setLevel(logging.DEBUG)
-            logging.getLogger("keeper").setLevel(logging.DEBUG)
-            logging.getLogger("filelock").setLevel(logging.DEBUG)
 
     def _get_gas_price(self) -> GasPrice:
         if self.arguments.gas_price > 0:
@@ -319,25 +296,3 @@ class Config:
 
     def get_contract_address(self, name):
         return self.config["contracts"].get(name, None)
-
-
-class Database:
-    def __init__(self, filename: str):
-        self.lock = threading.Lock()
-        self.db = TinyDB(filename)
-
-    def open(self):
-        class ReturnProxy(object):
-            def __init__(self, lock: threading.Lock, db: TinyDB):
-                self.lock = lock
-                self.db = db
-
-            def __enter__(self):
-                self.lock.acquire()
-                return self.db
-
-            def __exit__(self, exc_type, exc_value, traceback):
-                self.lock.release()
-                return None
-
-        return ReturnProxy(lock=self.lock, db=self.db)
