@@ -140,7 +140,7 @@ class Keeper:
                 self.logger.debug(f"Config file is: " + json.dumps(result, indent=4))
             elif self._config_checksum[filename] != checksum:
                 self.logger.info(f"Reloaded configuration from '{filename}'")
-                self.logger.debug(f"Reloded config file is: " + json.dumps(result, indent=4))
+                self.logger.debug(f"Reloaded config file is: " + json.dumps(result, indent=4))
             self._config_checksum[filename] = checksum
 
             return result
