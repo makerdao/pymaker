@@ -32,7 +32,7 @@ import pkg_resources
 from keeper.api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad, Contract
 from keeper.api.gas import FixedGasPrice, DefaultGasPrice, GasPrice, IncreasingGasPrice
-from keeper.api.logger import Logger
+from keeper.api.logger import Logger, Event
 from keeper.api.util import AsyncCallback, chain
 from web3 import Web3, HTTPProvider
 
@@ -77,7 +77,8 @@ class Keeper:
         self.logger.info(f"Keeper operating as {self.our_address}")
         self._check_account_unlocked()
         self._wait_for_init()
-        self.logger.info(f"Keeper account balance is {self.eth_balance(self.our_address)} ETH") #TODO balance
+        balance = self.eth_balance(self.our_address)
+        self.logger.info(f"Keeper account balance is {balance} ETH", Event.eth_balance(self.our_address, balance))
         self.logger.info("Keeper started")
         self.startup()
         self._main_loop()

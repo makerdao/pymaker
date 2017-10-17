@@ -125,7 +125,7 @@ class Event:
         elif isinstance(value, bytes):
             return value.decode("utf-8")
         elif isinstance(value, str):
-            return str
+            return value
         else:
             raise Exception(f"Unknown type of {value}")
 
@@ -134,7 +134,6 @@ class Event:
         assert(transaction["hash"] is not None)
 
         event_time = time.time()
-        print(transaction)
         return {
             "eventType": "transactionMined",
             "chainId": transaction["chainId"] if "chainId" in transaction else None,
@@ -157,4 +156,12 @@ class Event:
             "gasCost": transaction["gasPrice"]*receipt.raw_receipt["gasUsed"],
             "totalConfirmationTime": int(event_time - initial_time),
             "lastConfirmationTime": int(event_time - last_time)
+        }
+
+    @staticmethod
+    def eth_balance(address, balance):
+        return {
+            "eventType": "ethBalance",
+            "address": address.address.lower(),
+            "balance": float(balance)
         }
