@@ -12,7 +12,7 @@ Reference Maker Keeper Framework.
 ## Introduction
 
 The _SAI Stablecoin System_, as well as the _DAI Stablecoin System_ in the future,
-both rely on external agents, often called _keepers_, to automate certain operations
+both incentivize external agents, often called _keepers_, to automate certain operations
 around the Ethereum blockchain.
 
 This project contains a set of reference keepers, which can either be run directly
