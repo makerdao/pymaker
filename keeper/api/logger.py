@@ -165,3 +165,13 @@ class Event:
             "address": address.address.lower(),
             "balance": float(balance)
         }
+
+    @staticmethod
+    def token_balance(address, token_address, token_name, balance):
+        return {
+            "eventType": "tokenBalance",
+            "address": address.address.lower(),
+            "tokenAddress": token_address.address.lower(),
+            "tokenName": token_name,
+            "balance": float(balance)
+        }
