@@ -368,8 +368,12 @@ class Transact:
         initial_time = time.time()
         last_time = initial_time
         gas_price_last = 0
+        frequency_of_pending_events = 30
+        number_of_pending_events_sent = 0
 
         while True:
+            seconds_elapsed = int(time.time() - initial_time)
+
             # Check if any transaction sent so far has been mined (has a receipt).
             # If it has, we return either the receipt (if if was successful) or `None`.
             for tx_hash in tx_hashes:
@@ -389,7 +393,6 @@ class Transact:
             # Send a transaction if:
             # - no transaction has been sent yet, or
             # - the gas price requested has changed since the last transaction has been sent
-            seconds_elapsed = int(time.time() - initial_time)
             gas_price_value = gas_price.get_gas_price(seconds_elapsed)
             if len(tx_hashes) == 0 or gas_price_value != gas_price_last:
                 gas_price_last = gas_price_value
@@ -398,15 +401,7 @@ class Transact:
 
                 try:
                     tx_hash = self._func(nonce, gas, gas_price_value)
-                    tx_data = self.web3.eth.getTransaction(tx_hash)
                     tx_hashes.append(tx_hash)
-
-                    # self._register_event({
-                    #     'type': 'sent',
-                    #     'timestamp': datetime.now(tz=pytz.utc).isoformat(),
-                    #     'blockNumber': self.web3.eth.blockNumber,
-                    #     'transaction': tx_data.__dict__
-                    # })
 
                     self.logger.info(f"Sent transaction {self.name()} with nonce={nonce}, gas={gas},"
                                      f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
@@ -417,6 +412,14 @@ class Transact:
 
                     if len(tx_hashes) == 0:
                         raise
+
+            # Send a pending transaction event every `frequency_of_pending_events` seconds.
+            if seconds_elapsed > number_of_pending_events_sent*frequency_of_pending_events:
+                if len(tx_hashes) > 0:
+                    tx_data = self.web3.eth.getTransaction(tx_hashes[len(tx_hashes) - 1])
+                    if tx_data:
+                        self.logger.info(None, Event.transaction_pending(self.name(), tx_data, initial_time, last_time))
+                        number_of_pending_events_sent = number_of_pending_events_sent + 1
 
             await asyncio.sleep(0.25)
 

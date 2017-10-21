@@ -130,6 +130,30 @@ class Event:
             raise Exception(f"Unknown type of {value}")
 
     @staticmethod
+    def transaction_pending(name, transaction, initial_time, last_time):
+        assert(transaction["hash"] is not None)
+
+        event_time = time.time()
+        return {
+            "eventType": "transactionPending",
+            "chainId": transaction["chainId"] if "chainId" in transaction else None,
+            "networkId": transaction["networkId"] if "networkId" in transaction else None,
+            "transactionHash": transaction["hash"],
+            "transactionName": name,
+            "from": transaction["from"],
+            "to": transaction["to"],
+            "creates": transaction["creates"] if "creates" in transaction else None,
+            "input": Event._as_string(transaction["input"]),
+            "raw": transaction["raw"] if "raw" in transaction else None,
+            "value": transaction["value"],
+            "nonce": transaction["nonce"],
+            "startGas": transaction["gas"],
+            "gasPrice": transaction["gasPrice"],
+            "totalElapsedTime": int(event_time - initial_time),
+            "lastElapsedTime": int(event_time - last_time)
+        }
+
+    @staticmethod
     def transaction_mined(name, transaction, receipt, initial_time, last_time):
         assert(transaction["hash"] is not None)
 
