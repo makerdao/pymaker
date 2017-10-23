@@ -31,7 +31,7 @@ from keeper.conversion import Conversion
 class Sequence:
     def __init__(self, conversions: List[Conversion]):
         assert(isinstance(conversions, list))
-        self.steps = copy.deepcopy(conversions)
+        self.steps = list(map(lambda conversion: copy.copy(conversion), conversions))
         self._validate_token_chain()
 
     def total_rate(self) -> Ray:
