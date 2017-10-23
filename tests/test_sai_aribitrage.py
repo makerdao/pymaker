@@ -85,6 +85,7 @@ class TestSaiArbitrage:
         sai.tap.jump(Wad.from_number(1.05)).transact()
 
         # when
+        keeper.approve()
         keeper.process_block()
 
         # then
@@ -116,6 +117,7 @@ class TestSaiArbitrage:
         assert len(sai.otc.active_offers()) == 3
 
         # when
+        keeper.approve()
         keeper.process_block()
 
         # then
@@ -147,6 +149,7 @@ class TestSaiArbitrage:
         assert len(sai.otc.active_offers()) == 3
 
         # when
+        keeper.approve()
         keeper.process_block()
 
         # then
