@@ -24,7 +24,7 @@ from web3 import Web3
 
 from keeper.api import Address
 from keeper.api.util import synchronize, int_to_bytes32, bytes_to_int, bytes_to_hexstring, hexstring_to_bytes, \
-    AsyncCallback, chain, next_nonce
+    AsyncCallback, chain
 
 
 async def async_return(result):
@@ -114,23 +114,6 @@ def mocked_web3_transaction_count(address: Address, latest: int, pending: int) -
     web3.eth = Mock()
     web3.eth.getTransactionCount = Mock(side_effect=side_effect)
     return web3
-
-
-def test_next_nonce_should_generate_nonces_starting_from_last_transactions_nonce():
-    # given
-    web3: Web3 = Mock(Web3)
-    web3.eth = Mock()
-    web3.eth.getTransactionCount = Mock(return_value=5)
-
-    # and
-    some_account = Address('0x0000000000111111111122222222223333333333')
-
-    # expect
-    assert next_nonce(web3, some_account) == 5
-    assert next_nonce(web3, some_account) == 6
-    assert next_nonce(web3, some_account) == 7
-    assert next_nonce(web3, some_account) == 8
-    assert next_nonce(web3, some_account) == 9
 
 
 def test_synchronize_should_return_empty_list_for_no_futures():

@@ -30,7 +30,7 @@ from web3.utils.events import get_event_data
 from keeper.api.gas import DefaultGasPrice, GasPrice
 from keeper.api.logger import Logger, Event
 from keeper.api.numeric import Wad
-from keeper.api.util import synchronize, next_nonce
+from keeper.api.util import synchronize
 
 filter_threads = []
 
@@ -276,16 +276,16 @@ class Transact:
         else:
             return gas_estimate + 100000
 
-    def _func(self, nonce: int, gas: int, gas_price: Optional[int]):
+    def _func(self, gas: int, gas_price: Optional[int], nonce: Optional[int]):
         # Until https://github.com/pipermerriam/eth-testrpc/issues/98 issue is not resolved,
         # `eth-testrpc` does not handle the `nonce` parameter properly so we do have to
         # ignore it otherwise unit-tests will not pass. Hopefully we will be able to get
         # rid of it once the above issue is solved.
-        nonce_dict = {'nonce': nonce} if not isinstance(self.web3.providers[0], EthereumTesterProvider) else {}
         gas_price_dict = {'gasPrice': gas_price} if gas_price is not None else {}
+        nonce_dict = {'nonce': nonce} if nonce is not None else {}
 
         return self.contract.\
-            transact({**{'gas': gas}, **nonce_dict, **gas_price_dict, **self._as_dict(self.extra)}).\
+            transact({**{'gas': gas}, **gas_price_dict, **nonce_dict, **self._as_dict(self.extra)}).\
             __getattr__(self.function_name)(*self.parameters)
 
     def name(self) -> str:
@@ -357,13 +357,12 @@ class Transact:
             self.logger.warning(f"Transaction {self.name()} will fail, refusing to send ({sys.exc_info()[1]})")
             return None
 
-        # Get the next available nonce. `next_nonce()` takes pending transactions into account.
         # Get or calculate `gas`. Get `gas_price`, which in fact refers to a gas pricing algorithm.
-        nonce = next_nonce(self.web3, Address(self.web3.eth.defaultAccount))
         gas = self._gas(gas_estimate, **kwargs)
         gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
 
         # Initialize variables which will be used in the main loop.
+        nonce = None
         tx_hashes = []
         initial_time = time.time()
         last_time = initial_time
@@ -400,8 +399,13 @@ class Transact:
                     last_time = time.time()
 
                 try:
-                    tx_hash = self._func(nonce, gas, gas_price_value)
+                    tx_hash = self._func(gas, gas_price_value, nonce)
                     tx_hashes.append(tx_hash)
+
+                    # If this is the first transaction sent, get its nonce so we can override the transaction with
+                    # another one using higher gas price if :py:class:`keeper.api.gas.GasPrice` tells us to do so
+                    if nonce is None:
+                        nonce = self.web3.eth.getTransaction(tx_hash)['nonce']
 
                     self.logger.info(f"Sent transaction {self.name()} with nonce={nonce}, gas={gas},"
                                      f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"

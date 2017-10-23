@@ -21,9 +21,6 @@ import threading
 from typing import Optional
 from web3 import Web3, EthereumTesterProvider
 
-_next_nonce_lock = threading.Lock()
-_next_nonce_values = {}
-
 
 def chain(web3: Web3) -> str:
     block_0 = web3.eth.getBlock(0)['hash']
@@ -41,17 +38,6 @@ def chain(web3: Web3) -> str:
         return "morden"
     else:
         return "unknown"
-
-
-def next_nonce(web3: Web3, address) -> Optional[int]:
-    with _next_nonce_lock:
-        try:
-            next_value = _next_nonce_values[address.address]+1
-        except:
-            next_value = web3.eth.getTransactionCount(address.address)
-
-        _next_nonce_values[address.address] = next_value
-        return next_value
 
 
 def synchronize(futures) -> list:
