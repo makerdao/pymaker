@@ -83,10 +83,7 @@ so it gets automatically restarted every time it fails.
 
 ### Individual keeper accounts
 
-Due to the way keepers send Ethereum transactions, which is in fact related to the way
-dynamic gas management works, **it is essential to run each keeper on his own Ethereum account**.
-Otherwise the keepers will compete for the same nonces, which will effectively stop them
-from working.
+**It is advised to run each keeper on their own Ethereum account**
 
 ### Unlocking accounts
 
