@@ -77,8 +77,7 @@ class Keeper:
         self.logger.info(f"Keeper operating as {self.our_address}")
         self._check_account_unlocked()
         self._wait_for_init()
-        balance = self.eth_balance(self.our_address)
-        self.logger.info(f"Keeper account balance is {balance} ETH", Event.eth_balance(self.our_address, balance))
+        self.print_eth_balance()
         self.logger.info("Keeper started")
         self.startup()
         self._main_loop()
@@ -126,6 +125,10 @@ class Keeper:
     def eth_balance(self, address: Address) -> Wad:
         assert(isinstance(address, Address))
         return Wad(self.web3.eth.getBalance(address.address))
+
+    def print_eth_balance(self):
+        balance = self.eth_balance(self.our_address)
+        self.logger.info(f"Keeper account balance is {balance} ETH", Event.eth_balance(self.our_address, balance))
 
     def get_config(self, filename):
         with open(filename) as data_file:
