@@ -18,6 +18,7 @@
 import pytest
 
 from keeper import Wad
+from keeper.api.approval import directly
 from keeper.api.feed import DSValue
 from keeper.sai_arbitrage import SaiArbitrage
 from keeper.sai_bite import SaiBite
@@ -88,3 +89,32 @@ class TestSaiArbitrage:
 
         # then
         # (nothing happens)
+
+    def test_should_identify_multi_step_arbitrage_on_oasis(self, sai: SaiDeployment):
+        # given
+        keeper = SaiArbitrage(args=args(f"--eth-from {sai.our_address.address} --base-token SAI"
+                                        f" --min-profit 1.0 --max-engagement 1000.0"),
+                              web3=sai.web3, config=sai.get_config())
+
+        # and
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
+        sai.tub.jar_jump(Wad.from_number(1.05)).transact()
+        sai.tap.jump(Wad.from_number(1.05)).transact()
+
+        # and
+        sai.tub.join(Wad.from_number(1000)).transact()
+        sai.sai.mint(Wad.from_number(1000)).transact()
+        sai.otc.add_token_pair_whitelist(sai.sai.address, sai.skr.address).transact()
+        sai.otc.add_token_pair_whitelist(sai.skr.address, sai.gem.address).transact()
+        sai.otc.add_token_pair_whitelist(sai.gem.address, sai.sai.address).transact()
+        sai.otc.approve([sai.gem, sai.sai, sai.skr], directly())
+        sai.otc.make(sai.skr.address, Wad.from_number(105), sai.sai.address, Wad.from_number(100)).transact()
+        sai.otc.make(sai.gem.address, Wad.from_number(110), sai.skr.address, Wad.from_number(105)).transact()
+        sai.otc.make(sai.sai.address, Wad.from_number(115), sai.gem.address, Wad.from_number(110)).transact()
+        assert len(sai.otc.active_offers()) == 3
+
+        # when
+        keeper.process_block()
+
+        # then
+        assert len(sai.otc.active_offers()) == 0
