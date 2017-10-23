@@ -67,6 +67,13 @@ class TestSaiArbitrage:
         # then
         assert "error: the following arguments are required: --max-engagement" in err.getvalue()
 
+    def test_should_not_start_if_base_token_is_invalid(self, sai: SaiDeployment):
+        # expect
+        with pytest.raises(Exception):
+            SaiArbitrage(args=args(f"--eth-from {sai.our_address.address} --base-token SAJ"
+                                   f" --min-profit 1.0 --max-engagement 1000.0"),
+                         web3=sai.web3, config=sai.get_config())
+
     def test_should_not_do_anything_if_no_arbitrage_opportunities(self, sai: SaiDeployment):
         # given
         keeper = SaiArbitrage(args=args(f"--eth-from {sai.our_address.address} --base-token SAI"
