@@ -25,11 +25,7 @@ from web3 import Web3, EthereumTesterProvider
 def chain(web3: Web3) -> str:
     block_0 = web3.eth.getBlock(0)['hash']
     if block_0 == "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3":
-        block_1920000 = web3.eth.getBlock(1920000)['hash']
-        if block_1920000 == "0x94365e3a8c0b35089c1d1195081fe7489b528a84b22199c916180db8b28ade7f":
-            return "etclive"
-        else:
-            return "ethlive"
+        return "ethlive"
     elif block_0 == "0xa3c565fc15c7478862d50ccd6561e3c06b24cc509bf388941c25ea985ce32cb9":
         return "kovan"
     elif block_0 == "0x41941023680923e0fe4d74a34bdac8141f2540e3ae90623718e47d66d1ca4a2d":

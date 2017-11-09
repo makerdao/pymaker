@@ -36,12 +36,10 @@ async def async_exception():
     raise Exception("Exception to be passed further down")
 
 
-def mocked_web3(block_0_hash: str, block_1920000_hash: str = "") -> Web3:
+def mocked_web3(block_0_hash: str) -> Web3:
     def side_effect(block_number):
         if block_number == 0:
             return {'hash': block_0_hash}
-        elif block_number == 1920000:
-            return {'hash': block_1920000_hash}
         else:
             raise Exception("Unknown block number queried")
 
@@ -57,15 +55,6 @@ def test_chain_should_recognize_ethlive():
 
     # expect
     assert chain(web3) == "ethlive"
-
-
-def test_chain_should_recognize_etclive():
-    # given
-    web3 = mocked_web3(block_0_hash="0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3",
-                       block_1920000_hash="0x94365e3a8c0b35089c1d1195081fe7489b528a84b22199c916180db8b28ade7f")
-
-    # expect
-    assert chain(web3) == "etclive"
 
 
 def test_chain_should_recognize_kovan():
