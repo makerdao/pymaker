@@ -706,7 +706,7 @@ class EtherDelta(Contract):
 
     @coerce_return_to_text
     def _eth_sign(self, account, data_hash):
-        return self.web3._requestManager.request_blocking(
+        return self.web3.manager.request_blocking(
             "eth_sign", [account, encode_hex(data_hash)],
         )
 
