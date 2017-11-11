@@ -45,6 +45,10 @@ class Logger:
         logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(message)s',
                             level=(logging.DEBUG if trace else logging.INFO))
 
+        # if `--trace` is enabled, we enable logging from `socketIO-client`
+        if trace:
+            logging.getLogger('socketIO-client').setLevel(logging.DEBUG)
+
         # if only `--debug` is enabled, we set DEBUG logging level for our own loggers only
         # this significantly limits the output comparing to when `--trace` is enabled
         if debug and not trace:
