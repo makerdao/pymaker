@@ -213,8 +213,6 @@ class EtherDelta(Contract):
     Attributes:
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `EtherDelta` contract.
-        api_server: Base URL of the `EtherDelta` API server (for off-chain order support etc.).
-            `None` if no off-chain order support desired.
     """
 
     abi = Contract._load_abi(__name__, 'abi/EtherDelta.abi')
@@ -229,14 +227,11 @@ class EtherDelta(Contract):
                account_levels_addr: Address,
                fee_make: Wad,
                fee_take: Wad,
-               fee_rebate: Wad,
-               api_server: str):
+               fee_rebate: Wad):
         """Deploy a new instance of the `EtherDelta` contract.
 
         Args:
             web3: An instance of `Web` from `web3.py`.
-            api_server: Base URL of the `EtherDelta` API server (for off-chain order support etc.).
-                `None` if no off-chain order support desired.
 
         Returns:
             A `EtherDelta` class instance.
@@ -249,22 +244,16 @@ class EtherDelta(Contract):
                               fee_make.value,
                               fee_take.value,
                               fee_rebate.value
-                          ]),
-                          api_server=api_server)
+                          ]))
 
-    def __init__(self, web3: Web3, address: Address, api_server: str):
+    def __init__(self, web3: Web3, address: Address):
         assert(isinstance(address, Address))
-        assert(isinstance(api_server, str) or api_server is None)
 
         self.web3 = web3
         self.address = address
-        self.api_server = api_server
         self._contract = self._get_contract(web3, self.abi, address)
         self._onchain_orders = None
         self._offchain_orders = set()
-
-    def supports_offchain_orders(self) -> bool:
-        return self.api_server is not None
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         for token in tokens:
@@ -415,32 +404,6 @@ class EtherDelta(Contract):
         self._remove_filled_orders(self._onchain_orders)
 
         return list(self._onchain_orders)
-
-    def active_offchain_orders(self, token1: Address, token2: Address) -> List[OffChainOrder]:
-        assert(isinstance(token1, Address))
-        assert(isinstance(token2, Address))
-
-        if not self.supports_offchain_orders():
-            raise Exception("Off-chain orders not supported for this EtherDelta instance")
-
-        nonce = str(hash(token1.address)) + str(hash(token2.address)) + str(random.randint(1, 2**32 - 1))
-        url = f"{self.api_server}/orders/{nonce}/{token1.address}/{token2.address}"
-        res = requests.get(url)
-        if res.ok:
-            if len(res.text) > 0:
-                orders_dicts = map(lambda entry: entry['order'], json.loads(res.text)['orders'])
-                orders_dicts = filter(lambda order: Address(order['contractAddr']) == self.address, orders_dicts)
-                orders = list(map(lambda order: OffChainOrder.from_json(order), orders_dicts))
-                for order in orders:
-                    self._offchain_orders.add(order)
-        else:
-            raise Exception("Fetch failed")
-
-        self._remove_filled_orders(self._offchain_orders)
-
-        return list(filter(lambda order: (order.token_get == token1 and order.token_give == token2) or
-                                         (order.token_get == token2 and order.token_give == token1),
-                           self._offchain_orders))
 
     def _remove_filled_orders(self, order_set: set):
         assert(isinstance(order_set, set))
@@ -694,7 +657,17 @@ class EtherDelta(Contract):
 
 
 class EtherDeltaApi:
-    def __init__(self, logger: Logger):
+    """A client for the EtherDelta API backend.
+
+    Attributes:
+        api_server: Base URL of the EtherDelta API backend server.
+        logger: Instance of the :py:class:`keeper.api.Logger` class for event logging.
+    """
+    def __init__(self, api_server: str, logger: Logger):
+        assert(isinstance(api_server, str))
+        assert(isinstance(logger, Logger))
+
+        self.api_server = api_server
         self.logger = logger
         self.socket_io = None
         self.thread = threading.Thread(target=self._run, daemon=True)

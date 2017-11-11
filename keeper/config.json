@@ -30,7 +30,7 @@
     },
     "etherDelta": {
       "contract": "0x8d12A197cB00D4747a1fe03395095ce2A5CC6819",
-      "apiServer": ["https://cache1.etherdelta.com", "https://cache2.etherdelta.com"]
+      "apiServer": "https://socket.etherdelta.com"
     }
   }
 }
