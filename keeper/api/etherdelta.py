@@ -17,12 +17,15 @@
 
 import hashlib
 import json
+import logging
 import random
 import sys
 from pprint import pformat
 from typing import Optional, List
 
 import requests
+from socketIO_client_nexus import SocketIO
+
 from keeper.api import Contract, Address, Receipt, Transact
 from keeper.api.numeric import Wad
 from keeper.api.util import bytes_to_hexstring, hexstring_to_bytes
@@ -542,20 +545,32 @@ class EtherDelta(Contract):
         if self.supports_offchain_orders():
             log_signature = f"('{token_get}', '{amount_get}', '{token_give}', '{amount_give}', '{expires}', '{nonce}')"
 
+            logging.getLogger('requests').setLevel(logging.WARNING)
+            logging.basicConfig(level=logging.DEBUG)
+
             try:
                 self.logger.info(f"Creating off-chain EtherDelta order {log_signature} in progress...")
                 self.logger.debug(json.dumps(off_chain_order.to_json(self.address)))
-                res = requests.post(f"{self.api_server}/message",
-                                    data={'message': json.dumps(off_chain_order.to_json(self.address))},
-                                    timeout=30)
 
-                if '"success"' in res.text:
-                    self.logger.info(f"Created off-chain EtherDelta order {log_signature} successfully")
-                    self._offchain_orders.add(off_chain_order)
-                    return off_chain_order
-                else:
-                    self.logger.warning(f"Creating off-chain EtherDelta order {log_signature} failed ({res.text})")
-                    return None
+                with SocketIO('https://socket.etherdelta.com', transports=['websocket', 'xhr-polling']) as socketIO:
+                    # socketIO.on('connect', on_connect)
+                    # socketIO.on('disconnect', on_disconnect)
+                    # socketIO.on('reconnect', on_reconnect)
+                    # socketIO.wait(seconds=60)
+                    socketIO.emit('message', off_chain_order.to_json(self.address))
+                    socketIO.wait(seconds=300)
+
+                #res = requests.post(f"{self.api_server}/message",
+                                    #data={'message': json.dumps(off_chain_order.to_json(self.address))},
+                                    #timeout=30)
+
+                #if '"success"' in res.text:
+                self.logger.info(f"Created off-chain EtherDelta order {log_signature} successfully")
+                self._offchain_orders.add(off_chain_order)
+                return off_chain_order
+                # else:
+                #     self.logger.warning(f"Creating off-chain EtherDelta order {log_signature} failed ({res.text})")
+                #     return None
             except:
                 self.logger.warning(f"Creating off-chain EtherDelta order {log_signature} failed ({sys.exc_info()[1]})")
                 return None
