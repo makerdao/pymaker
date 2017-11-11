@@ -450,7 +450,7 @@ class EtherDelta(Contract):
             if self.amount_filled(order) == order.amount_get:
                 order_set.remove(order)
 
-    def place_order_onchain(self,
+    def place_onchain_order(self,
                             token_get: Address,
                             amount_get: Wad,
                             token_give: Address,
@@ -494,12 +494,12 @@ class EtherDelta(Contract):
 
         return result
 
-    def place_order_offchain(self,
-                             token_get: Address,
-                             amount_get: Wad,
-                             token_give: Address,
-                             amount_give: Wad,
-                             expires: int) -> Optional[OffChainOrder]:
+    def create_offchain_order(self,
+                              token_get: Address,
+                              amount_get: Wad,
+                              token_give: Address,
+                              amount_give: Wad,
+                              expires: int) -> Optional[OffChainOrder]:
         """Creates a new off-chain order.
 
         Although it's not necessary to have any amount of `token_give` deposited to EtherDelta
@@ -539,44 +539,8 @@ class EtherDelta(Contract):
         s = bytes.fromhex(signed_hash[64:128])
         v = ord(bytes.fromhex(signed_hash[128:130]))
 
-        off_chain_order = OffChainOrder(token_get, amount_get, token_give, amount_give, expires, nonce,
-                                        Address(self.web3.eth.defaultAccount), v, r, s)
-
-        if self.supports_offchain_orders():
-            log_signature = f"('{token_get}', '{amount_get}', '{token_give}', '{amount_give}', '{expires}', '{nonce}')"
-
-            logging.getLogger('requests').setLevel(logging.WARNING)
-            logging.basicConfig(level=logging.DEBUG)
-
-            try:
-                self.logger.info(f"Creating off-chain EtherDelta order {log_signature} in progress...")
-                self.logger.debug(json.dumps(off_chain_order.to_json(self.address)))
-
-                with SocketIO('https://socket.etherdelta.com', transports=['websocket', 'xhr-polling']) as socketIO:
-                    # socketIO.on('connect', on_connect)
-                    # socketIO.on('disconnect', on_disconnect)
-                    # socketIO.on('reconnect', on_reconnect)
-                    # socketIO.wait(seconds=60)
-                    socketIO.emit('message', off_chain_order.to_json(self.address))
-                    socketIO.wait(seconds=300)
-
-                #res = requests.post(f"{self.api_server}/message",
-                                    #data={'message': json.dumps(off_chain_order.to_json(self.address))},
-                                    #timeout=30)
-
-                #if '"success"' in res.text:
-                self.logger.info(f"Created off-chain EtherDelta order {log_signature} successfully")
-                self._offchain_orders.add(off_chain_order)
-                return off_chain_order
-                # else:
-                #     self.logger.warning(f"Creating off-chain EtherDelta order {log_signature} failed ({res.text})")
-                #     return None
-            except:
-                self.logger.warning(f"Creating off-chain EtherDelta order {log_signature} failed ({sys.exc_info()[1]})")
-                return None
-        else:
-            self.logger.warning(f"No EtherDelta API server configured, off-chain order has not been published")
-            return off_chain_order
+        return OffChainOrder(token_get, amount_get, token_give, amount_give, expires, nonce,
+                             Address(self.web3.eth.defaultAccount), v, r, s)
 
     def amount_available(self, order: Order) -> Wad:
         """Returns the amount that is still available (tradeable) for an order.
