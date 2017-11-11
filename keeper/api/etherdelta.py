@@ -660,13 +660,16 @@ class EtherDeltaApi:
     """A client for the EtherDelta API backend.
 
     Attributes:
+        contract_address: Address of the EtherDelta contract.
         api_server: Base URL of the EtherDelta API backend server.
         logger: Instance of the :py:class:`keeper.api.Logger` class for event logging.
     """
-    def __init__(self, api_server: str, logger: Logger):
+    def __init__(self, contract_address: Address, api_server: str, logger: Logger):
+        assert(isinstance(contract_address, Address))
         assert(isinstance(api_server, str))
         assert(isinstance(logger, Logger))
 
+        self.contract_address = contract_address
         self.api_server = api_server
         self.logger = logger
         self.socket_io = None
@@ -692,6 +695,22 @@ class EtherDeltaApi:
 
     def _on_reconnect(self):
         self.logger.info("Reconnected to the EtherDelta API")
+
+    def publish_offchain_order(self, order: OffChainOrder) -> bool:
+        assert(isinstance(order, OffChainOrder))
+
+        if self.socket_io and self.socket_io.connected:
+            self.logger.info(f"Publishing off-chain EtherDelta order ('{order.token_get}',"
+                             f" '{order.amount_get}', '{order.token_give}', '{order.amount_give}', '{order.expires}',"
+                             f" '{order.nonce}') in progress...")
+
+            order_json = order.to_json(self.contract_address)
+            self.logger.debug(json.dumps(order_json))
+            self.socket_io.emit('message', order_json)
+            return True
+        else:
+            self.logger.info(f"Failed to publish off-chain EtherDelta order as socketIO is not connected")
+            return False
 
     def __repr__(self):
         return f"EtherDeltaApi()"
