@@ -691,7 +691,7 @@ class EtherDeltaApi:
         self.logger.info("Disconnected from the EtherDelta API")
 
     def _on_reconnect(self):
-        self.logger.info("Reconnected from the EtherDelta API")
+        self.logger.info("Reconnected to the EtherDelta API")
 
     def __repr__(self):
         return f"EtherDeltaApi()"
