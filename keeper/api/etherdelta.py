@@ -739,7 +739,7 @@ class EtherDeltaApi:
     def _run(self):
         while True:
             try:
-                self.socket_io = SocketIO('https://socket.etherdelta.com', namespace=LoggingNamespace, transports=['websocket', 'xhr-polling'])
+                self.socket_io = SocketIO('https://socket.etherdelta.com', transports=['websocket', 'xhr-polling'])
                 self.socket_io.on('connect', self._on_connect)
                 self.socket_io.on('disconnect', self._on_disconnect)
                 self.socket_io.on('reconnect', self._on_reconnect)
