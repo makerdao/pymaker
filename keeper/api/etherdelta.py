@@ -17,23 +17,23 @@
 
 import hashlib
 import json
-import logging
 import random
 import sys
+import threading
 from pprint import pformat
 from typing import Optional, List
 
 import requests
-from socketIO_client_nexus import SocketIO
-
-from keeper.api import Contract, Address, Receipt, Transact
-from keeper.api.numeric import Wad
-from keeper.api.util import bytes_to_hexstring, hexstring_to_bytes
 from eth_abi.encoding import get_single_encoder
 from eth_utils import coerce_return_to_text, encode_hex
+from socketIO_client_nexus import SocketIO, LoggingNamespace
 from web3 import Web3
 
+from keeper.api import Contract, Address, Transact
+from keeper.api import Logger
+from keeper.api.numeric import Wad
 from keeper.api.token import ERC20Token
+from keeper.api.util import bytes_to_hexstring, hexstring_to_bytes
 
 
 class Order:
@@ -727,3 +727,34 @@ class EtherDelta(Contract):
 
     def __repr__(self):
         return f"EtherDelta('{self.address}')"
+
+
+class EtherDeltaApi:
+    def __init__(self, logger: Logger):
+        self.logger = logger
+        self.socket_io = None
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+    def _run(self):
+        while True:
+            try:
+                self.socket_io = SocketIO('https://socket.etherdelta.com', namespace=LoggingNamespace, transports=['websocket', 'xhr-polling'])
+                self.socket_io.on('connect', self._on_connect)
+                self.socket_io.on('disconnect', self._on_disconnect)
+                self.socket_io.on('reconnect', self._on_reconnect)
+                self.socket_io.wait()
+            except:
+                self.logger.info("Multiple failures of the EtherDelta API, reinitializing it")
+
+    def _on_connect(self):
+        self.logger.info("Connected to the EtherDelta API")
+
+    def _on_disconnect(self):
+        self.logger.info("Disconnected from the EtherDelta API")
+
+    def _on_reconnect(self):
+        self.logger.info("Reconnected from the EtherDelta API")
+
+    def __repr__(self):
+        return f"EtherDeltaApi()"
