@@ -70,6 +70,14 @@ class OffChainOrder(Order):
         self.r = r
         self.s = s
 
+    @property
+    def sell_how_much(self):
+        return self.amount_give
+
+    @property
+    def buy_how_much(self):
+        return self.amount_get
+
     @staticmethod
     def from_json(data: dict):
         assert(isinstance(data, dict))
