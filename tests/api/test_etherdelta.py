@@ -36,8 +36,7 @@ class TestEtherDelta:
                                             account_levels_addr=Address('0x6666655555444441111188888777770000099999'),
                                             fee_make=Wad.from_number(0.01),
                                             fee_take=Wad.from_number(0.02),
-                                            fee_rebate=Wad.from_number(0.03),
-                                            api_server=None)
+                                            fee_rebate=Wad.from_number(0.03))
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1.mint(Wad.from_number(100)).transact()
         self.token2 = DSToken.deploy(self.web3, 'BBB')
