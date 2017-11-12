@@ -124,6 +124,11 @@ class OffChainOrder(Order):
                      self.r,
                      self.s))
 
+    def __str__(self):
+        return f"('{self.token_get}', '{self.amount_get}'," \
+               f" '{self.token_give}', '{self.amount_give}'," \
+               f" '{self.expires}', '{self.nonce}')"
+
     def __repr__(self):
         return pformat(vars(self))
 
@@ -673,6 +678,7 @@ class EtherDeltaApi:
         self.api_server = api_server
         self.logger = logger
         self.socket_io = None
+        self.order_queue = list()
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
 
@@ -683,9 +689,22 @@ class EtherDeltaApi:
                 self.socket_io.on('connect', self._on_connect)
                 self.socket_io.on('disconnect', self._on_disconnect)
                 self.socket_io.on('reconnect', self._on_reconnect)
-                self.socket_io.wait()
+                while True:
+                    self.socket_io.wait(seconds=1)
+                    if len(self.order_queue) > 0:
+                        order = self.order_queue[0]
+                        try:
+                            self.socket_io.emit('message', order.to_json(self.contract_address))
+                            self.logger.info(f"Placed off-chain EtherDelta order {order}")
+                            del self.order_queue[0]
+                        except:
+                            self.logger.info(f"Failed to place off-chain EtherDelta order, will try again")
             except:
                 self.logger.info("Multiple failures of the EtherDelta API, reinitializing it")
+                try:
+                    self.socket_io.disconnect()
+                except:
+                    pass
 
     def _on_connect(self):
         self.logger.info("Connected to the EtherDelta API")
@@ -696,21 +715,11 @@ class EtherDeltaApi:
     def _on_reconnect(self):
         self.logger.info("Reconnected to the EtherDelta API")
 
-    def publish_offchain_order(self, order: OffChainOrder) -> bool:
+    def publish_offchain_order(self, order: OffChainOrder):
         assert(isinstance(order, OffChainOrder))
 
-        if self.socket_io and self.socket_io.connected:
-            order_json = order.to_json(self.contract_address)
-            self.logger.debug(json.dumps(order_json))
-            try:
-                self.socket_io.emit('message', order_json)
-                return True
-            except:
-                self.logger.info(f"Failed to publish off-chain EtherDelta due to socketIO error")
-                return False
-        else:
-            self.logger.info(f"Failed to publish off-chain EtherDelta order as socketIO is not connected")
-            return False
+        self.order_queue.append(order)
+        self.logger.info(f"Queued off-chain EtherDelta order {order}")
 
     def __repr__(self):
         return f"EtherDeltaApi()"
