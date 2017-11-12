@@ -700,14 +700,14 @@ class EtherDeltaApi:
         assert(isinstance(order, OffChainOrder))
 
         if self.socket_io and self.socket_io.connected:
-            self.logger.info(f"Publishing off-chain EtherDelta order ('{order.token_get}',"
-                             f" '{order.amount_get}', '{order.token_give}', '{order.amount_give}', '{order.expires}',"
-                             f" '{order.nonce}') in progress...")
-
             order_json = order.to_json(self.contract_address)
             self.logger.debug(json.dumps(order_json))
-            self.socket_io.emit('message', order_json)
-            return True
+            try:
+                self.socket_io.emit('message', order_json)
+                return True
+            except:
+                self.logger.info(f"Failed to publish off-chain EtherDelta due to socketIO error")
+                return False
         else:
             self.logger.info(f"Failed to publish off-chain EtherDelta order as socketIO is not connected")
             return False
