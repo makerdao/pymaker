@@ -16,17 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import hashlib
-import json
 import random
-import sys
 import threading
 from pprint import pformat
 from typing import Optional, List
 
-import requests
 from eth_abi.encoding import get_single_encoder
 from eth_utils import coerce_return_to_text, encode_hex
-from socketIO_client_nexus import SocketIO, LoggingNamespace
+from socketIO_client_nexus import SocketIO
 from web3 import Web3
 
 from keeper.api import Contract, Address, Transact
