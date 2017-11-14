@@ -38,14 +38,8 @@ class Conversion:
     def name(self):
         raise NotImplementedError("name() not implemented")
 
-    def execute(self):
-        raise NotImplementedError("execute() not implemented")
-
-    def address(self) -> Address:
-        raise NotImplementedError("address() not implemented")
-
-    def calldata(self) -> str:
-        raise NotImplementedError("calldata() not implemented")
+    def transact(self):
+        raise NotImplementedError("transact() not implemented")
 
     def __str__(self):
         def amt(amount: Wad) -> str:
@@ -70,14 +64,8 @@ class TubJoinConversion(Conversion):
     def name(self):
         return f"tub.join('{self.source_amount}')"
 
-    def execute(self):
-        return self.tub.join(self.source_amount).transact()
-
-    def address(self) -> Address:
-        return self.tub.address
-
-    def calldata(self):
-        return self.tub.join(self.source_amount).invocation().calldata
+    def transact(self):
+        return self.tub.join(self.source_amount)
 
 
 class TubExitConversion(Conversion):
@@ -92,14 +80,8 @@ class TubExitConversion(Conversion):
     def name(self):
         return f"tub.exit('{self.source_amount}')"
 
-    def execute(self):
-        return self.tub.exit(self.source_amount).transact()
-
-    def address(self) -> Address:
-        return self.tub.address
-
-    def calldata(self):
-        return self.tub.exit(self.source_amount).invocation().calldata
+    def transact(self):
+        return self.tub.exit(self.source_amount)
 
 
 class TubBoomConversion(Conversion):
@@ -124,14 +106,8 @@ class TubBoomConversion(Conversion):
     def name(self):
         return f"tub.boom('{self.source_amount}')"
 
-    def execute(self):
-        return self.tap.boom(self.source_amount).transact()
-
-    def address(self) -> Address:
-        return self.tap.address
-
-    def calldata(self):
-        return self.tap.boom(self.source_amount).invocation().calldata
+    def transact(self):
+        return self.tap.boom(self.source_amount)
 
 
 class TubBustConversion(Conversion):
@@ -159,14 +135,8 @@ class TubBustConversion(Conversion):
     def name(self):
         return f"tub.bust('{self.target_amount}')"
 
-    def execute(self):
-        return self.tap.bust(self.target_amount).transact()
-
-    def address(self) -> Address:
-        return self.tap.address
-
-    def calldata(self):
-        return self.tap.bust(self.target_amount).invocation().calldata
+    def transact(self):
+        return self.tap.bust(self.target_amount)
 
 
 class LpcTakeRefConversion(Conversion):
@@ -184,14 +154,8 @@ class LpcTakeRefConversion(Conversion):
     def name(self):
         return f"lpc.take(ref, '{self.target_amount}')"
 
-    def execute(self):
-        return self.lpc.take(self.lpc.ref(), self.target_amount).transact()
-
-    def address(self) -> Address:
-        return self.lpc.address
-
-    def calldata(self):
-        return self.lpc.take(self.lpc.ref(), self.target_amount).invocation().calldata
+    def transact(self):
+        return self.lpc.take(self.lpc.ref(), self.target_amount)
 
 
 class LpcTakeAltConversion(Conversion):
@@ -209,14 +173,8 @@ class LpcTakeAltConversion(Conversion):
     def name(self):
         return f"lpc.take(alt, '{self.target_amount}')"
 
-    def execute(self):
-        return self.lpc.take(self.lpc.alt(), self.target_amount).transact()
-
-    def address(self) -> Address:
-        return self.lpc.address
-
-    def calldata(self):
-        return self.lpc.take(self.lpc.alt(), self.target_amount).invocation().calldata
+    def transact(self):
+        return self.lpc.take(self.lpc.alt(), self.target_amount)
 
 
 class OasisTakeConversion(Conversion):
@@ -232,14 +190,8 @@ class OasisTakeConversion(Conversion):
     def name(self):
         return f"otc.take({self.offer.offer_id}, '{self.quantity()}')"
 
-    def execute(self):
-        return self.otc.take(self.offer.offer_id, self.quantity()).transact()
-
-    def address(self) -> Address:
-        return self.otc.address
-
-    def calldata(self):
-        return self.otc.take(self.offer.offer_id, self.quantity()).invocation().calldata
+    def transact(self):
+        return self.otc.take(self.offer.offer_id, self.quantity())
 
     def quantity(self):
         quantity = self.target_amount

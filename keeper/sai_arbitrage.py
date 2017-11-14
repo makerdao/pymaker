@@ -188,8 +188,8 @@ class SaiArbitrage(SaiKeeper):
     def execute_opportunity_step_by_step(self, opportunity: Sequence):
         """Execute the opportunity step-by-step."""
         all_transfers = []
-        for conversion in opportunity.steps:
-            receipt = conversion.execute()
+        for step in opportunity.steps:
+            receipt = step.transact().transact(gas_price=self.gas_price)
             if receipt:
                 all_transfers += receipt.transfers
                 outgoing = TransferFormatter().format(filter(Transfer.outgoing(self.our_address), receipt.transfers))
@@ -203,8 +203,8 @@ class SaiArbitrage(SaiKeeper):
     def execute_opportunity_in_one_transaction(self, opportunity: Sequence):
         """Execute the opportunity in one transaction, using the `tx_manager`."""
         tokens = [self.sai.address, self.skr.address, self.gem.address]
-        invocations = list(map(lambda conv: Invocation(conv.address(), conv.calldata()), opportunity.steps))
-        receipt = self.tx_manager.execute(tokens, invocations).transact()
+        invocations = list(map(lambda step: step.transact().invocation(), opportunity.steps))
+        receipt = self.tx_manager.execute(tokens, invocations).transact(gas_price=self.gas_price)
         if receipt:
             self.logger.info(f"The profit we made is {TransferFormatter().format_net(receipt.transfers, self.our_address)}.")
         else:
