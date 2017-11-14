@@ -52,6 +52,9 @@ class OfferInfo:
     def __eq__(self, other):
         return self.offer_id == other.offer_id
 
+    def __hash__(self):
+        return self.offer_id
+
     def __repr__(self):
         return pformat(vars(self))
 
