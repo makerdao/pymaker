@@ -695,7 +695,6 @@ class EtherDeltaApi:
                 self.socket_io.on('disconnect', self._on_disconnect)
                 self.socket_io.on('reconnect', self._on_reconnect)
                 while True:
-                    self.socket_io.wait(seconds=1)
                     if len(self.order_queue) > 0:
                         order = self.order_queue[0]
                         try:
@@ -704,6 +703,8 @@ class EtherDeltaApi:
                             del self.order_queue[0]
                         except:
                             self.logger.info(f"Failed to place off-chain EtherDelta order, will try again")
+                    else:
+                        self.socket_io.wait(seconds=1)
             except:
                 self.logger.info("Multiple failures of the EtherDelta API, reinitializing it")
                 try:
