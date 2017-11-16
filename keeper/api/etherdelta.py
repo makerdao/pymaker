@@ -16,11 +16,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import hashlib
+import json
 import random
 import threading
 from pprint import pformat
 from typing import Optional, List
 
+import asyncio
+
+import time
 from eth_abi.encoding import get_single_encoder
 from eth_utils import coerce_return_to_text, encode_hex
 from socketIO_client_nexus import SocketIO
@@ -688,29 +692,112 @@ class EtherDeltaApi:
         self.thread.start()
 
     def _run(self):
+
+        # async def _read_stream(stream, cb):
+        #     while True:
+        #         line = await stream.readline()
+        #         if line:
+        #             cb(line)
+        #         else:
+        #             break
+        #
+        # async def _stream_subprocess(cmd, stdout_cb, stderr_cb):
+        #     process = await asyncio.create_subprocess_exec(*cmd, stdin=asyncio.subprocess.PIPE,
+        #                                                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        #
+        #     time.sleep(2)
+        #
+        #     process.stdin.write('XXX\n'.encode('ascii'))
+        #
+        #     await asyncio.wait([
+        #         _read_stream(process.stdout, stdout_cb),
+        #         _read_stream(process.stderr, stderr_cb)
+        #     ])
+        #     return await process.wait()
+        #
+        #
+        # cmd = ["node", "./node-test/test.js"]
+        # stdout_cb = lambda x: print("STDOUT: %s" % x)
+        # stderr_cb = lambda x: print("STDOUT: %s" % x)
+        #
+        # loop = asyncio.new_event_loop()
+        # rc = loop.run_until_complete(
+        #     _stream_subprocess(
+        #         cmd,
+        #         stdout_cb,
+        #         stderr_cb,
+        #     ))
+        # loop.close()
+
+        # '{"contractAddr": "0x8d12a197cb00d4747a1fe03395095ce2a5cc6819", "tokenGet": "0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4", "amountGet": 100000000000000000000, "tokenGive": "0x0000000000000000000000000000000000000000", "amountGive": 100000000000000000, "expires": 4559402, "nonce": 427189507, "v": 28, "r": "0x7ba721a486d105aad5b9b60c28df0599d2c2bcfa8e18b73bc612b45e56f2946b", "s": "0x42c325cdd6d5383653f48c16af129e47d7ea1bfe14c73c3934c861c68fde179a", "user": "0x00b7c0908514a44898e6a01c85bb6e8c82873f58"}\n'.encode('ascii')
+
+
+
+        from subprocess import Popen, PIPE
+        from time import sleep
+        from fcntl import fcntl, F_GETFL, F_SETFL
+        from os import O_NONBLOCK, read
+
+        # run the shell as a subprocess:
+        self.p = Popen(['node', 'test.js'], cwd='node-test',
+                  stdin = PIPE, stdout = PIPE, stderr = PIPE, shell = False)
+        # set the O_NONBLOCK flag of p.stdout file descriptor:
+        flags = fcntl(self.p.stdout, F_GETFL) # get current p.stdout flags
+        fcntl(self.p.stdout, F_SETFL, flags | O_NONBLOCK)
+        # set the O_NONBLOCK flag of p.stderr file descriptor:
+        flags = fcntl(self.p.stderr, F_GETFL) # get current p.stdout flags
+        fcntl(self.p.stderr, F_SETFL, flags | O_NONBLOCK)
+        # let the shell output the result:
+        # sleep(1.0)
+        # self.p.stdin.write('XXX\n'.encode('ascii'))
+        # self.p.stdin.write('{"contractAddr": "0x8d12a197cb00d4747a1fe03395095ce2a5cc6819", "tokenGet": "0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4", "amountGet": 100000000000000000000, "tokenGive": "0x0000000000000000000000000000000000000000", "amountGive": 100000000000000000, "expires": 4559402, "nonce": 427189507, "v": 28, "r": "0x7ba721a486d105aad5b9b60c28df0599d2c2bcfa8e18b73bc612b45e56f2946b", "s": "0x42c325cdd6d5383653f48c16af129e47d7ea1bfe14c73c3934c861c68fde179a", "user": "0x00b7c0908514a44898e6a01c85bb6e8c82873f58"}\n'.encode('ascii'))
+        # self.p.stdin.flush()
+        # sleep(1.0)
+        # get the output
         while True:
             try:
-                self.socket_io = SocketIO('https://socket.etherdelta.com', transports=['websocket', 'xhr-polling'])
-                self.socket_io.on('connect', self._on_connect)
-                self.socket_io.on('disconnect', self._on_disconnect)
-                self.socket_io.on('reconnect', self._on_reconnect)
-                while True:
-                    if len(self.order_queue) > 0:
-                        order = self.order_queue[0]
-                        try:
-                            self.socket_io.emit('message', order.to_json(self.contract_address))
-                            self.logger.info(f"Placed off-chain EtherDelta order {order}")
-                            del self.order_queue[0]
-                        except:
-                            self.logger.info(f"Failed to place off-chain EtherDelta order, will try again")
-                    else:
-                        self.socket_io.wait(seconds=1)
-            except:
-                self.logger.info("Multiple failures of the EtherDelta API, reinitializing it")
-                try:
-                    self.socket_io.disconnect()
-                except:
-                    pass
+                b = read(self.p.stdout.fileno(), 1024)
+                if len(b) > 0:
+                    print(b, )
+            except OSError:
+                # the os throws an exception if there is no data
+                # print('[No more data]')
+                sleep(0.1)
+                # break
+            try:
+                b = read(self.p.stderr.fileno(), 1024)
+                if len(b) > 0:
+                    print(b, )
+            except OSError:
+                # the os throws an exception if there is no data
+                # print('[No more stderr]')
+                sleep(0.1)
+                # break
+
+
+        # while True:
+        #     try:
+        #         self.socket_io = SocketIO('https://socket.etherdelta.com', transports=['websocket', 'xhr-polling'])
+        #         self.socket_io.on('connect', self._on_connect)
+        #         self.socket_io.on('disconnect', self._on_disconnect)
+        #         self.socket_io.on('reconnect', self._on_reconnect)
+        #         while True:
+        #             if len(self.order_queue) > 0:
+        #                 order = self.order_queue[0]
+        #                 try:
+        #                     self.socket_io.emit('message', order.to_json(self.contract_address))
+        #                     self.logger.info(f"Placed off-chain EtherDelta order {order}")
+        #                     del self.order_queue[0]
+        #                 except:
+        #                     self.logger.info(f"Failed to place off-chain EtherDelta order, will try again")
+        #             else:
+        #                 self.socket_io.wait(seconds=1)
+        #     except:
+        #         self.logger.info("Multiple failures of the EtherDelta API, reinitializing it")
+        #         try:
+        #             self.socket_io.disconnect()
+        #         except:
+        #             pass
 
     def _on_connect(self):
         self.logger.info("Connected to the EtherDelta API")
@@ -724,8 +811,12 @@ class EtherDeltaApi:
     def publish_offchain_order(self, order: OffChainOrder):
         assert(isinstance(order, OffChainOrder))
 
-        self.order_queue.append(order)
+        # self.order_queue.append(order)
         self.logger.info(f"Queued off-chain EtherDelta order {order}")
+
+        # issue command:
+        self.p.stdin.write((json.dumps(order.to_json(self.contract_address)) + '\n').encode('ascii'))
+        self.p.stdin.flush()
 
     def __repr__(self):
         return f"EtherDeltaApi()"
