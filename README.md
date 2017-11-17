@@ -47,6 +47,12 @@ git clone https://github.com/makerdao/keeper.git
 pip3 install -r requirements.txt
 ```
 
+### Installation of `etherdelta-socket`
+
+The EtherDelta keeper utilizes `etherdelta-socket` (in the `utils` directory) to place orders using socket.io.
+In order to use it, a node installation must be present and `npm install` needs to be run in the
+`utils/etherdelta-socket` folder.
+
 ### Known macOS issues
 
 In order for the requirements to install correctly on _macOS_, please install
