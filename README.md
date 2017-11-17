@@ -55,7 +55,7 @@ In order to use it, a node installation must be present and `npm install` needs 
 
 ### Known macOS issues
 
-In order for the requirements to install correctly on _macOS_, please install
+In order for the Python requirements to install correctly on _macOS_, please install
 `openssl`, `libtool` and `pkg-config` using [Homebrew](https://brew.sh/):
 ```
 brew install openssl libtool pkg-config
