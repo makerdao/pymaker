@@ -49,7 +49,7 @@ pip3 install -r requirements.txt
 
 ### Installation of `etherdelta-socket`
 
-The EtherDelta keeper utilizes `etherdelta-socket` (in the `utils` directory) to place orders using socket.io.
+The EtherDelta keeper utilizes `etherdelta-socket` (in the `utils` directory) to place orders using _socket.io_.
 In order to use it, a node installation must be present and `npm install` needs to be run in the
 `utils/etherdelta-socket` folder.
 
