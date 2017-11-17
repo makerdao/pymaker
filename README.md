@@ -57,10 +57,9 @@ In order to use it, a node installation must be present and `npm install` needs 
 
 The market maker keepers use `setzer` in order to access price feeds like GDAX, Kraken etc. In order
 for it to work correctly, `setzer` and its dependencies must be installed and available to the keepers.
+Please see https://github.com/makerdao/setzer.
 
 Without `setzer` installed, only the default price feed (provided by `Tub`) will be available.
-
-[https://github.com/makerdao/setzer]
 
 ### Known macOS issues
 
