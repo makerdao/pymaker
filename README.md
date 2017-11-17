@@ -53,6 +53,15 @@ The EtherDelta keeper utilizes `etherdelta-socket` (in the `utils` directory) to
 In order to use it, a node installation must be present and `npm install` needs to be run in the
 `utils/etherdelta-socket` folder.
 
+### Installation of `setzer`
+
+The market maker keepers use `setzer` in order to access price feeds like GDAX, Kraken etc. In order
+for it to work correctly, `setzer` and its dependencies must be installed and available to the keepers.
+
+Without `setzer` installed, only the default price feed (provided by `Tub`) will be available.
+
+[https://github.com/makerdao/setzer]
+
 ### Known macOS issues
 
 In order for the Python requirements to install correctly on _macOS_, please install
