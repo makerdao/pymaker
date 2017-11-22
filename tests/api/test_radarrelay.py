@@ -18,14 +18,11 @@
 import json
 
 import pkg_resources
-import pytest
-
-from keeper.api import Address, Wad
-from keeper.api.approval import directly
-from keeper.api.radarrelay import RadarRelay
-from keeper.api.token import DSToken
 from web3 import EthereumTesterProvider
 from web3 import Web3
+
+from keeper.api import Address
+from keeper.api.radarrelay import RadarRelay
 
 
 class TestRadarRelay:
