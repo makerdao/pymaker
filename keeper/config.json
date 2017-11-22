@@ -14,6 +14,12 @@
     },
     "etherDelta": {
       "contract": "0xF4Ff487adA7bb29603077216082DA7f4bA989854"
+    },
+    "0x": {
+      "etherToken": "0x05d090b51c40b020eab3bfcb6a2dff130df22e9c",
+      "zrxToken": "0x6ff6c0ff1d68b964901f986d4c9fa3ac68346570",
+      "tokenTransferProxy": "0x087Eed4Bc1ee3DE49BeFbd66C662B434B15d49d4",
+      "exchange": "0x90fe2af704b34e0224bf2299c838e04d4dcf1364"
     }
   },
   "ethlive": {
