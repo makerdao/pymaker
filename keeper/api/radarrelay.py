@@ -91,18 +91,18 @@ class Order:
                      expiration_unix_timestamp_sec=int(data['expirationUnixTimestampSec']),
                      exchange_contract_address=Address(data['exchangeContractAddress']))
 
-    # def to_json(self) -> dict:
-    #     return {'contractAddr': etherdelta_contract_address.address,
-    #             'tokenGet': self.token_get.address,
-    #             'amountGet': self.amount_get.value,
-    #             'tokenGive': self.token_give.address,
-    #             'amountGive': self.amount_give.value,
-    #             'expires': self.expires,
-    #             'nonce': self.nonce,
-    #             'v': self.v,
-    #             'r': bytes_to_hexstring(self.r),
-    #             's': bytes_to_hexstring(self.s),
-    #             'user': self.user.address}
+    def to_json_without_fees(self) -> dict:
+        return {
+            "exchangeContractAddress": self.exchange_contract_address.address,
+            "maker": self.maker.address,
+            "taker": self.taker.address,
+            "makerTokenAddress": self.maker_token_address.address,
+            "takerTokenAddress": self.taker_token_address.address,
+            "makerTokenAmount": str(self.maker_token_amount.value),
+            "takerTokenAmount": str(self.taker_token_amount.value),
+            "expirationUnixTimestampSec": str(self.expiration_unix_timestamp_sec),
+            "salt": str(self.salt)
+        }
 
     def __eq__(self, other):
         if isinstance(other, Order):

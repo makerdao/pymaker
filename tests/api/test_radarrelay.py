@@ -113,3 +113,34 @@ class TestOrder:
         assert order.taker_fee == Wad.from_number(0)
         assert order.expiration_unix_timestamp_sec == 1511988904
         assert order.salt == 50626048444772008084444062440502087868712695090943879708059561407114509847312
+
+    def test_serialize_order_to_json_without_fees(self):
+        # given
+        order = Order(maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+                      taker=Address("0x0000000000000000000000000000000000000000"),
+                      maker_fee=Wad.from_number(123),
+                      taker_fee=Wad.from_number(456),
+                      maker_token_amount=Wad(10000000000000000),
+                      taker_token_amount=Wad(20000000000000000),
+                      maker_token_address=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
+                      taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                      salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
+                      fee_recipient=Address('0x6666666666666666666666666666666666666666'),
+                      expiration_unix_timestamp_sec=42,
+                      exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"))
+
+        # when
+        json_order = order.to_json_without_fees()
+
+        # then
+        assert json_order == json.loads("""{
+            "exchangeContractAddress": "0x12459c951127e0c374ff9105dda097662a027093",
+            "maker": "0x9e56625509c2f60af937f23b7b532600390e8c8b",
+            "taker": "0x0000000000000000000000000000000000000000",
+            "makerTokenAddress": "0x323b5d4c32345ced77393b3530b1eed0f346429d",
+            "takerTokenAddress": "0xef7fff64389b814a946f3e92105513705ca6b990",
+            "makerTokenAmount": "10000000000000000",
+            "takerTokenAmount": "20000000000000000",
+            "expirationUnixTimestampSec": "42",
+            "salt": "67006738228878699843088602623665307406148487219438534730168799356281242528500"
+        }""")
