@@ -41,17 +41,16 @@ class TestRadarRelay:
         self.web3 = Web3(EthereumTesterProvider())
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
-        self.zrx_token_address = self.deploy(self.web3, 'ZRXToken')
+        self.zrx_token = ERC20Token(web3=self.web3, address=Address(self.deploy(self.web3, 'ZRXToken')))
         self.token_transfer_proxy_address = self.deploy(self.web3, 'TokenTransferProxy')
-        self.radarrelay = RadarRelay.deploy(self.web3,
-                                            Address(self.zrx_token_address),
+        self.radarrelay = RadarRelay.deploy(self.web3, self.zrx_token.address,
                                             Address(self.token_transfer_proxy_address))
 
     def test_correct_deployment(self):
         # expect
         assert self.radarrelay is not None
         assert self.radarrelay.address is not None
-        assert self.radarrelay.zrx_token() == Address(self.zrx_token_address)
+        assert self.radarrelay.zrx_token() == self.zrx_token.address
         assert self.radarrelay.token_transfer_proxy() == Address(self.token_transfer_proxy_address)
 
     def test_approval(self):
@@ -60,18 +59,15 @@ class TestRadarRelay:
         token1.mint(Wad.from_number(100)).transact()
 
         # and
-        zrx_token = ERC20Token(web3=self.web3, address=Address(self.zrx_token_address))
-
-        # and
         assert token1.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) == Wad(0)
-        assert zrx_token.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) == Wad(0)
+        assert self.zrx_token.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) == Wad(0)
 
         # when
         self.radarrelay.approve([token1], directly())
 
         # then
         assert token1.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) > Wad(0)
-        assert zrx_token.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) > Wad(0)
+        assert self.zrx_token.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) > Wad(0)
 
     def test_should_have_printable_representation(self):
         assert repr(self.radarrelay) == f"RadarRelay()"
