@@ -126,7 +126,7 @@ class RadarRelay(Contract):
     def deploy(web3: Web3,
                zrx_token: Address,
                token_transfer_proxy: Address):
-        """Deploy a new instance of the `EtherDelta` contract.
+        """Deploy a new instance of the `RadarRelay` contract.
 
         Args:
             web3: An instance of `Web` from `web3.py`.
