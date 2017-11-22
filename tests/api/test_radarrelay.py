@@ -21,8 +21,11 @@ import pkg_resources
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
+from keeper import Wad
 from keeper.api import Address
+from keeper.api.approval import directly
 from keeper.api.radarrelay import RadarRelay
+from keeper.api.token import DSToken, ERC20Token
 
 
 class TestRadarRelay:
@@ -50,6 +53,25 @@ class TestRadarRelay:
         assert self.radarrelay.address is not None
         assert self.radarrelay.zrx_token() == Address(self.zrx_token_address)
         assert self.radarrelay.token_transfer_proxy() == Address(self.token_transfer_proxy_address)
+
+    def test_approval(self):
+        # given
+        token1 = DSToken.deploy(self.web3, 'AAA')
+        token1.mint(Wad.from_number(100)).transact()
+
+        # and
+        zrx_token = ERC20Token(web3=self.web3, address=Address(self.zrx_token_address))
+
+        # and
+        assert token1.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) == Wad(0)
+        assert zrx_token.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) == Wad(0)
+
+        # when
+        self.radarrelay.approve([token1], directly())
+
+        # then
+        assert token1.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) > Wad(0)
+        assert zrx_token.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) > Wad(0)
 
     def test_should_have_printable_representation(self):
         assert repr(self.radarrelay) == f"RadarRelay()"

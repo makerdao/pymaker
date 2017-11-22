@@ -15,8 +15,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import List
+
 from web3 import Web3
 
+from keeper import ERC20Token
 from keeper.api import Contract, Address
 
 
@@ -162,6 +165,11 @@ class RadarRelay(Contract):
             The address of the `TokenTransferProxy` token.
         """
         return Address(self._contract.call().TOKEN_TRANSFER_PROXY_CONTRACT())
+
+    def approve(self, tokens: List[ERC20Token], approval_function):
+        approval_function(ERC20Token(web3=self.web3, address=self.zrx_token()), self.token_transfer_proxy(), '0x Exchange')
+        for token in tokens:
+            approval_function(token, self.token_transfer_proxy(), '0x Exchange')
 
     def __repr__(self):
         return f"RadarRelay()"
