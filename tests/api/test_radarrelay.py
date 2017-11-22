@@ -29,6 +29,7 @@ from web3 import Web3
 
 
 class TestRadarRelay:
+    #TODO duplicate of the deploy method in conftest.py
     def deploy(self, web3, contract_name, args=None):
         contract_factory = web3.eth.contract(abi=json.loads(pkg_resources.resource_string('keeper.api.feed', f'abi/{contract_name}.abi')),
                                              bytecode=pkg_resources.resource_string('keeper.api.feed', f'abi/{contract_name}.bin'))
