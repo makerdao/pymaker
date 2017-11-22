@@ -38,6 +38,9 @@
       "contract": "0x8d12A197cB00D4747a1fe03395095ce2A5CC6819",
       "apiServer": "https://socket.etherdelta.com"
     },
+    "radarRelay": {
+      "apiServer": "https://api.radarrelay.com/0x"
+    },
     "0x": {
       "etherToken": "0x2956356cD2a2bf3202F771F50D3D14A367b48070",
       "zrxToken": "0xE41d2489571d322189246DaFA5ebDe1F4699F498",

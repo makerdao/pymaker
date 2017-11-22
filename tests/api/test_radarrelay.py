@@ -24,7 +24,7 @@ from web3 import Web3
 from keeper import Wad
 from keeper.api import Address
 from keeper.api.approval import directly
-from keeper.api.radarrelay import RadarRelay
+from keeper.api.radarrelay import RadarRelay, Order
 from keeper.api.token import DSToken, ERC20Token
 
 
@@ -71,3 +71,45 @@ class TestRadarRelay:
 
     def test_should_have_printable_representation(self):
         assert repr(self.radarrelay) == f"RadarRelay()"
+
+
+class TestOrder:
+    def test_parse_json_order(self):
+        # given
+        json_order = json.loads("""{
+            "orderHash": "0x02266a4887256fdf16b47ca13e3f2cca76f93724842f3f7ddf55d92fb6601b6f",
+            "exchangeContractAddress": "0x12459c951127e0c374ff9105dda097662a027093",
+            "maker": "0x0046cac6668bef45b517a1b816a762f4f8add2a9",
+            "taker": "0x0000000000000000000000000000000000000000",
+            "makerTokenAddress": "0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4",
+            "takerTokenAddress": "0x2956356cd2a2bf3202f771f50d3d14a367b48070",
+            "feeRecipient": "0xa258b39954cef5cb142fd567a46cddb31a670124",
+            "makerTokenAmount": "11000000000000000000",
+            "takerTokenAmount": "30800000000000000",
+            "makerFee": "0",
+            "takerFee": "0",
+            "expirationUnixTimestampSec": "1511988904",
+            "salt": "50626048444772008084444062440502087868712695090943879708059561407114509847312",
+            "ecSignature": {
+                "r": "0xf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc3",
+                "s": "0x15baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab964",
+                "v": 28
+            }
+        }""")
+
+        # when
+        order = Order.from_json(json_order)
+
+        # then
+        assert order.exchange_contract_address == Address("0x12459c951127e0c374ff9105dda097662a027093")
+        assert order.maker == Address("0x0046cac6668bef45b517a1b816a762f4f8add2a9")
+        assert order.taker == Address("0x0000000000000000000000000000000000000000")
+        assert order.maker_token_address == Address("0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4")
+        assert order.taker_token_address == Address("0x2956356cd2a2bf3202f771f50d3d14a367b48070")
+        assert order.fee_recipient == Address("0xa258b39954cef5cb142fd567a46cddb31a670124")
+        assert order.maker_token_amount == Wad.from_number(11)
+        assert order.taker_token_amount == Wad.from_number(0.0308)
+        assert order.maker_fee == Wad.from_number(0)
+        assert order.taker_fee == Wad.from_number(0)
+        assert order.expiration_unix_timestamp_sec == 1511988904
+        assert order.salt == 50626048444772008084444062440502087868712695090943879708059561407114509847312
