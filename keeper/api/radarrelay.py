@@ -168,7 +168,7 @@ class RadarRelay(Contract):
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         for token in tokens + [ERC20Token(web3=self.web3, address=self.zrx_token())]:
-            approval_function(token, self.token_transfer_proxy(), '0x Exchange')
+            approval_function(token, self.token_transfer_proxy(), '0x Exchange contract')
 
     def __repr__(self):
         return f"RadarRelay()"
