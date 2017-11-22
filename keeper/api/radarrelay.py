@@ -147,5 +147,21 @@ class RadarRelay(Contract):
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
 
+    def zrx_token(self) -> Address:
+        """Get the address of the ZRX token contract associated with this `Exchange` contract.
+
+        Returns:
+            The address of the `ZRX` token.
+        """
+        return Address(self._contract.call().ZRX_TOKEN_CONTRACT())
+
+    def token_transfer_proxy(self) -> Address:
+        """Get the address of the `TokenTransferProxy` contract associated with this `Exchange` contract.
+
+        Returns:
+            The address of the `TokenTransferProxy` token.
+        """
+        return Address(self._contract.call().TOKEN_TRANSFER_PROXY_CONTRACT())
+
     def __repr__(self):
         return f"RadarRelay()"
