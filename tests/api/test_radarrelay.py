@@ -26,6 +26,7 @@ from keeper.api import Address
 from keeper.api.approval import directly
 from keeper.api.radarrelay import RadarRelay, Order
 from keeper.api.token import DSToken, ERC20Token
+from tests.api.helpers import is_hashable
 
 
 class TestRadarRelay:
@@ -74,6 +75,24 @@ class TestRadarRelay:
 
 
 class TestOrder:
+    def test_should_be_hashable(self):
+        # given
+        order = Order(maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+                      taker=Address("0x0000000000000000000000000000000000000000"),
+                      maker_fee=Wad.from_number(123),
+                      taker_fee=Wad.from_number(456),
+                      maker_token_amount=Wad(10000000000000000),
+                      taker_token_amount=Wad(20000000000000000),
+                      maker_token_address=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
+                      taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                      salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
+                      fee_recipient=Address('0x6666666666666666666666666666666666666666'),
+                      expiration_unix_timestamp_sec=42,
+                      exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"))
+
+        # expect
+        assert is_hashable(order)
+
     def test_parse_json_order(self):
         # given
         json_order = json.loads("""{
