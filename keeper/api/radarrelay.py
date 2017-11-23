@@ -18,10 +18,11 @@
 import copy
 import random
 from pprint import pformat
-from typing import List
+from typing import List, Optional
 
 import array
 import requests
+from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
 
 from keeper import ERC20Token, Wad
@@ -42,7 +43,10 @@ class Order:
                  salt: int,
                  fee_recipient: Address,
                  expiration_unix_timestamp_sec: int,
-                 exchange_contract_address: Address):
+                 exchange_contract_address: Address,
+                 ec_signature_r: Optional[str],
+                 ec_signature_s: Optional[str],
+                 ec_signature_v: Optional[int]):
 
         assert(isinstance(maker, Address))
         assert(isinstance(taker, Address))
@@ -56,6 +60,8 @@ class Order:
         assert(isinstance(fee_recipient, Address))
         assert(isinstance(expiration_unix_timestamp_sec, int))
         assert(isinstance(exchange_contract_address, Address))
+        assert((isinstance(ec_signature_r, str) and isinstance(ec_signature_s, str) and isinstance(ec_signature_v, int))
+               or (ec_signature_r is None and ec_signature_s is None and ec_signature_v is None))
 
         self.maker = maker
         self.taker = taker
@@ -69,6 +75,9 @@ class Order:
         self.fee_recipient = fee_recipient
         self.expiration_unix_timestamp_sec = expiration_unix_timestamp_sec
         self.exchange_contract_address = exchange_contract_address
+        self.ec_signature_r = ec_signature_r
+        self.ec_signature_s = ec_signature_s
+        self.ec_signature_v = ec_signature_v
 
     # @property
     # def sell_how_much(self):
@@ -93,7 +102,10 @@ class Order:
                      salt=int(data['salt']),
                      fee_recipient=Address(data['feeRecipient']),
                      expiration_unix_timestamp_sec=int(data['expirationUnixTimestampSec']),
-                     exchange_contract_address=Address(data['exchangeContractAddress']))
+                     exchange_contract_address=Address(data['exchangeContractAddress']),
+                     ec_signature_r=data['ecSignature']['r'] if 'ecSignature' in data else None,
+                     ec_signature_s=data['ecSignature']['s'] if 'ecSignature' in data else None,
+                     ec_signature_v=data['ecSignature']['v'] if 'ecSignature' in data else None)
 
     def to_json_without_fees(self) -> dict:
         return {
@@ -121,7 +133,10 @@ class Order:
                    self.salt == other.salt and \
                    self.fee_recipient == other.fee_recipient and \
                    self.expiration_unix_timestamp_sec == other.expiration_unix_timestamp_sec and \
-                   self.exchange_contract_address == other.exchange_contract_address
+                   self.exchange_contract_address == other.exchange_contract_address and \
+                   self.ec_signature_r == other.ec_signature_r and \
+                   self.ec_signature_s == other.ec_signature_s and \
+                   self.ec_signature_v == other.ec_signature_v
         else:
             return False
 
@@ -137,7 +152,10 @@ class Order:
                      self.salt,
                      self.fee_recipient,
                      self.expiration_unix_timestamp_sec,
-                     self.exchange_contract_address))
+                     self.exchange_contract_address,
+                     self.ec_signature_r,
+                     self.ec_signature_s,
+                     self.ec_signature_v))
 
     def __str__(self):
         return f"('{self.taker_token_address}', '{self.taker_token_amount}'," \
@@ -232,7 +250,10 @@ class RadarRelay(Contract):
                      salt=self.random_salt(),
                      fee_recipient=self._ZERO_ADDRESS,
                      expiration_unix_timestamp_sec=expiration_unix_timestamp_sec,
-                     exchange_contract_address=self.address)
+                     exchange_contract_address=self.address,
+                     ec_signature_r=None,
+                     ec_signature_s=None,
+                     ec_signature_v=None)
 
     def get_order_hash(self, order: Order) -> str:
         assert(isinstance(order, Order))
