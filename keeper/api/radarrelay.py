@@ -225,6 +225,8 @@ class RadarRelayApi:
         self.api_server = api_server
 
     def get_orders_by_maker(self, maker: Address):
+        assert(isinstance(maker, Address))
+
         url = f"{self.api_server}/v0/orders?" \
               f"exchangeContractAddress={self.contract_address.address}&" \
               f"maker={maker.address}&" \
