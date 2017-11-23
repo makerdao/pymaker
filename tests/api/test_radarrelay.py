@@ -70,6 +70,31 @@ class TestRadarRelay:
         assert token1.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) > Wad(0)
         assert self.zrx_token.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) > Wad(0)
 
+    def test_create_order(self):
+        # when
+        order = self.radarrelay.create_order(maker_token_amount=Wad.from_number(100),
+                                             taker_token_amount=Wad.from_number(2.5),
+                                             maker_token_address=Address("0x0202020202020202020202020202020202020202"),
+                                             taker_token_address=Address("0x0101010101010101010101010101010101010101"),
+                                             expiration_unix_timestamp_sec=1763920792)
+
+        # then
+        assert order.maker == Address(self.web3.eth.defaultAccount)
+        assert order.taker == Address("0x0000000000000000000000000000000000000000")
+        assert order.maker_token_amount == Wad.from_number(100)
+        assert order.taker_token_amount == Wad.from_number(2.5)
+        assert order.maker_token_address == Address("0x0202020202020202020202020202020202020202")
+        assert order.taker_token_address == Address("0x0101010101010101010101010101010101010101")
+        assert order.salt >= 0
+        assert order.expiration_unix_timestamp_sec == 1763920792
+        assert order.exchange_contract_address == self.radarrelay.address
+
+        # and
+        # [fees should be zero by default]
+        assert order.maker_fee == Wad.from_number(0)
+        assert order.taker_fee == Wad.from_number(0)
+        assert order.fee_recipient == Address("0x0000000000000000000000000000000000000000")
+
     def test_should_have_printable_representation(self):
         assert repr(self.radarrelay) == f"RadarRelay()"
 

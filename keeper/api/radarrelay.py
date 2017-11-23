@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import random
 from pprint import pformat
 from typing import List
 
@@ -159,6 +160,8 @@ class RadarRelay(Contract):
     abi = Contract._load_abi(__name__, 'abi/Exchange.abi')
     bin = Contract._load_bin(__name__, 'abi/Exchange.bin')
 
+    _ZERO_ADDRESS = Address("0x0000000000000000000000000000000000000000")
+
     @staticmethod
     def deploy(web3: Web3,
                zrx_token: Address,
@@ -203,6 +206,35 @@ class RadarRelay(Contract):
     def approve(self, tokens: List[ERC20Token], approval_function):
         for token in tokens + [ERC20Token(web3=self.web3, address=self.zrx_token())]:
             approval_function(token, self.token_transfer_proxy(), '0x Exchange contract')
+
+    def create_order(self,
+                     maker_token_amount: Wad,
+                     taker_token_amount: Wad,
+                     maker_token_address: Address,
+                     taker_token_address: Address,
+                     expiration_unix_timestamp_sec: int):
+        assert(isinstance(maker_token_amount, Wad))
+        assert(isinstance(taker_token_amount, Wad))
+        assert(isinstance(maker_token_address, Address))
+        assert(isinstance(taker_token_address, Address))
+        assert(isinstance(expiration_unix_timestamp_sec, int))
+
+        return Order(maker=Address(self.web3.eth.defaultAccount),
+                     taker=self._ZERO_ADDRESS,
+                     maker_fee=Wad(0),
+                     taker_fee=Wad(0),
+                     maker_token_amount=maker_token_amount,
+                     taker_token_amount=taker_token_amount,
+                     maker_token_address=maker_token_address,
+                     taker_token_address=taker_token_address,
+                     salt=self.random_salt(),
+                     fee_recipient=self._ZERO_ADDRESS,
+                     expiration_unix_timestamp_sec=expiration_unix_timestamp_sec,
+                     exchange_contract_address=self.address)
+
+    @staticmethod
+    def random_salt() -> int:
+        return random.randint(1, 2**256 - 1)
 
     def __repr__(self):
         return f"RadarRelay()"
