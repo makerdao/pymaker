@@ -300,9 +300,9 @@ class TestOrder:
                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
                       expiration_unix_timestamp_sec=42,
                       exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
-                      ec_signature_r=None,
-                      ec_signature_s=None,
-                      ec_signature_v=None)
+                      ec_signature_r="0xde21c90d3db3abdc8bdc5fafb1f5432a1dede4d621508e7d96fb2ebc15d7eb2f",
+                      ec_signature_s="0x74f3cb421f75727b78ae98157ddce6a77b46c8714f5848d70f6da083527e1719",
+                      ec_signature_v=28)
 
         # when
         json_order = order.to_json_without_fees()
@@ -318,4 +318,46 @@ class TestOrder:
             "takerTokenAmount": "20000000000000000",
             "expirationUnixTimestampSec": "42",
             "salt": "67006738228878699843088602623665307406148487219438534730168799356281242528500"
+        }""")
+
+    def test_serialize_order_to_json(self):
+        # given
+        order = Order(maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+                      taker=Address("0x0000000000000000000000000000000000000000"),
+                      maker_fee=Wad.from_number(123),
+                      taker_fee=Wad.from_number(456),
+                      maker_token_amount=Wad(10000000000000000),
+                      taker_token_amount=Wad(20000000000000000),
+                      maker_token_address=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
+                      taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                      salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
+                      fee_recipient=Address('0x6666666666666666666666666666666666666666'),
+                      expiration_unix_timestamp_sec=42,
+                      exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
+                      ec_signature_r="0xde21c90d3db3abdc8bdc5fafb1f5432a1dede4d621508e7d96fb2ebc15d7eb2f",
+                      ec_signature_s="0x74f3cb421f75727b78ae98157ddce6a77b46c8714f5848d70f6da083527e1719",
+                      ec_signature_v=28)
+
+        # when
+        json_order = order.to_json()
+
+        # then
+        assert json_order == json.loads("""{
+            "exchangeContractAddress": "0x12459c951127e0c374ff9105dda097662a027093",
+            "maker": "0x9e56625509c2f60af937f23b7b532600390e8c8b",
+            "taker": "0x0000000000000000000000000000000000000000",
+            "makerTokenAddress": "0x323b5d4c32345ced77393b3530b1eed0f346429d",
+            "takerTokenAddress": "0xef7fff64389b814a946f3e92105513705ca6b990",
+            "feeRecipient": "0x6666666666666666666666666666666666666666",
+            "makerTokenAmount": "10000000000000000",
+            "takerTokenAmount": "20000000000000000",
+            "makerFee": "123000000000000000000",
+            "takerFee": "456000000000000000000",
+            "expirationUnixTimestampSec": "42",
+            "salt": "67006738228878699843088602623665307406148487219438534730168799356281242528500",
+            "ecSignature": {
+                "r": "0xde21c90d3db3abdc8bdc5fafb1f5432a1dede4d621508e7d96fb2ebc15d7eb2f",
+                "s": "0x74f3cb421f75727b78ae98157ddce6a77b46c8714f5848d70f6da083527e1719",
+                "v": 28
+            }
         }""")

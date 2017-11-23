@@ -120,6 +120,27 @@ class Order:
             "salt": str(self.salt)
         }
 
+    def to_json(self) -> dict:
+        return {
+            "exchangeContractAddress": self.exchange_contract_address.address,
+            "maker": self.maker.address,
+            "taker": self.taker.address,
+            "makerTokenAddress": self.maker_token_address.address,
+            "takerTokenAddress": self.taker_token_address.address,
+            "feeRecipient": self.fee_recipient.address,
+            "makerTokenAmount": str(self.maker_token_amount.value),
+            "takerTokenAmount": str(self.taker_token_amount.value),
+            "makerFee": str(self.maker_fee.value),
+            "takerFee": str(self.taker_fee.value),
+            "expirationUnixTimestampSec": str(self.expiration_unix_timestamp_sec),
+            "salt": str(self.salt),
+            "ecSignature": {
+                "r": self.ec_signature_r,
+                "s": self.ec_signature_s,
+                "v": self.ec_signature_v
+            }
+        }
+
     def __eq__(self, other):
         if isinstance(other, Order):
             return self.maker == other.maker and \
