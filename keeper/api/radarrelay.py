@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 from pprint import pformat
 from typing import List
 
@@ -234,6 +235,17 @@ class RadarRelayApi:
 
         response = requests.get(url).json()
         return list(map(lambda item: Order.from_json(item), response))
+
+    def calculate_fees(self, order: Order) -> Order:
+        assert(isinstance(order, Order))
+
+        response = requests.post(f"{self.api_server}/v0/fees", json=order.to_json_without_fees()).json()
+
+        order_with_fees = copy.copy(order)
+        order_with_fees.maker_fee = Wad(int(response['makerFee']))
+        order_with_fees.taker_fee = Wad(int(response['takerFee']))
+        order_with_fees.fee_recipient = Address(response['feeRecipient'])
+        return order_with_fees
 
     def __repr__(self):
         return f"RadarRelayApi()"
