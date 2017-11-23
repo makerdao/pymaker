@@ -511,6 +511,7 @@ class EtherDelta(Contract):
                                     encode_uint256(amount_give.value) +
                                     encode_uint256(expires) +
                                     encode_uint256(nonce)).digest()
+        # TODO duplicate code below
         signed_hash = self._eth_sign(self.web3.eth.defaultAccount, order_hash)[2:]
         r = bytes.fromhex(signed_hash[0:64])
         s = bytes.fromhex(signed_hash[64:128])
@@ -660,6 +661,7 @@ class EtherDelta(Contract):
     def random_nonce():
         return random.randint(1, 2**32 - 1)
 
+    # TODO duplicate code below
     @coerce_return_to_text
     def _eth_sign(self, account, data_hash):
         return self.web3.manager.request_blocking(

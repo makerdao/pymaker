@@ -278,6 +278,7 @@ class RadarRelay(Contract):
     def sign_order(self, order: Order) -> Order:
         assert(isinstance(order, Order))
 
+        # TODO duplicate code below
         signed_hash = self._eth_sign(self.web3.eth.defaultAccount, self.get_order_hash(order))[2:]
         r = bytes.fromhex(signed_hash[0:64])
         s = bytes.fromhex(signed_hash[64:128])
@@ -289,6 +290,7 @@ class RadarRelay(Contract):
         signed_order.ec_signature_v = v
         return signed_order
 
+    # TODO duplicate code below
     @coerce_return_to_text
     def _eth_sign(self, account, data_hash):
         return self.web3.manager.request_blocking(
