@@ -285,8 +285,8 @@ class RadarRelay(Contract):
         v = ord(bytes.fromhex(signed_hash[128:130]))
 
         signed_order = copy.copy(order)
-        signed_order.ec_signature_r = r
-        signed_order.ec_signature_s = s
+        signed_order.ec_signature_r = bytes_to_hexstring(r)
+        signed_order.ec_signature_s = bytes_to_hexstring(s)
         signed_order.ec_signature_v = v
         return signed_order
 
