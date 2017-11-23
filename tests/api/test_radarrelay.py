@@ -18,6 +18,7 @@
 import json
 
 import pkg_resources
+import pytest
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
@@ -109,6 +110,25 @@ class TestRadarRelay:
         # then
         assert order_hash.startswith('0x')
         assert len(order_hash) == 66
+
+    @pytest.mark.skip(reason='eth_sign is not implemented yet in eth-testrpc')
+    def test_sign_order(self):
+        # given
+        order = self.radarrelay.create_order(maker_token_amount=Wad.from_number(100),
+                                             taker_token_amount=Wad.from_number(2.5),
+                                             maker_token_address=Address("0x0202020202020202020202020202020202020202"),
+                                             taker_token_address=Address("0x0101010101010101010101010101010101010101"),
+                                             expiration_unix_timestamp_sec=1763920792)
+
+        # when
+        signed_order = self.radarrelay.sign_order(order)
+
+        # then
+        assert signed_order.ec_signature_r.startswith('0x')
+        assert len(signed_order.ec_signature_r) == 64
+        assert signed_order.ec_signature_s.startswith('0x')
+        assert len(signed_order.ec_signature_s) == 64
+        assert signed_order.ec_signature_v in [27, 28]
 
     def test_should_have_printable_representation(self):
         assert repr(self.radarrelay) == f"RadarRelay()"

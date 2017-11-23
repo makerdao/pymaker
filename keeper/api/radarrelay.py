@@ -275,6 +275,26 @@ class RadarRelay(Contract):
 
         return bytes_to_hexstring(array.array('B', [ord(x) for x in result]).tobytes())
 
+    def sign_order(self, order: Order) -> Order:
+        assert(isinstance(order, Order))
+
+        signed_hash = self._eth_sign(self.web3.eth.defaultAccount, self.get_order_hash(order))[2:]
+        r = bytes.fromhex(signed_hash[0:64])
+        s = bytes.fromhex(signed_hash[64:128])
+        v = ord(bytes.fromhex(signed_hash[128:130]))
+
+        signed_order = copy.copy(order)
+        signed_order.ec_signature_r = r
+        signed_order.ec_signature_s = s
+        signed_order.ec_signature_v = v
+        return signed_order
+
+    @coerce_return_to_text
+    def _eth_sign(self, account, data_hash):
+        return self.web3.manager.request_blocking(
+            "eth_sign", [account, encode_hex(data_hash)],
+        )
+
     @staticmethod
     def random_salt() -> int:
         return random.randint(1, 2**256 - 1)
