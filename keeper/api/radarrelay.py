@@ -20,11 +20,13 @@ import random
 from pprint import pformat
 from typing import List
 
+import array
 import requests
 from web3 import Web3
 
 from keeper import ERC20Token, Wad
 from keeper.api import Contract, Address
+from keeper.api.util import bytes_to_hexstring
 
 
 class Order:
@@ -231,6 +233,26 @@ class RadarRelay(Contract):
                      fee_recipient=self._ZERO_ADDRESS,
                      expiration_unix_timestamp_sec=expiration_unix_timestamp_sec,
                      exchange_contract_address=self.address)
+
+    def get_order_hash(self, order: Order) -> str:
+        assert(isinstance(order, Order))
+
+        # the hash depends on the exchange contract address as well
+        assert(order.exchange_contract_address == self.address)
+
+        result = self._contract.call().getOrderHash([order.maker.address,
+                                                     order.taker.address,
+                                                     order.maker_token_address.address,
+                                                     order.taker_token_address.address,
+                                                     order.fee_recipient.address],
+                                                    [order.maker_token_amount.value,
+                                                     order.taker_token_amount.value,
+                                                     order.maker_fee.value,
+                                                     order.taker_fee.value,
+                                                     order.expiration_unix_timestamp_sec,
+                                                     order.salt])
+
+        return bytes_to_hexstring(array.array('B', [ord(x) for x in result]).tobytes())
 
     @staticmethod
     def random_salt() -> int:

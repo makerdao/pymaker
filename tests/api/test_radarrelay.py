@@ -95,6 +95,21 @@ class TestRadarRelay:
         assert order.taker_fee == Wad.from_number(0)
         assert order.fee_recipient == Address("0x0000000000000000000000000000000000000000")
 
+    def test_get_order_hash(self):
+        # given
+        order = self.radarrelay.create_order(maker_token_amount=Wad.from_number(100),
+                                             taker_token_amount=Wad.from_number(2.5),
+                                             maker_token_address=Address("0x0202020202020202020202020202020202020202"),
+                                             taker_token_address=Address("0x0101010101010101010101010101010101010101"),
+                                             expiration_unix_timestamp_sec=1763920792)
+
+        # when
+        order_hash = self.radarrelay.get_order_hash(order)
+
+        # then
+        assert order_hash.startswith('0x')
+        assert len(order_hash) == 66
+
     def test_should_have_printable_representation(self):
         assert repr(self.radarrelay) == f"RadarRelay()"
 
