@@ -282,18 +282,7 @@ class RadarRelay(Contract):
         # the hash depends on the exchange contract address as well
         assert(order.exchange_contract_address == self.address)
 
-        result = self._contract.call().getOrderHash([order.maker.address,
-                                                     order.taker.address,
-                                                     order.maker_token_address.address,
-                                                     order.taker_token_address.address,
-                                                     order.fee_recipient.address],
-                                                    [order.maker_token_amount.value,
-                                                     order.taker_token_amount.value,
-                                                     order.maker_fee.value,
-                                                     order.taker_fee.value,
-                                                     order.expiration_unix_timestamp_sec,
-                                                     order.salt])
-
+        result = self._contract.call().getOrderHash(self._order_addresses(order), self._order_values(order))
         return bytes_to_hexstring(array.array('B', [ord(x) for x in result]).tobytes())
 
     def sign_order(self, order: Order) -> Order:
@@ -315,17 +304,24 @@ class RadarRelay(Contract):
         assert(isinstance(order, Order))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'cancelOrder',
-                        [[order.maker.address,
-                         order.taker.address,
-                         order.maker_token_address.address,
-                         order.taker_token_address.address,
-                         order.fee_recipient.address],
-                        [order.maker_token_amount.value,
-                         order.taker_token_amount.value,
-                         order.maker_fee.value,
-                         order.taker_fee.value,
-                         order.expiration_unix_timestamp_sec,
-                         order.salt], order.taker_token_amount.value])
+                        [self._order_addresses(order), self._order_values(order), order.taker_token_amount.value])
+
+    @staticmethod
+    def _order_values(order):
+        return [order.maker_token_amount.value,
+                order.taker_token_amount.value,
+                order.maker_fee.value,
+                order.taker_fee.value,
+                order.expiration_unix_timestamp_sec,
+                order.salt]
+
+    @staticmethod
+    def _order_addresses(order):
+        return [order.maker.address,
+                order.taker.address,
+                order.maker_token_address.address,
+                order.taker_token_address.address,
+                order.fee_recipient.address]
 
     # TODO duplicate code below
     @coerce_return_to_text
