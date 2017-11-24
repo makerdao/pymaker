@@ -285,6 +285,11 @@ class RadarRelay(Contract):
         result = self._contract.call().getOrderHash(self._order_addresses(order), self._order_values(order))
         return bytes_to_hexstring(array.array('B', [ord(x) for x in result]).tobytes())
 
+    def get_unavailable_taker_token_amount(self, order: Order) -> Wad:
+        assert(isinstance(order, Order))
+
+        return Wad(self._contract.call().getUnavailableTakerTokenAmount(hexstring_to_bytes(self.get_order_hash(order))))
+
     def sign_order(self, order: Order) -> Order:
         assert(isinstance(order, Order))
 
