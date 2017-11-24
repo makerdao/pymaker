@@ -365,5 +365,11 @@ class RadarRelayApi:
         order_with_fees.fee_recipient = Address(response['feeRecipient'])
         return order_with_fees
 
+    def submit_order(self, order: Order) -> bool:
+        assert(isinstance(order, Order))
+
+        response = requests.post(f"{self.api_server}/v0/order", json=order.to_json())
+        return response.status_code == 201
+
     def __repr__(self):
         return f"RadarRelayApi()"
