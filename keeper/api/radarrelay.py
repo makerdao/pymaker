@@ -26,7 +26,7 @@ from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
 
 from keeper import ERC20Token, Wad
-from keeper.api import Contract, Address
+from keeper.api import Contract, Address, Transact
 from keeper.api.util import bytes_to_hexstring, hexstring_to_bytes
 
 
@@ -310,6 +310,22 @@ class RadarRelay(Contract):
         signed_order.ec_signature_s = bytes_to_hexstring(s)
         signed_order.ec_signature_v = v
         return signed_order
+
+    def cancel_order(self, order: Order) -> Transact:
+        assert(isinstance(order, Order))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'cancelOrder',
+                        [[order.maker.address,
+                         order.taker.address,
+                         order.maker_token_address.address,
+                         order.taker_token_address.address,
+                         order.fee_recipient.address],
+                        [order.maker_token_amount.value,
+                         order.taker_token_amount.value,
+                         order.maker_fee.value,
+                         order.taker_fee.value,
+                         order.expiration_unix_timestamp_sec,
+                         order.salt], order.taker_token_amount.value])
 
     # TODO duplicate code below
     @coerce_return_to_text
