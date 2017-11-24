@@ -27,7 +27,7 @@ from web3 import Web3
 
 from keeper import ERC20Token, Wad
 from keeper.api import Contract, Address
-from keeper.api.util import bytes_to_hexstring
+from keeper.api.util import bytes_to_hexstring, hexstring_to_bytes
 
 
 class Order:
@@ -300,7 +300,7 @@ class RadarRelay(Contract):
         assert(isinstance(order, Order))
 
         # TODO duplicate code below
-        signed_hash = self._eth_sign(self.web3.eth.defaultAccount, self.get_order_hash(order))[2:]
+        signed_hash = self._eth_sign(self.web3.eth.defaultAccount, hexstring_to_bytes(self.get_order_hash(order)))[2:]
         r = bytes.fromhex(signed_hash[0:64])
         s = bytes.fromhex(signed_hash[64:128])
         v = ord(bytes.fromhex(signed_hash[128:130]))
