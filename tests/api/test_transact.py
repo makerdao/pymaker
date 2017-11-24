@@ -51,14 +51,38 @@ class TestTxManager:
         assert self.token1.allowance_of(self.our_address, self.tx.address) == Wad(2**256-1)
         assert self.token2.allowance_of(self.our_address, self.tx.address) == Wad(2**256-1)
 
-    def test_execute(self):
+    def test_execute_zero_calls(self):
         # given
         self.tx.approve([self.token1], directly())
 
         # when
-        self.tx.execute([self.token1.address],
-                        [self.token1.transfer(self.other_address, Wad.from_number(500)).invocation()]).transact()
+        res = self.tx.execute([self.token1.address], []).transact()
 
         # then
+        assert res.successful
+
+    def test_execute_one_call(self):
+        # given
+        self.tx.approve([self.token1], directly())
+
+        # when
+        res = self.tx.execute([self.token1.address],
+                              [self.token1.transfer(self.other_address, Wad.from_number(500)).invocation()]).transact()
+
+        # then
+        assert res.successful
         assert self.token1.balance_of(self.our_address) == Wad.from_number(999500)
         assert self.token1.balance_of(self.other_address) == Wad.from_number(500)
+
+    def test_execute_one_call_fails_if_no_approval(self):
+        # given
+        # [no approval]
+
+        # when
+        res = self.tx.execute([self.token1.address],
+                              [self.token1.transfer(self.other_address, Wad.from_number(500)).invocation()]).transact()
+
+        # then
+        assert res is None
+        assert self.token1.balance_of(self.our_address) == Wad.from_number(1000000)
+        assert self.token1.balance_of(self.other_address) == Wad.from_number(0)
