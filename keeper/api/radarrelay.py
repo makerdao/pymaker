@@ -386,6 +386,8 @@ class RadarRelayApi:
         assert(isinstance(order, Order))
 
         response = requests.post(f"{self.api_server}/v0/order", json=order.to_json())
+        print(response.status_code)
+        print(response.text)
         return response.status_code == 201
 
     def __repr__(self):
