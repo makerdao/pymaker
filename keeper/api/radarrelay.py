@@ -79,13 +79,13 @@ class Order:
         self.ec_signature_s = ec_signature_s
         self.ec_signature_v = ec_signature_v
 
-    # @property
-    # def sell_how_much(self):
-    #     return self.amount_give
-    #
-    # @property
-    # def buy_how_much(self):
-    #     return self.amount_get
+    @property
+    def sell_how_much(self):
+        return self.amount_give
+
+    @property
+    def buy_how_much(self):
+        return self.amount_get
 
     @staticmethod
     def from_json(data: dict):
@@ -360,7 +360,7 @@ class RadarRelayApi:
         self.contract_address = contract_address
         self.api_server = api_server
 
-    def get_orders_by_maker(self, maker: Address):
+    def get_orders_by_maker(self, maker: Address) -> List[Order]:
         assert(isinstance(maker, Address))
 
         url = f"{self.api_server}/v0/orders?" \
