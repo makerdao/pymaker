@@ -42,7 +42,7 @@ class Order:
                  taker_token_address: Address,
                  salt: int,
                  fee_recipient: Address,
-                 expiration_unix_timestamp_sec: int,
+                 expiration: int,
                  exchange_contract_address: Address,
                  ec_signature_r: Optional[str],
                  ec_signature_s: Optional[str],
@@ -58,7 +58,7 @@ class Order:
         assert(isinstance(taker_token_address, Address))
         assert(isinstance(salt, int))
         assert(isinstance(fee_recipient, Address))
-        assert(isinstance(expiration_unix_timestamp_sec, int))
+        assert(isinstance(expiration, int))
         assert(isinstance(exchange_contract_address, Address))
         assert((isinstance(ec_signature_r, str) and isinstance(ec_signature_s, str) and isinstance(ec_signature_v, int))
                or (ec_signature_r is None and ec_signature_s is None and ec_signature_v is None))
@@ -73,7 +73,7 @@ class Order:
         self.taker_token_address = taker_token_address
         self.salt = salt
         self.fee_recipient = fee_recipient
-        self.expiration_unix_timestamp_sec = expiration_unix_timestamp_sec
+        self.expiration = expiration
         self.exchange_contract_address = exchange_contract_address
         self.ec_signature_r = ec_signature_r
         self.ec_signature_s = ec_signature_s
@@ -101,7 +101,7 @@ class Order:
                      taker_token_address=Address(data['takerTokenAddress']),
                      salt=int(data['salt']),
                      fee_recipient=Address(data['feeRecipient']),
-                     expiration_unix_timestamp_sec=int(data['expirationUnixTimestampSec']),
+                     expiration=int(data['expirationUnixTimestampSec']),
                      exchange_contract_address=Address(data['exchangeContractAddress']),
                      ec_signature_r=data['ecSignature']['r'] if 'ecSignature' in data else None,
                      ec_signature_s=data['ecSignature']['s'] if 'ecSignature' in data else None,
@@ -116,7 +116,7 @@ class Order:
             "takerTokenAddress": self.taker_token_address.address,
             "makerTokenAmount": str(self.maker_token_amount.value),
             "takerTokenAmount": str(self.taker_token_amount.value),
-            "expirationUnixTimestampSec": str(self.expiration_unix_timestamp_sec),
+            "expirationUnixTimestampSec": str(self.expiration),
             "salt": str(self.salt)
         }
 
@@ -132,7 +132,7 @@ class Order:
             "takerTokenAmount": str(self.taker_token_amount.value),
             "makerFee": str(self.maker_fee.value),
             "takerFee": str(self.taker_fee.value),
-            "expirationUnixTimestampSec": str(self.expiration_unix_timestamp_sec),
+            "expirationUnixTimestampSec": str(self.expiration),
             "salt": str(self.salt),
             "ecSignature": {
                 "r": self.ec_signature_r,
@@ -153,7 +153,7 @@ class Order:
                    self.taker_token_address == other.taker_token_address and \
                    self.salt == other.salt and \
                    self.fee_recipient == other.fee_recipient and \
-                   self.expiration_unix_timestamp_sec == other.expiration_unix_timestamp_sec and \
+                   self.expiration == other.expiration and \
                    self.exchange_contract_address == other.exchange_contract_address and \
                    self.ec_signature_r == other.ec_signature_r and \
                    self.ec_signature_s == other.ec_signature_s and \
@@ -172,7 +172,7 @@ class Order:
                      self.taker_token_address,
                      self.salt,
                      self.fee_recipient,
-                     self.expiration_unix_timestamp_sec,
+                     self.expiration,
                      self.exchange_contract_address,
                      self.ec_signature_r,
                      self.ec_signature_s,
@@ -253,12 +253,12 @@ class RadarRelay(Contract):
                      taker_token_amount: Wad,
                      maker_token_address: Address,
                      taker_token_address: Address,
-                     expiration_unix_timestamp_sec: int):
+                     expiration: int):
         assert(isinstance(maker_token_amount, Wad))
         assert(isinstance(taker_token_amount, Wad))
         assert(isinstance(maker_token_address, Address))
         assert(isinstance(taker_token_address, Address))
-        assert(isinstance(expiration_unix_timestamp_sec, int))
+        assert(isinstance(expiration, int))
 
         return Order(maker=Address(self.web3.eth.defaultAccount),
                      taker=self._ZERO_ADDRESS,
@@ -270,7 +270,7 @@ class RadarRelay(Contract):
                      taker_token_address=taker_token_address,
                      salt=self.random_salt(),
                      fee_recipient=self._ZERO_ADDRESS,
-                     expiration_unix_timestamp_sec=expiration_unix_timestamp_sec,
+                     expiration=expiration,
                      exchange_contract_address=self.address,
                      ec_signature_r=None,
                      ec_signature_s=None,
@@ -317,7 +317,7 @@ class RadarRelay(Contract):
                 order.taker_token_amount.value,
                 order.maker_fee.value,
                 order.taker_fee.value,
-                order.expiration_unix_timestamp_sec,
+                order.expiration,
                 order.salt]
 
     @staticmethod

@@ -77,7 +77,7 @@ class TestRadarRelay:
                                              taker_token_amount=Wad.from_number(2.5),
                                              maker_token_address=Address("0x0202020202020202020202020202020202020202"),
                                              taker_token_address=Address("0x0101010101010101010101010101010101010101"),
-                                             expiration_unix_timestamp_sec=1763920792)
+                                             expiration=1763920792)
 
         # then
         assert order.maker == Address(self.web3.eth.defaultAccount)
@@ -102,7 +102,7 @@ class TestRadarRelay:
                                              taker_token_amount=Wad.from_number(2.5),
                                              maker_token_address=Address("0x0202020202020202020202020202020202020202"),
                                              taker_token_address=Address("0x0101010101010101010101010101010101010101"),
-                                             expiration_unix_timestamp_sec=1763920792)
+                                             expiration=1763920792)
 
         # when
         order_hash = self.radarrelay.get_order_hash(order)
@@ -118,7 +118,7 @@ class TestRadarRelay:
                                              taker_token_amount=Wad.from_number(2.5),
                                              maker_token_address=Address("0x0202020202020202020202020202020202020202"),
                                              taker_token_address=Address("0x0101010101010101010101010101010101010101"),
-                                             expiration_unix_timestamp_sec=1763920792)
+                                             expiration=1763920792)
 
         # when
         signed_order = self.radarrelay.sign_order(order)
@@ -147,7 +147,7 @@ class TestOrder:
                        taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
                        salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
                        fee_recipient=Address('0x6666666666666666666666666666666666666666'),
-                       expiration_unix_timestamp_sec=42,
+                       expiration=42,
                        exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
                        ec_signature_r="0xf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc3",
                        ec_signature_s="0x15baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab964",
@@ -163,7 +163,7 @@ class TestOrder:
                        taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
                        salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
                        fee_recipient=Address('0x6666666666666666666666666666666666666666'),
-                       expiration_unix_timestamp_sec=42,
+                       expiration=42,
                        exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
                        ec_signature_r="0xf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc3",
                        ec_signature_s="0x15baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab964",
@@ -196,7 +196,7 @@ class TestOrder:
                       taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
                       salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
-                      expiration_unix_timestamp_sec=42,
+                      expiration=42,
                       exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
                       ec_signature_r="0xf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc3",
                       ec_signature_s="0x15baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab964",
@@ -298,7 +298,7 @@ class TestOrder:
                       taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
                       salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
-                      expiration_unix_timestamp_sec=42,
+                      expiration=42,
                       exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
                       ec_signature_r="0xde21c90d3db3abdc8bdc5fafb1f5432a1dede4d621508e7d96fb2ebc15d7eb2f",
                       ec_signature_s="0x74f3cb421f75727b78ae98157ddce6a77b46c8714f5848d70f6da083527e1719",
@@ -332,7 +332,7 @@ class TestOrder:
                       taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
                       salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
-                      expiration_unix_timestamp_sec=42,
+                      expiration=42,
                       exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
                       ec_signature_r="0xde21c90d3db3abdc8bdc5fafb1f5432a1dede4d621508e7d96fb2ebc15d7eb2f",
                       ec_signature_s="0x74f3cb421f75727b78ae98157ddce6a77b46c8714f5848d70f6da083527e1719",
