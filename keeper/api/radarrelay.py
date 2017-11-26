@@ -25,7 +25,7 @@ import requests
 from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
 
-from keeper import ERC20Token, Wad
+from keeper import ERC20Token, Wad, Logger
 from keeper.api import Contract, Address, Transact
 from keeper.api.util import bytes_to_hexstring, hexstring_to_bytes
 
@@ -352,13 +352,16 @@ class RadarRelayApi:
     Attributes:
         contract_address: Address of the 0x Exchange contract.
         api_server: Base URL of the Standard Relayer API server.
+        logger: Instance of the :py:class:`keeper.api.Logger` class for event logging.
     """
-    def __init__(self, contract_address: Address, api_server: str):
+    def __init__(self, contract_address: Address, api_server: str, logger: Logger):
         assert(isinstance(contract_address, Address))
         assert(isinstance(api_server, str))
+        assert(isinstance(logger, Logger))
 
         self.contract_address = contract_address
         self.api_server = api_server
+        self.logger = logger
 
     def get_orders_by_maker(self, maker: Address) -> List[Order]:
         assert(isinstance(maker, Address))
@@ -386,9 +389,12 @@ class RadarRelayApi:
         assert(isinstance(order, Order))
 
         response = requests.post(f"{self.api_server}/v0/order", json=order.to_json())
-        print(response.status_code)
-        print(response.text)
-        return response.status_code == 201
+        if response.status_code == 201:
+            self.logger.info(f"Placed 0x order: {order}")
+            return True
+        else:
+            self.logger.warning(f"Failed to place 0x order: {response.text} ({response.status_code})")
+            return False
 
     def __repr__(self):
         return f"RadarRelayApi()"
