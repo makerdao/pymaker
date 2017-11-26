@@ -81,11 +81,11 @@ class Order:
 
     @property
     def sell_how_much(self):
-        return self.amount_give
+        return self.maker_token_amount
 
     @property
     def buy_how_much(self):
-        return self.amount_get
+        return self.taker_token_amount
 
     @staticmethod
     def from_json(data: dict):
