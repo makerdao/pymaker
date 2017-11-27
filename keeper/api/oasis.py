@@ -29,6 +29,10 @@ from keeper.api.token import ERC20Token
 class OfferInfo:
     """Represents a single offer on `OasisDEX`.
 
+    Instances of this class shouldn't be created directly. Instead of that, new orders can be queried
+    using methods of :py:class:`keeper.api.oasis.SimpleMarket`, :py:class:`keeper.api.oasis.ExpiringMarket`
+    or :py:class:`keeper.api.oasis.MatchingMarket`.
+
     Attributes:
         offer_id: Id of the offer.
         sell_how_much: The amount of the `sell_which_token` token which is put on sale.
@@ -39,8 +43,22 @@ class OfferInfo:
         timestamp: Date and time when this offer has been created, as a unix timestamp.
     """
 
-    def __init__(self, offer_id: int, sell_how_much: Wad, sell_which_token: Address, buy_how_much: Wad,
-                 buy_which_token: Address, owner: Address, timestamp: int):
+    def __init__(self,
+                 offer_id: int,
+                 sell_how_much: Wad,
+                 sell_which_token: Address,
+                 buy_how_much: Wad,
+                 buy_which_token: Address,
+                 owner: Address,
+                 timestamp: int):
+        assert(isinstance(offer_id, int))
+        assert(isinstance(sell_how_much, Wad))
+        assert(isinstance(sell_which_token, Address))
+        assert(isinstance(buy_how_much, Wad))
+        assert(isinstance(buy_which_token, Address))
+        assert(isinstance(owner, Address))
+        assert(isinstance(timestamp, int))
+
         self.offer_id = offer_id
         self.sell_how_much = sell_how_much
         self.sell_which_token = sell_which_token
