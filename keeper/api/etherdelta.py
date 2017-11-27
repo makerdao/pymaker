@@ -38,13 +38,14 @@ from keeper.api.util import bytes_to_hexstring, hexstring_to_bytes
 
 
 class Order:
-    def __init__(self, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int):
+    def __init__(self, ether_delta, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int):
         assert(isinstance(token_get, Address))
         assert(isinstance(amount_get, Wad))
         assert(isinstance(token_give, Address))
         assert(isinstance(amount_give, Wad))
         assert(isinstance(expires, int))
 
+        self._ether_delta = ether_delta
         self.token_get = token_get
         self.amount_get = amount_get
         self.token_give = token_give
@@ -55,9 +56,9 @@ class Order:
 
 
 class OffChainOrder(Order):
-    def __init__(self, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int,
+    def __init__(self, ether_delta, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int,
                  nonce: int, user: Address, v: int, r: bytes, s: bytes):
-        super().__init__(token_get, amount_get, token_give, amount_give, expires)
+        super().__init__(ether_delta, token_get, amount_get, token_give, amount_give, expires)
 
         assert(isinstance(nonce, int))
         assert(isinstance(user, Address))
@@ -72,17 +73,22 @@ class OffChainOrder(Order):
         self.s = s
 
     @property
-    def sell_how_much(self):
-        return self.amount_give
+    def sell_to_buy_price(self) -> Wad:
+        return self.amount_give / self.amount_get
 
     @property
-    def buy_how_much(self):
-        return self.amount_get
+    def buy_to_sell_price(self) -> Wad:
+        return self.amount_get / self.amount_give
+
+    @property
+    def remaining_sell_amount(self) -> Wad:
+        return self.amount_give - (self._ether_delta.amount_filled(self) * self.amount_give / self.amount_get)
 
     @staticmethod
-    def from_json(data: dict):
+    def from_json(ether_delta, data: dict):
         assert(isinstance(data, dict))
-        return OffChainOrder(token_get=Address(data['tokenGet']),
+        return OffChainOrder(ether_delta=ether_delta,
+                             token_get=Address(data['tokenGet']),
                              amount_get=Wad(int(data['amountGet'])),
                              token_give=Address(data['tokenGive']),
                              amount_give=Wad(int(data['amountGive'])),
@@ -143,9 +149,9 @@ class OffChainOrder(Order):
 
 
 class OnChainOrder(Order):
-    def __init__(self, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int,
+    def __init__(self, ether_delta, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int,
                  nonce: int, user: Address):
-        super().__init__(token_get, amount_get, token_give, amount_give, expires)
+        super().__init__(ether_delta, token_get, amount_get, token_give, amount_give, expires)
 
         assert(isinstance(nonce, int))
         assert(isinstance(user, Address))
@@ -188,8 +194,9 @@ class LogOrder():
         self.nonce = args['nonce']
         self.user = Address(args['user'])
 
-    def to_order(self) -> OnChainOrder:
-        return OnChainOrder(token_get=self.token_get,
+    def to_order(self, ether_delta) -> OnChainOrder:
+        return OnChainOrder(ether_delta=ether_delta,
+                            token_get=self.token_get,
                             amount_get=self.amount_get,
                             token_give=self.token_give,
                             amount_give=self.amount_give,
@@ -413,7 +420,7 @@ class EtherDelta(Contract):
             self._onchain_orders = set()
             self.on_order(lambda order: self._onchain_orders.add(order.to_order()))
             for old_order in self.past_order(1000000):
-                self._onchain_orders.add(old_order.to_order())
+                self._onchain_orders.add(old_order.to_order(self))
 
         self._remove_filled_orders(self._onchain_orders)
 
@@ -463,7 +470,7 @@ class EtherDelta(Contract):
         # as the collection is a set, if the event arrives later,
         # no duplicate will get added
         if self._onchain_orders is not None:
-            onchain_order = OnChainOrder(token_get, amount_get, token_give, amount_give,
+            onchain_order = OnChainOrder(self, token_get, amount_get, token_give, amount_give,
                                          expires, nonce, Address(self.web3.eth.defaultAccount))
 
             # TODO we shouldn't actually do it if we do not know the transaction went through
@@ -517,7 +524,7 @@ class EtherDelta(Contract):
         s = bytes.fromhex(signed_hash[64:128])
         v = ord(bytes.fromhex(signed_hash[128:130]))
 
-        return OffChainOrder(token_get, amount_get, token_give, amount_give, expires, nonce,
+        return OffChainOrder(self, token_get, amount_get, token_give, amount_give, expires, nonce,
                              Address(self.web3.eth.defaultAccount), v, r, s)
 
     def amount_available(self, order: Order) -> Wad:

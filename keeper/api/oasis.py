@@ -44,6 +44,7 @@ class OfferInfo:
     """
 
     def __init__(self,
+                 market,
                  offer_id: int,
                  sell_how_much: Wad,
                  sell_which_token: Address,
@@ -59,6 +60,7 @@ class OfferInfo:
         assert(isinstance(owner, Address))
         assert(isinstance(timestamp, int))
 
+        self._market = market
         self.offer_id = offer_id
         self.sell_how_much = sell_how_much
         self.sell_which_token = sell_which_token
@@ -67,8 +69,22 @@ class OfferInfo:
         self.owner = owner
         self.timestamp = timestamp
 
+    @property
+    def sell_to_buy_price(self) -> Wad:
+        return self.sell_how_much / self.buy_how_much
+
+    @property
+    def buy_to_sell_price(self) -> Wad:
+        return self.buy_how_much / self.sell_how_much
+
+    @property
+    def remaining_sell_amount(self) -> Wad:
+        return self.sell_how_much
+
     def __eq__(self, other):
-        return self.offer_id == other.offer_id
+        assert(isinstance(other, OfferInfo))
+        return self._market.address == other._market.address and \
+               self.offer_id == other.offer_id
 
     def __hash__(self):
         return self.offer_id
@@ -225,7 +241,8 @@ class SimpleMarket(Contract):
             self._none_offers.add(offer_id)
             return None
         else:
-            return OfferInfo(offer_id=offer_id,
+            return OfferInfo(market=self,
+                             offer_id=offer_id,
                              sell_how_much=Wad(array[0]),
                              sell_which_token=Address(array[1]),
                              buy_how_much=Wad(array[2]),

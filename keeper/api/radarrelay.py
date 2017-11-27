@@ -32,6 +32,7 @@ from keeper.api.util import bytes_to_hexstring, hexstring_to_bytes
 
 class Order:
     def __init__(self,
+                 exchange,
                  maker: Address,
                  taker: Address,
                  maker_fee: Wad,
@@ -63,6 +64,7 @@ class Order:
         assert((isinstance(ec_signature_r, str) and isinstance(ec_signature_s, str) and isinstance(ec_signature_v, int))
                or (ec_signature_r is None and ec_signature_s is None and ec_signature_v is None))
 
+        self._exchange = exchange
         self.maker = maker
         self.taker = taker
         self.maker_fee = maker_fee
@@ -80,18 +82,24 @@ class Order:
         self.ec_signature_v = ec_signature_v
 
     @property
-    def sell_how_much(self):
-        return self.maker_token_amount
+    def sell_to_buy_price(self) -> Wad:
+        return self.maker_token_amount / self.taker_token_amount
 
     @property
-    def buy_how_much(self):
-        return self.taker_token_amount
+    def buy_to_sell_price(self) -> Wad:
+        return self.taker_token_amount / self.maker_token_amount
+
+    @property
+    def remaining_sell_amount(self) -> Wad:
+        return self.maker_token_amount - (self._exchange.get_unavailable_taker_token_amount(self)
+                                          * self.maker_token_amount / self.taker_token_amount)
 
     @staticmethod
-    def from_json(data: dict):
+    def from_json(exchange, data: dict):
         assert(isinstance(data, dict))
 
-        return Order(maker=Address(data['maker']),
+        return Order(exchange=exchange,
+                     maker=Address(data['maker']),
                      taker=Address(data['taker']),
                      maker_fee=Wad(int(data['makerFee'])),
                      taker_fee=Wad(int(data['takerFee'])),
@@ -260,7 +268,8 @@ class RadarRelay(Contract):
         assert(isinstance(taker_token_address, Address))
         assert(isinstance(expiration, int))
 
-        return Order(maker=Address(self.web3.eth.defaultAccount),
+        return Order(exchange=self,
+                     maker=Address(self.web3.eth.defaultAccount),
                      taker=self._ZERO_ADDRESS,
                      maker_fee=Wad(0),
                      taker_fee=Wad(0),
@@ -350,16 +359,16 @@ class RadarRelayApi:
     <https://github.com/0xProject/standard-relayer-api>
 
     Attributes:
-        contract_address: Address of the 0x Exchange contract.
+        exchange: The 0x Exchange contract.
         api_server: Base URL of the Standard Relayer API server.
         logger: Instance of the :py:class:`keeper.api.Logger` class for event logging.
     """
-    def __init__(self, contract_address: Address, api_server: str, logger: Logger):
-        assert(isinstance(contract_address, Address))
+    def __init__(self, exchange: RadarRelay, api_server: str, logger: Logger):
+        assert(isinstance(exchange, RadarRelay))
         assert(isinstance(api_server, str))
         assert(isinstance(logger, Logger))
 
-        self.contract_address = contract_address
+        self.exchange = exchange
         self.api_server = api_server
         self.logger = logger
 
@@ -367,23 +376,27 @@ class RadarRelayApi:
         assert(isinstance(maker, Address))
 
         url = f"{self.api_server}/v0/orders?" \
-              f"exchangeContractAddress={self.contract_address.address}&" \
+              f"exchangeContractAddress={self.exchange.address.address}&" \
               f"maker={maker.address}&" \
               f"per_page=100"
 
         response = requests.get(url).json()
-        return list(map(lambda item: Order.from_json(item), response))
+        return list(map(lambda item: Order.from_json(self.exchange, item), response))
 
     def calculate_fees(self, order: Order) -> Order:
         assert(isinstance(order, Order))
 
-        response = requests.post(f"{self.api_server}/v0/fees", json=order.to_json_without_fees()).json()
+        response = requests.post(f"{self.api_server}/v0/fees", json=order.to_json_without_fees())
+        if response.status_code == 200:
+            data = response.json()
 
-        order_with_fees = copy.copy(order)
-        order_with_fees.maker_fee = Wad(int(response['makerFee']))
-        order_with_fees.taker_fee = Wad(int(response['takerFee']))
-        order_with_fees.fee_recipient = Address(response['feeRecipient'])
-        return order_with_fees
+            order_with_fees = copy.copy(order)
+            order_with_fees.maker_fee = Wad(int(data['makerFee']))
+            order_with_fees.taker_fee = Wad(int(data['takerFee']))
+            order_with_fees.fee_recipient = Address(data['feeRecipient'])
+            return order_with_fees
+        else:
+            raise Exception(f"Failed to fetch fees for order: {response.text} ({response.status_code})")
 
     def submit_order(self, order: Order) -> bool:
         assert(isinstance(order, Order))

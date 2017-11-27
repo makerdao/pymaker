@@ -87,7 +87,7 @@ class TestRadarRelay:
         assert order.maker_token_address == Address("0x0202020202020202020202020202020202020202")
         assert order.taker_token_address == Address("0x0101010101010101010101010101010101010101")
         assert order.salt >= 0
-        assert order.expiration_unix_timestamp_sec == 1763920792
+        assert order.expiration == 1763920792
         assert order.exchange_contract_address == self.radarrelay.address
 
         # and
@@ -137,7 +137,8 @@ class TestRadarRelay:
 class TestOrder:
     def test_should_be_comparable(self):
         # given
-        order1 = Order(maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+        order1 = Order(exchange=None,
+                       maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
                        taker=Address("0x0000000000000000000000000000000000000000"),
                        maker_fee=Wad.from_number(123),
                        taker_fee=Wad.from_number(456),
@@ -153,7 +154,8 @@ class TestOrder:
                        ec_signature_s="0x15baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab964",
                        ec_signature_v=28)
 
-        order2 = Order(maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+        order2 = Order(exchange=None,
+                       maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
                        taker=Address("0x0000000000000000000000000000000000000000"),
                        maker_fee=Wad.from_number(123),
                        taker_fee=Wad.from_number(456),
@@ -186,7 +188,8 @@ class TestOrder:
 
     def test_should_be_hashable(self):
         # given
-        order = Order(maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+        order = Order(exchange=None,
+                      maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
                       taker=Address("0x0000000000000000000000000000000000000000"),
                       maker_fee=Wad.from_number(123),
                       taker_fee=Wad.from_number(456),
@@ -229,7 +232,7 @@ class TestOrder:
         }""")
 
         # when
-        order = Order.from_json(json_order)
+        order = Order.from_json(None, json_order)
 
         # then
         assert order.exchange_contract_address == Address("0x12459c951127e0c374ff9105dda097662a027093")
@@ -242,7 +245,7 @@ class TestOrder:
         assert order.taker_token_amount == Wad.from_number(0.0308)
         assert order.maker_fee == Wad.from_number(0)
         assert order.taker_fee == Wad.from_number(0)
-        assert order.expiration_unix_timestamp_sec == 1511988904
+        assert order.expiration == 1511988904
         assert order.salt == 50626048444772008084444062440502087868712695090943879708059561407114509847312
         assert order.ec_signature_r == "0xf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc3"
         assert order.ec_signature_s == "0x15baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab964"
@@ -267,7 +270,7 @@ class TestOrder:
         }""")
 
         # when
-        order = Order.from_json(json_order)
+        order = Order.from_json(None, json_order)
 
         # then
         assert order.exchange_contract_address == Address("0x12459c951127e0c374ff9105dda097662a027093")
@@ -280,7 +283,7 @@ class TestOrder:
         assert order.taker_token_amount == Wad.from_number(0.0308)
         assert order.maker_fee == Wad.from_number(0)
         assert order.taker_fee == Wad.from_number(0)
-        assert order.expiration_unix_timestamp_sec == 1511988904
+        assert order.expiration == 1511988904
         assert order.salt == 50626048444772008084444062440502087868712695090943879708059561407114509847312
         assert order.ec_signature_r is None
         assert order.ec_signature_s is None
@@ -288,7 +291,8 @@ class TestOrder:
 
     def test_serialize_order_to_json_without_fees(self):
         # given
-        order = Order(maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+        order = Order(exchange=None,
+                      maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
                       taker=Address("0x0000000000000000000000000000000000000000"),
                       maker_fee=Wad.from_number(123),
                       taker_fee=Wad.from_number(456),
@@ -322,7 +326,8 @@ class TestOrder:
 
     def test_serialize_order_to_json(self):
         # given
-        order = Order(maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+        order = Order(exchange=None,
+                      maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
                       taker=Address("0x0000000000000000000000000000000000000000"),
                       maker_fee=Wad.from_number(123),
                       taker_fee=Wad.from_number(456),
