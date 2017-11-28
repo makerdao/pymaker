@@ -17,6 +17,7 @@
 
 import pytest
 
+from keeper import Address
 from keeper.api.feed import DSValue
 from keeper.api.numeric import Ray, Wad
 from keeper.sai_top_up import SaiTopUp
@@ -58,38 +59,47 @@ class TestSaiTopUpArguments:
 
 class TestSaiTopUpBehaviour:
     @staticmethod
-    def set_price(sai: SaiDeployment, new_price: Wad):
-        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(new_price.value).transact()
+    def set_price(sai: SaiDeployment, new_price):
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(new_price).value).transact()
 
-    def open_cdp(self, sai: SaiDeployment):
+    def open_cdp(self, sai: SaiDeployment, eth_amount, sai_amount):
         # given
         sai.tub.cuff(Ray.from_number(2.0)).transact()
         sai.tub.cork(Wad.from_number(100000000)).transact()
-        sai.tub.join(Wad.from_number(100000)).transact()
 
         # and
-        self.set_price(sai, Wad.from_number(500))
+        self.set_price(sai, 500)
 
         # and
         sai.tub.open().transact()
-        sai.tub.lock(1, Wad.from_number(40)).transact()
-        sai.tub.draw(1, Wad.from_number(5000)).transact()
+        sai.tub.join(Wad.from_number(eth_amount)).transact()
+        sai.tub.lock(1, Wad.from_number(eth_amount)).transact()
+        sai.tub.draw(1, Wad.from_number(sai_amount)).transact()
 
         # and
-        assert sai.tub.ink(1) == Wad.from_number(40)
-        assert sai.tub.tab(1) == Wad.from_number(5000)
+        assert sai.tub.ink(1) == Wad.from_number(eth_amount)
+        assert sai.tub.tab(1) == Wad.from_number(sai_amount)
 
-    def test_should_bite_unsafe_cups_only(self, sai: SaiDeployment):
+    @staticmethod
+    def sai_balance(sai: SaiDeployment, balance):
+        if sai.sai.balance_of(sai.our_address) < Wad.from_number(balance):
+            sai.sai.mint(Wad.from_number(balance) - sai.sai.balance_of(sai.our_address))
+        else:
+            sai.sai.transfer(Address('0x0000000000111111111100000000001111111111'),
+                                     sai.sai.balance_of(sai.our_address) - Wad.from_number(balance))
+
+    def test_should_top_up_if_collateralization_too_low_and_sai_below_max(self, sai: SaiDeployment):
         # given
-        self.open_cdp(sai)
+        self.open_cdp(sai, eth_amount=40, sai_amount=5000)
+        self.sai_balance(sai, balance=2500)
 
         # and
-        keeper = SaiTopUp(args=args(f"--eth-from {sai.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45"),
+        keeper = SaiTopUp(args=args(f"--eth-from {sai.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
                           web3=sai.web3, config=sai.get_config())
         keeper.approve()
 
         # when
-        self.set_price(sai, Wad.from_number(276))
+        self.set_price(sai, 276)
         # and
         keeper.check_all_cups()
         # then
@@ -97,9 +107,38 @@ class TestSaiTopUpBehaviour:
         assert sai.tub.tab(1) == Wad.from_number(5000)
 
         # when
-        self.set_price(sai, Wad.from_number(274))
+        self.set_price(sai, 274)
         # and
         keeper.check_all_cups()
         # then
         assert sai.tub.ink(1) == Wad(44708029197080290000)
         assert sai.tub.tab(1) == Wad.from_number(5000)
+
+    @pytest.mark.skip("wiping cdp debt not implemented yet")
+    def test_should_wipe_if_collateralization_too_low_and_sai_above_max(self, sai: SaiDeployment):
+        # given
+        self.open_cdp(sai, eth_amount=40, sai_amount=5000)
+        self.sai_balance(sai, balance=3500)
+
+        # and
+        keeper = SaiTopUp(args=args(f"--eth-from {sai.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
+                          web3=sai.web3, config=sai.get_config())
+        keeper.approve()
+
+        # when
+        self.set_price(sai, 276)
+        # and
+        keeper.check_all_cups()
+        # then
+        assert sai.tub.ink(1) == Wad.from_number(40)
+        assert sai.tub.tab(1) == Wad.from_number(5000)
+        assert sai.sai.balance_of(sai.our_address) == Wad.from_number(3500)
+
+        # when
+        self.set_price(sai, 274)
+        # and
+        keeper.check_all_cups()
+        # then
+        assert sai.tub.ink(1) == Wad(40)
+        assert sai.tub.tab(1) == Wad.from_number(3500)
+        assert sai.sai.balance_of(sai.our_address) == Wad.from_number(2000)

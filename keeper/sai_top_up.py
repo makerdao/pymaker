@@ -31,6 +31,8 @@ class SaiTopUp(SaiKeeper):
     collateralization ratio falls under `mat` + `--min-margin`, the cup will get
     topped-up up to `mat` + `--top-up-margin`.
 
+    TODO this keeper will evolve into a CDP management keeper.
+
     Cups owned by other accounts are ignored.
     """
     def __init__(self, args: list, **kwargs):
@@ -42,6 +44,8 @@ class SaiTopUp(SaiKeeper):
     def args(self, parser: argparse.ArgumentParser):
         parser.add_argument("--min-margin", help="Margin between the liquidation ratio and the top-up threshold", type=float, required=True)
         parser.add_argument("--top-up-margin", help="Margin between the liquidation ratio and the top-up target", type=float, required=True)
+        parser.add_argument("--max-sai", type=float, required=True)
+        parser.add_argument("--avg-sai", type=float, required=True)
 
     def startup(self):
         self.approve()
@@ -57,10 +61,12 @@ class SaiTopUp(SaiKeeper):
     def check_cup(self, cup):
         top_up_amount = self.required_top_up(cup)
         if top_up_amount:
-            if top_up_amount <= self.skr.balance_of(self.our_address):
+            if top_up_amount <= self.eth_balance(self.our_address):
+                # TODO we do not always join with the same amount as the one we lock!
+                self.tub.join(top_up_amount).transact(gas_price=self.gas_price)
                 self.tub.lock(cup.cup_id, top_up_amount).transact(gas_price=self.gas_price)
             else:
-                self.logger.info(f"Cannot top-up as our balance is less than {top_up_amount} SKR.")
+                self.logger.info(f"Cannot top-up as our balance is less than {top_up_amount} ETH.")
 
     def our_cups(self):
         for cup_id in range(1, self.tub.cupi()+1):
