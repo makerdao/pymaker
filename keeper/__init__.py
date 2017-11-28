@@ -31,7 +31,7 @@ import pkg_resources
 
 from keeper.api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad, Contract
-from keeper.api.gas import FixedGasPrice, DefaultGasPrice, GasPrice, IncreasingGasPrice
+from keeper.api.gas import FixedGasPrice, DefaultGasPrice, GasPrice
 from keeper.api.logger import Logger, Event
 from keeper.api.util import AsyncCallback, chain
 from web3 import Web3, HTTPProvider
@@ -46,9 +46,6 @@ class Keeper:
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
         parser.add_argument("--gas-price", help="Static gas pricing: Gas price in Wei", default=0, type=int)
-        parser.add_argument("--initial-gas-price", help="Increasing gas pricing: Initial gas price in Wei", default=0, type=int)
-        parser.add_argument("--increase-gas-price-by", help="Increasing gas pricing: Gas price increase in Wei", default=0, type=int)
-        parser.add_argument("--increase-gas-price-every", help="Increasing gas pricing: Gas price increase interval in seconds", default=0, type=int)
         parser.add_argument("--debug", help="Enable debug output", dest='debug', action='store_true')
         parser.add_argument("--trace", help="Enable trace output", dest='trace', action='store_true')
         self.args(parser)
@@ -198,23 +195,7 @@ class Keeper:
 
     def _get_gas_price(self) -> GasPrice:
         if self.arguments.gas_price > 0:
-            if self.arguments.initial_gas_price > 0 \
-                    or self.arguments.increase_gas_price_by > 0 \
-                    or self.arguments.increase_gas_price_every > 0:
-                raise Exception("Cannot use 'Static gas pricing' and 'Increasing gas pricing' arguments at the same time")
-
             return FixedGasPrice(self.arguments.gas_price)
-        elif self.arguments.initial_gas_price > 0 \
-                or self.arguments.increase_gas_price_by > 0 \
-                or self.arguments.increase_gas_price_every > 0:
-            if self.arguments.initial_gas_price > 0 \
-                    and self.arguments.increase_gas_price_by > 0 \
-                    and self.arguments.increase_gas_price_every > 0:
-                return IncreasingGasPrice(initial_price=self.arguments.initial_gas_price,
-                                          increase_by=self.arguments.increase_gas_price_by,
-                                          every_secs=self.arguments.increase_gas_price_every)
-            else:
-                raise Exception("For 'Increasing gas pricing' all three arguments have to be specified")
         else:
             return DefaultGasPrice()
 
