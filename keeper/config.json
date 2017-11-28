@@ -2,7 +2,6 @@
   "kovan": {
     "tokens": {
       "WETH": "0x53eccc9246c1e537d79199d0c7231e425a40f896",
-      "DAI": "0x0000000000000000000000000000000000000000",
       "MKR": "0x4bb514a7f83fbb13c2b41448208e89fabbcfe2fb"
     },
     "contracts": {
@@ -17,15 +16,12 @@
     },
     "0x": {
       "etherToken": "0x05d090b51c40b020eab3bfcb6a2dff130df22e9c",
-      "zrxToken": "0x6ff6c0ff1d68b964901f986d4c9fa3ac68346570",
-      "tokenTransferProxy": "0x087Eed4Bc1ee3DE49BeFbd66C662B434B15d49d4",
       "exchange": "0x90fe2af704b34e0224bf2299c838e04d4dcf1364"
     }
   },
   "ethlive": {
     "tokens": {
       "WETH": "0xecf8f87f810ecf450940c9f60066b4a7a501d6a7",
-      "DAI": "0x0000000000000000000000000000000000000000",
       "MKR": "0xc66ea802717bfb9833400264dd12c2bceaa34a6d"
     },
     "contracts": {
@@ -43,8 +39,6 @@
     },
     "0x": {
       "etherToken": "0x2956356cD2a2bf3202F771F50D3D14A367b48070",
-      "zrxToken": "0xE41d2489571d322189246DaFA5ebDe1F4699F498",
-      "tokenTransferProxy": "0x8da0D80f5007ef1e431DD2127178d224E32C2eF4",
       "exchange": "0x12459C951127e0c374FF9105DdA097662A027093"
     }
   }
