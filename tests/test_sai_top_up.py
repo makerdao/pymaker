@@ -24,7 +24,7 @@ from tests.conftest import SaiDeployment
 from tests.helper import args, captured_output
 
 
-class TestSaiTopUp:
+class TestSaiTopUpArguments:
     def test_should_not_start_without_eth_from_argument(self, sai: SaiDeployment):
         # when
         with captured_output() as (out, err):
@@ -55,6 +55,8 @@ class TestSaiTopUp:
         # then
         assert "error: the following arguments are required: --top-up-margin" in err.getvalue()
 
+
+class TestSaiTopUpBehaviour:
     def test_should_bite_unsafe_cups_only(self, sai: SaiDeployment):
         # given
         sai.tub.cuff(Ray.from_number(2.0)).transact()
