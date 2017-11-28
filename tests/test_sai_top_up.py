@@ -57,43 +57,49 @@ class TestSaiTopUpArguments:
 
 
 class TestSaiTopUpBehaviour:
-    def test_should_bite_unsafe_cups_only(self, sai: SaiDeployment):
+    @staticmethod
+    def set_price(sai: SaiDeployment, new_price: Wad):
+        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(new_price.value).transact()
+
+    def open_cdp(self, sai: SaiDeployment):
         # given
         sai.tub.cuff(Ray.from_number(2.0)).transact()
+        sai.tub.cork(Wad.from_number(100000000)).transact()
+        sai.tub.join(Wad.from_number(100000)).transact()
+
+        # and
+        self.set_price(sai, Wad.from_number(500))
+
+        # and
+        sai.tub.open().transact()
+        sai.tub.lock(1, Wad.from_number(40)).transact()
+        sai.tub.draw(1, Wad.from_number(5000)).transact()
+
+        # and
+        assert sai.tub.ink(1) == Wad.from_number(40)
+        assert sai.tub.tab(1) == Wad.from_number(5000)
+
+    def test_should_bite_unsafe_cups_only(self, sai: SaiDeployment):
+        # given
+        self.open_cdp(sai)
 
         # and
         keeper = SaiTopUp(args=args(f"--eth-from {sai.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45"),
                           web3=sai.web3, config=sai.get_config())
-
-        # and
-        sai.tub.join(Wad.from_number(10)).transact()
-        sai.tub.cork(Wad.from_number(100000)).transact()
-        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
-
-        # and
-        sai.tub.open().transact()
-        sai.tub.lock(1, Wad.from_number(4)).transact()
-        sai.tub.draw(1, Wad.from_number(500)).transact()
-
-        # and
-        assert sai.tub.ink(1) == Wad.from_number(4)
-        assert sai.tub.tab(1) == Wad.from_number(500)
-
-        # and
         keeper.approve()
 
         # when
-        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(276).value).transact()
+        self.set_price(sai, Wad.from_number(276))
         # and
         keeper.check_all_cups()
         # then
-        assert sai.tub.ink(1) == Wad.from_number(4)
-        assert sai.tub.tab(1) == Wad.from_number(500)
+        assert sai.tub.ink(1) == Wad.from_number(40)
+        assert sai.tub.tab(1) == Wad.from_number(5000)
 
         # when
-        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(274).value).transact()
+        self.set_price(sai, Wad.from_number(274))
         # and
         keeper.check_all_cups()
         # then
-        assert sai.tub.ink(1) == Wad(4470802919708029000)
-        assert sai.tub.tab(1) == Wad.from_number(500)
+        assert sai.tub.ink(1) == Wad(44708029197080290000)
+        assert sai.tub.tab(1) == Wad.from_number(5000)
