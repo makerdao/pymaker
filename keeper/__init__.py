@@ -37,6 +37,7 @@ from keeper.api.util import AsyncCallback, chain
 from web3 import Web3, HTTPProvider
 
 from keeper.api.token import ERC20Token
+from keeper.lifecycle import Web3Lifecycle
 
 
 class Keeper:
@@ -68,35 +69,39 @@ class Keeper:
         Contract.logger = self.logger
 
     def start(self):
-        self.logger.info(f"{self.executable_name()}")
-        self.logger.info(f"{'-' * len(self.executable_name())}")
-        self.logger.info(f"Keeper on {self.chain}, connected to {self.web3.providers[0].endpoint_uri}")
-        self.logger.info(f"Keeper operating as {self.our_address}")
-        self._check_account_unlocked()
-        self._wait_for_init()
-        self.print_eth_balance()
-        self.logger.info("Keeper started")
-        self.startup()
-        self._main_loop()
-        self.logger.info("Shutting down the keeper")
-        if any_filter_thread_present():
-            self.logger.info("Waiting for all threads to terminate...")
-            stop_all_filter_threads()
-        if self._on_block_callback is not None:
-            self.logger.info("Waiting for outstanding callback to terminate...")
-            self._on_block_callback.wait()
-        self.logger.info("Executing keeper shutdown logic...")
-        self.shutdown()
-        self.logger.info("Keeper terminated")
-        exit(10 if self.fatal_termination else 0)
+        with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            lifecycle.on_startup(self.startup)
+            lifecycle.on_shutdown(self.shutdown)
+
+        # self.logger.info(f"{self.executable_name()}")
+        # self.logger.info(f"{'-' * len(self.executable_name())}")
+        # self.logger.info(f"Keeper on {self.chain}, connected to {self.web3.providers[0].endpoint_uri}")
+        # self.logger.info(f"Keeper operating as {self.our_address}")
+        # self._check_account_unlocked()
+        # self._wait_for_init()
+        # # self.print_eth_balance()
+        # self.logger.info("Keeper started")
+        # self.startup()
+        # self._main_loop()
+        # self.logger.info("Shutting down the keeper")
+        # if any_filter_thread_present():
+        #     self.logger.info("Waiting for all threads to terminate...")
+        #     stop_all_filter_threads()
+        # if self._on_block_callback is not None:
+        #     self.logger.info("Waiting for outstanding callback to terminate...")
+        #     self._on_block_callback.wait()
+        # self.logger.info("Executing keeper shutdown logic...")
+        # self.shutdown()
+        # self.logger.info("Keeper terminated")
+        # exit(10 if self.fatal_termination else 0)
 
     def args(self, parser: argparse.ArgumentParser):
         pass
 
-    def startup(self):
+    def startup(self, lifecycle: Web3Lifecycle):
         raise NotImplementedError("Please implement the startup() method")
 
-    def shutdown(self):
+    def shutdown(self, lifecycle: Web3Lifecycle):
         pass
     
     def terminate(self, message=None):
@@ -123,9 +128,9 @@ class Keeper:
         assert(isinstance(address, Address))
         return Wad(self.web3.eth.getBalance(address.address))
 
-    def print_eth_balance(self):
-        balance = self.eth_balance(self.our_address)
-        self.logger.info(f"Keeper account balance is {balance} ETH", Event.eth_balance(self.our_address, balance))
+    # def print_eth_balance(self):
+    #     balance = self.eth_balance(self.our_address)
+    #     self.logger.info(f"Keeper account balance is {balance} ETH", Event.eth_balance(self.our_address, balance))
 
     def get_config(self, filename):
         with open(filename) as data_file:
