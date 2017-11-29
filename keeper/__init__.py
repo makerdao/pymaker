@@ -127,24 +127,6 @@ class Keeper:
         balance = self.eth_balance(self.our_address)
         self.logger.info(f"Keeper account balance is {balance} ETH", Event.eth_balance(self.our_address, balance))
 
-    def get_config(self, filename):
-        with open(filename) as data_file:
-            content_file = data_file.read()
-            content_config = _jsonnet.evaluate_snippet("snippet", content_file, ext_vars={})
-            result = json.loads(content_config)
-
-            # Report if file has been newly loaded or reloaded
-            checksum = zlib.crc32(content_config.encode('utf-8'))
-            if filename not in self._config_checksum:
-                self.logger.info(f"Loaded configuration from '{filename}'")
-                self.logger.debug(f"Config file is: " + json.dumps(result, indent=4))
-            elif self._config_checksum[filename] != checksum:
-                self.logger.info(f"Reloaded configuration from '{filename}'")
-                self.logger.debug(f"Reloaded config file is: " + json.dumps(result, indent=4))
-            self._config_checksum[filename] = checksum
-
-            return result
-
     def on_block(self, callback):
         def new_block_callback(block_hash):
             self._last_block_time = datetime.datetime.now()
