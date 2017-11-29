@@ -51,7 +51,7 @@ class SaiBite:
         self.web3.eth.defaultAccount = self.arguments.eth_from
 
         self.our_address = Address(self.arguments.eth_from)
-        self.chain = "kovan" #TODO chain(self.web3)
+        self.chain = "kovan" #TODO TODO TODO!!!! chain(self.web3)
         self.config = kwargs['config'] if 'config' in kwargs else Config.load_config(self.chain)
         self.tub = Tub(web3=self.web3, address=Address(self.config.get_contract_address("saiTub")))
 
@@ -59,7 +59,7 @@ class SaiBite:
         self.logger = Logger('bite-keeper', self.chain, _json_log, self.arguments.debug, self.arguments.trace)
         Contract.logger = self.logger
 
-    def setup_lifecycle(self):
+    def lifecycle(self):
         with Web3Lifecycle(self.web3, self.logger) as lifecycle:
             lifecycle.on_startup(self.startup)
 
@@ -83,4 +83,4 @@ class SaiBite:
 
 
 if __name__ == '__main__':
-    SaiBite(sys.argv[1:]).setup_lifecycle()
+    SaiBite(sys.argv[1:]).lifecycle()

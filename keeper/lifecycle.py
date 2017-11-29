@@ -98,6 +98,12 @@ class Web3Lifecycle:
     def on_shutdown(self, callback):
         self.shutdown_function = callback
 
+    def terminate(self, message=None):
+        if message is not None:
+            self.logger.warning(message)
+
+        self.terminated_internally = True
+
     # TODO should queue the callback and apply it only after keeper startup
     def on_block(self, callback):
         def new_block_callback(block_hash):
