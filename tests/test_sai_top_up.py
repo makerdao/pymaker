@@ -141,3 +141,31 @@ class TestSaiTopUpBehaviour:
         assert sai.tub.ink(1) == Wad.from_number(40)
         assert sai.tub.tab(1) == Wad.from_number(3500)
         assert sai.sai.balance_of(sai.our_address) == Wad.from_number(2000)
+
+    def test_should_both_wipe_and_top_up_if_collateralization_too(self, sai: SaiDeployment):
+        # given
+        self.open_cdp(sai, eth_amount=40, sai_amount=5000)
+        self.sai_balance(sai, balance=3500)
+
+        # and
+        keeper = SaiTopUp(args=args(f"--eth-from {sai.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
+                          web3=sai.web3, config=sai.get_config())
+        keeper.approve()
+
+        # when
+        self.set_price(sai, 276)
+        # and
+        keeper.check_all_cups()
+        # then
+        assert sai.tub.ink(1) == Wad.from_number(40)
+        assert sai.tub.tab(1) == Wad.from_number(5000)
+        assert sai.sai.balance_of(sai.our_address) == Wad.from_number(3500)
+
+        # when
+        self.set_price(sai, 120)
+        # and
+        keeper.check_all_cups()
+        # then
+        assert sai.tub.ink(1) == Wad(71458333333333333000)
+        assert sai.tub.tab(1) == Wad.from_number(3500)
+        assert sai.sai.balance_of(sai.our_address) == Wad.from_number(2000)
