@@ -21,11 +21,11 @@ import pytest
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
-from keeper.api import Address, Wad
-from keeper.api.approval import directly
-from keeper.api.oasis import SimpleMarket, ExpiringMarket, MatchingMarket
-from keeper.api.token import DSToken
-from tests.api.helpers import wait_until_mock_called
+from pymaker import Address, Wad
+from pymaker.approval import directly
+from pymaker.oasis import SimpleMarket, ExpiringMarket, MatchingMarket
+from pymaker.token import DSToken
+from tests.pymaker.helpers import wait_until_mock_called
 
 PAST_BLOCKS = 100
 

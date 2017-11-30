@@ -30,11 +30,11 @@ from eth_abi.encoding import get_single_encoder
 from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
 
-from keeper.api import Contract, Address, Transact
-from keeper.api import Logger
-from keeper.api.numeric import Wad
-from keeper.api.token import ERC20Token
-from keeper.api.util import bytes_to_hexstring, hexstring_to_bytes
+from pymaker import Contract, Address, Transact
+from pymaker import Logger
+from pymaker.numeric import Wad
+from pymaker.token import ERC20Token
+from pymaker.util import bytes_to_hexstring, hexstring_to_bytes
 
 
 class Order:
@@ -231,7 +231,7 @@ class EtherDelta(Contract):
             amount: Amount of raw ETH to be deposited on EtherDelta.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(amount, Wad))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'deposit', [], {'value': amount.value})
@@ -245,7 +245,7 @@ class EtherDelta(Contract):
             amount: Amount of raw ETH to be withdrawn from EtherDelta.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(amount, Wad))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'withdraw', [amount.value])
@@ -274,7 +274,7 @@ class EtherDelta(Contract):
             amount: Amount of token `token` to be deposited to EtherDelta.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(token, Address))
         assert(isinstance(amount, Wad))
@@ -291,7 +291,7 @@ class EtherDelta(Contract):
             amount: Amount of token `token` to be withdrawn from EtherDelta.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(token, Address))
         assert(isinstance(amount, Wad))
@@ -425,7 +425,7 @@ class EtherDelta(Contract):
                 in order to buy a corresponding amount of `token_have` tokens.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(order, Order))
         assert(isinstance(amount, Wad))
@@ -481,7 +481,7 @@ class EtherDelta(Contract):
             order: The order you want to cancel.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(order, Order))
 
@@ -517,7 +517,7 @@ class EtherDeltaApi:
     Attributes:
         contract_address: Address of the EtherDelta contract.
         api_server: Base URL of the EtherDelta API backend server.
-        logger: Instance of the :py:class:`keeper.api.Logger` class for event logging.
+        logger: Instance of the :py:class:`pymaker.Logger` class for event logging.
     """
     def __init__(self, contract_address: Address, api_server: str, logger: Logger):
         assert(isinstance(contract_address, Address))

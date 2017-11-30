@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from keeper.api import Address, Wad, Contract, Calldata, Transact
-from keeper.api.numeric import Ray
-from keeper.api.util import int_to_bytes32
+from pymaker import Address, Wad, Contract, Calldata, Transact
+from pymaker.numeric import Ray
+from pymaker.util import int_to_bytes32
 from web3 import Web3
 
-from keeper.api.token import ERC20Token
+from pymaker.token import ERC20Token
 
 
 class Cup:
@@ -124,7 +124,7 @@ class Tub(Contract):
             seconds: Number of seconds to warp the time forward, or `0` to permanently disable time travel.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abiTip, self.tip(), self._contractTip, 'warp', [seconds])
 
@@ -299,7 +299,7 @@ class Tub(Contract):
             new_axe: The new value of the liquidation penalty (`axe`). `1.0` means no penalty. `1.2` means 20% penalty.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_axe, Ray)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'chop', [new_axe.value])
@@ -311,7 +311,7 @@ class Tub(Contract):
             new_hat: The new value of the debt ceiling (`hat`), in SAI.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_hat, Wad)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'cork', [new_hat.value])
@@ -323,7 +323,7 @@ class Tub(Contract):
             new_mat: The new value of the liquidation ratio (`mat`). `1.5` means the liquidation ratio is 150%.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_mat, Ray)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'cuff', [new_mat.value])
@@ -335,7 +335,7 @@ class Tub(Contract):
             new_tax: The new per-second value of the stability fee (`tax`). `1.0` means no stability fee.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_tax, Ray)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'crop', [new_tax.value])
@@ -347,7 +347,7 @@ class Tub(Contract):
             new_way: The new per-second value of the holder fee (`way`). `1.0` means no holder fee.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_way, Ray)
         return Transact(self, self.web3, self.abiTip, self.tip(), self._contractTip, 'coax', [new_way.value])
@@ -356,7 +356,7 @@ class Tub(Contract):
         """Recalculate the internal debt price (`chi`).
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'drip', [])
 
@@ -364,7 +364,7 @@ class Tub(Contract):
         """Recalculate the accrued holder fee (`par`).
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abiTip, self.tip(), self._contractTip, 'prod', [])
 
@@ -443,7 +443,7 @@ class Tub(Contract):
             new_tax: The new value of the spread (`gap`). `1.0` means no spread, `1.01` means 1% spread.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_gap, Wad)
         return Transact(self, self.web3, self.abiJar, self.jar(), self._contractJar, 'jump', [new_gap.value])
@@ -542,7 +542,7 @@ class Tub(Contract):
             amount_in_gem: The amount of GEMs to buy SKR for.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(amount_in_gem, Wad)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'join', [amount_in_gem.value])
@@ -554,7 +554,7 @@ class Tub(Contract):
             amount_in_skr: The amount of SKR to sell for GEMs.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(amount_in_skr, Wad)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'exit', [amount_in_skr.value])
@@ -564,7 +564,7 @@ class Tub(Contract):
         """Create a new cup.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'open', [])
 
@@ -578,7 +578,7 @@ class Tub(Contract):
             cup_id: Id of the cup to close.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'shut', [int_to_bytes32(cup_id)])
@@ -591,7 +591,7 @@ class Tub(Contract):
             amount_in_skr: The amount of collateral to post, in SKR.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
@@ -606,7 +606,7 @@ class Tub(Contract):
             amount_in_skr: The amount of collateral to remove, in SKR.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
@@ -621,7 +621,7 @@ class Tub(Contract):
             amount_in_sai: The amount SAI to be issued.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
@@ -636,7 +636,7 @@ class Tub(Contract):
             amount_in_sai: The amount SAI to be repaid.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
@@ -651,7 +651,7 @@ class Tub(Contract):
             new_lad: New owner of the cup.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         assert isinstance(new_lad, Address)
@@ -665,7 +665,7 @@ class Tub(Contract):
             cup_id: Id of the cup to liquidate.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
         return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'bite', [int_to_bytes32(cup_id)])
@@ -746,7 +746,7 @@ class Tap(Contract):
             new_gap: The new value of the spread (`gap`). `1.0` means no spread, `1.01` means 1% spread.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_gap, Wad)
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'jump', [new_gap.value])
@@ -782,7 +782,7 @@ class Tap(Contract):
             amount_in_skr: The amount of SKR we want to send in order to receive SAI.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(amount_in_skr, Wad)
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'boom', [amount_in_skr.value])
@@ -794,7 +794,7 @@ class Tap(Contract):
             amount_in_skr: The amount of SKR we want to receive in exchange for our SAI.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(amount_in_skr, Wad)
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'bust', [amount_in_skr.value])
@@ -940,7 +940,7 @@ class Lpc(Contract):
             new_gap: The new value of the spread (`gap`). `1.0` means no spread. `1.02` means 2% spread.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_gap, Wad)
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'jump', [new_gap.value])
@@ -996,7 +996,7 @@ class Lpc(Contract):
             amount: The value (in `token`) to enter the pool with.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(token, Address)
         assert isinstance(amount, Wad)
@@ -1014,7 +1014,7 @@ class Lpc(Contract):
             amount: The value (in `token`) you want to receive from the pool.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(token, Address)
         assert isinstance(amount, Wad)
@@ -1033,7 +1033,7 @@ class Lpc(Contract):
             amount: The value (in `token`) you want to get from the pool.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(token, Address)
         assert isinstance(amount, Wad)

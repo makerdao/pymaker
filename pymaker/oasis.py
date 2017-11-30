@@ -18,20 +18,20 @@
 from pprint import pformat
 from typing import Optional, List
 
-from keeper.api import Contract, Address, Transact
-from keeper.api.numeric import Wad
-from keeper.api.util import int_to_bytes32, bytes_to_int
+from pymaker import Contract, Address, Transact
+from pymaker.numeric import Wad
+from pymaker.util import int_to_bytes32, bytes_to_int
 from web3 import Web3
 
-from keeper.api.token import ERC20Token
+from pymaker.token import ERC20Token
 
 
 class OfferInfo:
     """Represents a single offer on `OasisDEX`.
 
     Instances of this class shouldn't be created directly. Instead of that, new orders can be queried
-    using methods of :py:class:`keeper.api.oasis.SimpleMarket`, :py:class:`keeper.api.oasis.ExpiringMarket`
-    or :py:class:`keeper.api.oasis.MatchingMarket`.
+    using methods of :py:class:`pymaker.oasis.SimpleMarket`, :py:class:`pymaker.oasis.ExpiringMarket`
+    or :py:class:`pymaker.oasis.MatchingMarket`.
 
     Attributes:
         offer_id: Id of the offer.
@@ -269,7 +269,7 @@ class SimpleMarket(Contract):
             want_amount: Amount of the `want_token` you want to receive.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'make', [have_token.address, want_token.address, have_amount.value, want_amount.value])
@@ -286,7 +286,7 @@ class SimpleMarket(Contract):
             quantity: Quantity of `sell_which_token` that you want to buy.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'take',
                         [int_to_bytes32(offer_id), quantity.value])
@@ -301,7 +301,7 @@ class SimpleMarket(Contract):
             offer_id: Id of the offer you want to cancel.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'kill', [int_to_bytes32(offer_id)])
 
@@ -376,7 +376,7 @@ class MatchingMarket(ExpiringMarket):
             buy_enabled: Whether direct buy should be enabled or disabled.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(buy_enabled, bool))
         return Transact(self, self.web3, self.abi, self.address, self._contract,
@@ -389,7 +389,7 @@ class MatchingMarket(ExpiringMarket):
             matching_enabled: Whether order matching should be enabled or disabled.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(matching_enabled, bool))
         return Transact(self, self.web3, self.abi, self.address, self._contract,
@@ -405,7 +405,7 @@ class MatchingMarket(ExpiringMarket):
             quote_token: Address of the ERC20 token.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(base_token, Address))
         assert(isinstance(quote_token, Address))
@@ -438,7 +438,7 @@ class MatchingMarket(ExpiringMarket):
                 If `None`, the optimal position will automatically get calculated.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(have_token, Address))
         assert(isinstance(have_amount, Wad))

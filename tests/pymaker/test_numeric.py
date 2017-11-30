@@ -17,8 +17,8 @@
 
 import pytest
 
-from keeper.api.numeric import Wad, Ray
-from tests.api.helpers import is_hashable
+from pymaker.numeric import Wad, Ray
+from tests.pymaker.helpers import is_hashable
 
 
 class TestWad:

@@ -1,5 +1,5 @@
 SAI Stablecoin API
 ==================
 
-.. automodule:: keeper.api.sai
+.. automodule:: pymaker.sai
     :members:

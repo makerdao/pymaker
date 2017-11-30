@@ -19,9 +19,9 @@ import itertools
 from functools import reduce
 from typing import Iterable
 
-from keeper.api import Address, Transfer
-from keeper.api.token import ERC20Token
-from keeper.api.numeric import Wad
+from pymaker import Address, Transfer
+from pymaker.token import ERC20Token
+from pymaker.numeric import Wad
 
 
 class TransferFormatter:

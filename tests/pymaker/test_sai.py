@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from keeper.api import Address
-from keeper.api.feed import DSValue
-from keeper.api.numeric import Wad, Ray
+from pymaker import Address
+from pymaker.feed import DSValue
+from pymaker.numeric import Wad, Ray
 from tests.conftest import SaiDeployment
 
 

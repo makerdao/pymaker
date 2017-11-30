@@ -25,7 +25,7 @@ class GasPrice(object):
     returning the gas price (in Wei) for a specific point in time. It is possible to build
     custom gas price strategies by implementing this method so the gas price returned
     increases over time. The piece of code responsible for sending Ethereum transactions
-    (please see :py:class:`keeper.api.Transact`) will in this case overwrite the transaction
+    (please see :py:class:`pymaker.Transact`) will in this case overwrite the transaction
     with another one, using the same `nonce` but increasing gas price. If the value returned
     by `get_gas_price` does not go up, no new transaction gets submitted to the network.
 

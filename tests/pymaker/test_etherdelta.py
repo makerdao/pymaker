@@ -16,13 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import pytest
 
-from keeper.api import Address, Wad
-from keeper.api.approval import directly
-from keeper.api.token import DSToken
+from pymaker import Address, Wad
+from pymaker.approval import directly
+from pymaker.token import DSToken
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
-from keeper.api.etherdelta import EtherDelta
+from pymaker.etherdelta import EtherDelta
 
 
 class TestEtherDelta:

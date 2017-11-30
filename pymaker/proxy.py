@@ -17,7 +17,7 @@
 
 from web3 import Web3
 
-from keeper.api import Contract, Address, Transact
+from pymaker import Contract, Address, Transact
 
 
 class DSProxy(Contract):

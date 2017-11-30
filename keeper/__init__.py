@@ -22,14 +22,14 @@ import sys
 
 import pkg_resources
 
-from keeper.api import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
+from pymaker import Address, register_filter_thread, all_filter_threads_alive, stop_all_filter_threads, \
     any_filter_thread_present, Wad, Contract
-from keeper.api.gas import FixedGasPrice, DefaultGasPrice, GasPrice
-from keeper.api.logger import Logger, Event
-from keeper.api.util import AsyncCallback, chain
+from pymaker.gas import FixedGasPrice, DefaultGasPrice, GasPrice
+from pymaker.logger import Logger, Event
+from pymaker.util import AsyncCallback, chain
 from web3 import Web3, HTTPProvider
 
-from keeper.api.token import ERC20Token
+from pymaker.token import ERC20Token
 from keeper.lifecycle import Web3Lifecycle
 
 

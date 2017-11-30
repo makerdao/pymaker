@@ -18,7 +18,7 @@
 from mock import MagicMock
 
 from keeper import Logger
-from keeper.api.config import ReloadableConfig
+from pymaker.config import ReloadableConfig
 
 
 class TestReloadableConfig:

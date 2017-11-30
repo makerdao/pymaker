@@ -18,8 +18,8 @@
 import pytest
 
 from keeper import Address
-from keeper.api.feed import DSValue
-from keeper.api.numeric import Ray, Wad
+from pymaker.feed import DSValue
+from pymaker.numeric import Ray, Wad
 from keeper.sai_top_up import SaiTopUp
 from tests.conftest import SaiDeployment
 from tests.helper import args, captured_output

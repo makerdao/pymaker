@@ -17,9 +17,9 @@
 
 import pytest
 
-from keeper.api import Address
-from keeper.api.numeric import Ray
-from keeper.api.numeric import Wad
+from pymaker import Address
+from pymaker.numeric import Ray
+from pymaker.numeric import Wad
 from keeper.conversion import Conversion
 from keeper.opportunity import Sequence, OpportunityFinder
 

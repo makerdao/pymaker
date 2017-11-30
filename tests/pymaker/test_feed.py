@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-from keeper.api import Address
+from pymaker import Address
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
-from keeper.api.feed import DSValue
+from pymaker.feed import DSValue
 
 
 class TestDSValue:

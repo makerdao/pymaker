@@ -15,14 +15,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from keeper.api import Address
-from keeper.api.numeric import Ray
-from keeper.api.numeric import Wad
-from keeper.api.oasis import OfferInfo
-from keeper.api.oasis import SimpleMarket
-from keeper.api.token import ERC20Token
+from pymaker import Address
+from pymaker.numeric import Ray
+from pymaker.numeric import Wad
+from pymaker.oasis import OfferInfo
+from pymaker.oasis import SimpleMarket
+from pymaker.token import ERC20Token
 
-from keeper.api.sai import Tub, Lpc, Tap
+from pymaker.sai import Tub, Lpc, Tap
 
 
 class Conversion:

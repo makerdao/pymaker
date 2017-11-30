@@ -17,7 +17,7 @@
 
 from web3 import Web3
 
-from keeper.api import Contract, Address, Transact
+from pymaker import Contract, Address, Transact
 
 
 class DSVault(Contract):
@@ -66,7 +66,7 @@ class DSVault(Contract):
             address: The address of the new `authority`.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(address, Address))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])

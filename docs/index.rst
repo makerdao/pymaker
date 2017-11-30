@@ -18,37 +18,37 @@ General
 Address
 ~~~~~~~
 
-.. autoclass:: keeper.api.Address
+.. autoclass:: pymaker.Address
     :members:
 
 Transact
 ~~~~~~~~
 
-.. autoclass:: keeper.api.Transact
+.. autoclass:: pymaker.Transact
     :members:
 
 Calldata
 ~~~~~~~~
 
-.. autoclass:: keeper.api.Calldata
+.. autoclass:: pymaker.Calldata
     :members:
 
 Invocation
 ~~~~~~~~~~
 
-.. autoclass:: keeper.api.Invocation
+.. autoclass:: pymaker.Invocation
     :members:
 
 Receipt
 ~~~~~~~
 
-.. autoclass:: keeper.api.Receipt
+.. autoclass:: pymaker.Receipt
     :members:
 
 Transfer
 ~~~~~~~~
 
-.. autoclass:: keeper.api.Transfer
+.. autoclass:: pymaker.Transfer
     :members:
 
 
@@ -61,20 +61,20 @@ or `Ray` (27-digit precision type).
 Wad
 ~~~
 
-.. autoclass:: keeper.api.numeric.Wad
+.. autoclass:: pymaker.numeric.Wad
     :members:
 
 Ray
 ~~~
 
-.. autoclass:: keeper.api.numeric.Ray
+.. autoclass:: pymaker.numeric.Ray
     :members:
 
 
 Gas price
 ---------
 
-.. autoclass:: keeper.api.gas.GasPrice
+.. autoclass:: pymaker.gas.GasPrice
     :members:
 
 The following implementations of `GasPrice` are available:
@@ -82,26 +82,26 @@ The following implementations of `GasPrice` are available:
 DefaultGasPrice
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: keeper.api.gas.DefaultGasPrice
+.. autoclass:: pymaker.gas.DefaultGasPrice
     :members:
 
 FixedGasPrice
 ~~~~~~~~~~~~~
 
-.. autoclass:: keeper.api.gas.FixedGasPrice
+.. autoclass:: pymaker.gas.FixedGasPrice
     :members:
 
 IncreasingGasPrice
 ~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: keeper.api.gas.IncreasingGasPrice
+.. autoclass:: pymaker.gas.IncreasingGasPrice
     :members:
 
 
 Approvals
 ---------
 
-.. automodule:: keeper.api.approval
+.. automodule:: pymaker.approval
     :members:
 
 
@@ -122,19 +122,19 @@ ERC20
 ERC20Token
 """"""""""
 
-.. autoclass:: keeper.api.token.ERC20Token
+.. autoclass:: pymaker.token.ERC20Token
     :members:
 
 DSToken
 """""""
 
-.. autoclass:: keeper.api.token.DSToken
+.. autoclass:: pymaker.token.DSToken
     :members:
 
 DSEthToken
 """"""""""
 
-.. autoclass:: keeper.api.token.DSEthToken
+.. autoclass:: pymaker.token.DSEthToken
     :members:
 
 
@@ -147,13 +147,13 @@ they provide arbitrage opportunities for profit-seeking agents, so an API has be
 OasisDEX
 """"""""
 
-.. automodule:: keeper.api.oasis
+.. automodule:: pymaker.oasis
     :members:
 
 EtherDelta
 """"""""""
 
-.. automodule:: keeper.api.etherdelta
+.. automodule:: pymaker.etherdelta
     :members:
 
 
@@ -163,32 +163,32 @@ Authentication
 DSGuard
 """""""
 
-.. autoclass:: keeper.api.auth.DSGuard
+.. autoclass:: pymaker.auth.DSGuard
     :members:
 
 DSRoles
 """""""
 
-.. autoclass:: keeper.api.auth.DSRoles
+.. autoclass:: pymaker.auth.DSRoles
     :members:
 
 
 DSProxy
 ~~~~~~~
 
-.. autoclass:: keeper.api.proxy.DSProxy
+.. autoclass:: pymaker.proxy.DSProxy
     :members:
 
 DSValue
 ~~~~~~~
 
-.. autoclass:: keeper.api.feed.DSValue
+.. autoclass:: pymaker.feed.DSValue
     :members:
 
 DSVault
 ~~~~~~~
 
-.. autoclass:: keeper.api.vault.DSVault
+.. autoclass:: pymaker.vault.DSVault
     :members:
 
 
@@ -199,5 +199,5 @@ Atomic transactions
 TxManager
 ~~~~~~~~~
 
-.. autoclass:: keeper.api.transact.TxManager
+.. autoclass:: pymaker.transact.TxManager
     :members:

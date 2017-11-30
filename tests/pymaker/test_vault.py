@@ -18,8 +18,8 @@
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
-from keeper.api import Address
-from keeper.api.vault import DSVault
+from pymaker import Address
+from pymaker.vault import DSVault
 
 
 class TestDSVault:

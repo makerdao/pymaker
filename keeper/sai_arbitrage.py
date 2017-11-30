@@ -20,13 +20,13 @@ from typing import List
 
 import sys
 
-from keeper.api import Address, Transfer
-from keeper.api.approval import via_tx_manager, directly
-from keeper.api.numeric import Ray
-from keeper.api.numeric import Wad
-from keeper.api.transactional import TxManager
+from pymaker import Address, Transfer
+from pymaker.approval import via_tx_manager, directly
+from pymaker.numeric import Ray
+from pymaker.numeric import Wad
+from pymaker.transactional import TxManager
 
-from keeper.api.token import ERC20Token
+from pymaker.token import ERC20Token
 from keeper.conversion import Conversion
 from keeper.conversion import OasisTakeConversion
 from keeper.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion

@@ -27,10 +27,10 @@ import pkg_resources
 from web3 import Web3, EthereumTesterProvider
 from web3.utils.events import get_event_data
 
-from keeper.api.gas import DefaultGasPrice, GasPrice
-from keeper.api.logger import Logger, Event
-from keeper.api.numeric import Wad
-from keeper.api.util import synchronize
+from pymaker.gas import DefaultGasPrice, GasPrice
+from pymaker.logger import Logger, Event
+from pymaker.numeric import Wad
+from pymaker.util import synchronize
 
 filter_threads = []
 
@@ -206,7 +206,7 @@ class Receipt:
         gas_used: Amount of gas used by the Ethereum transaction.
         transfers: A list of ERC20 token transfers resulting from the execution
             of this Ethereum transaction. Each transfer is an instance of the
-            :py:class:`keeper.api.Transfer` class.
+            :py:class:`pymaker.Transfer` class.
         successful: Boolean flag which is `True` if the Ethereum transaction
             was successful. We consider transaction successful if the contract
             method has been executed without throwing.
@@ -222,7 +222,7 @@ class Receipt:
             self.successful = True
             for receipt_log in receipt_logs:
                 if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
-                    from keeper.api.token import ERC20Token
+                    from pymaker.token import ERC20Token
                     transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
                     event_data = get_event_data(transfer_abi, receipt_log)
                     self.transfers.append(Transfer(token_address=Address(event_data['address']),
@@ -312,16 +312,16 @@ class Transact:
 
         Executes the Ethereum transaction synchronously. The method will block until the
         transaction gets mined i.e. it will return when either the transaction execution
-        succeeded or failed. In case of the former, a :py:class:`keeper.api.Receipt`
+        succeeded or failed. In case of the former, a :py:class:`pymaker.Receipt`
         object will be returned.
 
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
         Allowed keyword arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
-        to be an instance of a class inheriting from :py:class:`keeper.api.gas.GasPrice`.
+        to be an instance of a class inheriting from :py:class:`pymaker.gas.GasPrice`.
 
         Returns:
-            A :py:class:`keeper.api.Receipt` object if the transaction invocation was successful.
+            A :py:class:`pymaker.Receipt` object if the transaction invocation was successful.
             `None` otherwise.
         """
         return synchronize([self.transact_async(**kwargs)])[0]
@@ -330,16 +330,16 @@ class Transact:
         """Executes the Ethereum transaction asynchronously.
 
         Executes the Ethereum transaction asynchronously. The method will return immediately.
-        Ultimately, its future value will become either a :py:class:`keeper.api.Receipt` or `None`,
+        Ultimately, its future value will become either a :py:class:`pymaker.Receipt` or `None`,
         depending on whether the transaction execution was successful or not.
 
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
         Allowed keyword arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
-        to be an instance of a class inheriting from :py:class:`keeper.api.gas.GasPrice`.
+        to be an instance of a class inheriting from :py:class:`pymaker.gas.GasPrice`.
 
         Returns:
-            A future value of either a :py:class:`keeper.api.Receipt` object if the transaction
+            A future value of either a :py:class:`pymaker.Receipt` object if the transaction
             invocation was successful, or `None` if it failed.
         """
         # First we try to estimate the gas usage of the transaction. If gas estimation fails
@@ -403,7 +403,7 @@ class Transact:
                     tx_hashes.append(tx_hash)
 
                     # If this is the first transaction sent, get its nonce so we can override the transaction with
-                    # another one using higher gas price if :py:class:`keeper.api.gas.GasPrice` tells us to do so
+                    # another one using higher gas price if :py:class:`pymaker.gas.GasPrice` tells us to do so
                     if nonce is None:
                         nonce = self.web3.eth.getTransaction(tx_hash)['nonce']
 
@@ -430,13 +430,13 @@ class Transact:
     def invocation(self) -> Invocation:
         """Returns the `Invocation` object for this pending Ethereum transaction.
 
-        The :py:class:`keeper.api.Invocation` object may be used with :py:class:`keeper.api.transactional.TxManager`
+        The :py:class:`pymaker.Invocation` object may be used with :py:class:`pymaker.transactional.TxManager`
         to invoke multiple contract calls in one Ethereum transaction.
 
-        Please see :py:class:`keeper.api.transactional.TxManager` documentation for more details.
+        Please see :py:class:`pymaker.transactional.TxManager` documentation for more details.
 
         Returns:
-            :py:class:`keeper.api.Invocation` object for this pending Ethereum transaction.
+            :py:class:`pymaker.Invocation` object for this pending Ethereum transaction.
         """
         return Invocation(self.address,
                           Calldata(self.web3.eth.contract(abi=self.abi).encodeABI(self.function_name, self.parameters)))
@@ -446,7 +446,7 @@ class Transfer:
     """Represents an ERC20 token transfer.
 
     Represents an ERC20 token transfer resulting from contract method execution.
-    A list of transfers can be found in the :py:class:`keeper.api.Receipt` class.
+    A list of transfers can be found in the :py:class:`pymaker.Receipt` class.
 
     Attributes:
         token_address: Address of the ERC20 token that has been transferred.

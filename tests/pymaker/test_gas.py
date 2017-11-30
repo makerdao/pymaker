@@ -17,7 +17,7 @@
 
 import pytest
 
-from keeper.api.gas import DefaultGasPrice, FixedGasPrice, IncreasingGasPrice
+from pymaker.gas import DefaultGasPrice, FixedGasPrice, IncreasingGasPrice
 
 
 class TestDefaultGasPrice:

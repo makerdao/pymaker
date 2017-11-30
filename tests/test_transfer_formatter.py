@@ -16,10 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-from keeper.api import Address, Transfer
-from keeper.api.numeric import Wad
+from pymaker import Address, Transfer
+from pymaker.numeric import Wad
 
-from keeper.api.token import ERC20Token
+from pymaker.token import ERC20Token
 from keeper.transfer_formatter import TransferFormatter
 
 

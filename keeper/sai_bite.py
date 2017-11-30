@@ -23,7 +23,7 @@ import pkg_resources
 from web3 import Web3, HTTPProvider
 
 from keeper import Address, Contract, Logger, FixedGasPrice, DefaultGasPrice, chain
-from keeper.api.sai import Tub
+from pymaker.sai import Tub
 from keeper.lifecycle import Web3Lifecycle
 
 

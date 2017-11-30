@@ -16,10 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from keeper import Keeper
-from keeper.api import Address
-from keeper.api.oasis import MatchingMarket
-from keeper.api.sai import Tub, Top, Tap
-from keeper.api.token import ERC20Token, DSEthToken
+from pymaker import Address
+from pymaker.oasis import MatchingMarket
+from pymaker.sai import Tub, Top, Tap
+from pymaker.token import ERC20Token, DSEthToken
 
 
 class SaiKeeper(Keeper):

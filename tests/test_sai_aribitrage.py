@@ -18,8 +18,8 @@
 import pytest
 
 from keeper import Wad
-from keeper.api.approval import directly
-from keeper.api.feed import DSValue
+from pymaker.approval import directly
+from pymaker.feed import DSValue
 from keeper.sai_arbitrage import SaiArbitrage
 from keeper.sai_bite import SaiBite
 from tests.conftest import SaiDeployment

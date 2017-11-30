@@ -22,11 +22,11 @@ import pytest
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
-from keeper.api import Address
-from keeper.api import Wad
-from keeper.api.approval import directly, via_tx_manager
-from keeper.api.token import DSToken
-from keeper.api.transactional import TxManager
+from pymaker import Address
+from pymaker import Wad
+from pymaker.approval import directly, via_tx_manager
+from pymaker.token import DSToken
+from pymaker.transactional import TxManager
 
 
 class FailingTransact:

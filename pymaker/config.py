@@ -20,7 +20,7 @@ import json
 
 import zlib
 
-from keeper import Logger
+from pymaker.logger import Logger
 
 
 class ReloadableConfig:

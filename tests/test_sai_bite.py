@@ -18,7 +18,7 @@
 import pytest
 
 from keeper import Wad
-from keeper.api.feed import DSValue
+from pymaker.feed import DSValue
 from keeper.sai_bite import SaiBite
 from tests.conftest import SaiDeployment
 from tests.helper import args, captured_output

@@ -19,8 +19,8 @@ from typing import Optional
 
 from web3 import Web3
 
-from keeper.api import Contract, Address, Receipt, Transact
-from keeper.api.util import bytes_to_hexstring, int_to_bytes32
+from pymaker import Contract, Address, Receipt, Transact
+from pymaker.util import bytes_to_hexstring, int_to_bytes32
 
 
 class DSGuard(Contract):

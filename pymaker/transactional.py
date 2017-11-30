@@ -21,8 +21,8 @@ from typing import List
 
 from web3 import Web3
 
-from keeper.api import Contract, Address, Invocation, Transact
-from keeper.api.token import ERC20Token
+from pymaker import Contract, Address, Invocation, Transact
+from pymaker.token import ERC20Token
 
 
 class TxManager(Contract):
@@ -73,7 +73,7 @@ class TxManager(Contract):
             invocations: A list of invocations (contract methods) to be executed.
 
         Returns:
-            A :py:class:`keeper.api.Transact` instance, which can be used to trigger the transaction.
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         def token_addresses() -> list:
             return list(map(lambda address: address.address, tokens))

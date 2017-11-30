@@ -18,8 +18,8 @@
 import pytest
 
 from keeper import Wad
-from keeper.api import Address, Calldata, Receipt, Transfer
-from tests.api.helpers import is_hashable
+from pymaker import Address, Calldata, Receipt, Transfer
+from tests.pymaker.helpers import is_hashable
 
 
 class TestAddress:

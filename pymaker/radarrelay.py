@@ -25,9 +25,11 @@ import requests
 from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
 
-from keeper import ERC20Token, Wad, Logger
-from keeper.api import Contract, Address, Transact
-from keeper.api.util import bytes_to_hexstring, hexstring_to_bytes
+from pymaker.token import ERC20Token
+from pymaker.numeric import Wad
+from pymaker.logger import Logger
+from pymaker import Contract, Address, Transact
+from pymaker.util import bytes_to_hexstring, hexstring_to_bytes
 
 
 class Order:
@@ -361,7 +363,7 @@ class RadarRelayApi:
     Attributes:
         exchange: The 0x Exchange contract.
         api_server: Base URL of the Standard Relayer API server.
-        logger: Instance of the :py:class:`keeper.api.Logger` class for event logging.
+        logger: Instance of the :py:class:`pymaker.Logger` class for event logging.
     """
     def __init__(self, exchange: RadarRelay, api_server: str, logger: Logger):
         assert(isinstance(exchange, RadarRelay))
