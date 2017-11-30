@@ -29,16 +29,24 @@ class TestSaiBite:
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiBite(args=args(f""),
-                        web3=sai.web3, config=sai.get_config())
+                SaiBite(args=args(f""), web3=sai.web3)
 
         # then
         assert "error: the following arguments are required: --eth-from" in err.getvalue()
 
+    def test_should_not_start_without_tub_address_argument(self, sai: SaiDeployment):
+        # when
+        with captured_output() as (out, err):
+            with pytest.raises(SystemExit):
+                SaiBite(args=args(f"--eth-from {sai.web3.eth.defaultAccount}"), web3=sai.web3)
+
+        # then
+        assert "error: the following arguments are required: --tub-address" in err.getvalue()
+
     def test_should_bite_unsafe_cups_only(self, sai: SaiDeployment):
         # given
-        keeper = SaiBite(args=args(f"--eth-from {sai.web3.eth.defaultAccount}"),
-                         web3=sai.web3, config=sai.get_config())
+        keeper = SaiBite(args=args(f"--eth-from {sai.web3.eth.defaultAccount} --tub-address {sai.tub.address}"),
+                         web3=sai.web3)
 
         # and
         sai.tub.join(Wad.from_number(10)).transact()
