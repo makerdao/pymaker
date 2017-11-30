@@ -15,13 +15,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import _jsonnet
 import argparse
 import json
 import os
 import sys
-
-import zlib
 
 import pkg_resources
 

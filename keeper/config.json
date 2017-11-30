@@ -1,9 +1,5 @@
 {
   "kovan": {
-    "tokens": {
-      "WETH": "0x53eccc9246c1e537d79199d0c7231e425a40f896",
-      "MKR": "0x4bb514a7f83fbb13c2b41448208e89fabbcfe2fb"
-    },
     "contracts": {
       "otc": "0x375d52588c3f39ee7710290237a95C691d8432E7",
       "saiTub": "0xb7ae5ccabd002b5eebafe6a8fad5499394f67980",
@@ -20,10 +16,6 @@
     }
   },
   "ethlive": {
-    "tokens": {
-      "WETH": "0xecf8f87f810ecf450940c9f60066b4a7a501d6a7",
-      "MKR": "0xc66ea802717bfb9833400264dd12c2bceaa34a6d"
-    },
     "contracts": {
       "otc": "0x3aa927a97594c3ab7d7bf0d47c71c3877d1de4a1",
       "saiTub": "0xe819300b6f3d0625632b47196233fe6671a59891",
