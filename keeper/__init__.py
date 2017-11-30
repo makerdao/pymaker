@@ -30,7 +30,7 @@ from pymaker.util import AsyncCallback, chain
 from web3 import Web3, HTTPProvider
 
 from pymaker.token import ERC20Token
-from keeper.lifecycle import Web3Lifecycle
+from pymaker.lifecycle import Web3Lifecycle
 
 
 class Keeper:

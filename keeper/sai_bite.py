@@ -24,7 +24,7 @@ from web3 import Web3, HTTPProvider
 
 from keeper import Address, Contract, Logger, FixedGasPrice, DefaultGasPrice, chain
 from pymaker.sai import Tub
-from keeper.lifecycle import Web3Lifecycle
+from pymaker.lifecycle import Web3Lifecycle
 
 
 class SaiBite:

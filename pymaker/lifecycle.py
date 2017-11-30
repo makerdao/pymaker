@@ -22,8 +22,9 @@ import time
 
 from web3 import Web3
 
-from keeper import Logger, AsyncCallback, register_filter_thread, any_filter_thread_present, stop_all_filter_threads, \
-    all_filter_threads_alive
+from pymaker import register_filter_thread, any_filter_thread_present, stop_all_filter_threads, all_filter_threads_alive
+from pymaker.logger import Logger
+from pymaker.util import AsyncCallback
 
 
 class Web3Lifecycle:
