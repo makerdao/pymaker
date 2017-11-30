@@ -378,7 +378,7 @@ class RadarRelayApi:
         url = f"{self.api_server}/v0/orders?" \
               f"exchangeContractAddress={self.exchange.address.address}&" \
               f"maker={maker.address}&" \
-              f"per_page=100"
+              f"per_page=10000"
 
         response = requests.get(url).json()
         return list(map(lambda item: Order.from_json(self.exchange, item), response))
