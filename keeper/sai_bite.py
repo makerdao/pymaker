@@ -16,19 +16,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import os
 import sys
 
-import os
 import pkg_resources
 from web3 import Web3, HTTPProvider
 
-from keeper import Address, Config, Contract, Logger, FixedGasPrice, DefaultGasPrice
+from keeper import Address, Contract, Logger, FixedGasPrice, DefaultGasPrice, chain
 from keeper.api.sai import Tub
 from keeper.lifecycle import Web3Lifecycle
 
 
 class SaiBite:
-    """SAI keeper to bite undercollateralized cups.
+    """Keeper to bite undercollateralized cups.
 
     Keeper constantly looks for unsafe cups and bites them the moment they become
     unsafe. Ultimately, it should take into account the profit it can make by processing
@@ -42,6 +42,7 @@ class SaiBite:
         parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
         parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
         parser.add_argument("--eth-from", help="Ethereum account from which to send transactions", required=True, type=str)
+        parser.add_argument("--tub-address", help="Ethereum address of the Tub contract", required=True, type=str)
         parser.add_argument("--gas-price", help="Gas price in Wei (default: node default)", default=0, type=int)
         parser.add_argument("--debug", help="Enable debug output", dest='debug', action='store_true')
         parser.add_argument("--trace", help="Enable trace output", dest='trace', action='store_true')
@@ -50,10 +51,9 @@ class SaiBite:
         self.web3 = kwargs['web3'] if 'web3' in kwargs else Web3(HTTPProvider(endpoint_uri=f"http://{self.arguments.rpc_host}:{self.arguments.rpc_port}"))
         self.web3.eth.defaultAccount = self.arguments.eth_from
 
+        self.chain = chain(self.web3)
         self.our_address = Address(self.arguments.eth_from)
-        self.chain = "kovan" #TODO TODO TODO!!!! chain(self.web3)
-        self.config = kwargs['config'] if 'config' in kwargs else Config.load_config(self.chain)
-        self.tub = Tub(web3=self.web3, address=Address(self.config.get_contract_address("saiTub")))
+        self.tub = Tub(web3=self.web3, address=Address(self.arguments.tub_address))
 
         _json_log = os.path.abspath(pkg_resources.resource_filename(__name__, f"../logs/bite-keeper_{self.chain}_{self.our_address}.json.log".lower()))
         self.logger = Logger('bite-keeper', self.chain, _json_log, self.arguments.debug, self.arguments.trace)
@@ -67,7 +67,6 @@ class SaiBite:
         lifecycle.on_block(self.check_all_cups)
 
     def check_all_cups(self):
-        print("AAA I AM LIVE")
         for cup_id in range(self.tub.cupi()):
             self.check_cup(cup_id+1)
 
