@@ -21,7 +21,6 @@ from keeper import Wad
 from pymaker.approval import directly
 from pymaker.feed import DSValue
 from keeper.sai_arbitrage import SaiArbitrage
-from keeper.sai_bite import SaiBite
 from pymaker.deployment import Deployment
 from tests.helper import args, captured_output
 
