@@ -109,43 +109,6 @@ describes how to unlock multiple accounts in Parity on startup.
 
 This sections lists and briefly describes a set of reference keepers present in this project.
 
-### `keeper-sai-bite`
-
-SAI keeper to bite undercollateralized cups.
-
-This keeper constantly looks for unsafe cups and bites them the moment they become
-unsafe. Ultimately, it should take into account the profit it can make by processing
-the resulting collateral via `bust` and only waste gas on `bite` if it can make it up
-by subsequent arbitrage. For now, it is a dumb keeper that just bites every cup
-that can be bitten.
-
-Usage:
-```
-usage: keeper-sai-bite [-h] [--rpc-host RPC_HOST] [--rpc-port RPC_PORT]
-                       --eth-from ETH_FROM [--gas-price GAS_PRICE]
-                       [--initial-gas-price INITIAL_GAS_PRICE]
-                       [--increase-gas-price-by INCREASE_GAS_PRICE_BY]
-                       [--increase-gas-price-every INCREASE_GAS_PRICE_EVERY]
-                       [--debug] [--trace]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --rpc-host RPC_HOST   JSON-RPC host (default: `localhost')
-  --rpc-port RPC_PORT   JSON-RPC port (default: `8545')
-  --eth-from ETH_FROM   Ethereum account from which to send transactions
-  --gas-price GAS_PRICE
-                        Static gas pricing: Gas price in Wei
-  --initial-gas-price INITIAL_GAS_PRICE
-                        Increasing gas pricing: Initial gas price in Wei
-  --increase-gas-price-by INCREASE_GAS_PRICE_BY
-                        Increasing gas pricing: Gas price increase in Wei
-  --increase-gas-price-every INCREASE_GAS_PRICE_EVERY
-                        Increasing gas pricing: Gas price increase interval in
-                        seconds
-  --debug               Enable debug output
-  --trace               Enable trace output
-```
-
 ### `keeper-sai-arbitrage`
 
 SAI keeper to arbitrage on OasisDEX, `join`, `exit`, `boom` and `bust`.
