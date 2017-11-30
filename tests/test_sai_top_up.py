@@ -21,37 +21,37 @@ from keeper import Address
 from pymaker.feed import DSValue
 from pymaker.numeric import Ray, Wad
 from keeper.sai_top_up import SaiTopUp
-from tests.conftest import SaiDeployment
+from pymaker.deployment import Deployment
 from tests.helper import args, captured_output
 
 
 class TestSaiTopUpArguments:
-    def test_should_not_start_without_eth_from_argument(self, sai: SaiDeployment):
+    def test_should_not_start_without_eth_from_argument(self, deployment: Deployment):
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
                 SaiTopUp(args=args(f""),
-                         web3=sai.web3, config=sai.get_config())
+                         web3=deployment.web3, config=deployment.get_config())
 
         # then
         assert "error: the following arguments are required: --eth-from" in err.getvalue()
 
-    def test_should_not_start_without_min_margin_argument(self, sai: SaiDeployment):
+    def test_should_not_start_without_min_margin_argument(self, deployment: Deployment):
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiTopUp(args=args(f"--eth-from {sai.web3.eth.defaultAccount}"),
-                         web3=sai.web3, config=sai.get_config())
+                SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount}"),
+                         web3=deployment.web3, config=deployment.get_config())
 
         # then
         assert "error: the following arguments are required: --min-margin" in err.getvalue()
 
-    def test_should_not_start_without_top_up_margin_argument(self, sai: SaiDeployment):
+    def test_should_not_start_without_top_up_margin_argument(self, deployment: Deployment):
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiTopUp(args=args(f"--eth-from {sai.web3.eth.defaultAccount} --min-margin 0.2"),
-                         web3=sai.web3, config=sai.get_config())
+                SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} --min-margin 0.2"),
+                         web3=deployment.web3, config=deployment.get_config())
 
         # then
         assert "error: the following arguments are required: --top-up-margin" in err.getvalue()
@@ -59,113 +59,113 @@ class TestSaiTopUpArguments:
 
 class TestSaiTopUpBehaviour:
     @staticmethod
-    def set_price(sai: SaiDeployment, new_price):
-        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(new_price).value).transact()
+    def set_price(deployment: Deployment, new_price):
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(new_price).value).transact()
 
-    def open_cdp(self, sai: SaiDeployment, eth_amount, sai_amount):
+    def open_cdp(self, deployment: Deployment, eth_amount, sai_amount):
         # given
-        sai.tub.cuff(Ray.from_number(2.0)).transact()
-        sai.tub.cork(Wad.from_number(100000000)).transact()
+        deployment.tub.cuff(Ray.from_number(2.0)).transact()
+        deployment.tub.cork(Wad.from_number(100000000)).transact()
 
         # and
-        self.set_price(sai, 500)
+        self.set_price(deployment, 500)
 
         # and
-        sai.tub.open().transact()
-        sai.tub.join(Wad.from_number(eth_amount)).transact()
-        sai.tub.lock(1, Wad.from_number(eth_amount)).transact()
-        sai.tub.draw(1, Wad.from_number(sai_amount)).transact()
+        deployment.tub.open().transact()
+        deployment.tub.join(Wad.from_number(eth_amount)).transact()
+        deployment.tub.lock(1, Wad.from_number(eth_amount)).transact()
+        deployment.tub.draw(1, Wad.from_number(sai_amount)).transact()
 
         # and
-        assert sai.tub.ink(1) == Wad.from_number(eth_amount)
-        assert sai.tub.tab(1) == Wad.from_number(sai_amount)
+        assert deployment.tub.ink(1) == Wad.from_number(eth_amount)
+        assert deployment.tub.tab(1) == Wad.from_number(sai_amount)
 
     @staticmethod
-    def sai_balance(sai: SaiDeployment, balance):
-        if sai.sai.balance_of(sai.our_address) < Wad.from_number(balance):
-            sai.sai.mint(Wad.from_number(balance) - sai.sai.balance_of(sai.our_address)).transact()
+    def sai_balance(deployment: Deployment, balance):
+        if deployment.sai.balance_of(deployment.our_address) < Wad.from_number(balance):
+            deployment.sai.mint(Wad.from_number(balance) - deployment.sai.balance_of(deployment.our_address)).transact()
         else:
-            sai.sai.transfer(Address('0x0000000000111111111100000000001111111111'),
-                                     sai.sai.balance_of(sai.our_address) - Wad.from_number(balance)).transact()
+            deployment.sai.transfer(Address('0x0000000000111111111100000000001111111111'),
+                                    deployment.sai.balance_of(deployment.our_address) - Wad.from_number(balance)).transact()
 
-    def test_should_top_up_if_collateralization_too_low_and_sai_below_max(self, sai: SaiDeployment):
+    def test_should_top_up_if_collateralization_too_low_and_sai_below_max(self, deployment: Deployment):
         # given
-        self.open_cdp(sai, eth_amount=40, sai_amount=5000)
-        self.sai_balance(sai, balance=2500)
+        self.open_cdp(deployment, eth_amount=40, sai_amount=5000)
+        self.sai_balance(deployment, balance=2500)
 
         # and
-        keeper = SaiTopUp(args=args(f"--eth-from {sai.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
-                          web3=sai.web3, config=sai.get_config())
+        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
+                          web3=deployment.web3, config=deployment.get_config())
         keeper.approve()
 
         # when
-        self.set_price(sai, 276)
+        self.set_price(deployment, 276)
         # and
         keeper.check_all_cups()
         # then
-        assert sai.tub.ink(1) == Wad.from_number(40)
-        assert sai.tub.tab(1) == Wad.from_number(5000)
+        assert deployment.tub.ink(1) == Wad.from_number(40)
+        assert deployment.tub.tab(1) == Wad.from_number(5000)
 
         # when
-        self.set_price(sai, 274)
+        self.set_price(deployment, 274)
         # and
         keeper.check_all_cups()
         # then
-        assert sai.tub.ink(1) == Wad(44708029197080290000)
-        assert sai.tub.tab(1) == Wad.from_number(5000)
+        assert deployment.tub.ink(1) == Wad(44708029197080290000)
+        assert deployment.tub.tab(1) == Wad.from_number(5000)
 
-    def test_should_wipe_if_collateralization_too_low_and_sai_above_max(self, sai: SaiDeployment):
+    def test_should_wipe_if_collateralization_too_low_and_sai_above_max(self, deployment: Deployment):
         # given
-        self.open_cdp(sai, eth_amount=40, sai_amount=5000)
-        self.sai_balance(sai, balance=3500)
+        self.open_cdp(deployment, eth_amount=40, sai_amount=5000)
+        self.sai_balance(deployment, balance=3500)
 
         # and
-        keeper = SaiTopUp(args=args(f"--eth-from {sai.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
-                          web3=sai.web3, config=sai.get_config())
+        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
+                          web3=deployment.web3, config=deployment.get_config())
         keeper.approve()
 
         # when
-        self.set_price(sai, 276)
+        self.set_price(deployment, 276)
         # and
         keeper.check_all_cups()
         # then
-        assert sai.tub.ink(1) == Wad.from_number(40)
-        assert sai.tub.tab(1) == Wad.from_number(5000)
-        assert sai.sai.balance_of(sai.our_address) == Wad.from_number(3500)
+        assert deployment.tub.ink(1) == Wad.from_number(40)
+        assert deployment.tub.tab(1) == Wad.from_number(5000)
+        assert deployment.sai.balance_of(deployment.our_address) == Wad.from_number(3500)
 
         # when
-        self.set_price(sai, 274)
+        self.set_price(deployment, 274)
         # and
         keeper.check_all_cups()
         # then
-        assert sai.tub.ink(1) == Wad.from_number(40)
-        assert sai.tub.tab(1) == Wad.from_number(3500)
-        assert sai.sai.balance_of(sai.our_address) == Wad.from_number(2000)
+        assert deployment.tub.ink(1) == Wad.from_number(40)
+        assert deployment.tub.tab(1) == Wad.from_number(3500)
+        assert deployment.sai.balance_of(deployment.our_address) == Wad.from_number(2000)
 
-    def test_should_both_wipe_and_top_up_if_collateralization_too(self, sai: SaiDeployment):
+    def test_should_both_wipe_and_top_up_if_collateralization_too(self, deployment: Deployment):
         # given
-        self.open_cdp(sai, eth_amount=40, sai_amount=5000)
-        self.sai_balance(sai, balance=3500)
+        self.open_cdp(deployment, eth_amount=40, sai_amount=5000)
+        self.sai_balance(deployment, balance=3500)
 
         # and
-        keeper = SaiTopUp(args=args(f"--eth-from {sai.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
-                          web3=sai.web3, config=sai.get_config())
+        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
+                          web3=deployment.web3, config=deployment.get_config())
         keeper.approve()
 
         # when
-        self.set_price(sai, 276)
+        self.set_price(deployment, 276)
         # and
         keeper.check_all_cups()
         # then
-        assert sai.tub.ink(1) == Wad.from_number(40)
-        assert sai.tub.tab(1) == Wad.from_number(5000)
-        assert sai.sai.balance_of(sai.our_address) == Wad.from_number(3500)
+        assert deployment.tub.ink(1) == Wad.from_number(40)
+        assert deployment.tub.tab(1) == Wad.from_number(5000)
+        assert deployment.sai.balance_of(deployment.our_address) == Wad.from_number(3500)
 
         # when
-        self.set_price(sai, 120)
+        self.set_price(deployment, 120)
         # and
         keeper.check_all_cups()
         # then
-        assert sai.tub.ink(1) == Wad(71458333333333333000)
-        assert sai.tub.tab(1) == Wad.from_number(3500)
-        assert sai.sai.balance_of(sai.our_address) == Wad.from_number(2000)
+        assert deployment.tub.ink(1) == Wad(71458333333333333000)
+        assert deployment.tub.tab(1) == Wad.from_number(3500)
+        assert deployment.sai.balance_of(deployment.our_address) == Wad.from_number(2000)

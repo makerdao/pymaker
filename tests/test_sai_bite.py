@@ -20,63 +20,64 @@ import pytest
 from keeper import Wad
 from pymaker.feed import DSValue
 from keeper.sai_bite import SaiBite
-from tests.conftest import SaiDeployment
+from pymaker.deployment import Deployment
 from tests.helper import args, captured_output
 
 
 class TestSaiBite:
-    def test_should_not_start_without_eth_from_argument(self, sai: SaiDeployment):
+    def test_should_not_start_without_eth_from_argument(self, deployment: Deployment):
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiBite(args=args(f""), web3=sai.web3)
+                SaiBite(args=args(f""), web3=deployment.web3)
 
         # then
         assert "error: the following arguments are required: --eth-from" in err.getvalue()
 
-    def test_should_not_start_without_tub_address_argument(self, sai: SaiDeployment):
+    def test_should_not_start_without_tub_address_argument(self, deployment: Deployment):
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiBite(args=args(f"--eth-from {sai.web3.eth.defaultAccount}"), web3=sai.web3)
+                SaiBite(args=args(f"--eth-from {deployment.web3.eth.defaultAccount}"), web3=deployment.web3)
 
         # then
         assert "error: the following arguments are required: --tub-address" in err.getvalue()
 
-    def test_should_bite_unsafe_cups_only(self, sai: SaiDeployment):
+    def test_should_bite_unsafe_cups_only(self, deployment: Deployment):
         # given
-        keeper = SaiBite(args=args(f"--eth-from {sai.web3.eth.defaultAccount} --tub-address {sai.tub.address}"),
-                         web3=sai.web3)
+        keeper = SaiBite(args=args(
+            f"--eth-from {deployment.web3.eth.defaultAccount} --tub-address {deployment.tub.address}"),
+                         web3=deployment.web3)
 
         # and
-        sai.tub.join(Wad.from_number(10)).transact()
-        sai.tub.cork(Wad.from_number(100000)).transact()
-        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
+        deployment.tub.join(Wad.from_number(10)).transact()
+        deployment.tub.cork(Wad.from_number(100000)).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
 
         # and
-        sai.tub.open().transact()
-        sai.tub.lock(1, Wad.from_number(4)).transact()
-        sai.tub.draw(1, Wad.from_number(1000)).transact()
+        deployment.tub.open().transact()
+        deployment.tub.lock(1, Wad.from_number(4)).transact()
+        deployment.tub.draw(1, Wad.from_number(1000)).transact()
 
         # and
-        assert sai.tub.safe(1)
+        assert deployment.tub.safe(1)
 
         # when
         keeper.check_all_cups()
 
         # then
-        assert sai.tub.safe(1)
-        assert sai.tub.tab(1) == Wad.from_number(1000)
+        assert deployment.tub.safe(1)
+        assert deployment.tub.tab(1) == Wad.from_number(1000)
 
         # when
-        DSValue(web3=sai.web3, address=sai.tub.pip()).poke_with_int(Wad.from_number(150).value).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(150).value).transact()
 
         # and
-        assert not sai.tub.safe(1)
+        assert not deployment.tub.safe(1)
 
         # and
         keeper.check_all_cups()
 
         # then
-        assert sai.tub.safe(1)
-        assert sai.tub.tab(1) == Wad.from_number(0)
+        assert deployment.tub.safe(1)
+        assert deployment.tub.tab(1) == Wad.from_number(0)
