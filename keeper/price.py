@@ -22,7 +22,7 @@ from typing import Optional
 from keeper import Wad, Logger
 from keeper.api.feed import DSValue
 from keeper.api.sai import Tub
-from keeper.api.setzer import Setzer
+from keeper.setzer import Setzer
 
 
 class PriceFeed(object):
