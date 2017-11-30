@@ -79,10 +79,6 @@ class Keeper:
     def executable_name(self):
         return "keeper-" + self.keeper_name()
 
-    def eth_balance(self, address: Address) -> Wad:
-        assert(isinstance(address, Address))
-        return Wad(self.web3.eth.getBalance(address.address))
-
     # def print_eth_balance(self):
     #     balance = self.eth_balance(self.our_address)
     #     self.logger.info(f"Keeper account balance is {balance} ETH", Event.eth_balance(self.our_address, balance))

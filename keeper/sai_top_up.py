@@ -22,6 +22,7 @@ from pymaker.approval import directly
 from pymaker.numeric import Ray
 from pymaker.numeric import Wad
 from keeper.sai import SaiKeeper
+from pymaker.util import eth_balance
 
 
 class SaiTopUp(SaiKeeper):
@@ -77,7 +78,7 @@ class SaiTopUp(SaiKeeper):
         # in to SKR and then top-up the cup.
         if self.is_undercollateralized(cup_id):
             top_up_amount = self.calculate_skr_top_up(cup_id)
-            if top_up_amount <= self.eth_balance(self.our_address):
+            if top_up_amount <= eth_balance(self.web3, self.our_address):
                 # TODO we do not always join with the same amount as the one we lock!
                 self.tub.join(top_up_amount).transact(gas_price=self.gas_price)
                 self.tub.lock(cup_id, top_up_amount).transact(gas_price=self.gas_price)

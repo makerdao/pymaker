@@ -21,6 +21,8 @@ import threading
 from typing import Optional
 from web3 import Web3, EthereumTesterProvider
 
+from pymaker.numeric import Wad
+
 
 def chain(web3: Web3) -> str:
     block_0 = web3.eth.getBlock(0)['hash']
@@ -45,6 +47,10 @@ def synchronize(futures) -> list:
             loop.close()
     else:
         return []
+
+
+def eth_balance(web3: Web3, address) -> Wad:
+    return Wad(web3.eth.getBalance(address.address))
 
 
 def int_to_bytes32(value: int) -> bytes:
