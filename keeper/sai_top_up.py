@@ -40,6 +40,8 @@ class SaiTopUp(SaiKeeper):
         self.liquidation_ratio = self.tub.mat()
         self.minimum_ratio = self.liquidation_ratio + Ray.from_number(self.arguments.min_margin)
         self.target_ratio = self.liquidation_ratio + Ray.from_number(self.arguments.top_up_margin)
+        self.max_sai = Wad.from_number(self.arguments.max_sai)
+        self.avg_sai = Wad.from_number(self.arguments.avg_sai)
 
     def args(self, parser: argparse.ArgumentParser):
         parser.add_argument("--min-margin", help="Margin between the liquidation ratio and the top-up threshold", type=float, required=True)
@@ -56,15 +58,29 @@ class SaiTopUp(SaiKeeper):
 
     def check_all_cups(self):
         for cup in self.our_cups():
-            self.check_cup(cup)
+            self.check_cup(cup.cup_id)
 
-    def check_cup(self, cup):
-        top_up_amount = self.required_top_up(cup)
-        if top_up_amount:
+    def check_cup(self, cup_id: int):
+        assert(isinstance(cup_id, int))
+
+        # If cup is undercollateralized and the amount of SAI we are holding is more than `--max-sai`
+        # then we wipe some debt first so our balance reaches `--avg-sai`. Bear in mind that it is
+        # possible that we pay all out debt this way and our SAI balance will still be higher
+        # than `--max-sai`.
+        if self.is_undercollateralized(cup_id) and self.sai.balance_of(self.our_address) > self.max_sai:
+            amount_of_sai_to_wipe = self.calculate_sai_wipe()
+            if amount_of_sai_to_wipe > Wad(0):
+                self.tub.wipe(cup_id, amount_of_sai_to_wipe).transact(gas_price=self.gas_price)
+
+        # If cup is still undercollateralized, calculate the amount of SKR needed to top it up so
+        # the collateralization level reaches `--top-up-margin`. If we have enough ETH, exchange
+        # in to SKR and then top-up the cup.
+        if self.is_undercollateralized(cup_id):
+            top_up_amount = self.calculate_skr_top_up(cup_id)
             if top_up_amount <= self.eth_balance(self.our_address):
                 # TODO we do not always join with the same amount as the one we lock!
                 self.tub.join(top_up_amount).transact(gas_price=self.gas_price)
-                self.tub.lock(cup.cup_id, top_up_amount).transact(gas_price=self.gas_price)
+                self.tub.lock(cup_id, top_up_amount).transact(gas_price=self.gas_price)
             else:
                 self.logger.info(f"Cannot top-up as our balance is less than {top_up_amount} ETH.")
 
@@ -74,17 +90,38 @@ class SaiTopUp(SaiKeeper):
             if cup.lad == self.our_address:
                 yield cup
 
-    def required_top_up(self, cup):
-        pro = cup.ink*self.tub.tag()
-        tab = self.tub.tab(cup.cup_id)
+    def is_undercollateralized(self, cup_id) -> bool:
+        pro = self.tub.ink(cup_id)*self.tub.tag()
+        tab = self.tub.tab(cup_id)
         if tab > Wad(0):
             current_ratio = Ray(pro / tab)
-            if current_ratio < self.minimum_ratio:
-                return tab * (Wad(self.target_ratio - current_ratio) / self.tub.tag())
-            else:
-                return None
+            print(current_ratio)
+            print(self.minimum_ratio)
+            return current_ratio < self.minimum_ratio
         else:
-            return None
+            return False
+
+    def calculate_sai_wipe(self) -> Wad:
+        """Calculates the amount of SAI that can be wiped.
+
+        Calculates the amount of SAI than can be wiped in order to bring the SAI holdings
+        to `--avg-sai`.
+        """
+        return Wad.max(self.sai.balance_of(self.our_address) - self.avg_sai, Wad(0))
+
+    def calculate_skr_top_up(self, cup_id) -> Wad:
+        """Calculates the required top-up in SKR.
+
+        Calculates the required top-up in SKR in order to bring the collateralization level
+        of the cup to `--target-ratio`.
+        """
+        pro = self.tub.ink(cup_id)*self.tub.tag()
+        tab = self.tub.tab(cup_id)
+        if tab > Wad(0):
+            current_ratio = Ray(pro / tab)
+            return Wad.max(tab * (Wad(self.target_ratio - current_ratio) / self.tub.tag()), Wad(0))
+        else:
+            return Wad(0)
 
 
 if __name__ == '__main__':

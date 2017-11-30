@@ -83,10 +83,10 @@ class TestSaiTopUpBehaviour:
     @staticmethod
     def sai_balance(sai: SaiDeployment, balance):
         if sai.sai.balance_of(sai.our_address) < Wad.from_number(balance):
-            sai.sai.mint(Wad.from_number(balance) - sai.sai.balance_of(sai.our_address))
+            sai.sai.mint(Wad.from_number(balance) - sai.sai.balance_of(sai.our_address)).transact()
         else:
             sai.sai.transfer(Address('0x0000000000111111111100000000001111111111'),
-                                     sai.sai.balance_of(sai.our_address) - Wad.from_number(balance))
+                                     sai.sai.balance_of(sai.our_address) - Wad.from_number(balance)).transact()
 
     def test_should_top_up_if_collateralization_too_low_and_sai_below_max(self, sai: SaiDeployment):
         # given
@@ -114,7 +114,6 @@ class TestSaiTopUpBehaviour:
         assert sai.tub.ink(1) == Wad(44708029197080290000)
         assert sai.tub.tab(1) == Wad.from_number(5000)
 
-    @pytest.mark.skip("wiping cdp debt not implemented yet")
     def test_should_wipe_if_collateralization_too_low_and_sai_above_max(self, sai: SaiDeployment):
         # given
         self.open_cdp(sai, eth_amount=40, sai_amount=5000)
@@ -139,6 +138,6 @@ class TestSaiTopUpBehaviour:
         # and
         keeper.check_all_cups()
         # then
-        assert sai.tub.ink(1) == Wad(40)
+        assert sai.tub.ink(1) == Wad.from_number(40)
         assert sai.tub.tab(1) == Wad.from_number(3500)
         assert sai.sai.balance_of(sai.our_address) == Wad.from_number(2000)
