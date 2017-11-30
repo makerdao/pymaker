@@ -26,7 +26,7 @@ from keeper.api import Address
 from keeper.api import Wad
 from keeper.api.approval import directly, via_tx_manager
 from keeper.api.token import DSToken
-from keeper.api.transact import TxManager, Invocation
+from keeper.api.transactional import TxManager
 
 
 class FailingTransact:

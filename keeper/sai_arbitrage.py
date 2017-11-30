@@ -24,7 +24,7 @@ from keeper.api import Address, Transfer
 from keeper.api.approval import via_tx_manager, directly
 from keeper.api.numeric import Ray
 from keeper.api.numeric import Wad
-from keeper.api.transact import Invocation, TxManager
+from keeper.api.transactional import TxManager
 
 from keeper.api.token import ERC20Token
 from keeper.conversion import Conversion

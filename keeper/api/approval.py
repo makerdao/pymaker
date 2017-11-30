@@ -17,7 +17,7 @@
 
 from keeper.api import Address, Wad, Contract
 from keeper.api.token import ERC20Token
-from keeper.api.transact import TxManager
+from keeper.api.transactional import TxManager
 
 
 def directly():

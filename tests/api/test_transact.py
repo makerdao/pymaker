@@ -22,7 +22,7 @@ from keeper.api import Address
 from keeper.api import Wad
 from keeper.api.approval import directly
 from keeper.api.token import DSToken
-from keeper.api.transact import TxManager
+from keeper.api.transactional import TxManager
 
 
 class TestTxManager:

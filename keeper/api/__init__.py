@@ -430,10 +430,10 @@ class Transact:
     def invocation(self) -> Invocation:
         """Returns the `Invocation` object for this pending Ethereum transaction.
 
-        The :py:class:`keeper.api.Invocation` object may be used with :py:class:`keeper.api.transact.TxManager`
+        The :py:class:`keeper.api.Invocation` object may be used with :py:class:`keeper.api.transactional.TxManager`
         to invoke multiple contract calls in one Ethereum transaction.
 
-        Please see :py:class:`keeper.api.transact.TxManager` documentation for more details.
+        Please see :py:class:`keeper.api.transactional.TxManager` documentation for more details.
 
         Returns:
             :py:class:`keeper.api.Invocation` object for this pending Ethereum transaction.

@@ -582,7 +582,7 @@ from keeper.api import Address, Wad
 from keeper.api.approval import directly
 from keeper.api.sai import Tub
 from keeper.api.token import ERC20Token
-from keeper.api.transact import TxManager
+from keeper.api.transactional import TxManager
 
 
 web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
