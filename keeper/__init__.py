@@ -50,13 +50,6 @@ class Keeper:
         self.chain = chain(self.web3)
         self.config = kwargs['config'] if 'config' in kwargs else Config.load_config(self.chain)
         self.gas_price = self._get_gas_price()
-        self.terminated_internally = False
-        self.terminated_externally = False
-        self.fatal_termination = False
-        self._at_least_one_every = False
-        self._last_block_time = None
-        self._on_block_callback = None
-        self._config_checksum = {}
         _json_log = os.path.abspath(pkg_resources.resource_filename(__name__, f"../logs/{self.executable_name()}_{self.chain}_{self.our_address}.json.log".lower()))
         self.logger = Logger(self.keeper_name(), self.chain, _json_log, self.arguments.debug, self.arguments.trace)
         Contract.logger = self.logger
