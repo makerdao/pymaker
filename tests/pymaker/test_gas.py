@@ -17,7 +17,13 @@
 
 import pytest
 
-from pymaker.gas import DefaultGasPrice, FixedGasPrice, IncreasingGasPrice
+from pymaker.gas import DefaultGasPrice, FixedGasPrice, IncreasingGasPrice, GasPrice
+
+
+class TestGasPrice:
+    def test_not_implemented(self):
+        with pytest.raises(Exception):
+            GasPrice().get_gas_price(0)
 
 
 class TestDefaultGasPrice:
