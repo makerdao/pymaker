@@ -48,7 +48,7 @@ class Web3Lifecycle:
         # self.logger.info(f"{self.executable_name()}")
         # self.logger.info(f"{'-' * len(self.executable_name())}")
         # on {self.chain},
-        self.logger.info(f"Keeper connected to {self.web3.providers[0].endpoint_uri}")
+        self.logger.info(f"Keeper connected to {self.web3.providers[0]}")
         self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
         self._check_account_unlocked()
         self._wait_for_init()
