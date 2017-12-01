@@ -374,7 +374,6 @@ of the _SAI Stablecoin_ ecosystem. The current version provides APIs around:
 * `SimpleMarket`, `ExpiringMarket` and `MatchingMarket` (<https://github.com/makerdao/maker-otc>),
 * `TxManager` (<https://github.com/reverendus/tx-manager>),
 * `DSGuard` (<https://github.com/dapphub/ds-guard>),
-* `DSProxy` (<https://github.com/dapphub/ds-proxy>),
 * `DSToken` (<https://github.com/dapphub/ds-token>),
 * `DSEthToken` (<https://github.com/dapphub/ds-eth-token>),
 * `DSValue` (<https://github.com/dapphub/ds-value>),
