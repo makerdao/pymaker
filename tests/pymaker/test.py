@@ -18,7 +18,7 @@
 import pytest
 from web3 import Web3, EthereumTesterProvider
 
-from pymaker import Address
+from pymaker import Address, synchronize
 from pymaker.numeric import Wad
 from pymaker.token import DSToken
 
@@ -40,9 +40,24 @@ class TestTransact:
         # [token transfer costs ~50k gas, we should add a 100k buffer by default which puts in the (100k, 200k) range]
         assert 100000 <= self.web3.eth.getTransaction(receipt.transaction_hash)['gas'] <= 200000
 
+    def test_default_gas_async(self):
+        # when
+        receipt = synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async()])[0]
+
+        # then
+        # [token transfer costs ~50k gas, we should add a 100k buffer by default which puts in the (100k, 200k) range]
+        assert 100000 <= self.web3.eth.getTransaction(receipt.transaction_hash)['gas'] <= 200000
+
     def test_custom_gas(self):
         # when
         receipt = self.token.transfer(self.second_address, Wad(500)).transact(gas=129995)
+
+        # then
+        assert self.web3.eth.getTransaction(receipt.transaction_hash)['gas'] == 129995
+
+    def test_custom_gas_async(self):
+        # when
+        receipt = synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas=129995)])[0]
 
         # then
         assert self.web3.eth.getTransaction(receipt.transaction_hash)['gas'] == 129995
@@ -58,3 +73,9 @@ class TestTransact:
         # expect
         with pytest.raises(Exception):
             self.token.transfer(self.second_address, Wad(500)).transact(gas=129995, gas_buffer=3000000)
+
+    def test_gas_and_gas_buffer_not_allowed_at_the_same_time_async(self):
+        # expect
+        with pytest.raises(Exception):
+            synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas=129995,
+                                                                                           gas_buffer=3000000)])
