@@ -173,12 +173,6 @@ DSRoles
     :members:
 
 
-DSProxy
-~~~~~~~
-
-.. autoclass:: pymaker.proxy.DSProxy
-    :members:
-
 DSValue
 ~~~~~~~
 
