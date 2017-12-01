@@ -15,12 +15,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
-
 from web3 import Web3
 
-from pymaker import Contract, Address, Receipt, Transact
-from pymaker.util import bytes_to_hexstring, int_to_bytes32
+from pymaker import Contract, Address, Transact
+from pymaker.util import int_to_bytes32
 
 
 class DSGuard(Contract):
@@ -59,18 +57,6 @@ class DSGuard(Contract):
             dst = dst.address
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'permit', [src, dst, sig])
-
-    def forbid(self, src: Address, dst: Address, sig: bytes) -> Transact:
-        assert(isinstance(src, Address) or isinstance(src, bytes))
-        assert(isinstance(dst, Address) or isinstance(dst, bytes))
-        assert(isinstance(sig, bytes) and len(sig) == 32)
-
-        if isinstance(src, Address):
-            src = src.address
-        if isinstance(dst, Address):
-            dst = dst.address
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'forbid', [src, dst, sig])
 
     def __repr__(self):
         return f"DSGuard('{self.address}')"
