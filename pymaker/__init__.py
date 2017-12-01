@@ -323,6 +323,10 @@ class Transact:
         Allowed keyword arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
         to be an instance of a class inheriting from :py:class:`pymaker.gas.GasPrice`.
 
+        The `gas` keyword argument is the gas limit for the transaction, whereas `gas_buffer`
+        specifies how much gas should be added to the estimate. They can not be present
+        at the same time. If none of them are present, a default buffer is added to the estimate.
+
         Returns:
             A :py:class:`pymaker.Receipt` object if the transaction invocation was successful.
             `None` otherwise.
@@ -340,6 +344,10 @@ class Transact:
 
         Allowed keyword arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
         to be an instance of a class inheriting from :py:class:`pymaker.gas.GasPrice`.
+
+        The `gas` keyword argument is the gas limit for the transaction, whereas `gas_buffer`
+        specifies how much gas should be added to the estimate. They can not be present
+        at the same time. If none of them are present, a default buffer is added to the estimate.
 
         Returns:
             A future value of either a :py:class:`pymaker.Receipt` object if the transaction
