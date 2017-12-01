@@ -180,6 +180,11 @@ def test_bytes_to_int_from_string():
     assert bytes_to_int('\x00\x00\x01\x01') == 257
 
 
+def test_bytes_to_int_from_int_should_fail():
+    with pytest.raises(AssertionError):
+        bytes_to_int(0)
+
+
 def test_bytes_to_hexstring():
     assert bytes_to_hexstring(bytes([0x00])) == '0x00'
     assert bytes_to_hexstring(bytes([0x01, 0x02, 0x03])) == '0x010203'
