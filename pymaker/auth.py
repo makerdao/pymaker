@@ -49,7 +49,7 @@ class DSGuard(Contract):
     def permit(self, src, dst, sig: bytes) -> Transact:
         assert(isinstance(src, Address) or isinstance(src, bytes))
         assert(isinstance(dst, Address) or isinstance(dst, bytes))
-        assert(isinstance(sig, bytes) and len(sig) == 32)
+        assert(isinstance(sig, bytes) and len(sig) in (4, 32))
 
         if isinstance(src, Address):
             src = src.address
