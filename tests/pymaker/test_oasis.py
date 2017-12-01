@@ -148,6 +148,24 @@ class GeneralMarketTest:
         assert past_make[0].buy_amount == Wad.from_number(2)
         assert past_make[0].timestamp != 0
 
+    def test_past_bump(self):
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.bump(1).transact()
+
+        # then
+        past_bump = self.otc.past_bump(PAST_BLOCKS)
+        assert len(past_bump) == 1
+        assert past_bump[0].id == 1
+        assert past_bump[0].maker == self.our_address
+        assert past_bump[0].pay_token == self.token1.address
+        assert past_bump[0].pay_amount == Wad.from_number(1)
+        assert past_bump[0].buy_token == self.token2.address
+        assert past_bump[0].buy_amount == Wad.from_number(2)
+        assert past_bump[0].timestamp != 0
+
     def test_past_take(self):
         # when
         self.otc.approve([self.token1], directly())
@@ -210,6 +228,28 @@ class GeneralMarketTest:
         assert on_make.buy_token == self.token2.address
         assert on_make.buy_amount == Wad.from_number(2)
         assert on_make.timestamp != 0
+
+    @pytest.mark.timeout(5)
+    def test_on_bump(self):
+        # given
+        on_bump_mock = Mock()
+        self.otc.on_bump(on_bump_mock)
+
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.bump(1).transact()
+
+        # then
+        on_bump = wait_until_mock_called(on_bump_mock)[0]
+        assert on_bump.id == 1
+        assert on_bump.maker == self.our_address
+        assert on_bump.pay_token == self.token1.address
+        assert on_bump.pay_amount == Wad.from_number(1)
+        assert on_bump.buy_token == self.token2.address
+        assert on_bump.buy_amount == Wad.from_number(2)
+        assert on_bump.timestamp != 0
 
     @pytest.mark.timeout(5)
     def test_on_take(self):

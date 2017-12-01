@@ -274,6 +274,21 @@ class SimpleMarket(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'make', [have_token.address, want_token.address, have_amount.value, want_amount.value])
 
+    def bump(self, offer_id: int) -> Transact:
+        """Bumps an offer.
+
+        Bumping an offer generates a `LogBump` event, which can make the order reappear
+        in some front-ends relying on the events.
+
+        Args:
+            offer_id: Id of the offer you want to bump.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'bump',
+                        [int_to_bytes32(offer_id)])
+
     def take(self, offer_id: int, quantity: Wad) -> Transact:
         """Takes (buys) an offer.
 
