@@ -17,13 +17,25 @@
 
 import _jsonnet
 import json
-
 import zlib
 
 from pymaker.logger import Logger
 
 
 class ReloadableConfig:
+    """Reloadable JSON config file reader, capable of using jsonnet expressions.
+
+    This reader will always read most up-to-date version of the config file from disk
+    on each call to `get_config()`. In addition to that, whenever the config file changes,
+    a log event is emitted.
+
+    This reader uses _jsonnet_ data templating language, so the JSON config files can use
+    some advanced expressions documented here: <https://github.com/google/jsonnet>.
+
+    Attributes:
+        filename: Filename of the configuration file.
+        logger: Logger used to log events.
+    """
     def __init__(self, filename: str, logger: Logger):
         assert(isinstance(filename, str))
         assert(isinstance(logger, Logger))
@@ -33,6 +45,7 @@ class ReloadableConfig:
         self._checksum = None
 
     def get_config(self) -> dict:
+        """Reads the JSON config file from disk and returns it as a Python `dict`."""
         with open(self.filename) as data_file:
             content_file = data_file.read()
             content_config = _jsonnet.evaluate_snippet("snippet", content_file, ext_vars={})
