@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-from mock import MagicMock, Mock
+from mock import MagicMock
 from web3 import EthereumTesterProvider, Web3
 
 from pymaker import Address, Logger
@@ -61,3 +61,23 @@ class TestLifecycle:
 
         # then
         assert ordering == ['STARTUP', 'SHUTDOWN']
+
+    def test_every(self):
+        self.counter = 0
+
+        def callback(lifecycle):
+            self.counter = self.counter + 1
+            if self.counter >= 2:
+                lifecycle.terminate("Unit test is over")
+
+        # given
+        mock = MagicMock(side_effect=callback)
+
+        # when
+        with pytest.raises(SystemExit):
+            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+                lifecycle.every(1, mock)
+
+        # then
+        assert mock.call_count >= 2
+        assert lifecycle.terminated_internally

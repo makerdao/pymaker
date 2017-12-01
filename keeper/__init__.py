@@ -87,7 +87,7 @@ class Keeper:
         self.lifecycle.on_block(callback)
 
     def every(self, frequency_in_seconds: int, callback):
-        self.lifecycle.every(frequency_in_seconds, callback)
+        self.lifecycle.every(frequency_in_seconds, lambda lifecycle: callback())
 
     def _get_gas_price(self) -> GasPrice:
         if self.arguments.gas_price > 0:
