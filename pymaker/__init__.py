@@ -269,6 +269,9 @@ class Transact:
             return dict(**dict_or_none)
 
     def _gas(self, gas_estimate: int, **kwargs) -> int:
+        if 'gas' in kwargs and 'gas_buffer' in kwargs:
+            raise Exception('"gas" and "gas_buffer" keyword arguments may not be specified at the same time')
+
         if 'gas' in kwargs:
             return kwargs['gas']
         elif 'gas_buffer' in kwargs:

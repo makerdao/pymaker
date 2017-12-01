@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
 from web3 import Web3, EthereumTesterProvider
 
 from pymaker import Address
@@ -52,3 +53,8 @@ class TestTransact:
 
         # then
         assert self.web3.eth.getTransaction(receipt.transaction_hash)['gas'] > 3000000
+
+    def test_gas_and_gas_buffer_not_allowed_at_the_same_time(self):
+        # expect
+        with pytest.raises(Exception):
+            self.token.transfer(self.second_address, Wad(500)).transact(gas=129995, gas_buffer=3000000)
