@@ -360,6 +360,32 @@ class TestMatchingMarketPosition:
             self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
                           want_token=self.token2.address, want_amount=Wad.from_number(amount)).transact()
 
+    def test_buy_enabled(self):
+        # when
+        self.otc.set_buy_enabled(False).transact()
+
+        # then
+        assert self.otc.is_buy_enabled() is False
+
+        # when
+        self.otc.set_buy_enabled(True).transact()
+
+        # then
+        assert self.otc.is_buy_enabled() is True
+
+    def test_matching_enabled(self):
+        # when
+        self.otc.set_matching_enabled(False).transact()
+
+        # then
+        assert self.otc.is_matching_enabled() is False
+
+        # when
+        self.otc.set_matching_enabled(True).transact()
+
+        # then
+        assert self.otc.is_matching_enabled() is True
+
     def test_should_calculate_correct_order_position(self):
         # expect
         assert self.otc.position(have_token=self.token1.address, have_amount=Wad.from_number(1),

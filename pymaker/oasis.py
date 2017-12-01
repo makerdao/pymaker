@@ -369,6 +369,14 @@ class MatchingMarket(ExpiringMarket):
         return MatchingMarket(web3=web3, address=Contract._deploy(web3, MatchingMarket.abi, MatchingMarket.bin,
                                                                   [close_time]))
 
+    def is_buy_enabled(self) -> bool:
+        """Checks if direct buy is enabled.
+
+        Returns:
+            `True` if direct buy is enabled, `False` otherwise.
+        """
+        return self._contract.call().buyEnabled()
+
     def set_buy_enabled(self, buy_enabled: bool) -> Transact:
         """Enables or disables direct buy.
 
@@ -381,6 +389,14 @@ class MatchingMarket(ExpiringMarket):
         assert(isinstance(buy_enabled, bool))
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'setBuyEnabled', [buy_enabled])
+
+    def is_matching_enabled(self) -> bool:
+        """Checks if order matching is enabled.
+
+        Returns:
+            `True` if order matching is enabled, `False` otherwise.
+        """
+        return self._contract.call().matchingEnabled()
 
     def set_matching_enabled(self, matching_enabled: bool) -> Transact:
         """Enables or disables order matching.
