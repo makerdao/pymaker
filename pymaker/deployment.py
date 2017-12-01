@@ -34,10 +34,10 @@ from pymaker.vault import DSVault
 
 
 class Deployment:
-    """Represents a test deployment of the entire smart contract ecosystem.
+    """Represents a test deployment of the entire Maker smart contract ecosystem.
 
     Creating an instance of this class creates a testrpc web3 provider with the entire set
-    of smart contracts deployed to it. It is used in unit tests of PyMaker, and also in
+    of Maker smart contracts deployed to it. It is used in unit tests of PyMaker, and also in
     unit tests for individual keepers.
     """
     def __init__(self):
