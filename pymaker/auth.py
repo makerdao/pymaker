@@ -74,30 +74,3 @@ class DSGuard(Contract):
 
     def __repr__(self):
         return f"DSGuard('{self.address}')"
-
-
-class DSRoles(Contract):
-    """A client for the `DSRoles` contract.
-
-    You can find the source code of the `DSRoles` contract here:
-    <https://github.com/dapphub/ds-roles>.
-
-    Attributes:
-        web3: An instance of `Web` from `web3.py`.
-        address: Ethereum address of the `DSRoles` contract.
-    """
-
-    abi = Contract._load_abi(__name__, 'abi/DSRoles.abi')
-    bin = Contract._load_bin(__name__, 'abi/DSRoles.bin')
-
-    def __init__(self, web3: Web3, address: Address):
-        self.web3 = web3
-        self.address = address
-        self._contract = self._get_contract(web3, self.abi, address)
-
-    @staticmethod
-    def deploy(web3: Web3):
-        return DSRoles(web3=web3, address=Contract._deploy(web3, DSRoles.abi, DSRoles.bin, []))
-
-    def __repr__(self):
-        return f"DSRoles('{self.address}')"

@@ -375,7 +375,6 @@ of the _SAI Stablecoin_ ecosystem. The current version provides APIs around:
 * `TxManager` (<https://github.com/reverendus/tx-manager>),
 * `DSGuard` (<https://github.com/dapphub/ds-guard>),
 * `DSProxy` (<https://github.com/dapphub/ds-proxy>),
-* `DSRoles` (<https://github.com/dapphub/ds-roles>),
 * `DSToken` (<https://github.com/dapphub/ds-token>),
 * `DSEthToken` (<https://github.com/dapphub/ds-eth-token>),
 * `DSValue` (<https://github.com/dapphub/ds-value>),

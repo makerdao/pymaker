@@ -166,12 +166,6 @@ DSGuard
 .. autoclass:: pymaker.auth.DSGuard
     :members:
 
-DSRoles
-"""""""
-
-.. autoclass:: pymaker.auth.DSRoles
-    :members:
-
 
 DSValue
 ~~~~~~~
