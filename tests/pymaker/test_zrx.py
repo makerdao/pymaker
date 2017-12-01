@@ -19,18 +19,17 @@ import json
 
 import pkg_resources
 import pytest
-from web3 import EthereumTesterProvider
-from web3 import Web3
+from web3 import EthereumTesterProvider, Web3
 
 from keeper import Wad
 from pymaker import Address
 from pymaker.approval import directly
-from pymaker.radarrelay import RadarRelay, Order
 from pymaker.token import DSToken, ERC20Token
+from pymaker.zrx import ZrxExchange, Order
 from tests.pymaker.helpers import is_hashable
 
 
-class TestRadarRelay:
+class TestZrx:
     #TODO duplicate of the deploy method in conftest.py
     def deploy(self, web3, contract_name, args=None):
         contract_factory = web3.eth.contract(abi=json.loads(pkg_resources.resource_string('pymaker.feed', f'abi/{contract_name}.abi')),
@@ -45,15 +44,15 @@ class TestRadarRelay:
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.zrx_token = ERC20Token(web3=self.web3, address=Address(self.deploy(self.web3, 'ZRXToken')))
         self.token_transfer_proxy_address = self.deploy(self.web3, 'TokenTransferProxy')
-        self.radarrelay = RadarRelay.deploy(self.web3, self.zrx_token.address,
-                                            Address(self.token_transfer_proxy_address))
+        self.exchange = ZrxExchange.deploy(self.web3, self.zrx_token.address,
+                                           Address(self.token_transfer_proxy_address))
 
     def test_correct_deployment(self):
         # expect
-        assert self.radarrelay is not None
-        assert self.radarrelay.address is not None
-        assert self.radarrelay.zrx_token() == self.zrx_token.address
-        assert self.radarrelay.token_transfer_proxy() == Address(self.token_transfer_proxy_address)
+        assert self.exchange is not None
+        assert self.exchange.address is not None
+        assert self.exchange.zrx_token() == self.zrx_token.address
+        assert self.exchange.token_transfer_proxy() == Address(self.token_transfer_proxy_address)
 
     def test_approval(self):
         # given
@@ -65,7 +64,7 @@ class TestRadarRelay:
         assert self.zrx_token.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) == Wad(0)
 
         # when
-        self.radarrelay.approve([token1], directly())
+        self.exchange.approve([token1], directly())
 
         # then
         assert token1.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) > Wad(0)
@@ -73,11 +72,11 @@ class TestRadarRelay:
 
     def test_create_order(self):
         # when
-        order = self.radarrelay.create_order(maker_token_amount=Wad.from_number(100),
-                                             taker_token_amount=Wad.from_number(2.5),
-                                             maker_token_address=Address("0x0202020202020202020202020202020202020202"),
-                                             taker_token_address=Address("0x0101010101010101010101010101010101010101"),
-                                             expiration=1763920792)
+        order = self.exchange.create_order(maker_token_amount=Wad.from_number(100),
+                                           taker_token_amount=Wad.from_number(2.5),
+                                           maker_token_address=Address("0x0202020202020202020202020202020202020202"),
+                                           taker_token_address=Address("0x0101010101010101010101010101010101010101"),
+                                           expiration=1763920792)
 
         # then
         assert order.maker == Address(self.web3.eth.defaultAccount)
@@ -88,7 +87,7 @@ class TestRadarRelay:
         assert order.taker_token_address == Address("0x0101010101010101010101010101010101010101")
         assert order.salt >= 0
         assert order.expiration == 1763920792
-        assert order.exchange_contract_address == self.radarrelay.address
+        assert order.exchange_contract_address == self.exchange.address
 
         # and
         # [fees should be zero by default]
@@ -98,14 +97,14 @@ class TestRadarRelay:
 
     def test_get_order_hash(self):
         # given
-        order = self.radarrelay.create_order(maker_token_amount=Wad.from_number(100),
-                                             taker_token_amount=Wad.from_number(2.5),
-                                             maker_token_address=Address("0x0202020202020202020202020202020202020202"),
-                                             taker_token_address=Address("0x0101010101010101010101010101010101010101"),
-                                             expiration=1763920792)
+        order = self.exchange.create_order(maker_token_amount=Wad.from_number(100),
+                                           taker_token_amount=Wad.from_number(2.5),
+                                           maker_token_address=Address("0x0202020202020202020202020202020202020202"),
+                                           taker_token_address=Address("0x0101010101010101010101010101010101010101"),
+                                           expiration=1763920792)
 
         # when
-        order_hash = self.radarrelay.get_order_hash(order)
+        order_hash = self.exchange.get_order_hash(order)
 
         # then
         assert order_hash.startswith('0x')
@@ -114,14 +113,14 @@ class TestRadarRelay:
     @pytest.mark.skip(reason='eth_sign is not implemented yet in eth-testrpc')
     def test_sign_order(self):
         # given
-        order = self.radarrelay.create_order(maker_token_amount=Wad.from_number(100),
-                                             taker_token_amount=Wad.from_number(2.5),
-                                             maker_token_address=Address("0x0202020202020202020202020202020202020202"),
-                                             taker_token_address=Address("0x0101010101010101010101010101010101010101"),
-                                             expiration=1763920792)
+        order = self.exchange.create_order(maker_token_amount=Wad.from_number(100),
+                                           taker_token_amount=Wad.from_number(2.5),
+                                           maker_token_address=Address("0x0202020202020202020202020202020202020202"),
+                                           taker_token_address=Address("0x0101010101010101010101010101010101010101"),
+                                           expiration=1763920792)
 
         # when
-        signed_order = self.radarrelay.sign_order(order)
+        signed_order = self.exchange.sign_order(order)
 
         # then
         assert signed_order.ec_signature_r.startswith('0x')
@@ -131,7 +130,7 @@ class TestRadarRelay:
         assert signed_order.ec_signature_v in [27, 28]
 
     def test_should_have_printable_representation(self):
-        assert repr(self.radarrelay) == f"RadarRelay()"
+        assert repr(self.exchange) == f"ZrxExchange('{self.exchange.address}')"
 
 
 class TestOrder:

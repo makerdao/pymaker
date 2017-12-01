@@ -15,20 +15,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import array
 import copy
 import random
 from pprint import pformat
 from typing import List, Optional
 
-import array
 import requests
 from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
 
-from pymaker.token import ERC20Token
-from pymaker.numeric import Wad
-from pymaker.logger import Logger
 from pymaker import Contract, Address, Transact
+from pymaker.logger import Logger
+from pymaker.numeric import Wad
+from pymaker.token import ERC20Token
 from pymaker.util import bytes_to_hexstring, hexstring_to_bytes
 
 
@@ -197,8 +197,8 @@ class Order:
         return pformat(vars(self))
 
 
-class RadarRelay(Contract):
-    """A client for the RadarRelay/0x exchange contract.
+class ZrxExchange(Contract):
+    """A client for the 0x exchange contract.
 
     You can find the source code of the `0x` exchange contract here:
     <https://etherscan.io/address/0x12459c951127e0c374ff9105dda097662a027093#code.
@@ -214,19 +214,19 @@ class RadarRelay(Contract):
     _ZERO_ADDRESS = Address("0x0000000000000000000000000000000000000000")
 
     @staticmethod
-    def deploy(web3: Web3,
-               zrx_token: Address,
-               token_transfer_proxy: Address):
-        """Deploy a new instance of the `RadarRelay` contract.
+    def deploy(web3: Web3, zrx_token: Address, token_transfer_proxy: Address):
+        """Deploy a new instance of the 0x `Exchange` contract.
 
         Args:
             web3: An instance of `Web` from `web3.py`.
+            zrx_token: The address of the ZRX token this exchange will use.
+            token_transfer_proxy: The address of the token transfer proxy this exchange will use.
 
         Returns:
-            A `RadarRelay` class instance.
+            A `ZrxExchange` class instance.
         """
-        return RadarRelay(web3=web3,
-                          address=Contract._deploy(web3, RadarRelay.abi, RadarRelay.bin, [
+        return ZrxExchange(web3=web3,
+                           address=Contract._deploy(web3, ZrxExchange.abi, ZrxExchange.bin, [
                               zrx_token.address,
                               token_transfer_proxy.address
                           ]))
@@ -351,13 +351,12 @@ class RadarRelay(Contract):
         return random.randint(1, 2**256 - 1)
 
     def __repr__(self):
-        return f"RadarRelay()"
+        return f"ZrxExchange('{self.address}')"
 
 
-class RadarRelayApi:
-    """A client for the RadarRelay API. Following the Standard Relayer API V0.
+class ZrxRelayerApi:
+    """A client for the Standard 0x Relayer API V0.
 
-    <https://radarrelay.com/standard-relayer-api>
     <https://github.com/0xProject/standard-relayer-api>
 
     Attributes:
@@ -365,8 +364,8 @@ class RadarRelayApi:
         api_server: Base URL of the Standard Relayer API server.
         logger: Instance of the :py:class:`pymaker.Logger` class for event logging.
     """
-    def __init__(self, exchange: RadarRelay, api_server: str, logger: Logger):
-        assert(isinstance(exchange, RadarRelay))
+    def __init__(self, exchange: ZrxExchange, api_server: str, logger: Logger):
+        assert(isinstance(exchange, ZrxExchange))
         assert(isinstance(api_server, str))
         assert(isinstance(logger, Logger))
 
@@ -412,4 +411,4 @@ class RadarRelayApi:
             return False
 
     def __repr__(self):
-        return f"RadarRelayApi()"
+        return f"ZrxRelayerApi()"
