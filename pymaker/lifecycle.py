@@ -20,7 +20,7 @@ import signal
 import threading
 import time
 
-from web3 import Web3
+from web3 import Web3, EthereumTesterProvider
 
 from pymaker import register_filter_thread, any_filter_thread_present, stop_all_filter_threads, all_filter_threads_alive
 from pymaker.logger import Logger
@@ -72,6 +72,11 @@ class Web3Lifecycle:
         exit(10 if self.fatal_termination else 0)
 
     def _wait_for_init(self):
+        # In unit-tests waiting for the note to sync does not work correctly.
+        # So we skip it.
+        if str(self.web3.providers[0]) == 'EthereumTesterProvider':
+            return
+
         # wait for the client to have at least one peer
         if self.web3.net.peerCount == 0:
             self.logger.info(f"Waiting for the node to have at least one peer...")
@@ -86,6 +91,11 @@ class Web3Lifecycle:
                 time.sleep(0.25)
 
     def _check_account_unlocked(self):
+        # In unit-tests checking if the account is unlocked does not work correctly.
+        # It is because the `eth_sign` call is not implemented. So we skip it.
+        if str(self.web3.providers[0]) == 'EthereumTesterProvider':
+            return
+
         try:
             self.web3.eth.sign(self.web3.eth.defaultAccount, "test")
         except:

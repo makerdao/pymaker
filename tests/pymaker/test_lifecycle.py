@@ -16,12 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+from mock import MagicMock, Mock
 from web3 import EthereumTesterProvider, Web3
 
 from pymaker import Address, Logger
 from pymaker.lifecycle import Web3Lifecycle
-from pymaker.numeric import Wad, Ray
-from tests.pymaker.helpers import is_hashable
 
 
 class TestLifecycle:
@@ -33,5 +32,32 @@ class TestLifecycle:
 
     def test_should_always_exit(self):
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            with Web3Lifecycle(self.web3, self.logger):
                 pass
+
+    def test_should_call_startup_callback(self):
+        # given
+        startup_mock = MagicMock()
+
+        # when
+        with pytest.raises(SystemExit):
+            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+                lifecycle.on_startup(startup_mock)
+
+        # then
+        startup_mock.assert_called()
+
+    def test_should_call_shutdown_callback(self):
+        # given
+        ordering = []
+        startup_mock = MagicMock(side_effect=lambda lifecycle: ordering.append('STARTUP'))
+        shutdown_mock = MagicMock(side_effect=lambda lifecycle: ordering.append('SHUTDOWN'))
+
+        # when
+        with pytest.raises(SystemExit):
+            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+                lifecycle.on_startup(startup_mock)
+                lifecycle.on_shutdown(shutdown_mock)
+
+        # then
+        assert ordering == ['STARTUP', 'SHUTDOWN']
