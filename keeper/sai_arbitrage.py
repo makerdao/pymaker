@@ -187,13 +187,20 @@ class SaiArbitrage(SaiKeeper):
 
     def execute_opportunity_step_by_step(self, opportunity: Sequence):
         """Execute the opportunity step-by-step."""
+
+        def incoming_transfer(our_address: Address):
+            return lambda transfer: transfer.to_address == our_address
+
+        def outgoing_transfer(our_address: Address):
+            return lambda transfer: transfer.from_address == our_address
+
         all_transfers = []
         for step in opportunity.steps:
             receipt = step.transact().transact(gas_price=self.gas_price)
             if receipt:
                 all_transfers += receipt.transfers
-                outgoing = TransferFormatter().format(filter(Transfer.outgoing(self.our_address), receipt.transfers))
-                incoming = TransferFormatter().format(filter(Transfer.incoming(self.our_address), receipt.transfers))
+                outgoing = TransferFormatter().format(filter(outgoing_transfer(self.our_address), receipt.transfers))
+                incoming = TransferFormatter().format(filter(incoming_transfer(self.our_address), receipt.transfers))
                 self.logger.info(f"Exchanged {outgoing} to {incoming}")
             else:
                 self.errors += 1

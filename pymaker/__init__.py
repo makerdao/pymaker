@@ -497,10 +497,5 @@ class Transfer:
                self.to_address == other.to_address and \
                self.value == other.value
 
-    @staticmethod
-    def incoming(our_address: Address):
-        return lambda transfer: transfer.to_address == our_address
-
-    @staticmethod
-    def outgoing(our_address: Address):
-        return lambda transfer: transfer.from_address == our_address
+    def __hash__(self):
+        return hash((self.token_address, self.from_address, self.token_address, self.value))
