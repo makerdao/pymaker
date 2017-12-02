@@ -25,6 +25,7 @@ from keeper import Config
 from pymaker import Address
 from pymaker.approval import directly
 from pymaker.auth import DSGuard
+from pymaker.etherdelta import EtherDelta
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad
 from pymaker.oasis import MatchingMarket
@@ -81,7 +82,15 @@ class Deployment:
         tub = Tub.deploy(web3, jar, jug, pot.address, pit.address, tip)
         tap = Tap.deploy(web3, tub.address, pit.address)
         top = Top.deploy(web3, tub.address, tap.address)
+
         otc = MatchingMarket.deploy(web3, 2600000000)
+        etherdelta = EtherDelta.deploy(web3,
+                                       admin=Address('0x1111100000999998888877777666665555544444'),
+                                       fee_account=Address('0x8888877777666665555544444111110000099999'),
+                                       account_levels_addr=Address('0x6666655555444441111188888777770000099999'),
+                                       fee_make=Wad.from_number(0.01),
+                                       fee_take=Wad.from_number(0.02),
+                                       fee_rebate=Wad.from_number(0.03))
 
         # set permissions
         dad.permit(DSGuard.ANY, DSGuard.ANY, DSGuard.ANY).transact()
@@ -108,6 +117,7 @@ class Deployment:
         self.tap = tap
         self.top = top
         self.otc = otc
+        self.etherdelta = etherdelta
 
     def reset(self):
         """Rollbacks all changes made since the initial deployment."""
