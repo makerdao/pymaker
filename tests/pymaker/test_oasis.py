@@ -65,7 +65,7 @@ class GeneralMarketTest:
         # and
         assert self.otc.get_orders() == [self.otc.get_order(1)]
 
-    def test_offer_comparison(self):
+    def test_order_comparison(self):
         # when
         self.otc.approve([self.token1], directly())
         self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
