@@ -427,6 +427,10 @@ class TestTop:
         assert deployment.top == Top(web3=deployment.web3, address=deployment.top.address)
         assert deployment.top != Top(web3=deployment.web3, address=deployment.tub.address)
 
+    def test_default_fix(self, deployment: Deployment):
+        # expect
+        assert deployment.top.fix() == Ray.from_number(0)
+
     def test_cage_without_price(self, deployment: Deployment):
         # given
         deployment.tub.join(Wad.from_number(10)).transact()
