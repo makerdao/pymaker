@@ -7,9 +7,6 @@
       "saiTop": "0xc25789084005dc4ed6be033a943f2c2f3efafcc1",
       "auctionManager": "0xD0Abb0e61A905a50b21Bf4c74F39B9e101469365"
     },
-    "etherDelta": {
-      "contract": "0xF4Ff487adA7bb29603077216082DA7f4bA989854"
-    },
     "0x": {
       "etherToken": "0x05d090b51c40b020eab3bfcb6a2dff130df22e9c",
       "exchange": "0x90fe2af704b34e0224bf2299c838e04d4dcf1364"
@@ -21,10 +18,6 @@
       "saiTub": "0xe819300b6f3d0625632b47196233fe6671a59891",
       "saiTap": "0x897c798c096d44e511a275153da9de6139ebc249",
       "saiTop": "0x92bfd0e786e284429c96cf6a6e4a3ecf46fb3e9a"
-    },
-    "etherDelta": {
-      "contract": "0x8d12A197cB00D4747a1fe03395095ce2A5CC6819",
-      "apiServer": "https://socket.etherdelta.com"
     },
     "radarRelay": {
       "apiServer": "https://api.radarrelay.com/0x"
