@@ -152,24 +152,22 @@ class Order:
         }
 
     def __eq__(self, other):
-        if isinstance(other, Order):
-            return self.maker == other.maker and \
-                   self.taker == other.taker and \
-                   self.maker_fee == other.maker_fee and \
-                   self.taker_fee == other.taker_fee and \
-                   self.maker_token_amount == other.maker_token_amount and \
-                   self.taker_token_amount == other.taker_token_amount and \
-                   self.maker_token_address == other.maker_token_address and \
-                   self.taker_token_address == other.taker_token_address and \
-                   self.salt == other.salt and \
-                   self.fee_recipient == other.fee_recipient and \
-                   self.expiration == other.expiration and \
-                   self.exchange_contract_address == other.exchange_contract_address and \
-                   self.ec_signature_r == other.ec_signature_r and \
-                   self.ec_signature_s == other.ec_signature_s and \
-                   self.ec_signature_v == other.ec_signature_v
-        else:
-            return False
+        assert(isinstance(other, Order))
+        return self.maker == other.maker and \
+               self.taker == other.taker and \
+               self.maker_fee == other.maker_fee and \
+               self.taker_fee == other.taker_fee and \
+               self.maker_token_amount == other.maker_token_amount and \
+               self.taker_token_amount == other.taker_token_amount and \
+               self.maker_token_address == other.maker_token_address and \
+               self.taker_token_address == other.taker_token_address and \
+               self.salt == other.salt and \
+               self.fee_recipient == other.fee_recipient and \
+               self.expiration == other.expiration and \
+               self.exchange_contract_address == other.exchange_contract_address and \
+               self.ec_signature_r == other.ec_signature_r and \
+               self.ec_signature_s == other.ec_signature_s and \
+               self.ec_signature_v == other.ec_signature_v
 
     def __hash__(self):
         return hash((self.maker,
