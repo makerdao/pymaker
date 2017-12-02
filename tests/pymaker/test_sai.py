@@ -16,9 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pymaker import Address
+from pymaker.deployment import Deployment
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray
-from pymaker.deployment import Deployment
+from pymaker.sai import Tub, Tap, Top
 
 
 class TestTub:
@@ -318,6 +319,11 @@ class TestTub:
         assert deployment.tub.jar_bid() == Ray.from_number(0.95)
         assert deployment.tub.jar_ask() == Ray.from_number(1.05)
 
+    def test_comparison(self, deployment: Deployment):
+        # expect
+        assert deployment.tub == deployment.tub
+        assert deployment.tub == Tub(web3=deployment.web3, address=deployment.tub.address)
+
 
 class TestTap:
     def test_jump_and_gap(self, deployment: Deployment):
@@ -406,3 +412,17 @@ class TestTap:
         assert deployment.tap.woe() == Wad.from_number(700)
         assert deployment.skr.balance_of(deployment.our_address) == Wad.from_number(8)
         assert deployment.sai.balance_of(deployment.our_address) == Wad.from_number(700)
+
+    def test_comparison(self, deployment: Deployment):
+        # expect
+        assert deployment.tap == deployment.tap
+        assert deployment.tap == Tap(web3=deployment.web3, address=deployment.tap.address)
+        assert deployment.tap != Tap(web3=deployment.web3, address=deployment.tub.address)
+
+
+class TestTop:
+    def test_comparison(self, deployment: Deployment):
+        # expect
+        assert deployment.top == deployment.top
+        assert deployment.top == Top(web3=deployment.web3, address=deployment.top.address)
+        assert deployment.top != Top(web3=deployment.web3, address=deployment.tub.address)

@@ -685,7 +685,7 @@ class Tub(Contract):
 
     def __eq__(self, other):
         assert(isinstance(other, Tub))
-        return self.address == other.addressTub
+        return self.address == other.address
 
     def __repr__(self):
         return f"Tub('{self.address}')"
