@@ -370,7 +370,7 @@ pytest
 In order simplify keeper development, a set of APIs has been developed around the core contracts
 of the _SAI Stablecoin_ ecosystem. The current version provides APIs around:
 * `ERC20Token`,
-* `Tub`, `Tap`, `Top` and `Lpc` (<https://github.com/makerdao/sai>),
+* `Tub`, `Tap` and `Top` (<https://github.com/makerdao/sai>),
 * `SimpleMarket`, `ExpiringMarket` and `MatchingMarket` (<https://github.com/makerdao/maker-otc>),
 * `TxManager` (<https://github.com/reverendus/tx-manager>),
 * `DSGuard` (<https://github.com/dapphub/ds-guard>),

@@ -16,13 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pymaker import Address
-from pymaker.numeric import Ray
-from pymaker.numeric import Wad
-from pymaker.oasis import OfferInfo
-from pymaker.oasis import SimpleMarket
+from pymaker.numeric import Wad, Ray
+from pymaker.oasis import SimpleMarket, OfferInfo
+from pymaker.sai import Tub, Tap
 from pymaker.token import ERC20Token
-
-from pymaker.sai import Tub, Lpc, Tap
 
 
 class Conversion:
@@ -137,44 +134,6 @@ class TubBustConversion(Conversion):
 
     def transact(self):
         return self.tap.bust(self.target_amount)
-
-
-class LpcTakeRefConversion(Conversion):
-    def __init__(self, lpc: Lpc):
-        self.lpc = lpc
-        rate = Ray(self.lpc.tag() / (self.lpc.par() * self.lpc.gap()))
-        #TODO we always leave 0.000001 in the liquidity pool, in case of some rounding errors
-        max_entry_alt = Wad.max((ERC20Token(web3=lpc.web3, address=lpc.ref()).balance_of(lpc.address) / Wad(rate)) - Wad.from_number(0.000001), Wad.from_number(0))
-        super().__init__(source_token=self.lpc.alt(),
-                         target_token=self.lpc.ref(),
-                         rate=rate,
-                         max_source_amount=max_entry_alt,
-                         method="lpc.take(ref)")
-
-    def name(self):
-        return f"lpc.take(ref, '{self.target_amount}')"
-
-    def transact(self):
-        return self.lpc.take(self.lpc.ref(), self.target_amount)
-
-
-class LpcTakeAltConversion(Conversion):
-    def __init__(self, lpc: Lpc):
-        self.lpc = lpc
-        rate = Ray(self.lpc.par() / (self.lpc.tag() * self.lpc.gap()))
-        #TODO we always leave 0.000001 in the liquidity pool, in case of some rounding errors
-        max_entry_ref = Wad.max((ERC20Token(web3=lpc.web3, address=lpc.alt()).balance_of(lpc.address) / Wad(rate)) - Wad.from_number(0.000001), Wad.from_number(0))
-        super().__init__(source_token=self.lpc.ref(),
-                         target_token=self.lpc.alt(),
-                         rate=rate,
-                         max_source_amount=max_entry_ref,
-                         method="lpc.take(alt)")
-
-    def name(self):
-        return f"lpc.take(alt, '{self.target_amount}')"
-
-    def transact(self):
-        return self.lpc.take(self.lpc.alt(), self.target_amount)
 
 
 class OasisTakeConversion(Conversion):

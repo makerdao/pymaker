@@ -16,23 +16,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import sys
 from typing import List
 
-import sys
-
-from pymaker import Address, Transfer
-from pymaker.approval import via_tx_manager, directly
-from pymaker.numeric import Ray
-from pymaker.numeric import Wad
-from pymaker.transactional import TxManager
-
-from pymaker.token import ERC20Token
 from keeper.conversion import Conversion
 from keeper.conversion import OasisTakeConversion
 from keeper.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion
 from keeper.opportunity import OpportunityFinder, Sequence
 from keeper.sai import SaiKeeper
 from keeper.transfer_formatter import TransferFormatter
+from pymaker import Address
+from pymaker.approval import via_tx_manager, directly
+from pymaker.numeric import Ray
+from pymaker.numeric import Wad
+from pymaker.token import ERC20Token
+from pymaker.transactional import TxManager
 
 
 class SaiArbitrage(SaiKeeper):

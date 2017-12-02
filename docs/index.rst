@@ -108,10 +108,10 @@ Approvals
 Contracts
 ---------
 
-SAI Stablecoin
+Stablecoin
 ~~~~~~~~~~~~~~
 
-The two core smart contracts of the `SAI Stablecoin System` are ``Tub`` and ``Lpc``.
+The core smart contract of the `SAI Stablecoin System` is ``Tub``.
 
 .. toctree::
     api.sai
