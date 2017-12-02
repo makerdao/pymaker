@@ -17,8 +17,8 @@
 
 import pytest
 
-from keeper import Wad
 from pymaker import Address, Calldata, Receipt, Transfer
+from pymaker.numeric import Wad
 from tests.pymaker.helpers import is_hashable
 
 

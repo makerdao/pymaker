@@ -24,7 +24,7 @@ from typing import Optional
 
 import eth_utils
 import pkg_resources
-from web3 import Web3, EthereumTesterProvider
+from web3 import Web3
 from web3.utils.events import get_event_data
 
 from pymaker.gas import DefaultGasPrice, GasPrice
@@ -106,13 +106,22 @@ class Contract:
     logger = Logger('-', '-')
 
     @staticmethod
-    def _deploy(web3: Web3, abi: dict, bytecode: str, args) -> Address:
-        contract_factory = web3.eth.contract(abi=abi, bytecode=bytecode)
-        tx_hash = contract_factory.deploy(args=args)
+    def _deploy(web3: Web3, abi: list, bytecode: bytes, args: list) -> Address:
+        assert(isinstance(web3, Web3))
+        assert(isinstance(abi, list))
+        assert(isinstance(bytecode, bytes))
+        assert(isinstance(args, list))
+
+        tx_hash = web3.eth.contract(abi=abi, bytecode=bytecode).deploy(args=args)
         receipt = web3.eth.getTransactionReceipt(tx_hash)
         return Address(receipt['contractAddress'])
 
-    def _get_contract(self, web3: Web3, abi: dict, address: Address):
+    @staticmethod
+    def _get_contract(web3: Web3, abi: list, address: Address):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(abi, list))
+        assert(isinstance(address, Address))
+
         code = web3.eth.getCode(address.address)
         if (code == "0x") or (code is None):
             raise Exception(f"No contract found at {address}")
@@ -147,11 +156,11 @@ class Contract:
         return callback
 
     @staticmethod
-    def _load_abi(package, resource) -> dict:
+    def _load_abi(package, resource) -> list:
         return json.loads(pkg_resources.resource_string(package, resource))
 
     @staticmethod
-    def _load_bin(package, resource) -> str:
+    def _load_bin(package, resource) -> bytes:
         return pkg_resources.resource_string(package, resource)
 
 
@@ -202,6 +211,7 @@ class Receipt:
     """Represents a receipt for an Ethereum transaction.
 
     Attributes:
+        raw_receipt: Raw receipt received from the Ethereum node.
         transaction_hash: Hash of the Ethereum transaction.
         gas_used: Amount of gas used by the Ethereum transaction.
         transfers: A list of ERC20 token transfers resulting from the execution
@@ -236,14 +246,23 @@ class Receipt:
 class Transact:
     """Represents an Ethereum transaction before it gets executed."""
 
-    def __init__(self, origin, web3, abi, address, contract, function_name, parameters, extra=None):
+    def __init__(self,
+                 origin: object,
+                 web3: Web3,
+                 abi: list,
+                 address: Address,
+                 contract: object,
+                 function_name: str,
+                 parameters: list,
+                 extra: Optional[dict] = None):
         assert(isinstance(origin, object))
         assert(isinstance(web3, Web3))
-        assert(isinstance(abi, object))
+        assert(isinstance(abi, list))
         assert(isinstance(address, Address))
         assert(isinstance(contract, object))
         assert(isinstance(function_name, str))
         assert(isinstance(parameters, list))
+        assert(isinstance(extra, dict) or (extra is None))
 
         self.origin = origin
         self.logger = origin.logger
@@ -280,10 +299,6 @@ class Transact:
             return gas_estimate + 100000
 
     def _func(self, gas: int, gas_price: Optional[int], nonce: Optional[int]):
-        # Until https://github.com/pipermerriam/eth-testrpc/issues/98 issue is not resolved,
-        # `eth-testrpc` does not handle the `nonce` parameter properly so we do have to
-        # ignore it otherwise unit-tests will not pass. Hopefully we will be able to get
-        # rid of it once the above issue is solved.
         gas_price_dict = {'gasPrice': gas_price} if gas_price is not None else {}
         nonce_dict = {'nonce': nonce} if nonce is not None else {}
 
@@ -292,10 +307,10 @@ class Transact:
             __getattr__(self.function_name)(*self.parameters)
 
     def name(self) -> str:
-        """Returns the nicely formatted name (description) of this pending Ethereum transaction.
+        """Returns the nicely formatted name of this pending Ethereum transaction.
 
         Returns:
-            Nicely formatted name (description) of this pending Ethereum transaction.
+            Nicely formatted name of this pending Ethereum transaction.
         """
         name = f"{repr(self.origin)}.{self.function_name}({self.parameters})"
         return name if self.extra is None else name + f" with {self.extra}"
