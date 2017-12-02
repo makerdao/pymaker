@@ -44,8 +44,12 @@ class ReloadableConfig:
         self.logger = logger
         self._checksum = None
 
-    def get_config(self) -> dict:
-        """Reads the JSON config file from disk and returns it as a Python `dict`."""
+    def get_config(self):
+        """Reads the JSON config file from disk and returns it as a Python object.
+
+        Returns:
+            Current configuration as a `dict` or `list` object.
+        """
         with open(self.filename) as data_file:
             content_file = data_file.read()
             content_config = _jsonnet.evaluate_snippet("snippet", content_file, ext_vars={})

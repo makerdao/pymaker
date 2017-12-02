@@ -20,7 +20,7 @@ import signal
 import threading
 import time
 
-from web3 import Web3, EthereumTesterProvider
+from web3 import Web3
 
 from pymaker import register_filter_thread, any_filter_thread_present, stop_all_filter_threads, all_filter_threads_alive
 from pymaker.logger import Logger
@@ -104,9 +104,23 @@ class Web3Lifecycle:
             exit(-1)
 
     def on_startup(self, callback):
+        """Register the specified callback to be run on keeper startup.
+
+        Args:
+            callback: Function to be called on keeper startup.
+        """
+        assert(callable(callback))
+
         self.startup_function = callback
 
     def on_shutdown(self, callback):
+        """Register the specified callback to be run on keeper shutdown.
+
+        Args:
+            callback: Function to be called on keeper shutdown.
+        """
+        assert(callable(callback))
+
         self.shutdown_function = callback
 
     def terminate(self, message=None):

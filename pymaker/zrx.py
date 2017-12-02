@@ -232,6 +232,7 @@ class ZrxExchange(Contract):
                           ]))
 
     def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
         assert(isinstance(address, Address))
 
         self.web3 = web3
@@ -255,6 +256,23 @@ class ZrxExchange(Contract):
         return Address(self._contract.call().TOKEN_TRANSFER_PROXY_CONTRACT())
 
     def approve(self, tokens: List[ERC20Token], approval_function):
+        """Approve the 0x Exchange TokenTransferProxy contract to fully access balances of specified tokens.
+
+        In case of 0x, it's the TokenTransferProxy contract that actually gets the approvals,
+        not the 0x Exchange contract itself. In addition to the tokens specified as the `tokens`
+        parameter, the ZRX token always gets approved as well as without it the 0x Exchange
+        contract wouldn't be able to charge maker and taker fees.
+
+        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+        in `pymaker.approval`.
+
+        Args:
+            tokens: List of :py:class:`pymaker.token.ERC20Token` class instances.
+            approval_function: Approval function (i.e. approval mode).
+        """
+        assert(isinstance(tokens, list))
+        assert(callable(approval_function))
+
         for token in tokens + [ERC20Token(web3=self.web3, address=self.zrx_token())]:
             approval_function(token, self.token_transfer_proxy(), '0x Exchange contract')
 

@@ -34,6 +34,16 @@ from pymaker.vault import DSVault
 
 
 def deploy_contract(web3: Web3, contract_name: str, args: Optional[list]=None) -> Address:
+    """Deploys a new contract.
+
+    Args:
+        web3: An instance of `Web` from `web3.py`.
+        contract_name: Name of the contract, used to find the `abi` and `bin` files.
+        args: Optional list of contract constructor parameters.
+
+    Returns:
+        Ethereum address of the newly deployed contract, as a :py:class:`pymaker.Address` instance.
+    """
     assert(isinstance(web3, Web3))
     assert(isinstance(contract_name, str))
     assert(isinstance(args, list) or (args is None))

@@ -50,6 +50,9 @@ class TxManager(Contract):
     bin = Contract._load_bin(__name__, 'abi/TxManager.bin')
 
     def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(address, Address))
+
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
@@ -59,6 +62,18 @@ class TxManager(Contract):
         return TxManager(web3=web3, address=Contract._deploy(web3, TxManager.abi, TxManager.bin, []))
 
     def approve(self, tokens: List[ERC20Token], approval_function):
+        """Approve the TxManager contract to fully access balances of specified tokens.
+
+        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+        in `pymaker.approval`.
+
+        Args:
+            tokens: List of :py:class:`pymaker.token.ERC20Token` class instances.
+            approval_function: Approval function (i.e. approval mode).
+        """
+        assert(isinstance(tokens, list))
+        assert(callable(approval_function))
+
         for token in tokens:
             approval_function(token, self.address, 'TxManager')
 

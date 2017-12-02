@@ -75,6 +75,9 @@ class Tub(Contract):
     abiJug = Contract._load_abi(__name__, 'abi/SaiJug.abi')
 
     def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(address, Address))
+
         self.web3 = web3
         self.address = address
         self._contractTub = self._get_contract(web3, self.abiTub, address)
@@ -100,6 +103,16 @@ class Tub(Contract):
         Transact(self, self.web3, self.abiJug, self.jug(), self._contractJug, 'setAuthority', [address.address]).transact()
 
     def approve(self, approval_function):
+        """Approve the SAI contracts to access our GEM, SKR and SAI balances.
+
+        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+        in `pymaker.approval`.
+
+        Args:
+            approval_function: Approval function (i.e. approval mode).
+        """
+        assert(callable(approval_function))
+
         approval_function(ERC20Token(web3=self.web3, address=self.gem()), self.jar(), 'Tub.jar')
         approval_function(ERC20Token(web3=self.web3, address=self.skr()), self.jar(), 'Tub.jar')
         approval_function(ERC20Token(web3=self.web3, address=self.sai()), self.pot(), 'Tub.pot')
@@ -690,6 +703,9 @@ class Tap(Contract):
     bin = Contract._load_bin(__name__, 'abi/Tap.bin')
 
     def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(address, Address))
+
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
@@ -819,6 +835,9 @@ class Top(Contract):
     bin = Contract._load_bin(__name__, 'abi/Top.bin')
 
     def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(address, Address))
+
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
@@ -874,6 +893,9 @@ class Lpc(Contract):
     abiTip = Contract._load_abi(__name__, 'abi/Tip.abi')
 
     def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(address, Address))
+
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)

@@ -54,6 +54,9 @@ class DSValue(Contract):
         return DSValue(web3=web3, address=Contract._deploy(web3, DSValue.abi, DSValue.bin, []))
 
     def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(address, Address))
+
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)

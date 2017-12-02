@@ -168,6 +168,9 @@ class SimpleMarket(Contract):
     bin = Contract._load_bin(__name__, 'abi/SimpleMarket.bin')
 
     def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(address, Address))
+
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
@@ -178,7 +181,7 @@ class SimpleMarket(Contract):
         """Deploy a new instance of the `SimpleMarket` contract.
 
         Args:
-            web3: An instance of `Web` from `web3.py`.
+            web3: An instance of `Web3` from `web3.py`.
 
         Returns:
             A `SimpleMarket` class instance.
@@ -186,31 +189,59 @@ class SimpleMarket(Contract):
         return SimpleMarket(web3=web3, address=Contract._deploy(web3, SimpleMarket.abi, SimpleMarket.bin, []))
 
     def approve(self, tokens: List[ERC20Token], approval_function):
+        """Approve the OasisDEX contract to fully access balances of specified tokens.
+
+        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+        in `pymaker.approval`.
+
+        Args:
+            tokens: List of :py:class:`pymaker.token.ERC20Token` class instances.
+            approval_function: Approval function (i.e. approval mode).
+        """
+        assert(isinstance(tokens, list))
+        assert(callable(approval_function))
+
         for token in tokens:
             approval_function(token, self.address, 'OasisDEX')
 
     def on_make(self, handler):
+        assert(callable(handler))
+
         self._on_event(self._contract, 'LogMake', LogMake, handler)
 
     def on_bump(self, handler):
+        assert(callable(handler))
+
         self._on_event(self._contract, 'LogBump', LogBump, handler)
 
     def on_take(self, handler):
+        assert(callable(handler))
+
         self._on_event(self._contract, 'LogTake', LogTake, handler)
 
     def on_kill(self, handler):
+        assert(callable(handler))
+
         self._on_event(self._contract, 'LogKill', LogKill, handler)
 
     def past_make(self, number_of_past_blocks: int) -> List[LogMake]:
+        assert(isinstance(number_of_past_blocks, int))
+
         return self._past_events(self._contract, 'LogMake', LogMake, number_of_past_blocks)
 
     def past_bump(self, number_of_past_blocks: int) -> List[LogBump]:
+        assert(isinstance(number_of_past_blocks, int))
+
         return self._past_events(self._contract, 'LogBump', LogBump, number_of_past_blocks)
 
     def past_take(self, number_of_past_blocks: int) -> List[LogTake]:
+        assert(isinstance(number_of_past_blocks, int))
+
         return self._past_events(self._contract, 'LogTake', LogTake, number_of_past_blocks)
 
     def past_kill(self, number_of_past_blocks: int) -> List[LogKill]:
+        assert(isinstance(number_of_past_blocks, int))
+
         return self._past_events(self._contract, 'LogKill', LogKill, number_of_past_blocks)
 
     def get_last_offer_id(self) -> int:

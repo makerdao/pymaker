@@ -19,25 +19,40 @@ import hashlib
 import json
 import random
 import threading
+import time
+from fcntl import fcntl, F_GETFL, F_SETFL
 from os import O_NONBLOCK, read
 from pprint import pformat
 from subprocess import Popen, PIPE
-from typing import Optional, List
-from fcntl import fcntl, F_GETFL, F_SETFL
+from typing import List
 
-import time
 from eth_abi.encoding import get_single_encoder
 from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
 
 from pymaker import Contract, Address, Transact
-from pymaker import Logger
+from pymaker.logger import Logger
 from pymaker.numeric import Wad
 from pymaker.token import ERC20Token
 from pymaker.util import bytes_to_hexstring, hexstring_to_bytes
 
 
 class Order:
+    """An off-chain order placed on the EtherDelta exchange.
+
+    Attributes:
+        ether_delta: Reference to the EtherDelta object.
+        token_get: Address of the ERC20 token to be bought.
+        amount_get: Amount of the `token_get` to be bought.
+        token_give: Address of the ERC20 token put on sale.
+        amount_give: Amount of the `token_give` token put on sale.
+        expires: The block number after which the order will expire.
+        nonce: Nonce number, used to make orders similar unique and randomize signatures.
+        user: Order creator.
+        v: V component of the order signature.
+        r: R component of the order signature.
+        s: S component of the order signature.
+    """
     def __init__(self, ether_delta, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int,
                  nonce: int, user: Address, v: int, r: bytes, s: bytes):
 
@@ -181,6 +196,7 @@ class EtherDelta(Contract):
                           ]))
 
     def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
         assert(isinstance(address, Address))
 
         self.web3 = web3
@@ -188,6 +204,18 @@ class EtherDelta(Contract):
         self._contract = self._get_contract(web3, self.abi, address)
 
     def approve(self, tokens: List[ERC20Token], approval_function):
+        """Approve the EtherDelta contract to fully access balances of specified tokens.
+
+        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+        in `pymaker.approval`.
+
+        Args:
+            tokens: List of :py:class:`pymaker.token.ERC20Token` class instances.
+            approval_function: Approval function (i.e. approval mode).
+        """
+        assert(isinstance(tokens, list))
+        assert(callable(approval_function))
+
         for token in tokens:
             approval_function(token, self.address, 'EtherDelta')
 
@@ -216,12 +244,29 @@ class EtherDelta(Contract):
         return Address(self._contract.call().accountLevelsAddr())
 
     def fee_make(self) -> Wad:
+        """Returns the maker fee configured in the contract.
+
+        Returns:
+            The maker fee.
+        """
         return Wad(self._contract.call().feeMake())
 
     def fee_take(self) -> Wad:
+        """Returns the taker fee configured in the contract.
+
+        Returns:
+            The taker fee.
+        """
         return Wad(self._contract.call().feeTake())
 
     def fee_rebate(self) -> Wad:
+        """Returns the rebate fee configured in the contract.
+
+        Plase see the contract source code for more details.
+
+        Returns:
+            The rebate fee.
+        """
         return Wad(self._contract.call().feeRebate())
 
     def deposit(self, amount: Wad) -> Transact:
@@ -335,7 +380,7 @@ class EtherDelta(Contract):
             expires: The block number after which the order will expire.
 
         Returns:
-            Newly created order as an instance of the `OffChainOrder` class.
+            Newly created order as an instance of the :py:class:`pymaker.etherdelta.Order` class.
         """
 
         def encode_address(address: Address) -> bytes:
@@ -555,7 +600,7 @@ class EtherDeltaApi:
 
     @staticmethod
     def _set_nonblock(pipe):
-        flags = fcntl(pipe, F_GETFL) # get current p.stdout flags
+        flags = fcntl(pipe, F_GETFL)  # get current p.stdout flags
         fcntl(pipe, F_SETFL, flags | O_NONBLOCK)
 
     def publish_order(self, order: Order):
