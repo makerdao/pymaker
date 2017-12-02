@@ -15,12 +15,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pymaker import Address, Wad, Contract, Calldata, Transact
-from pymaker.numeric import Ray
-from pymaker.util import int_to_bytes32
+from typing import Optional
+
 from web3 import Web3
 
+from pymaker import Address, Contract, Transact
+from pymaker.numeric import Wad, Ray
 from pymaker.token import ERC20Token
+from pymaker.util import int_to_bytes32
 
 
 class Cup:
@@ -860,7 +862,21 @@ class Top(Contract):
         """
         return Ray(self._contract.call().fix())
 
-    # TODO cage
+    def cage(self, price: Optional[Wad] = None) -> Transact:
+        """Force settlement of the system at a current or given price (sai per gem).
+
+        Args:
+            price: The settlement price (SAI per GEM), or `None` if current price should be used.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
+        assert(isinstance(price, Wad) or price is None)
+        if price:
+            return Transact(self, self.web3, self.abi, self.address, self._contract, 'cage', [price.value])
+        else:
+            return Transact(self, self.web3, self.abi, self.address, self._contract, 'cage', [])
+
     # TODO cash
     # TODO vent
 

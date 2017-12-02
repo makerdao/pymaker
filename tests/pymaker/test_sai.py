@@ -426,3 +426,37 @@ class TestTop:
         assert deployment.top == deployment.top
         assert deployment.top == Top(web3=deployment.web3, address=deployment.top.address)
         assert deployment.top != Top(web3=deployment.web3, address=deployment.tub.address)
+
+    def test_cage_without_price(self, deployment: Deployment):
+        # given
+        deployment.tub.join(Wad.from_number(10)).transact()
+        deployment.tub.cork(Wad.from_number(100000)).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
+
+        # and
+        deployment.tub.open().transact()
+        deployment.tub.lock(1, Wad.from_number(4)).transact()
+        deployment.tub.draw(1, Wad.from_number(1000)).transact()
+
+        # when
+        deployment.top.cage().transact()
+
+        # then
+        assert deployment.top.fix() == Ray.from_number(0.004)
+
+    def test_cage_with_price(self, deployment: Deployment):
+        # given
+        deployment.tub.join(Wad.from_number(10)).transact()
+        deployment.tub.cork(Wad.from_number(100000)).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
+
+        # and
+        deployment.tub.open().transact()
+        deployment.tub.lock(1, Wad.from_number(4)).transact()
+        deployment.tub.draw(1, Wad.from_number(1000)).transact()
+
+        # when
+        deployment.top.cage(Wad.from_number(200)).transact()
+
+        # then
+        assert deployment.top.fix() == Ray.from_number(0.005)
