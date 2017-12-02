@@ -88,6 +88,23 @@ class TestSaiTopUpBehaviour:
             deployment.sai.transfer(Address('0x0000000000111111111100000000001111111111'),
                                     deployment.sai.balance_of(deployment.our_address) - Wad.from_number(balance)).transact()
 
+    def test_should_not_crash_on_empty_cdps(self, deployment: Deployment):
+        # given
+        deployment.tub.open().transact()
+
+        # and
+        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
+                          web3=deployment.web3, config=deployment.get_config())
+        keeper.approve()
+
+        # when
+        self.set_price(deployment, 276)
+        # and
+        keeper.check_all_cups()
+
+        # then
+        # [nothing bad happens]
+
     def test_should_top_up_if_collateralization_too_low_and_sai_below_max(self, deployment: Deployment):
         # given
         self.open_cdp(deployment, eth_amount=40, sai_amount=5000)
