@@ -18,9 +18,10 @@
 import pytest
 from web3 import Web3, EthereumTesterProvider
 
-from pymaker import Address, synchronize
+from pymaker import Address
 from pymaker.numeric import Wad
 from pymaker.token import DSToken
+from pymaker.util import synchronize
 
 
 class TestTransact:
