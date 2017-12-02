@@ -16,21 +16,33 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
+from typing import Optional
 
 import pkg_resources
-from web3 import EthereumTesterProvider
-from web3 import Web3
+from web3 import Web3, EthereumTesterProvider
 
 from keeper import Config
 from pymaker import Address
-from pymaker import Wad
 from pymaker.approval import directly
 from pymaker.auth import DSGuard
 from pymaker.feed import DSValue
+from pymaker.numeric import Wad
 from pymaker.oasis import MatchingMarket
 from pymaker.sai import Tub, Tap, Top
 from pymaker.token import DSToken
 from pymaker.vault import DSVault
+
+
+def deploy_contract(web3: Web3, contract_name: str, args: Optional[list]=None) -> Address:
+    assert(isinstance(web3, Web3))
+    assert(isinstance(contract_name, str))
+    assert(isinstance(args, list) or (args is None))
+
+    abi = json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/{contract_name}.abi'))
+    bytecode = pkg_resources.resource_string('pymaker.deployment', f'abi/{contract_name}.bin')
+    tx_hash = web3.eth.contract(abi=abi, bytecode=bytecode).deploy(args=args)
+    receipt = web3.eth.getTransactionReceipt(tx_hash)
+    return Address(receipt['contractAddress'])
 
 
 class Deployment:
@@ -41,15 +53,6 @@ class Deployment:
     unit tests for individual keepers.
     """
     def __init__(self):
-
-        #TODO duplicate of the deploy method in test_radarrelay.py
-        def deploy(web3, contract_name, args=None):
-            contract_factory = web3.eth.contract(abi=json.loads(pkg_resources.resource_string('pymaker.feed', f'abi/{contract_name}.abi')),
-                                                 bytecode=pkg_resources.resource_string('pymaker.feed', f'abi/{contract_name}.bin'))
-            tx_hash = contract_factory.deploy(args=args)
-            receipt = web3.eth.getTransactionReceipt(tx_hash)
-            return receipt['contractAddress']
-
         web3 = Web3(EthereumTesterProvider())
         web3.eth.defaultAccount = web3.eth.accounts[0]
         our_address = Address(web3.eth.defaultAccount)
@@ -60,12 +63,12 @@ class Deployment:
         skr = DSToken.deploy(web3, 'SKR')
         pot = DSVault.deploy(web3)
         pit = DSVault.deploy(web3)
-        tip = deploy(web3, 'Tip')
+        tip = deploy_contract(web3, 'Tip')
         dad = DSGuard.deploy(web3)
-        jug = deploy(web3, 'SaiJug', [sai.address.address, sin.address.address])
-        jar = deploy(web3, 'SaiJar', [skr.address.address, gem.address.address, pip.address.address])
+        jug = deploy_contract(web3, 'SaiJug', [sai.address.address, sin.address.address])
+        jar = deploy_contract(web3, 'SaiJar', [skr.address.address, gem.address.address, pip.address.address])
 
-        tub = Tub.deploy(web3, Address(jar), Address(jug), pot.address, pit.address, Address(tip))
+        tub = Tub.deploy(web3, jar, jug, pot.address, pit.address, tip)
         tap = Tap.deploy(web3, tub.address, pit.address)
         top = Top.deploy(web3, tub.address, tap.address)
         otc = MatchingMarket.deploy(web3, 2600000000)

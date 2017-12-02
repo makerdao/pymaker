@@ -17,42 +17,33 @@
 
 import json
 
-import pkg_resources
 import pytest
 from web3 import EthereumTesterProvider, Web3
 
-from keeper import Wad
 from pymaker import Address
 from pymaker.approval import directly
+from pymaker.deployment import deploy_contract
+from pymaker.numeric import Wad
 from pymaker.token import DSToken, ERC20Token
 from pymaker.zrx import ZrxExchange, Order
 from tests.pymaker.helpers import is_hashable
 
 
 class TestZrx:
-    #TODO duplicate of the deploy method in conftest.py
-    def deploy(self, web3, contract_name, args=None):
-        contract_factory = web3.eth.contract(abi=json.loads(pkg_resources.resource_string('pymaker.feed', f'abi/{contract_name}.abi')),
-                                             bytecode=pkg_resources.resource_string('pymaker.feed', f'abi/{contract_name}.bin'))
-        tx_hash = contract_factory.deploy(args=args)
-        receipt = web3.eth.getTransactionReceipt(tx_hash)
-        return receipt['contractAddress']
-
     def setup_method(self):
         self.web3 = Web3(EthereumTesterProvider())
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
-        self.zrx_token = ERC20Token(web3=self.web3, address=Address(self.deploy(self.web3, 'ZRXToken')))
-        self.token_transfer_proxy_address = self.deploy(self.web3, 'TokenTransferProxy')
-        self.exchange = ZrxExchange.deploy(self.web3, self.zrx_token.address,
-                                           Address(self.token_transfer_proxy_address))
+        self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))
+        self.token_transfer_proxy_address = deploy_contract(self.web3, 'TokenTransferProxy')
+        self.exchange = ZrxExchange.deploy(self.web3, self.zrx_token.address, self.token_transfer_proxy_address)
 
     def test_correct_deployment(self):
         # expect
         assert self.exchange is not None
         assert self.exchange.address is not None
         assert self.exchange.zrx_token() == self.zrx_token.address
-        assert self.exchange.token_transfer_proxy() == Address(self.token_transfer_proxy_address)
+        assert self.exchange.token_transfer_proxy() == self.token_transfer_proxy_address
 
     def test_approval(self):
         # given
@@ -60,15 +51,15 @@ class TestZrx:
         token1.mint(Wad.from_number(100)).transact()
 
         # and
-        assert token1.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) == Wad(0)
-        assert self.zrx_token.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) == Wad(0)
+        assert token1.allowance_of(self.our_address, self.token_transfer_proxy_address) == Wad(0)
+        assert self.zrx_token.allowance_of(self.our_address, self.token_transfer_proxy_address) == Wad(0)
 
         # when
         self.exchange.approve([token1], directly())
 
         # then
-        assert token1.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) > Wad(0)
-        assert self.zrx_token.allowance_of(self.our_address, Address(self.token_transfer_proxy_address)) > Wad(0)
+        assert token1.allowance_of(self.our_address, self.token_transfer_proxy_address) > Wad(0)
+        assert self.zrx_token.allowance_of(self.our_address, self.token_transfer_proxy_address) > Wad(0)
 
     def test_create_order(self):
         # when
