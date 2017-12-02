@@ -863,7 +863,7 @@ class Top(Contract):
         return Ray(self._contract.call().fix())
 
     def cage(self, price: Optional[Wad] = None) -> Transact:
-        """Force settlement of the system at a current or given price (sai per gem).
+        """Force settlement of the system at a current or given price (SAI per GEM).
 
         Args:
             price: The settlement price (SAI per GEM), or `None` if current price should be used.
@@ -877,7 +877,14 @@ class Top(Contract):
         else:
             return Transact(self, self.web3, self.abi, self.address, self._contract, 'cage', [])
 
-    # TODO cash
+    def cash(self) -> Transact:
+        """Exchange SAI to GEM after cage.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'cash', [])
+
     # TODO vent
 
     def __eq__(self, other):

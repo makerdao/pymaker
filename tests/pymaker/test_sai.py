@@ -464,3 +464,25 @@ class TestTop:
 
         # then
         assert deployment.top.fix() == Ray.from_number(0.005)
+
+    def test_cash(self, deployment: Deployment):
+        # given
+        deployment.tub.join(Wad.from_number(10)).transact()
+        deployment.tub.cork(Wad.from_number(100000)).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
+
+        # and
+        deployment.tub.open().transact()
+        deployment.tub.lock(1, Wad.from_number(4)).transact()
+        deployment.tub.draw(1, Wad.from_number(1000)).transact()
+
+        # and
+        gem_before = deployment.gem.balance_of(deployment.our_address)
+
+        # when
+        deployment.top.cage().transact()
+        deployment.top.cash().transact()
+
+        # then
+        gem_after = deployment.gem.balance_of(deployment.our_address)
+        assert gem_after - gem_before == Wad.from_number(4)
