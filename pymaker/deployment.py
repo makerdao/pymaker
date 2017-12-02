@@ -113,7 +113,7 @@ class Deployment:
         """Rollbacks all changes made since the initial deployment."""
         self.web3.providers[0].rpc_methods.evm_revert()
         self.web3.providers[0].rpc_methods.evm_snapshot()
-        self.otc._none_offers = set()
+        self.otc._none_orders = set()
 
     # TODO this will go away the moment we give up the idea of a config file with contract addresses
     def get_config(self):

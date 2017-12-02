@@ -17,7 +17,7 @@
 
 from pymaker import Address
 from pymaker.numeric import Wad, Ray
-from pymaker.oasis import SimpleMarket, OfferInfo
+from pymaker.oasis import SimpleMarket, Order
 from pymaker.sai import Tub, Tap
 from pymaker.token import ERC20Token
 
@@ -137,20 +137,20 @@ class TubBustConversion(Conversion):
 
 
 class OasisTakeConversion(Conversion):
-    def __init__(self, otc: SimpleMarket, offer: OfferInfo):
+    def __init__(self, otc: SimpleMarket, order: Order):
         self.otc = otc
-        self.offer = offer
-        super().__init__(source_token=offer.buy_which_token,
-                         target_token=offer.sell_which_token,
-                         rate=Ray(offer.sell_how_much)/Ray(offer.buy_how_much),
-                         max_source_amount=offer.buy_how_much,
-                         method=f"opc.take({self.offer.offer_id})")
+        self.order = order
+        super().__init__(source_token=order.buy_which_token,
+                         target_token=order.sell_which_token,
+                         rate=Ray(order.sell_how_much) / Ray(order.buy_how_much),
+                         max_source_amount=order.buy_how_much,
+                         method=f"opc.take({self.order.order_id})")
 
     def name(self):
-        return f"otc.take({self.offer.offer_id}, '{self.quantity()}')"
+        return f"otc.take({self.order.order_id}, '{self.quantity()}')"
 
     def transact(self):
-        return self.otc.take(self.offer.offer_id, self.quantity())
+        return self.otc.take(self.order.order_id, self.quantity())
 
     def quantity(self):
         quantity = self.target_amount
@@ -160,12 +160,12 @@ class OasisTakeConversion(Conversion):
 
         # if by any chance rounding makes us want to buy more quantity than is available,
         # we just buy the whole lot
-        if quantity > self.offer.sell_how_much:
-            quantity = self.offer.sell_how_much
+        if quantity > self.order.sell_how_much:
+            quantity = self.order.sell_how_much
 
         # if by any chance rounding makes us want to buy only slightly less than the available lot,
         # we buy everything as this is probably what we wanted in the first place
-        if self.offer.sell_how_much - quantity < Wad.from_number(0.0000000001):
-            quantity = self.offer.sell_how_much
+        if self.order.sell_how_much - quantity < Wad.from_number(0.0000000001):
+            quantity = self.order.sell_how_much
 
         return quantity

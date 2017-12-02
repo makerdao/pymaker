@@ -123,13 +123,13 @@ class SaiArbitrage(SaiKeeper):
                 TubBoomConversion(self.tub, self.tap),
                 TubBustConversion(self.tub, self.tap)]
 
-    def otc_offers(self, tokens):
-        return [offer for offer in self.otc.active_offers()
-                if offer.sell_which_token in tokens
-                and offer.buy_which_token in tokens]
+    def otc_orders(self, tokens):
+        return [order for order in self.otc.get_orders()
+                if order.sell_which_token in tokens
+                and order.buy_which_token in tokens]
 
     def otc_conversions(self, tokens) -> List[Conversion]:
-        return list(map(lambda offer: OasisTakeConversion(self.otc, offer), self.otc_offers(tokens)))
+        return list(map(lambda order: OasisTakeConversion(self.otc, order), self.otc_orders(tokens)))
 
     def all_conversions(self):
         return self.tub_conversions() + \

@@ -43,7 +43,7 @@ class GeneralMarketTest:
 
     def test_approve_and_make_and_getters(self):
         # given
-        assert self.otc.get_last_offer_id() == 0
+        assert self.otc.get_last_order_id() == 0
 
         # when
         self.otc.approve([self.token1], directly())
@@ -51,19 +51,19 @@ class GeneralMarketTest:
                       want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
 
         # then
-        assert self.otc.get_last_offer_id() == 1
+        assert self.otc.get_last_order_id() == 1
 
         # and
-        assert self.otc.get_offer(1).offer_id == 1
-        assert self.otc.get_offer(1).sell_which_token == self.token1.address
-        assert self.otc.get_offer(1).sell_how_much == Wad.from_number(1)
-        assert self.otc.get_offer(1).buy_which_token == self.token2.address
-        assert self.otc.get_offer(1).buy_how_much == Wad.from_number(2)
-        assert self.otc.get_offer(1).owner == self.our_address
-        assert self.otc.get_offer(1).timestamp != 0
+        assert self.otc.get_order(1).order_id == 1
+        assert self.otc.get_order(1).sell_which_token == self.token1.address
+        assert self.otc.get_order(1).sell_how_much == Wad.from_number(1)
+        assert self.otc.get_order(1).buy_which_token == self.token2.address
+        assert self.otc.get_order(1).buy_how_much == Wad.from_number(2)
+        assert self.otc.get_order(1).owner == self.our_address
+        assert self.otc.get_order(1).timestamp != 0
 
         # and
-        assert self.otc.active_offers() == [self.otc.get_offer(1)]
+        assert self.otc.get_orders() == [self.otc.get_order(1)]
 
     def test_offer_comparison(self):
         # when
@@ -76,9 +76,9 @@ class GeneralMarketTest:
                       want_token=self.token2.address, want_amount=Wad.from_number(4)).transact()
 
         # then
-        assert self.otc.get_last_offer_id() == 2
-        assert self.otc.get_offer(1) == self.otc.get_offer(1)
-        assert self.otc.get_offer(1) != self.otc.get_offer(2)
+        assert self.otc.get_last_order_id() == 2
+        assert self.otc.get_order(1) == self.otc.get_order(1)
+        assert self.otc.get_order(1) != self.otc.get_order(2)
 
     def test_take_partial(self):
         # given
@@ -91,10 +91,10 @@ class GeneralMarketTest:
         self.otc.take(1, Wad.from_number(0.25)).transact()
 
         # then
-        assert self.otc.get_offer(1).sell_how_much == Wad.from_number(0.75)
-        assert self.otc.get_offer(1).buy_how_much == Wad.from_number(1.5)
-        assert self.otc.active_offers() == [self.otc.get_offer(1)]
-        assert self.otc.get_last_offer_id() == 1
+        assert self.otc.get_order(1).sell_how_much == Wad.from_number(0.75)
+        assert self.otc.get_order(1).buy_how_much == Wad.from_number(1.5)
+        assert self.otc.get_orders() == [self.otc.get_order(1)]
+        assert self.otc.get_last_order_id() == 1
 
     def test_take_complete(self):
         # given
@@ -107,9 +107,9 @@ class GeneralMarketTest:
         self.otc.take(1, Wad.from_number(1)).transact()
 
         # then
-        assert self.otc.get_offer(1) is None
-        assert self.otc.active_offers() == []
-        assert self.otc.get_last_offer_id() == 1
+        assert self.otc.get_order(1) is None
+        assert self.otc.get_orders() == []
+        assert self.otc.get_last_order_id() == 1
 
     def test_kill(self):
         # given
@@ -121,9 +121,9 @@ class GeneralMarketTest:
         self.otc.kill(1).transact(gas=4000000)
 
         # then
-        assert self.otc.get_offer(1) is None
-        assert self.otc.active_offers() == []
-        assert self.otc.get_last_offer_id() == 1
+        assert self.otc.get_order(1) is None
+        assert self.otc.get_orders() == []
+        assert self.otc.get_last_order_id() == 1
 
     def test_no_past_events_on_startup(self):
         assert self.otc.past_make(PAST_BLOCKS) == []
@@ -140,7 +140,7 @@ class GeneralMarketTest:
         # then
         past_make = self.otc.past_make(PAST_BLOCKS)
         assert len(past_make) == 1
-        assert past_make[0].id == 1
+        assert past_make[0].order_id == 1
         assert past_make[0].maker == self.our_address
         assert past_make[0].pay_token == self.token1.address
         assert past_make[0].pay_amount == Wad.from_number(1)
@@ -158,7 +158,7 @@ class GeneralMarketTest:
         # then
         past_bump = self.otc.past_bump(PAST_BLOCKS)
         assert len(past_bump) == 1
-        assert past_bump[0].id == 1
+        assert past_bump[0].order_id == 1
         assert past_bump[0].maker == self.our_address
         assert past_bump[0].pay_token == self.token1.address
         assert past_bump[0].pay_amount == Wad.from_number(1)
@@ -179,7 +179,7 @@ class GeneralMarketTest:
         # then
         past_take = self.otc.past_take(PAST_BLOCKS)
         assert len(past_take) == 1
-        assert past_take[0].id == 1
+        assert past_take[0].order_id == 1
         assert past_take[0].maker == self.our_address
         assert past_take[0].taker == self.our_address
         assert past_take[0].pay_token == self.token1.address
@@ -200,7 +200,7 @@ class GeneralMarketTest:
         # then
         past_kill = self.otc.past_kill(PAST_BLOCKS)
         assert len(past_kill) == 1
-        assert past_kill[0].id == 1
+        assert past_kill[0].order_id == 1
         assert past_kill[0].maker == self.our_address
         assert past_kill[0].pay_token == self.token1.address
         assert past_kill[0].pay_amount == Wad.from_number(1)
@@ -221,7 +221,7 @@ class GeneralMarketTest:
 
         # then
         on_make = wait_until_mock_called(on_make_mock)[0]
-        assert on_make.id == 1
+        assert on_make.order_id == 1
         assert on_make.maker == self.our_address
         assert on_make.pay_token == self.token1.address
         assert on_make.pay_amount == Wad.from_number(1)
@@ -243,7 +243,7 @@ class GeneralMarketTest:
 
         # then
         on_bump = wait_until_mock_called(on_bump_mock)[0]
-        assert on_bump.id == 1
+        assert on_bump.order_id == 1
         assert on_bump.maker == self.our_address
         assert on_bump.pay_token == self.token1.address
         assert on_bump.pay_amount == Wad.from_number(1)
@@ -268,7 +268,7 @@ class GeneralMarketTest:
 
         # then
         on_take = wait_until_mock_called(on_take_mock)[0]
-        assert on_take.id == 1
+        assert on_take.order_id == 1
         assert on_take.maker == self.our_address
         assert on_take.taker == self.our_address
         assert on_take.pay_token == self.token1.address
@@ -293,7 +293,7 @@ class GeneralMarketTest:
 
         # then
         on_kill = wait_until_mock_called(on_kill_mock)[0]
-        assert on_kill.id == 1
+        assert on_kill.order_id == 1
         assert on_kill.maker == self.our_address
         assert on_kill.pay_token == self.token1.address
         assert on_kill.pay_amount == Wad.from_number(1)
@@ -337,11 +337,11 @@ class TestMatchingMarket(GeneralMarketTest):
                       want_token=self.token1.address, want_amount=Wad.from_number(1)).transact()
 
         # then
-        assert self.otc.get_offer(1) is None
-        assert self.otc.get_offer(2) is None
+        assert self.otc.get_order(1) is None
+        assert self.otc.get_order(2) is None
 
         # and
-        assert self.otc.get_last_offer_id() == 1
+        assert self.otc.get_last_order_id() == 1
 
     def test_advanced_matching(self):
         # given
@@ -362,23 +362,23 @@ class TestMatchingMarket(GeneralMarketTest):
                       want_token=self.token1.address, want_amount=Wad.from_number(10)).transact(gas=4000000)
 
         # then
-        assert self.otc.get_offer(1) is None
-        assert self.otc.get_offer(2) is not None
-        assert self.otc.get_offer(3) is None
-        assert self.otc.get_offer(4) is not None
-        assert self.otc.get_offer(5) is None
+        assert self.otc.get_order(1) is None
+        assert self.otc.get_order(2) is not None
+        assert self.otc.get_order(3) is None
+        assert self.otc.get_order(4) is not None
+        assert self.otc.get_order(5) is None
 
         # and
-        assert self.otc.get_last_offer_id() == 6
+        assert self.otc.get_last_order_id() == 6
 
         # and
-        assert self.otc.get_offer(6).offer_id == 6
-        assert self.otc.get_offer(6).sell_which_token == self.token2.address
-        assert self.otc.get_offer(6).sell_how_much == Wad.from_number(14.07)
-        assert self.otc.get_offer(6).buy_which_token == self.token1.address
-        assert self.otc.get_offer(6).buy_how_much == Wad.from_number(7)
-        assert self.otc.get_offer(6).owner == self.our_address
-        assert self.otc.get_offer(6).timestamp != 0
+        assert self.otc.get_order(6).order_id == 6
+        assert self.otc.get_order(6).sell_which_token == self.token2.address
+        assert self.otc.get_order(6).sell_how_much == Wad.from_number(14.07)
+        assert self.otc.get_order(6).buy_which_token == self.token1.address
+        assert self.otc.get_order(6).buy_how_much == Wad.from_number(7)
+        assert self.otc.get_order(6).owner == self.our_address
+        assert self.otc.get_order(6).timestamp != 0
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"MatchingMarket('{self.otc.address}')"

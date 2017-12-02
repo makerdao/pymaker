@@ -113,14 +113,14 @@ class TestSaiArbitrage:
         deployment.otc.make(deployment.skr.address, Wad.from_number(105), deployment.sai.address, Wad.from_number(100)).transact()
         deployment.otc.make(deployment.gem.address, Wad.from_number(110), deployment.skr.address, Wad.from_number(105)).transact()
         deployment.otc.make(deployment.sai.address, Wad.from_number(115), deployment.gem.address, Wad.from_number(110)).transact()
-        assert len(deployment.otc.active_offers()) == 3
+        assert len(deployment.otc.get_orders()) == 3
 
         # when
         keeper.approve()
         keeper.process_block()
 
         # then
-        assert len(deployment.otc.active_offers()) == 0
+        assert len(deployment.otc.get_orders()) == 0
 
     def test_should_obey_max_engagement(self, deployment: Deployment):
         # given
@@ -145,15 +145,15 @@ class TestSaiArbitrage:
         deployment.otc.make(deployment.skr.address, Wad.from_number(105), deployment.sai.address, Wad.from_number(100)).transact()
         deployment.otc.make(deployment.gem.address, Wad.from_number(110), deployment.skr.address, Wad.from_number(105)).transact()
         deployment.otc.make(deployment.sai.address, Wad.from_number(115), deployment.gem.address, Wad.from_number(110)).transact()
-        assert len(deployment.otc.active_offers()) == 3
+        assert len(deployment.otc.get_orders()) == 3
 
         # when
         keeper.approve()
         keeper.process_block()
 
         # then
-        assert len(deployment.otc.active_offers()) == 3
-        assert deployment.otc.active_offers()[0].buy_how_much == Wad.from_number(10)
+        assert len(deployment.otc.get_orders()) == 3
+        assert deployment.otc.get_orders()[0].buy_how_much == Wad.from_number(10)
 
     def test_should_obey_min_profit(self, deployment: Deployment):
         # given
@@ -178,14 +178,14 @@ class TestSaiArbitrage:
         deployment.otc.make(deployment.skr.address, Wad.from_number(105), deployment.sai.address, Wad.from_number(100)).transact()
         deployment.otc.make(deployment.gem.address, Wad.from_number(110), deployment.skr.address, Wad.from_number(105)).transact()
         deployment.otc.make(deployment.sai.address, Wad.from_number(115), deployment.gem.address, Wad.from_number(110)).transact()
-        assert len(deployment.otc.active_offers()) == 3
+        assert len(deployment.otc.get_orders()) == 3
 
         # when
         keeper.approve()
         keeper.process_block()
 
         # then
-        assert len(deployment.otc.active_offers()) == 3
-        assert deployment.otc.active_offers()[0].buy_how_much == Wad.from_number(100)
-        assert deployment.otc.active_offers()[1].buy_how_much == Wad.from_number(105)
-        assert deployment.otc.active_offers()[2].buy_how_much == Wad.from_number(110)
+        assert len(deployment.otc.get_orders()) == 3
+        assert deployment.otc.get_orders()[0].buy_how_much == Wad.from_number(100)
+        assert deployment.otc.get_orders()[1].buy_how_much == Wad.from_number(105)
+        assert deployment.otc.get_orders()[2].buy_how_much == Wad.from_number(110)
