@@ -56,11 +56,11 @@ class SaiArbitrage(SaiKeeper):
     You can find the source code of the `TxManager` here:
     <https://github.com/reverendus/tx-manager>.
 
-    The base token of this keeper is SAI i.e. all arbitrage opportunities will
-    start with some amount of SAI, exchange it to some other token(s) and then exchange
-    back to SAI, aiming to end up with more SAI than it started with. The keeper is aware
-    of gas costs and takes a rough estimate of these costs while calculating arbitrage
-    profitability.
+    The base token is the token all arbitrage opportunities will start with.
+    Some amount of this token will be exchanged to some other token(s) and then exchanged
+    back to the base token, aiming to end up with more of it than we started with.
+    The keeper is aware of gas costs and takes a rough estimate of these costs while
+    calculating arbitrage profitability.
     """
 
     def __init__(self, args, **kwargs):
