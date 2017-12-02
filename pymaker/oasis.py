@@ -18,12 +18,12 @@
 from pprint import pformat
 from typing import Optional, List
 
-from pymaker import Contract, Address, Transact
-from pymaker.numeric import Wad
-from pymaker.util import int_to_bytes32, bytes_to_int
 from web3 import Web3
 
+from pymaker import Contract, Address, Transact
+from pymaker.numeric import Wad
 from pymaker.token import ERC20Token
+from pymaker.util import int_to_bytes32, bytes_to_int
 
 
 class OfferInfo:
