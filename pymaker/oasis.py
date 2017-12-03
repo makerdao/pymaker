@@ -204,41 +204,113 @@ class SimpleMarket(Contract):
             approval_function(token, self.address, 'OasisDEX')
 
     def on_make(self, handler):
+        """Subscribe to LogMake events.
+
+        `LogMake` events are emitted by the Oasis contract every time someone places an order.
+
+        Args:
+            handler: Function which will be called for each subsequent `LogMake` event.
+                This handler will receive a :py:class:`pymaker.oasis.LogMake` class instance.
+        """
         assert(callable(handler))
 
         self._on_event(self._contract, 'LogMake', LogMake, handler)
 
     def on_bump(self, handler):
+        """Subscribe to LogBump events.
+
+        `LogBump` events are emitted by the Oasis contract every time someone calls the `bump()` function.
+
+        Args:
+            handler: Function which will be called for each subsequent `LogBump` event.
+                This handler will receive a :py:class:`pymaker.oasis.LogBump` class instance.
+        """
         assert(callable(handler))
 
         self._on_event(self._contract, 'LogBump', LogBump, handler)
 
     def on_take(self, handler):
+        """Subscribe to LogTake events.
+
+        `LogTake` events are emitted by the Oasis contract every time someone takes an order.
+
+        Args:
+            handler: Function which will be called for each subsequent `LogTake` event.
+                This handler will receive a :py:class:`pymaker.oasis.LogTake` class instance.
+        """
         assert(callable(handler))
 
         self._on_event(self._contract, 'LogTake', LogTake, handler)
 
     def on_kill(self, handler):
+        """Subscribe to LogKill events.
+
+        `LogKill` events are emitted by the Oasis contract every time someone cancels an order.
+
+        Args:
+            handler: Function which will be called for each subsequent `LogKill` event.
+                This handler will receive a :py:class:`pymaker.oasis.LogKill` class instance.
+        """
         assert(callable(handler))
 
         self._on_event(self._contract, 'LogKill', LogKill, handler)
 
     def past_make(self, number_of_past_blocks: int) -> List[LogMake]:
+        """Synchronously retrieve past LogMake events.
+
+        `LogMake` events are emitted by the Oasis contract every time someone places an order.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+
+        Returns:
+            List of past `LogMake` events represented as :py:class:`pymaker.oasis.LogMake` class.
+        """
         assert(isinstance(number_of_past_blocks, int))
 
         return self._past_events(self._contract, 'LogMake', LogMake, number_of_past_blocks)
 
     def past_bump(self, number_of_past_blocks: int) -> List[LogBump]:
+        """Synchronously retrieve past LogBump events.
+
+        `LogBump` events are emitted by the Oasis contract every time someone calls the `bump()` function.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+
+        Returns:
+            List of past `LogBump` events represented as :py:class:`pymaker.oasis.LogBump` class.
+        """
         assert(isinstance(number_of_past_blocks, int))
 
         return self._past_events(self._contract, 'LogBump', LogBump, number_of_past_blocks)
 
     def past_take(self, number_of_past_blocks: int) -> List[LogTake]:
+        """Synchronously retrieve past LogTake events.
+
+        `LogTake` events are emitted by the Oasis contract every time someone takes an order.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+
+        Returns:
+            List of past `LogTake` events represented as :py:class:`pymaker.oasis.LogTake` class.
+        """
         assert(isinstance(number_of_past_blocks, int))
 
         return self._past_events(self._contract, 'LogTake', LogTake, number_of_past_blocks)
 
     def past_kill(self, number_of_past_blocks: int) -> List[LogKill]:
+        """Synchronously retrieve past LogKill events.
+
+        `LogKill` events are emitted by the Oasis contract every time someone cancels an order.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+
+        Returns:
+            List of past `LogKill` events represented as :py:class:`pymaker.oasis.LogKill` class.
+        """
         assert(isinstance(number_of_past_blocks, int))
 
         return self._past_events(self._contract, 'LogKill', LogKill, number_of_past_blocks)
@@ -281,6 +353,11 @@ class SimpleMarket(Contract):
                          timestamp=array[6])
 
     def get_orders(self) -> List[Order]:
+        """Get all active order details.
+
+        Returns:
+            A list of `Order` objects representing all active orders on Oasis.
+        """
         orders = [self.get_order(order_id + 1) for order_id in range(self.get_last_order_id())]
         return [order for order in orders if order is not None]
 
