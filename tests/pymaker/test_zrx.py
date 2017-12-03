@@ -101,7 +101,6 @@ class TestZrx:
         assert order_hash.startswith('0x')
         assert len(order_hash) == 66
 
-    @pytest.mark.skip(reason='eth_sign is not implemented yet in eth-testrpc')
     def test_sign_order(self):
         # given
         order = self.exchange.create_order(maker_token_amount=Wad.from_number(100),
@@ -115,9 +114,9 @@ class TestZrx:
 
         # then
         assert signed_order.ec_signature_r.startswith('0x')
-        assert len(signed_order.ec_signature_r) == 64
+        assert len(signed_order.ec_signature_r) == 66
         assert signed_order.ec_signature_s.startswith('0x')
-        assert len(signed_order.ec_signature_s) == 64
+        assert len(signed_order.ec_signature_s) == 66
         assert signed_order.ec_signature_v in [27, 28]
 
     def test_should_have_printable_representation(self):
