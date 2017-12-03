@@ -29,7 +29,7 @@ from pymaker import Contract, Address, Transact
 from pymaker.logger import Logger
 from pymaker.numeric import Wad
 from pymaker.token import ERC20Token
-from pymaker.util import bytes_to_hexstring, hexstring_to_bytes
+from pymaker.util import bytes_to_hexstring, hexstring_to_bytes, eth_sign
 
 
 class Order:
@@ -321,7 +321,7 @@ class ZrxExchange(Contract):
         assert(isinstance(order, Order))
 
         # TODO duplicate code below
-        signed_hash = self._eth_sign(self.web3.eth.defaultAccount, hexstring_to_bytes(self.get_order_hash(order)))[2:]
+        signed_hash = eth_sign(self.web3, hexstring_to_bytes(self.get_order_hash(order)))[2:]
         r = bytes.fromhex(signed_hash[0:64])
         s = bytes.fromhex(signed_hash[64:128])
         v = ord(bytes.fromhex(signed_hash[128:130]))
@@ -354,13 +354,6 @@ class ZrxExchange(Contract):
                 order.maker_token_address.address,
                 order.taker_token_address.address,
                 order.fee_recipient.address]
-
-    # TODO duplicate code below
-    @coerce_return_to_text
-    def _eth_sign(self, account, data_hash):
-        return self.web3.manager.request_blocking(
-            "eth_sign", [account, encode_hex(data_hash)],
-        )
 
     @staticmethod
     def random_salt() -> int:

@@ -18,7 +18,13 @@
 import asyncio
 import threading
 
+from eth_utils import coerce_return_to_text
+from ethereum import utils
+from ethereum.tester import k0
+from ethereum.utils import int_to_bytes, encode_hex
+from secp256k1 import PrivateKey
 from web3 import Web3
+from web3.eth import Eth
 
 from pymaker.numeric import Wad
 
@@ -50,6 +56,31 @@ def synchronize(futures) -> list:
 
 def eth_balance(web3: Web3, address) -> Wad:
     return Wad(web3.eth.getBalance(address.address))
+
+
+@coerce_return_to_text
+def eth_sign(web3: Web3, data_hash: bytes):
+    assert(isinstance(web3, Web3))
+    assert(isinstance(data_hash, bytes))
+
+    # as `EthereumTesterProvider` does not support `eth_sign`, we implement it ourselves
+    if str(web3.providers[0]) == 'EthereumTesterProvider':
+        key = k0
+        msg = hexstring_to_bytes(Eth._recoveryMessageHash(data=data_hash))
+
+        pk = PrivateKey(key, raw=True)
+        signature = pk.ecdsa_recoverable_serialize(
+            pk.ecdsa_sign_recoverable(msg, raw=True)
+        )
+
+        signature = signature[0] + utils.bytearray_to_bytestr([signature[1]])
+        signature_hex = signature.hex()[0:128] + int_to_bytes(ord(bytes.fromhex(signature.hex()[128:130]))+27).hex()
+
+        return '0x' + signature_hex
+
+    return web3.manager.request_blocking(
+        "eth_sign", [web3.eth.defaultAccount, encode_hex(data_hash)],
+    )
 
 
 def int_to_bytes32(value: int) -> bytes:
