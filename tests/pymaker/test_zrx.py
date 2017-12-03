@@ -119,6 +119,36 @@ class TestZrx:
         assert len(signed_order.ec_signature_s) == 66
         assert signed_order.ec_signature_v in [27, 28]
 
+    def test_cancel_order(self):
+        # given
+        token1 = DSToken.deploy(self.web3, 'AAA')
+        token1.mint(Wad.from_number(100)).transact()
+
+        # and
+        token2 = DSToken.deploy(self.web3, 'BBB')
+        token2.mint(Wad.from_number(100)).transact()
+
+        # and
+        self.exchange.approve([token1, token2], directly())
+
+        # when
+        order = self.exchange.create_order(maker_token_amount=Wad.from_number(10),
+                                           taker_token_amount=Wad.from_number(4),
+                                           maker_token_address=token1.address,
+                                           taker_token_address=token2.address,
+                                           expiration=1763920792)
+        # and
+        signed_order = self.exchange.sign_order(order)
+
+        # then
+        assert self.exchange.get_unavailable_taker_token_amount(signed_order) == Wad(0)
+
+        # when
+
+        self.exchange.cancel_order(signed_order).transact()
+        # then
+        assert self.exchange.get_unavailable_taker_token_amount(signed_order) == Wad.from_number(4)
+
     def test_should_have_printable_representation(self):
         assert repr(self.exchange) == f"ZrxExchange('{self.exchange.address}')"
 
