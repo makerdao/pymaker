@@ -26,9 +26,16 @@ from pprint import pformat
 from subprocess import Popen, PIPE
 from typing import List
 
+from bitcoin import encode_privkey
 from eth_abi.encoding import get_single_encoder
-from eth_utils import coerce_return_to_text, encode_hex
+from eth_utils import coerce_return_to_text, encode_hex, big_endian_to_int
+from ethereum import utils
+from ethereum.tester import k0
+from ethereum.utils import int_to_bytes
+from secp256k1 import PrivateKey
 from web3 import Web3
+from web3.eth import Eth
+from web3.utils.signing import signature_wrapper
 
 from pymaker import Contract, Address, Transact
 from pymaker.logger import Logger
@@ -548,10 +555,33 @@ class EtherDelta(Contract):
     # TODO duplicate code below
     @coerce_return_to_text
     def _eth_sign(self, account, data_hash):
-        # as `EthereumTesterProvider` does not support `eth_sign`, we return
-        # some dummy data so that unit tests work correctly
+        assert(isinstance(data_hash, bytes))
+
+        # as `EthereumTesterProvider` does not support `eth_sign`, we implement it ourselves
         if str(self.web3.providers[0]) == 'EthereumTesterProvider':
-            return '0' * 132
+            key = k0
+
+            #utils.sha3(signature_wrapper(data_hash)) #utils.sha3("\x19Ethereum Signed Message:\n32" + data_hash)
+            # msg = utils.sha3(signature_wrapper(data_hash)) #utils.sha3("\x19Ethereum Signed Message:\n32" + data_hash)
+
+            # print(f"RAWHASH: {msg}")
+            msg = hexstring_to_bytes(Eth._recoveryMessageHash(data=data_hash))
+
+            if len(key) == 64:
+                # we need a binary key
+                key = encode_privkey(key, 'bin')
+
+
+            pk = PrivateKey(key, raw=True)
+            signature = pk.ecdsa_recoverable_serialize(
+                pk.ecdsa_sign_recoverable(msg, raw=True)
+            )
+            signature = signature[0] + utils.bytearray_to_bytestr([signature[1]])
+
+            signature_hex = signature.hex()
+            signature_hex = signature_hex[0:128] + int_to_bytes(ord(bytes.fromhex(signature_hex[128:130]))+27).hex()
+
+            return '0x' + signature_hex
 
         return self.web3.manager.request_blocking(
             "eth_sign", [account, encode_hex(data_hash)],
