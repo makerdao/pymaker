@@ -90,15 +90,15 @@ class TestEtherDelta:
         self.etherdelta.deposit_token(self.token2.address, Wad.from_number(10)).transact()
 
         # when
-        order = self.etherdelta.create_order(token_get=self.token2.address, amount_get=Wad.from_number(4),
-                                             token_give=self.token1.address, amount_give=Wad.from_number(2),
+        order = self.etherdelta.create_order(token_give=self.token1.address, amount_give=Wad.from_number(2),
+                                             token_get=self.token2.address, amount_get=Wad.from_number(4),
                                              expires=100000000)
 
         # then
-        assert order.token_get == self.token2.address
-        assert order.amount_get == Wad.from_number(4)
         assert order.token_give == self.token1.address
         assert order.amount_give == Wad.from_number(2)
+        assert order.token_get == self.token2.address
+        assert order.amount_get == Wad.from_number(4)
         assert order.expires == 100000000
         assert order.user == self.our_address
 

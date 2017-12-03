@@ -357,10 +357,10 @@ class EtherDelta(Contract):
         return Wad(self._contract.call().balanceOf(token.address, user.address))
 
     def create_order(self,
-                     token_get: Address,
-                     amount_get: Wad,
                      token_give: Address,
                      amount_give: Wad,
+                     token_get: Address,
+                     amount_get: Wad,
                      expires: int) -> Order:
         """Creates a new off-chain order.
 
@@ -372,10 +372,10 @@ class EtherDelta(Contract):
         as either `token_get` or `token_give`.
 
         Args:
-            token_get: Address of the ERC20 token you want to be paid with.
-            amount_get:  Amount of the `token_get` you want to receive.
             token_give: Address of the ERC20 token you want to put on sale.
             amount_give: Amount of the `token_give` token you want to put on sale.
+            token_get: Address of the ERC20 token you want to be paid with.
+            amount_get:  Amount of the `token_get` you want to receive.
             expires: The block number after which the order will expire.
 
         Returns:
