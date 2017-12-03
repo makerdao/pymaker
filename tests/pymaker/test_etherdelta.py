@@ -14,15 +14,15 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import pytest
 
-from pymaker import Address, Wad
-from pymaker.approval import directly
-from pymaker.token import DSToken
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
+from pymaker import Address
+from pymaker.approval import directly
 from pymaker.etherdelta import EtherDelta
+from pymaker.numeric import Wad
+from pymaker.token import DSToken
 
 
 class TestEtherDelta:
@@ -33,7 +33,7 @@ class TestEtherDelta:
         self.etherdelta = EtherDelta.deploy(self.web3,
                                             admin=Address('0x1111100000999998888877777666665555544444'),
                                             fee_account=Address('0x8888877777666665555544444111110000099999'),
-                                            account_levels_addr=Address('0x6666655555444441111188888777770000099999'),
+                                            account_levels_addr=Address('0x0000000000000000000000000000000000000000'),
                                             fee_make=Wad.from_number(0.01),
                                             fee_take=Wad.from_number(0.02),
                                             fee_rebate=Wad.from_number(0.03))
@@ -46,7 +46,7 @@ class TestEtherDelta:
         # expect
         assert self.etherdelta.admin() == Address('0x1111100000999998888877777666665555544444')
         assert self.etherdelta.fee_account() == Address('0x8888877777666665555544444111110000099999')
-        assert self.etherdelta.account_levels_addr() == Address('0x6666655555444441111188888777770000099999')
+        assert self.etherdelta.account_levels_addr() == Address('0x0000000000000000000000000000000000000000')
 
     def test_fees(self):
         # expect
@@ -111,25 +111,26 @@ class TestEtherDelta:
         assert not self.etherdelta.can_trade(order, Wad.from_number(5.5))
 
         # when
-        # self.etherdelta.trade(order, Wad.from_number(1.5)).transact()
-        #
-        # # then
-        # assert self.etherdelta.amount_available(order) == Wad.from_number(2.5)
-        # assert self.etherdelta.amount_filled(order) == Wad.from_number(1.5)
-        #
-        # # when
-        # self.etherdelta.withdraw_token(self.token2.address, Wad.from_number(9.25)).transact()
-        #
-        # # then
-        # assert self.etherdelta.amount_available(order) == Wad.from_number(0.75)
-        # assert self.etherdelta.amount_filled(order) == Wad.from_number(1.5)
-        #
-        # # when
-        # self.etherdelta.cancel_order(order).transact()
-        #
-        # # then
-        # assert self.etherdelta.amount_available(order) == Wad.from_number(0)
-        # assert self.etherdelta.amount_filled(order) == Wad.from_number(4)
+        self.etherdelta.trade(order, Wad.from_number(1.5)).transact()
+
+        # then
+        assert self.etherdelta.amount_available(order) == Wad.from_number(2.5)
+        assert self.etherdelta.amount_filled(order) == Wad.from_number(1.5)
+
+        # when
+        self.etherdelta.withdraw_token(self.token1.address, Wad.from_number(9.3)).transact()
+        print(self.etherdelta.balance_of_token(self.token1.address, self.our_address))
+
+        # then
+        assert self.etherdelta.amount_available(order) == Wad.from_number(1.4)
+        assert self.etherdelta.amount_filled(order) == Wad.from_number(1.5)
+
+        # when
+        self.etherdelta.cancel_order(order).transact()
+
+        # then
+        assert self.etherdelta.amount_available(order) == Wad.from_number(0)
+        assert self.etherdelta.amount_filled(order) == Wad.from_number(4)
 
     def test_should_have_printable_representation(self):
         assert repr(self.etherdelta) == f"EtherDelta('{self.etherdelta.address}')"
