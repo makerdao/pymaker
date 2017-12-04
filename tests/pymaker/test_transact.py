@@ -86,3 +86,6 @@ class TestTxManager:
         assert res is None
         assert self.token1.balance_of(self.our_address) == Wad.from_number(1000000)
         assert self.token1.balance_of(self.other_address) == Wad.from_number(0)
+
+    def test_should_have_printable_representation(self):
+        assert repr(self.tx) == f"TxManager('{self.tx.address}')"

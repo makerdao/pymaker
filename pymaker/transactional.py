@@ -106,3 +106,6 @@ class TxManager(Contract):
         assert(isinstance(invocations, list))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'execute', [token_addresses(), script()])
+
+    def __repr__(self):
+        return f"TxManager('{self.address}')"
