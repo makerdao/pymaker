@@ -333,6 +333,7 @@ class SimpleMarket(Contract):
             An instance of `Order` if the order is still active, or `None` if the order has been
             either already completely taken or cancelled.
         """
+        assert(isinstance(order_id, int))
 
         # if an order is None, it won't become not-None again for the same OTC instance
         if order_id in self._none_orders:
@@ -377,6 +378,13 @@ class SimpleMarket(Contract):
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
+        assert(isinstance(have_token, Address))
+        assert(isinstance(have_amount, Wad))
+        assert(isinstance(want_token, Address))
+        assert(isinstance(want_amount, Wad))
+        assert(have_amount > Wad(0))
+        assert(want_amount > Wad(0))
+
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'make', [have_token.address, want_token.address, have_amount.value, want_amount.value])
 
@@ -392,6 +400,8 @@ class SimpleMarket(Contract):
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
+        assert(isinstance(order_id, int))
+
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'bump',
                         [int_to_bytes32(order_id)])
 
@@ -409,6 +419,9 @@ class SimpleMarket(Contract):
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
+        assert(isinstance(order_id, int))
+        assert(isinstance(quantity, Wad))
+
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'take',
                         [int_to_bytes32(order_id), quantity.value])
 
@@ -424,6 +437,8 @@ class SimpleMarket(Contract):
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
+        assert(isinstance(order_id, int))
+
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'kill', [int_to_bytes32(order_id)])
 
     def __repr__(self):
