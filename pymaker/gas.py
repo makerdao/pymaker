@@ -41,7 +41,7 @@ class GasPrice(object):
         price for overwritten transactions to go up by at least 10%. Also, you may return
         `None` which will make the node use the default gas price, but once you returned
         a numeric value (gas price in Wei), you shouldn't switch back to `None` as such
-        transaction also may not ger properly overwritten.
+        transaction also may not get properly overwritten.
 
         Args:
             time_elapsed: Number of seconds since this specific Ethereum transaction
