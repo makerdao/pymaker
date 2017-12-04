@@ -87,5 +87,20 @@ class TestTxManager:
         assert self.token1.balance_of(self.our_address) == Wad.from_number(1000000)
         assert self.token1.balance_of(self.other_address) == Wad.from_number(0)
 
+    def test_execute_multiple_calls(self):
+        # given
+        self.tx.approve([self.token1], directly())
+
+        # when
+        res = self.tx.execute([self.token1.address],
+                              [self.token1.transfer(self.other_address, Wad.from_number(500)).invocation(),
+                               self.token1.transfer(self.other_address, Wad.from_number(200)).invocation(),
+                               self.token1.transfer(self.other_address, Wad.from_number(150)).invocation()]).transact()
+
+        # then
+        assert res.successful
+        assert self.token1.balance_of(self.our_address) == Wad.from_number(999150)
+        assert self.token1.balance_of(self.other_address) == Wad.from_number(850)
+
     def test_should_have_printable_representation(self):
         assert repr(self.tx) == f"TxManager('{self.tx.address}')"
