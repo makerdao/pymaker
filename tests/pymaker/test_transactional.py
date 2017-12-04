@@ -35,6 +35,7 @@ class TestTxManager:
         self.token1 = DSToken.deploy(self.web3, 'ABC')
         self.token1.mint(Wad.from_number(1000000)).transact()
         self.token2 = DSToken.deploy(self.web3, 'DEF')
+        self.token2.mint(Wad.from_number(1000000)).transact()
 
     def test_owner(self):
         assert self.tx.owner() == self.our_address
@@ -87,20 +88,22 @@ class TestTxManager:
         assert self.token1.balance_of(self.our_address) == Wad.from_number(1000000)
         assert self.token1.balance_of(self.other_address) == Wad.from_number(0)
 
-    def test_execute_multiple_calls(self):
+    def test_execute_multiple_calls_with_multiple_tokens(self):
         # given
-        self.tx.approve([self.token1], directly())
+        self.tx.approve([self.token1, self.token2], directly())
 
         # when
-        res = self.tx.execute([self.token1.address],
+        res = self.tx.execute([self.token1.address, self.token2.address],
                               [self.token1.transfer(self.other_address, Wad.from_number(500)).invocation(),
                                self.token1.transfer(self.other_address, Wad.from_number(200)).invocation(),
-                               self.token1.transfer(self.other_address, Wad.from_number(150)).invocation()]).transact()
+                               self.token2.transfer(self.other_address, Wad.from_number(150)).invocation()]).transact()
 
         # then
         assert res.successful
-        assert self.token1.balance_of(self.our_address) == Wad.from_number(999150)
-        assert self.token1.balance_of(self.other_address) == Wad.from_number(850)
+        assert self.token1.balance_of(self.our_address) == Wad.from_number(999300)
+        assert self.token1.balance_of(self.other_address) == Wad.from_number(700)
+        assert self.token2.balance_of(self.our_address) == Wad.from_number(999850)
+        assert self.token2.balance_of(self.other_address) == Wad.from_number(150)
 
     def test_should_have_printable_representation(self):
         assert repr(self.tx) == f"TxManager('{self.tx.address}')"
