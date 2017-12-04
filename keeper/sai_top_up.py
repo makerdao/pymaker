@@ -26,7 +26,7 @@ from pymaker.util import eth_balance
 
 
 class SaiTopUp(SaiKeeper):
-    """SAI keeper to top-up cups before they reach the liquidation ratio.
+    """Keeper to top-up cups before they reach the liquidation ratio.
 
     Kepper constantly monitors cups owned by the `--eth-from` account. If the
     collateralization ratio falls under `mat` + `--min-margin`, the cup will get

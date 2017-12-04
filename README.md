@@ -111,7 +111,7 @@ This sections lists and briefly describes a set of reference keepers present in 
 
 ### `keeper-sai-arbitrage`
 
-SAI keeper to arbitrage on OasisDEX, `join`, `exit`, `boom` and `bust`.
+Keeper to arbitrage on OasisDEX, `join`, `exit`, `boom` and `bust`.
 
 Keeper constantly looks for profitable enough arbitrage opportunities
 and executes them the moment they become available. It can make profit on:
@@ -186,7 +186,7 @@ optional arguments:
 
 ### `keeper-sai-top-up`
 
-SAI keeper to top-up cups before they reach the liquidation ratio.
+Keeper to top-up cups before they reach the liquidation ratio.
 
 Kepper constantly monitors cups owned by the `--eth-from` account. If the
 collateralization ratio falls under `mat` + `--min-margin`, the cup will get
@@ -230,7 +230,7 @@ optional arguments:
 
 ### `keeper-sai-maker-otc`
 
-SAI keeper to act as a market maker on OasisDEX, on the W-ETH/SAI pair.
+Keeper to act as a market maker on OasisDEX, on the W-ETH/SAI pair.
 
 Keeper continuously monitors and adjusts its positions in order to act as a market maker.
 It maintains buy and sell orders in multiple bands at the same time. In each buy band,
@@ -405,7 +405,7 @@ for the bands config file.
 
 ### `keeper-sai-maker-etherdelta`
 
-SAI keeper to act as a market maker on EtherDelta, on the ETH/SAI pair.
+Keeper to act as a market maker on EtherDelta, on the ETH/SAI pair.
 
 Due to limitations of EtherDelta, **the development of this keeper has been
 discontinued**. It works most of the time, but due to the fact that EtherDelta
