@@ -25,7 +25,7 @@ from pymaker import Address, Wad
 from pymaker.approval import directly
 from pymaker.oasis import SimpleMarket, ExpiringMarket, MatchingMarket
 from pymaker.token import DSToken
-from tests.pymaker.helpers import wait_until_mock_called
+from tests.pymaker.helpers import wait_until_mock_called, is_hashable
 
 PAST_BLOCKS = 100
 
@@ -79,6 +79,15 @@ class GeneralMarketTest:
         assert self.otc.get_last_order_id() == 2
         assert self.otc.get_order(1) == self.otc.get_order(1)
         assert self.otc.get_order(1) != self.otc.get_order(2)
+
+    def test_order_hashable(self):
+        # given
+        self.otc.approve([self.token1], directly())
+        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
+                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+
+        # expect
+        assert is_hashable(self.otc.get_order(1))
 
     def test_take_partial(self):
         # given
