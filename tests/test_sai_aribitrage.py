@@ -17,11 +17,11 @@
 
 import pytest
 
-from keeper import Wad
 from keeper.sai_arbitrage import SaiArbitrage
 from pymaker.approval import directly
 from pymaker.deployment import Deployment
 from pymaker.feed import DSValue
+from pymaker.numeric import Wad, Ray
 from pymaker.transactional import TxManager
 from tests.helper import args, captured_output
 
@@ -241,6 +241,62 @@ class TestSaiArbitrage:
         # and
         # [the total supply of SKR has decreased, so we know the keeper did call exit('110.0')]
         assert deployment.skr.total_supply() == Wad.from_number(0)
+
+    def test_should_identify_arbitrage_against_oasis_and_bust(self, deployment: Deployment):
+        # given
+        keeper = SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address} --base-token SAI"
+                                        f" --min-profit 950.0 --max-engagement 14250.0"),
+                              web3=deployment.web3, config=deployment.get_config())
+
+        # and
+        # [we generate some bad debt available for `bust`]
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
+        deployment.tub.cork(Wad.from_number(1000000)).transact()
+        deployment.tub.cuff(Ray.from_number(2.0)).transact()
+        deployment.tub.chop(Ray.from_number(2.0)).transact()
+        deployment.gem.mint(Wad.from_number(100)).transact()
+        deployment.tub.join(Wad.from_number(100)).transact()
+        deployment.tub.open().transact()
+        deployment.tub.lock(1, Wad.from_number(100)).transact()
+        deployment.tub.draw(1, Wad.from_number(25000)).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(400).value).transact()
+        deployment.tub.bite(1).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
+        assert deployment.tap.woe() == Wad.from_number(25000)
+        assert deployment.tap.fog() == Wad.from_number(100)
+
+        # and
+        # [we add a boom/bust spread to make calculations a bit more difficult]
+        deployment.tap.jump(Wad.from_number(0.95)).transact()
+        assert deployment.tap.ask() == Wad.from_number(475.0)
+        assert deployment.tap.bid() == Wad.from_number(525.0)
+
+        # and
+        # [we have some SKR to cover rounding errors]
+        deployment.skr.mint(Wad.from_number(0.000000000000000001)).transact()
+
+        # and
+        # [we should now have 30 SKR available for 14250 SAI on `bust`]
+        # [now lets pretend somebody else placed an order on OASIS offering 15250 SAI for these 30 SKR]
+        # [this will be an arbitrage opportunity which can make the bot earn 1000 SAI]
+        deployment.sai.mint(Wad.from_number(15250)).transact()
+        deployment.otc.approve([deployment.sai, deployment.skr], directly())
+        deployment.otc.add_token_pair_whitelist(deployment.skr.address, deployment.sai.address).transact()
+        deployment.otc.make(deployment.sai.address, Wad.from_number(15250), deployment.skr.address, Wad.from_number(30)).transact()
+        assert len(deployment.otc.get_orders()) == 1
+
+        # when
+        keeper.approve()
+        keeper.process_block()
+
+        # then
+        # [the order on Oasis has been taken by the keeper]
+        assert len(deployment.otc.get_orders()) == 0
+
+        # and
+        # [the amount of bad debt has decreased, so we know the keeper did call bust('14250.0')]
+        # [the inequality below is to cater for rounding errors]
+        assert deployment.tap.woe() < Wad.from_number(10800.0)
 
     def test_should_obey_max_engagement(self, deployment: Deployment):
         # given
