@@ -139,7 +139,7 @@ class TestSaiArbitrage:
         # and
         # [somebody else placed an order on OASIS offering 110 WETH for 100 SKR]
         deployment.tub.join(Wad.from_number(110)).transact()
-        deployment.otc.approve([deployment.gem, deployment.skr], directly()) #deployment.sai,
+        deployment.otc.approve([deployment.gem, deployment.skr], directly())
         deployment.otc.add_token_pair_whitelist(deployment.skr.address, deployment.gem.address).transact()
         deployment.otc.make(deployment.gem.address, Wad.from_number(110), deployment.skr.address, Wad.from_number(100)).transact()
         assert deployment.skr.total_supply() == Wad.from_number(110)
@@ -154,8 +154,44 @@ class TestSaiArbitrage:
         assert len(deployment.otc.get_orders()) == 0
 
         # and
-        # [the total supply of SKR has increased, so we knot the keeper did call join('100.0')]
+        # [the total supply of SKR has increased, so we know the keeper did call join('100.0')]
         assert deployment.skr.total_supply() == Wad.from_number(210)
+
+    def test_should_identify_arbitrage_against_oasis_and_exit(self, deployment: Deployment):
+        # given
+        keeper = SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address} --base-token WETH"
+                                        f" --min-profit 5.0 --max-engagement 100.0"),
+                              web3=deployment.web3, config=deployment.get_config())
+
+        # and
+        # [a price is set, so the arbitrage keeper knows prices of `boom` and `bust`]
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
+
+        # and
+        # [we have 100 WETH]
+        deployment.gem.mint(Wad.from_number(100)).transact()
+
+        # and
+        # [somebody else placed an order on OASIS offering 110 SKR for 100 WETH]
+        deployment.gem.mint(Wad.from_number(110)).transact()
+        deployment.tub.join(Wad.from_number(110)).transact()
+        deployment.otc.approve([deployment.gem, deployment.skr], directly())
+        deployment.otc.add_token_pair_whitelist(deployment.skr.address, deployment.gem.address).transact()
+        deployment.otc.make(deployment.skr.address, Wad.from_number(110), deployment.gem.address, Wad.from_number(100)).transact()
+        assert deployment.skr.total_supply() == Wad.from_number(110)
+        assert len(deployment.otc.get_orders()) == 1
+
+        # when
+        keeper.approve()
+        keeper.process_block()
+
+        # then
+        # [the order on Oasis has been taken by the keeper]
+        assert len(deployment.otc.get_orders()) == 0
+
+        # and
+        # [the total supply of SKR has decreased, so we know the keeper did call exit('110.0')]
+        assert deployment.skr.total_supply() == Wad.from_number(0)
 
     def test_should_obey_max_engagement(self, deployment: Deployment):
         # given
