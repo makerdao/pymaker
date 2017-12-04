@@ -129,7 +129,6 @@ class TestSaiArbitrage:
         # [keeper used three transactions, as TxManager is not configured]
         assert (block_number_after - block_number_before) == 3
 
-    @pytest.mark.skip(reason="Can't get this test to work, will get back to it one day")
     def test_should_execute_arbitrage_in_one_transaction_if_tx_manager_configured(self, deployment: Deployment):
         # given
         tx_manager = TxManager.deploy(deployment.web3)
