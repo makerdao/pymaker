@@ -18,10 +18,10 @@
 import pytest
 
 from keeper import Address
-from pymaker.feed import DSValue
-from pymaker.numeric import Ray, Wad
 from keeper.sai_top_up import SaiTopUp
 from pymaker.deployment import Deployment
+from pymaker.feed import DSValue
+from pymaker.numeric import Ray, Wad
 from tests.helper import args, captured_output
 
 
@@ -31,17 +31,28 @@ class TestSaiTopUpArguments:
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
                 SaiTopUp(args=args(f""),
-                         web3=deployment.web3, config=deployment.get_config())
+                         web3=deployment.web3)
 
         # then
         assert "error: the following arguments are required: --eth-from" in err.getvalue()
+
+    def test_should_not_start_without_tub_address_argument(self, deployment: Deployment):
+        # when
+        with captured_output() as (out, err):
+            with pytest.raises(SystemExit):
+                SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount}"),
+                         web3=deployment.web3)
+
+        # then
+        assert "error: the following arguments are required: --tub-address" in err.getvalue()
 
     def test_should_not_start_without_min_margin_argument(self, deployment: Deployment):
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount}"),
-                         web3=deployment.web3, config=deployment.get_config())
+                SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} "
+                                   f"--tub-address {deployment.tub.address}"),
+                         web3=deployment.web3)
 
         # then
         assert "error: the following arguments are required: --min-margin" in err.getvalue()
@@ -50,8 +61,10 @@ class TestSaiTopUpArguments:
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} --min-margin 0.2"),
-                         web3=deployment.web3, config=deployment.get_config())
+                SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} "
+                                   f"--tub-address {deployment.tub.address} "
+                                   f"--min-margin 0.2"),
+                         web3=deployment.web3)
 
         # then
         assert "error: the following arguments are required: --top-up-margin" in err.getvalue()
@@ -93,8 +106,10 @@ class TestSaiTopUpBehaviour:
         deployment.tub.open().transact()
 
         # and
-        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
-                          web3=deployment.web3, config=deployment.get_config())
+        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} "
+                                    f"--tub-address {deployment.tub.address} "
+                                    f"--min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
+                          web3=deployment.web3)
         keeper.approve()
 
         # when
@@ -111,8 +126,10 @@ class TestSaiTopUpBehaviour:
         self.sai_balance(deployment, balance=2500)
 
         # and
-        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
-                          web3=deployment.web3, config=deployment.get_config())
+        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} "
+                                    f"--tub-address {deployment.tub.address} "
+                                    f"--min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
+                          web3=deployment.web3)
         keeper.approve()
 
         # when
@@ -137,8 +154,10 @@ class TestSaiTopUpBehaviour:
         self.sai_balance(deployment, balance=3500)
 
         # and
-        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
-                          web3=deployment.web3, config=deployment.get_config())
+        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} "
+                                    f"--tub-address {deployment.tub.address} "
+                                    f"--min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
+                          web3=deployment.web3)
         keeper.approve()
 
         # when
@@ -165,8 +184,10 @@ class TestSaiTopUpBehaviour:
         self.sai_balance(deployment, balance=3500)
 
         # and
-        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} --min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
-                          web3=deployment.web3, config=deployment.get_config())
+        keeper = SaiTopUp(args=args(f"--eth-from {deployment.web3.eth.defaultAccount} "
+                                    f"--tub-address {deployment.tub.address} "
+                                    f"--min-margin 0.2 --top-up-margin 0.45 --max-sai 3000 --avg-sai 2000"),
+                          web3=deployment.web3)
         keeper.approve()
 
         # when
