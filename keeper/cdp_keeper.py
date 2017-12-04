@@ -33,7 +33,7 @@ from pymaker.token import ERC20Token
 from pymaker.util import eth_balance, chain
 
 
-class SaiTopUp:
+class CdpKeeper:
     """Keeper to actively manage open CDPs.
 
     Keeper constantly monitors cups owned by the `--eth-from` account.
@@ -158,4 +158,4 @@ class SaiTopUp:
 
 
 if __name__ == '__main__':
-    SaiTopUp(sys.argv[1:]).lifecycle()
+    CdpKeeper(sys.argv[1:]).lifecycle()
