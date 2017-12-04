@@ -18,10 +18,11 @@
 import pytest
 
 from keeper import Wad
-from pymaker.approval import directly
-from pymaker.feed import DSValue
 from keeper.sai_arbitrage import SaiArbitrage
+from pymaker.approval import directly
 from pymaker.deployment import Deployment
+from pymaker.feed import DSValue
+from pymaker.transactional import TxManager
 from tests.helper import args, captured_output
 
 
@@ -117,10 +118,59 @@ class TestSaiArbitrage:
 
         # when
         keeper.approve()
+        block_number_before = deployment.web3.eth.blockNumber
         keeper.process_block()
+        block_number_after = deployment.web3.eth.blockNumber
 
         # then
         assert len(deployment.otc.get_orders()) == 0
+
+        # and
+        # [keeper used three transactions, as TxManager is not configured]
+        assert (block_number_after - block_number_before) == 3
+
+    @pytest.mark.skip(reason="Can't get this test to work, will get back to it one day")
+    def test_should_execute_arbitrage_in_one_transaction_if_tx_manager_configured(self, deployment: Deployment):
+        # given
+        tx_manager = TxManager.deploy(deployment.web3)
+
+        # and
+        keeper = SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address} --base-token SAI"
+                                        f" --min-profit 13.0 --max-engagement 100.0"
+                                        f" --tx-manager {tx_manager.address}"),
+                              web3=deployment.web3, config=deployment.get_config())
+
+        # and
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
+        deployment.tub.jar_jump(Wad.from_number(1.05)).transact()
+        deployment.tub.join(Wad.from_number(1000)).transact()
+        deployment.tap.jump(Wad.from_number(1.05)).transact()
+
+        # and
+        deployment.sai.mint(Wad.from_number(1000)).transact()
+
+        # and
+        deployment.otc.approve([deployment.gem, deployment.sai, deployment.skr], directly())
+        deployment.otc.add_token_pair_whitelist(deployment.sai.address, deployment.skr.address).transact()
+        deployment.otc.add_token_pair_whitelist(deployment.skr.address, deployment.gem.address).transact()
+        deployment.otc.add_token_pair_whitelist(deployment.gem.address, deployment.sai.address).transact()
+        deployment.otc.make(deployment.skr.address, Wad.from_number(105), deployment.sai.address, Wad.from_number(100)).transact()
+        deployment.otc.make(deployment.gem.address, Wad.from_number(110), deployment.skr.address, Wad.from_number(105)).transact()
+        deployment.otc.make(deployment.sai.address, Wad.from_number(115), deployment.gem.address, Wad.from_number(110)).transact()
+        assert len(deployment.otc.get_orders()) == 3
+
+        # when
+        keeper.approve()
+        block_number_before = deployment.web3.eth.blockNumber
+        keeper.process_block()
+        block_number_after = deployment.web3.eth.blockNumber
+
+        # then
+        assert len(deployment.otc.get_orders()) == 0
+
+        # and
+        # [keeper used only one transaction, as TxManager is configured]
+        assert (block_number_after - block_number_before) == 1
 
     def test_should_identify_arbitrage_against_oasis_and_join(self, deployment: Deployment):
         # given
