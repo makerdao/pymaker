@@ -1,3 +1,0 @@
-#!/bin/sh
-. "$(dirname "$0")"/_prelude
-exec python3 -m arbitrage_keeper.arbitrage_keeper $@
