@@ -16,11 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+
+from arbitrage_keeper.transfer_formatter import TransferFormatter
 from pymaker import Address, Transfer
 from pymaker.numeric import Wad
-
 from pymaker.token import ERC20Token
-from keeper.transfer_formatter import TransferFormatter
 
 
 @pytest.fixture(autouse=True)

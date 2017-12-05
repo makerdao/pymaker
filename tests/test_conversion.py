@@ -16,12 +16,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-from pymaker import Address
-from pymaker.numeric import Ray
-from pymaker.numeric import Wad
 
+from arbitrage_keeper.conversion import Conversion
+from pymaker import Address
+from pymaker.numeric import Wad, Ray
 from pymaker.token import ERC20Token
-from keeper.conversion import Conversion
 
 
 @pytest.fixture(autouse=True)

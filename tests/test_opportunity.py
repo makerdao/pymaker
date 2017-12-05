@@ -17,11 +17,10 @@
 
 import pytest
 
+from arbitrage_keeper.conversion import Conversion
+from arbitrage_keeper.opportunity import Sequence, OpportunityFinder
 from pymaker import Address
-from pymaker.numeric import Ray
-from pymaker.numeric import Wad
-from keeper.conversion import Conversion
-from keeper.opportunity import Sequence, OpportunityFinder
+from pymaker.numeric import Wad, Ray
 
 
 class TestSequence:

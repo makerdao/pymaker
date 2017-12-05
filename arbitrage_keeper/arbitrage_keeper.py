@@ -16,19 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import os
 import sys
 from typing import List
-
-import os
 
 import pkg_resources
 from web3 import Web3, HTTPProvider
 
-from keeper.conversion import Conversion
-from keeper.conversion import OasisTakeConversion
-from keeper.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion
-from keeper.opportunity import OpportunityFinder, Sequence
-from keeper.transfer_formatter import TransferFormatter
+from arbitrage_keeper.conversion import Conversion, OasisTakeConversion
+from arbitrage_keeper.conversion import TubBoomConversion, TubBustConversion, TubExitConversion, TubJoinConversion
+from arbitrage_keeper.opportunity import OpportunityFinder, Sequence
+from arbitrage_keeper.transfer_formatter import TransferFormatter
 from pymaker import Address, Contract
 from pymaker.approval import via_tx_manager, directly
 from pymaker.gas import DefaultGasPrice, FixedGasPrice
