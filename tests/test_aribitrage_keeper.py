@@ -17,7 +17,7 @@
 
 import pytest
 
-from keeper.sai_arbitrage import SaiArbitrage
+from arbitrage_keeper.arbitrage_keeper import ArbitrageKeeper
 from pymaker.approval import directly
 from pymaker.deployment import Deployment
 from pymaker.feed import DSValue
@@ -26,13 +26,13 @@ from pymaker.transactional import TxManager
 from tests.helper import args, captured_output
 
 
-class TestSaiArbitrage:
+class TestArbitrageKeeper:
     def test_should_not_start_without_eth_from_argument(self, deployment: Deployment):
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiArbitrage(args=args(f""),
-                             web3=deployment.web3, config=deployment.get_config())
+                ArbitrageKeeper(args=args(f""),
+                                web3=deployment.web3, config=deployment.get_config())
 
         # then
         assert "error: the following arguments are required: --eth-from" in err.getvalue()
@@ -41,8 +41,8 @@ class TestSaiArbitrage:
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"),
-                             web3=deployment.web3, config=deployment.get_config())
+                ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"),
+                                web3=deployment.web3, config=deployment.get_config())
 
         # then
         assert "error: the following arguments are required: --tub-address" in err.getvalue()
@@ -51,9 +51,9 @@ class TestSaiArbitrage:
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+                ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                        f" --tub-address {deployment.tub.address}"),
-                             web3=deployment.web3, config=deployment.get_config())
+                                web3=deployment.web3, config=deployment.get_config())
 
         # then
         assert "error: the following arguments are required: --tap-address" in err.getvalue()
@@ -62,10 +62,10 @@ class TestSaiArbitrage:
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+                ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                        f" --tub-address {deployment.tub.address}"
                                        f" --tap-address {deployment.tap.address}"),
-                             web3=deployment.web3, config=deployment.get_config())
+                                web3=deployment.web3, config=deployment.get_config())
 
         # then
         assert "error: the following arguments are required: --oasis-address" in err.getvalue()
@@ -74,11 +74,11 @@ class TestSaiArbitrage:
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+                ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                        f" --tub-address {deployment.tub.address}"
                                        f" --tap-address {deployment.tap.address}"
                                        f" --oasis-address {deployment.otc.address}"),
-                             web3=deployment.web3, config=deployment.get_config())
+                                web3=deployment.web3, config=deployment.get_config())
 
         # then
         assert "error: the following arguments are required: --base-token" in err.getvalue()
@@ -87,12 +87,12 @@ class TestSaiArbitrage:
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+                ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                        f" --tub-address {deployment.tub.address}"
                                        f" --tap-address {deployment.tap.address}"
                                        f" --oasis-address {deployment.otc.address}"
                                        f" --base-token {deployment.sai.address}"),
-                             web3=deployment.web3, config=deployment.get_config())
+                                web3=deployment.web3, config=deployment.get_config())
 
         # then
         assert "error: the following arguments are required: --min-profit" in err.getvalue()
@@ -101,13 +101,13 @@ class TestSaiArbitrage:
         # when
         with captured_output() as (out, err):
             with pytest.raises(SystemExit):
-                SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+                ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                        f" --tub-address {deployment.tub.address}"
                                        f" --tap-address {deployment.tap.address}"
                                        f" --oasis-address {deployment.otc.address}"
                                        f" --base-token {deployment.sai.address}"
                                        f" --min-profit 1.0"),
-                             web3=deployment.web3, config=deployment.get_config())
+                                web3=deployment.web3, config=deployment.get_config())
 
         # then
         assert "error: the following arguments are required: --max-engagement" in err.getvalue()
@@ -115,23 +115,23 @@ class TestSaiArbitrage:
     def test_should_not_start_if_base_token_is_invalid(self, deployment: Deployment):
         # expect
         with pytest.raises(Exception):
-            SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+            ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                    f" --tub-address {deployment.tub.address}"
                                    f" --tap-address {deployment.tap.address}"
                                    f" --oasis-address {deployment.otc.address}"
                                    f" --base-token 0x1121211212112121121211212112121121211212"
                                    f" --min-profit 1.0 --max-engagement 1000.0"),
-                         web3=deployment.web3, config=deployment.get_config())
+                            web3=deployment.web3, config=deployment.get_config())
 
     def test_should_not_do_anything_if_no_arbitrage_opportunities(self, deployment: Deployment):
         # given
-        keeper = SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+        keeper = ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                         f" --tub-address {deployment.tub.address}"
                                         f" --tap-address {deployment.tap.address}"
                                         f" --oasis-address {deployment.otc.address}"
                                         f" --base-token {deployment.sai.address}"
                                         f" --min-profit 1.0 --max-engagement 1000.0"),
-                              web3=deployment.web3, config=deployment.get_config())
+                                 web3=deployment.web3, config=deployment.get_config())
 
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
         deployment.tap.jump(Wad.from_number(1.05)).transact()
@@ -145,13 +145,13 @@ class TestSaiArbitrage:
 
     def test_should_identify_multi_step_arbitrage_on_oasis(self, deployment: Deployment):
         # given
-        keeper = SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+        keeper = ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                         f" --tub-address {deployment.tub.address}"
                                         f" --tap-address {deployment.tap.address}"
                                         f" --oasis-address {deployment.otc.address}"
                                         f" --base-token {deployment.sai.address}"
                                         f" --min-profit 13.0 --max-engagement 100.0"),
-                              web3=deployment.web3, config=deployment.get_config())
+                                 web3=deployment.web3, config=deployment.get_config())
 
         # and
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
@@ -190,14 +190,14 @@ class TestSaiArbitrage:
         tx_manager = TxManager.deploy(deployment.web3)
 
         # and
-        keeper = SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+        keeper = ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                         f" --tub-address {deployment.tub.address}"
                                         f" --tap-address {deployment.tap.address}"
                                         f" --oasis-address {deployment.otc.address}"
                                         f" --base-token {deployment.sai.address}"
                                         f" --min-profit 13.0 --max-engagement 100.0"
                                         f" --tx-manager {tx_manager.address}"),
-                              web3=deployment.web3, config=deployment.get_config())
+                                 web3=deployment.web3, config=deployment.get_config())
 
         # and
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
@@ -233,13 +233,13 @@ class TestSaiArbitrage:
 
     def test_should_identify_arbitrage_against_oasis_and_join(self, deployment: Deployment):
         # given
-        keeper = SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+        keeper = ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                         f" --tub-address {deployment.tub.address}"
                                         f" --tap-address {deployment.tap.address}"
                                         f" --oasis-address {deployment.otc.address}"
                                         f" --base-token {deployment.gem.address}"
                                         f" --min-profit 5.0 --max-engagement 100.0"),
-                              web3=deployment.web3, config=deployment.get_config())
+                                 web3=deployment.web3, config=deployment.get_config())
 
         # and
         # [a price is set, so the arbitrage keeper knows prices of `boom` and `bust`]
@@ -272,13 +272,13 @@ class TestSaiArbitrage:
 
     def test_should_identify_arbitrage_against_oasis_and_exit(self, deployment: Deployment):
         # given
-        keeper = SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+        keeper = ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                         f" --tub-address {deployment.tub.address}"
                                         f" --tap-address {deployment.tap.address}"
                                         f" --oasis-address {deployment.otc.address}"
                                         f" --base-token {deployment.gem.address}"
                                         f" --min-profit 5.0 --max-engagement 100.0"),
-                              web3=deployment.web3, config=deployment.get_config())
+                                 web3=deployment.web3, config=deployment.get_config())
 
         # and
         # [a price is set, so the arbitrage keeper knows prices of `boom` and `bust`]
@@ -312,13 +312,13 @@ class TestSaiArbitrage:
 
     def test_should_identify_arbitrage_against_oasis_and_bust(self, deployment: Deployment):
         # given
-        keeper = SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+        keeper = ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                         f" --tub-address {deployment.tub.address}"
                                         f" --tap-address {deployment.tap.address}"
                                         f" --oasis-address {deployment.otc.address}"
                                         f" --base-token {deployment.sai.address}"
                                         f" --min-profit 950.0 --max-engagement 14250.0"),
-                              web3=deployment.web3, config=deployment.get_config())
+                                 web3=deployment.web3, config=deployment.get_config())
 
         # and
         # [we generate some bad debt available for `bust`]
@@ -372,13 +372,13 @@ class TestSaiArbitrage:
 
     def test_should_obey_max_engagement(self, deployment: Deployment):
         # given
-        keeper = SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+        keeper = ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                         f" --tub-address {deployment.tub.address}"
                                         f" --tap-address {deployment.tap.address}"
                                         f" --oasis-address {deployment.otc.address}"
                                         f" --base-token {deployment.sai.address}"
                                         f" --min-profit 1.0 --max-engagement 90.0"),
-                              web3=deployment.web3, config=deployment.get_config())
+                                 web3=deployment.web3, config=deployment.get_config())
 
         # and
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
@@ -409,13 +409,13 @@ class TestSaiArbitrage:
 
     def test_should_obey_min_profit(self, deployment: Deployment):
         # given
-        keeper = SaiArbitrage(args=args(f"--eth-from {deployment.our_address.address}"
+        keeper = ArbitrageKeeper(args=args(f"--eth-from {deployment.our_address.address}"
                                         f" --tub-address {deployment.tub.address}"
                                         f" --tap-address {deployment.tap.address}"
                                         f" --oasis-address {deployment.otc.address}"
                                         f" --base-token {deployment.sai.address}"
                                         f" --min-profit 16.0 --max-engagement 1000.0"),
-                              web3=deployment.web3, config=deployment.get_config())
+                                 web3=deployment.web3, config=deployment.get_config())
 
         # and
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()

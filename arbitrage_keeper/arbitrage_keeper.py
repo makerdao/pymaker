@@ -42,7 +42,7 @@ from pymaker.transactional import TxManager
 from pymaker.util import chain
 
 
-class SaiArbitrage:
+class ArbitrageKeeper:
     """Keeper to arbitrage on OasisDEX, `join`, `exit`, `boom` and `bust`.
 
     Keeper constantly looks for profitable enough arbitrage opportunities
@@ -159,13 +159,6 @@ class SaiArbitrage:
     def startup(self, lifecycle):
         self.approve()
         lifecycle.on_block(self.process_block)
-        lifecycle.every(60*60, self.print_balances)
-
-    def print_balances(self):
-        def balances():
-            for token in [self.sai, self.skr, self.gem]:
-                yield f"{token.balance_of(self.our_address)} {token.name()}"
-        self.logger.info(f"Keeper balances are {', '.join(balances())}.")
 
     def approve(self):
         """Approve all components that need to access our balances"""
@@ -281,4 +274,4 @@ class SaiArbitrage:
 
 
 if __name__ == '__main__':
-    SaiArbitrage(sys.argv[1:]).lifecycle()
+    ArbitrageKeeper(sys.argv[1:]).lifecycle()
