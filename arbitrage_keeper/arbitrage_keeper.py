@@ -200,7 +200,6 @@ class ArbitrageKeeper:
         if opportunity:
             self.print_opportunity(opportunity)
             self.execute_opportunity(opportunity)
-            self.print_balances()
 
     def profitable_opportunities(self):
         """Identify all profitable arbitrage opportunities within given limits."""
