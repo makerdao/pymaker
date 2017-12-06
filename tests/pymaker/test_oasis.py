@@ -217,7 +217,7 @@ class GeneralMarketTest:
         assert past_kill[0].buy_amount == Wad.from_number(2)
         assert past_kill[0].timestamp != 0
 
-    @pytest.mark.timeout(5)
+    @pytest.mark.timeout(10)
     def test_on_make(self):
         # given
         on_make_mock = Mock()
@@ -238,7 +238,7 @@ class GeneralMarketTest:
         assert on_make.buy_amount == Wad.from_number(2)
         assert on_make.timestamp != 0
 
-    @pytest.mark.timeout(5)
+    @pytest.mark.timeout(10)
     def test_on_bump(self):
         # given
         on_bump_mock = Mock()
@@ -260,7 +260,7 @@ class GeneralMarketTest:
         assert on_bump.buy_amount == Wad.from_number(2)
         assert on_bump.timestamp != 0
 
-    @pytest.mark.timeout(5)
+    @pytest.mark.timeout(10)
     def test_on_take(self):
         # given
         on_take_mock = Mock()
@@ -286,7 +286,7 @@ class GeneralMarketTest:
         assert on_take.give_amount == Wad.from_number(1)
         assert on_take.timestamp != 0
 
-    @pytest.mark.timeout(5)
+    @pytest.mark.timeout(10)
     def test_on_kill(self):
         # given
         on_kill_mock = Mock()
