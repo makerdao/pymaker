@@ -109,50 +109,6 @@ describes how to unlock multiple accounts in Parity on startup.
 
 This sections lists and briefly describes a set of reference keepers present in this project.
 
-### `keeper-sai-top-up`
-
-Keeper to top-up cups before they reach the liquidation ratio.
-
-Kepper constantly monitors cups owned by the `--eth-from` account. If the
-collateralization ratio falls under `mat` + `--min-margin`, the cup will get
-topped-up up to `mat` + `--top-up-margin`.
-
-Cups owned by other accounts are ignored.
-
-Usage:
-```
-usage: keeper-sai-top-up [-h] [--rpc-host RPC_HOST] [--rpc-port RPC_PORT]
-                         --eth-from ETH_FROM [--gas-price GAS_PRICE]
-                         [--initial-gas-price INITIAL_GAS_PRICE]
-                         [--increase-gas-price-by INCREASE_GAS_PRICE_BY]
-                         [--increase-gas-price-every INCREASE_GAS_PRICE_EVERY]
-                         [--debug] [--trace] [--min-margin MIN_MARGIN]
-                         [--top-up-margin TOP_UP_MARGIN]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --rpc-host RPC_HOST   JSON-RPC host (default: `localhost')
-  --rpc-port RPC_PORT   JSON-RPC port (default: `8545')
-  --eth-from ETH_FROM   Ethereum account from which to send transactions
-  --gas-price GAS_PRICE
-                        Static gas pricing: Gas price in Wei
-  --initial-gas-price INITIAL_GAS_PRICE
-                        Increasing gas pricing: Initial gas price in Wei
-  --increase-gas-price-by INCREASE_GAS_PRICE_BY
-                        Increasing gas pricing: Gas price increase in Wei
-  --increase-gas-price-every INCREASE_GAS_PRICE_EVERY
-                        Increasing gas pricing: Gas price increase interval in
-                        seconds
-  --debug               Enable debug output
-  --trace               Enable trace output
-  --min-margin MIN_MARGIN
-                        Margin between the liquidation ratio and the top-up
-                        threshold
-  --top-up-margin TOP_UP_MARGIN
-                        Margin between the liquidation ratio and the top-up
-                        target
-```
-
 ### `keeper-sai-maker-otc`
 
 Keeper to act as a market maker on OasisDEX, on the W-ETH/SAI pair.
