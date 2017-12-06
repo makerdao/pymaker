@@ -187,5 +187,5 @@ Atomic transactions
 TxManager
 ~~~~~~~~~
 
-.. autoclass:: pymaker.transact.TxManager
+.. autoclass:: pymaker.transactional.TxManager
     :members:
