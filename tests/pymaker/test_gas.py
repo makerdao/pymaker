@@ -53,6 +53,28 @@ class TestFixedGasPrice:
         assert fixed_gas_price.get_gas_price(600) == value
         assert fixed_gas_price.get_gas_price(1000000) == value
 
+    def test_gas_price_should_be_updated_by_update_gas_price_method(self):
+        # given
+        value1 = 9000000000
+        value2 = 16000000000
+
+        # and
+        fixed_gas_price = FixedGasPrice(value1)
+
+        # and
+        assert fixed_gas_price.get_gas_price(0) == value1
+        assert fixed_gas_price.get_gas_price(1) == value1
+        assert fixed_gas_price.get_gas_price(2) == value1
+        assert fixed_gas_price.get_gas_price(5) == value1
+
+        # when
+        fixed_gas_price.update_gas_price(value2)
+
+        # then
+        assert fixed_gas_price.get_gas_price(60) == value2
+        assert fixed_gas_price.get_gas_price(120) == value2
+        assert fixed_gas_price.get_gas_price(600) == value2
+
 
 class TestIncreasingGasPrice:
     def test_gas_price_should_increase_with_time(self):

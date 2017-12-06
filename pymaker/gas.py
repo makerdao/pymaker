@@ -69,7 +69,8 @@ class FixedGasPrice(GasPrice):
     """Fixed gas price.
 
     Uses specified gas price instead of the default price suggested by the Ethereum
-    node the keeper is connected to.
+    node the keeper is connected to. The gas price may be later changed (while the transaction
+    is still in progress) by calling the `update_gas_price` method.
 
     Attributes:
         gas_price: Gas price to be used (in Wei).
@@ -77,6 +78,23 @@ class FixedGasPrice(GasPrice):
     def __init__(self, gas_price: int):
         assert(isinstance(gas_price, int))
         self.gas_price = gas_price
+
+    def update_gas_price(self, new_gas_price: int):
+        """Changes the initial gas price to a higher value, preferably higher.
+
+        The only reason when calling this function makes sense is when an async transaction is in progress.
+        In this case, the loop waiting for the transaction to be mined (see :py:class:`pymaker.Transact`)
+        will resend the pending transaction again with the new gas price.
+
+        As Parity excepts the gas price to rise by at least 10% in replacement transactions, the price
+        argument supplied to this method should be accordingly higher.
+
+        Args:
+            new_gas_price: New gas price to be set (in Wei).
+        """
+        assert(isinstance(new_gas_price, int))
+
+        self.gas_price = new_gas_price
 
     def get_gas_price(self, time_elapsed: int) -> Optional[int]:
         assert(isinstance(time_elapsed, int))
