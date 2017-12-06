@@ -457,7 +457,8 @@ This snippet demonstrates how multiple token transfers can be executed asynchron
 from web3 import HTTPProvider
 from web3 import Web3
 
-from pymaker import Address, Wad, synchronize
+from pymaker import Address, synchronize
+from pymaker.numeric import Wad
 from pymaker.sai import Tub
 from pymaker.token import ERC20Token
 
@@ -481,8 +482,9 @@ A `TxManager` instance has to be deployed and owned by the caller.
 from web3 import HTTPProvider
 from web3 import Web3
 
-from pymaker import Address, Wad
+from pymaker import Address
 from pymaker.approval import directly
+from pymaker.numeric import Wad
 from pymaker.sai import Tub
 from pymaker.token import ERC20Token
 from pymaker.transactional import TxManager
@@ -500,6 +502,42 @@ tx.approve([sai, skr], directly())
 tx.execute([sai.address, skr.address],
            [sai.transfer(Address('0x0101010101020202020203030303030404040404'), Wad.from_number(1.5)).invocation(),
             skr.transfer(Address('0x0303030303040404040405050505050606060606'), Wad.from_number(2.5)).invocation()]).transact()
+```
+
+### Ad-hoc increasing of gas price for asynchronous transactions
+
+```python
+import asyncio
+from random import randint
+
+from web3 import Web3, HTTPProvider
+
+from pymaker import Address
+from pymaker.gas import FixedGasPrice
+from pymaker.oasis import SimpleMarket
+
+
+web3 = Web3(HTTPProvider(endpoint_uri=f"http://localhost:8545"))
+otc = SimpleMarket(web3=web3, address=Address('0x375d52588c3f39ee7710290237a95C691d8432E7'))
+
+
+async def bump_with_increasing_gas_price(order_id):
+    gas_price = FixedGasPrice(gas_price=1000000000)
+    task = asyncio.ensure_future(otc.bump(order_id).transact_async(gas_price=gas_price))
+
+    while not task.done():
+        await asyncio.sleep(1)
+        gas_price.update_gas_price(gas_price.gas_price + randint(0, gas_price.gas_price))
+
+    return task.result()
+
+
+bump_task = asyncio.ensure_future(bump_with_increasing_gas_price(otc.get_orders()[-1].order_id))
+event_loop = asyncio.get_event_loop()
+bump_result = event_loop.run_until_complete(bump_task)
+
+print(bump_result)
+print(bump_result.transaction_hash)
 ```
 
 ## License
