@@ -18,10 +18,10 @@
 import asyncio
 import threading
 
-from eth_utils import coerce_return_to_text
+from eth_utils import coerce_return_to_text, encode_hex
 from ethereum import utils
 from ethereum.tester import k0
-from ethereum.utils import int_to_bytes, encode_hex
+from ethereum.utils import int_to_bytes
 from secp256k1 import PrivateKey
 from web3 import Web3
 from web3.eth import Eth
