@@ -39,7 +39,7 @@ class TxManager(Contract):
     have to be granted to the `TxManager`.
 
     You can find the source code of the `TxManager` contract here:
-    <https://github.com/reverendus/tx-manager>.
+    <https://github.com/makerdao/tx-manager>.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.

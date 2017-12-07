@@ -54,7 +54,7 @@ The current version provides APIs around:
 * `ERC20Token`,
 * `Tub`, `Tap` and `Top` (<https://github.com/makerdao/sai>),
 * `SimpleMarket`, `ExpiringMarket` and `MatchingMarket` (<https://github.com/makerdao/maker-otc>),
-* `TxManager` (<https://github.com/reverendus/tx-manager>),
+* `TxManager` (<https://github.com/makerdao/tx-manager>),
 * `DSGuard` (<https://github.com/dapphub/ds-guard>),
 * `DSToken` (<https://github.com/dapphub/ds-token>),
 * `DSEthToken` (<https://github.com/dapphub/ds-eth-token>),
