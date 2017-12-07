@@ -57,8 +57,8 @@ class Keeper:
     def start(self):
         with Web3Lifecycle(self.web3, self.logger) as lifecycle:
             self.lifecycle = lifecycle
-            lifecycle.on_startup(lambda lifecycle: self.startup())
-            lifecycle.on_shutdown(lambda lifecycle: self.shutdown())
+            lifecycle.on_startup(self.startup)
+            lifecycle.on_shutdown(self.shutdown)
 
     def args(self, parser: argparse.ArgumentParser):
         pass

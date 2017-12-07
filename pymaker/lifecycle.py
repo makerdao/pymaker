@@ -55,7 +55,7 @@ class Web3Lifecycle:
         # self.print_eth_balance()
         self.logger.info("Keeper started")
         if self.startup_function:
-            self.startup_function(self)
+            self.startup_function()
         self._main_loop()
         self.logger.info("Shutting down the keeper")
         if any_filter_thread_present():
@@ -66,7 +66,7 @@ class Web3Lifecycle:
             self._on_block_callback.wait()
         if self.shutdown_function:
             self.logger.info("Executing keeper shutdown logic...")
-            self.shutdown_function(self)
+            self.shutdown_function()
             self.logger.info("Shutdown logic finished")
         self.logger.info("Keeper terminated")
         exit(10 if self.fatal_termination else 0)
