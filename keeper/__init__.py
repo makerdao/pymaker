@@ -79,10 +79,6 @@ class Keeper:
     def executable_name(self):
         return "keeper-" + self.keeper_name()
 
-    # def print_eth_balance(self):
-    #     balance = self.eth_balance(self.our_address)
-    #     self.logger.info(f"Keeper account balance is {balance} ETH", Event.eth_balance(self.our_address, balance))
-
     def on_block(self, callback):
         self.lifecycle.on_block(callback)
 

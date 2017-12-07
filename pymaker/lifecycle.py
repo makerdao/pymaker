@@ -52,7 +52,6 @@ class Web3Lifecycle:
         self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
         self._check_account_unlocked()
         self._wait_for_init()
-        # self.print_eth_balance()
         self.logger.info("Keeper started")
         if self.startup_function:
             self.startup_function()
