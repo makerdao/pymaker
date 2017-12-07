@@ -169,7 +169,7 @@ class Web3Lifecycle:
 
         def func():
             try:
-                callback(self)
+                callback()
             except:
                 setup_timer(frequency_in_seconds)
                 raise
