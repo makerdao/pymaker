@@ -113,16 +113,27 @@ class IncreasingGasPrice(GasPrice):
         increase_by: Gas price increase in Wei, which will happen every `every_secs` seconds.
         every_secs: Gas price increase interval (in seconds).
     """
-    def __init__(self, initial_price: int, increase_by: int, every_secs: int):
+    def __init__(self, initial_price: int, increase_by: int, every_secs: int, max_price: Optional[int]):
         assert(isinstance(initial_price, int))
         assert(isinstance(increase_by, int))
         assert(isinstance(every_secs, int))
+        assert(isinstance(max_price, int) or max_price is None)
+        assert(initial_price > 0)
         assert(increase_by > 0)
         assert(every_secs > 0)
+        if max_price is not None:
+            assert(max_price > 0)
+
         self.initial_price = initial_price
         self.increase_by = increase_by
         self.every_secs = every_secs
+        self.max_price = max_price
 
     def get_gas_price(self, time_elapsed: int) -> Optional[int]:
         assert(isinstance(time_elapsed, int))
-        return self.initial_price + int(time_elapsed/self.every_secs)*self.increase_by
+
+        result = self.initial_price + int(time_elapsed/self.every_secs)*self.increase_by
+        if self.max_price is not None:
+            result = min(result, self.max_price)
+
+        return result

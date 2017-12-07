@@ -79,7 +79,7 @@ class TestFixedGasPrice:
 class TestIncreasingGasPrice:
     def test_gas_price_should_increase_with_time(self):
         # given
-        increasing_gas_price = IncreasingGasPrice(1000, 100, 60)
+        increasing_gas_price = IncreasingGasPrice(1000, 100, 60, None)
 
         # expect
         assert increasing_gas_price.get_gas_price(0) == 1000
@@ -90,16 +90,45 @@ class TestIncreasingGasPrice:
         assert increasing_gas_price.get_gas_price(120) == 1200
         assert increasing_gas_price.get_gas_price(1200) == 3000
 
-    def test_should_require_positive_increase_by_value(self):
+    def test_gas_price_should_obey_max_value(self):
+        # given
+        increasing_gas_price = IncreasingGasPrice(1000, 100, 60, 2500)
+
+        # expect
+        assert increasing_gas_price.get_gas_price(0) == 1000
+        assert increasing_gas_price.get_gas_price(1) == 1000
+        assert increasing_gas_price.get_gas_price(59) == 1000
+        assert increasing_gas_price.get_gas_price(60) == 1100
+        assert increasing_gas_price.get_gas_price(119) == 1100
+        assert increasing_gas_price.get_gas_price(120) == 1200
+        assert increasing_gas_price.get_gas_price(1200) == 2500
+        assert increasing_gas_price.get_gas_price(3000) == 2500
+        assert increasing_gas_price.get_gas_price(1000000) == 2500
+
+    def test_should_require_positive_initial_price(self):
         with pytest.raises(Exception):
-            IncreasingGasPrice(1000, 0, 60)
+            IncreasingGasPrice(0, 1000, 60, None)
 
         with pytest.raises(Exception):
-            IncreasingGasPrice(1000, -1, 60)
+            IncreasingGasPrice(-1, 1000, 60, None)
+
+    def test_should_require_positive_increase_by_value(self):
+        with pytest.raises(Exception):
+            IncreasingGasPrice(1000, 0, 60, None)
+
+        with pytest.raises(Exception):
+            IncreasingGasPrice(1000, -1, 60, None)
 
     def test_should_require_positive_every_secs_value(self):
         with pytest.raises(Exception):
-            IncreasingGasPrice(1000, 100, 0)
+            IncreasingGasPrice(1000, 100, 0, None)
 
         with pytest.raises(Exception):
-            IncreasingGasPrice(1000, 100, -1)
+            IncreasingGasPrice(1000, 100, -1, None)
+
+    def test_should_require_positive_max_price_if_provided(self):
+        with pytest.raises(Exception):
+            IncreasingGasPrice(1000, 1000, 60, 0)
+
+        with pytest.raises(Exception):
+            IncreasingGasPrice(1000, 1000, 60, -1)
