@@ -1,15 +1,11 @@
-Maker Keeper API
-================
+pymaker API
+===========
 
-The Maker Keeper API exists to provide a simple way of interacting with a set of smart contracts that create
-the `SAI Stablecoin System`. It is meant to evolve towards the `DAI Stablecoin System` in the future.
+The `pymaker` API exists to provide a simple way of interacting with Maker smart contracts.
 
-They were designed to simplify and facilitate creation of external profit-seeking agents, usually called keepers,
+It was designed to simplify and facilitate creation of external profit-seeking agents, usually called keepers,
 that operate around the stablecoin set of smart contracts. The API can also be used to automate certain tasks for
-other entities involved in the `Sai Stablecoin System`, like SAI issuers or traders.
-
-**Beware!** These APIs are still in a very early stage of development and they will very likely change
-and/or evolve together with the `SAI Stablecoin System`.
+other entities involved in the platform, like DAI issuers or traders.
 
 
 General
@@ -108,13 +104,26 @@ Approvals
 Contracts
 ---------
 
-Stablecoin
+DAI Stablecoin
 ~~~~~~~~~~~~~~
 
-The core smart contract of the `SAI Stablecoin System` is ``Tub``.
+Tub
+"""
 
-.. toctree::
-    api.sai
+.. autoclass:: pymaker.sai.Tub
+    :members:
+
+Tap
+"""
+
+.. autoclass:: pymaker.sai.Tap
+    :members:
+
+Top
+"""
+
+.. autoclass:: pymaker.sai.Top
+    :members:
 
 ERC20
 ~~~~~
@@ -141,8 +150,8 @@ DSEthToken
 Exchanges
 ~~~~~~~~~
 
-Both `OsaisDEX` and `EtherDelta` are independent of `SAI Stablecoin System`, but as a decentralized exchanges
-they provide arbitrage opportunities for profit-seeking agents, so an API has been created around them as well.
+`OaaisDEX`, `EtherDelta` and `0x` are decentralized exchanges which also provide some arbitrage opportunities
+for profit-seeking agents. Because of that an API has been created around them as well.
 
 OasisDEX
 """"""""
@@ -154,6 +163,12 @@ EtherDelta
 """"""""""
 
 .. automodule:: pymaker.etherdelta
+    :members:
+
+0x
+""
+
+.. automodule:: pymaker.zrx
     :members:
 
 
