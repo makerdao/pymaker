@@ -22,6 +22,13 @@ from pymaker.transactional import TxManager
 
 
 def directly():
+    """Approval function: Approves the caller to access tokens directly.
+
+    This function is meant to be passed as a parameter to the `approve(...)` method
+    of `Tub`, `SimpleMarket`, 'EtherDelta', 'TxManager', `ZrxExchange` and possibly
+    others in the future.
+    """
+
     def approval_function(token: ERC20Token, spender_address: Address, spender_name: str):
         if token.allowance_of(Address(token.web3.eth.defaultAccount), spender_address) < Wad(2 ** 128 - 1):
             Contract.logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.name()} directly")
@@ -32,6 +39,13 @@ def directly():
 
 
 def via_tx_manager(tx_manager: TxManager):
+    """Approval function: Approves the caller to access tokens via the `TxManager`.
+
+    This function is meant to be passed as a parameter to the `approve(...)` method
+    of `Tub`, `SimpleMarket`, 'EtherDelta', 'TxManager', `ZrxExchange` and possibly
+    others in the future.
+    """
+
     def approval_function(token: ERC20Token, spender_address: Address, spender_name: str):
         if token.allowance_of(tx_manager.address, spender_address) < Wad(2 ** 128 - 1):
             Contract.logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.name()}"
