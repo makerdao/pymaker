@@ -50,8 +50,8 @@ class TestLifecycle:
     def test_should_call_shutdown_callback(self):
         # given
         ordering = []
-        startup_mock = MagicMock(side_effect=lambda lifecycle: ordering.append('STARTUP'))
-        shutdown_mock = MagicMock(side_effect=lambda lifecycle: ordering.append('SHUTDOWN'))
+        startup_mock = MagicMock(side_effect=lambda: ordering.append('STARTUP'))
+        shutdown_mock = MagicMock(side_effect=lambda: ordering.append('SHUTDOWN'))
 
         # when
         with pytest.raises(SystemExit):
@@ -65,7 +65,7 @@ class TestLifecycle:
     def test_every(self):
         self.counter = 0
 
-        def callback(lifecycle):
+        def callback():
             self.counter = self.counter + 1
             if self.counter >= 2:
                 lifecycle.terminate("Unit test is over")
