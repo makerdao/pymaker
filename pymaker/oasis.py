@@ -35,51 +35,44 @@ class Order:
 
     Attributes:
         order_id: Id of the order.
-        sell_how_much: The amount of the `sell_which_token` token which is put on sale.
-        sell_which_token: The address of the token which is put on sale.
-        buy_how_much: The price the order creator wants to be paid, denominated in the `buy_which_token` token.
-        buy_which_token: The address of the token the order creator wants to be paid with.
-        owner: Ethereum address of the owner of this order.
+        maker: Ethereum address of the owner of this order.
+        pay_token: The address of the token which is put on sale.
+        pay_amount: The amount of the `pay_token` token which is put on sale.
+        buy_token: The address of the token the order creator wants to be paid with.
+        buy_amount: The price the order creator wants to be paid, denominated in the `buy_token` token.
         timestamp: Date and time when this order has been created, as a unix timestamp.
     """
 
-    def __init__(self,
-                 market,
-                 order_id: int,
-                 sell_how_much: Wad,
-                 sell_which_token: Address,
-                 buy_how_much: Wad,
-                 buy_which_token: Address,
-                 owner: Address,
-                 timestamp: int):
+    def __init__(self, market, order_id: int, maker: Address, pay_token: Address, pay_amount: Wad, buy_token: Address,
+                 buy_amount: Wad, timestamp: int):
         assert(isinstance(order_id, int))
-        assert(isinstance(sell_how_much, Wad))
-        assert(isinstance(sell_which_token, Address))
-        assert(isinstance(buy_how_much, Wad))
-        assert(isinstance(buy_which_token, Address))
-        assert(isinstance(owner, Address))
+        assert(isinstance(maker, Address))
+        assert(isinstance(pay_token, Address))
+        assert(isinstance(pay_amount, Wad))
+        assert(isinstance(buy_token, Address))
+        assert(isinstance(buy_amount, Wad))
         assert(isinstance(timestamp, int))
 
         self._market = market
         self.order_id = order_id
-        self.sell_how_much = sell_how_much
-        self.sell_which_token = sell_which_token
-        self.buy_how_much = buy_how_much
-        self.buy_which_token = buy_which_token
-        self.owner = owner
+        self.maker = maker
+        self.pay_token = pay_token
+        self.pay_amount = pay_amount
+        self.buy_token = buy_token
+        self.buy_amount = buy_amount
         self.timestamp = timestamp
 
     @property
     def sell_to_buy_price(self) -> Wad:
-        return self.sell_how_much / self.buy_how_much
+        return self.pay_amount / self.buy_amount
 
     @property
     def buy_to_sell_price(self) -> Wad:
-        return self.buy_how_much / self.sell_how_much
+        return self.buy_amount / self.pay_amount
 
     @property
     def remaining_sell_amount(self) -> Wad:
-        return self.sell_how_much
+        return self.pay_amount
 
     def __eq__(self, other):
         assert(isinstance(other, Order))
@@ -344,13 +337,8 @@ class SimpleMarket(Contract):
             self._none_orders.add(order_id)
             return None
         else:
-            return Order(market=self,
-                         order_id=order_id,
-                         sell_how_much=Wad(array[0]),
-                         sell_which_token=Address(array[1]),
-                         buy_how_much=Wad(array[2]),
-                         buy_which_token=Address(array[3]),
-                         owner=Address(array[4]),
+            return Order(market=self, order_id=order_id, maker=Address(array[4]), pay_token=Address(array[1]),
+                         pay_amount=Wad(array[0]), buy_token=Address(array[3]), buy_amount=Wad(array[2]),
                          timestamp=array[6])
 
     def get_orders(self) -> List[Order]:
@@ -363,30 +351,30 @@ class SimpleMarket(Contract):
         return [order for order in orders if order is not None]
 
     #TODO make it return the id of the newly created order
-    def make(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> Transact:
+    def make(self, pay_token: Address, pay_amount: Wad, buy_token: Address, buy_amount: Wad) -> Transact:
         """Create a new order.
 
         The `have_amount` of `have_token` token will be taken from you on order creation and deposited
         in the market contract. Allowance needs to be set first - refer to the `approve()` method.
 
         Args:
-            have_token: Address of the ERC20 token you want to put on sale.
-            have_amount: Amount of the `have_token` token you want to put on sale.
-            want_token: Address of the ERC20 token you want to be paid with.
-            want_amount: Amount of the `want_token` you want to receive.
+            pay_token: Address of the ERC20 token you want to put on sale.
+            pay_amount: Amount of the `pay_token` token you want to put on sale.
+            buy_token: Address of the ERC20 token you want to be paid with.
+            buy_amount: Amount of the `buy_token` you want to receive.
 
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
-        assert(isinstance(have_token, Address))
-        assert(isinstance(have_amount, Wad))
-        assert(isinstance(want_token, Address))
-        assert(isinstance(want_amount, Wad))
-        assert(have_amount > Wad(0))
-        assert(want_amount > Wad(0))
+        assert(isinstance(pay_token, Address))
+        assert(isinstance(pay_amount, Wad))
+        assert(isinstance(buy_token, Address))
+        assert(isinstance(buy_amount, Wad))
+        assert(pay_amount > Wad(0))
+        assert(buy_amount > Wad(0))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'make', [have_token.address, want_token.address, have_amount.value, want_amount.value])
+                        'make', [pay_token.address, buy_token.address, pay_amount.value, buy_amount.value])
 
     def bump(self, order_id: int) -> Transact:
         """Bumps an order.
@@ -408,13 +396,13 @@ class SimpleMarket(Contract):
     def take(self, order_id: int, quantity: Wad) -> Transact:
         """Takes (buys) an order.
 
-        If `quantity` is equal to `sell_how_much`, the whole order will be taken (bought) which will make it
+        If `quantity` is equal to `pay_amount`, the whole order will be taken (bought) which will make it
         disappear from the order book. If you want to buy a fraction of the order, set `quantity` to a number
-        lower than `sell_how_much`.
+        lower than `pay_amount`.
 
         Args:
             order_id: Id of the order you want to take (buy).
-            quantity: Quantity of `sell_which_token` that you want to buy.
+            quantity: Quantity of `pay_token` that you want to buy.
 
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
@@ -565,7 +553,7 @@ class MatchingMarket(ExpiringMarket):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'addTokenPairWhitelist', [base_token.address, quote_token.address])
 
-    def make(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad, pos: int = None) -> Transact:
+    def make(self, pay_token: Address, pay_amount: Wad, buy_token: Address, buy_amount: Wad, pos: int = None) -> Transact:
         """Create a new order.
 
         The `have_amount` of `have_token` token will be taken from you on order creation and deposited
@@ -582,36 +570,36 @@ class MatchingMarket(ExpiringMarket):
         due to high gas usage.
 
         Args:
-            have_token: Address of the ERC20 token you want to put on sale.
-            have_amount: Amount of the `have_token` token you want to put on sale.
-            want_token: Address of the ERC20 token you want to be paid with.
-            want_amount: Amount of the `want_token` you want to receive.
+            pay_token: Address of the ERC20 token you want to put on sale.
+            pay_amount: Amount of the `pay_token` token you want to put on sale.
+            buy_token: Address of the ERC20 token you want to be paid with.
+            buy_amount: Amount of the `buy_token` you want to receive.
             pos: The position to insert the order at in the sorted list.
                 If `None`, the optimal position will automatically get calculated.
 
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
-        assert(isinstance(have_token, Address))
-        assert(isinstance(have_amount, Wad))
-        assert(isinstance(want_token, Address))
-        assert(isinstance(want_amount, Wad))
+        assert(isinstance(pay_token, Address))
+        assert(isinstance(pay_amount, Wad))
+        assert(isinstance(buy_token, Address))
+        assert(isinstance(buy_amount, Wad))
         assert(isinstance(pos, int) or (pos is None))
-        assert(have_amount > Wad(0))
-        assert(want_amount > Wad(0))
+        assert(pay_amount > Wad(0))
+        assert(buy_amount > Wad(0))
 
         if pos is None:
-            pos = self.position(have_token=have_token,
-                                have_amount=have_amount,
-                                want_token=want_token,
-                                want_amount=want_amount)
+            pos = self.position(pay_token=pay_token,
+                                pay_amount=pay_amount,
+                                buy_token=buy_token,
+                                buy_amount=buy_amount)
         else:
             assert(pos >= 0)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'offer', [have_amount.value, have_token.address, want_amount.value, want_token.address, pos])
+                        'offer', [pay_amount.value, pay_token.address, buy_amount.value, buy_token.address, pos])
 
-    def position(self, have_token: Address, have_amount: Wad, want_token: Address, want_amount: Wad) -> int:
+    def position(self, pay_token: Address, pay_amount: Wad, buy_token: Address, buy_amount: Wad) -> int:
         """Calculate the position (`pos`) new order should be inserted at to minimize gas costs.
 
         The `MatchingMarket` contract maintains an internal ordered linked list of orders, which allows the contract
@@ -627,24 +615,24 @@ class MatchingMarket(ExpiringMarket):
         by `make` when `pos` argument is omitted (or is `None`).
 
         Args:
-            have_token: Address of the ERC20 token you want to put on sale.
-            have_amount: Amount of the `have_token` token you want to put on sale.
-            want_token: Address of the ERC20 token you want to be paid with.
-            want_amount: Amount of the `want_token` you want to receive.
+            pay_token: Address of the ERC20 token you want to put on sale.
+            pay_amount: Amount of the `pay_token` token you want to put on sale.
+            buy_token: Address of the ERC20 token you want to be paid with.
+            buy_amount: Amount of the `buy_token` you want to receive.
 
         Returns:
             The position (`pos`) new order should be inserted at.
         """
-        assert(isinstance(have_token, Address))
-        assert(isinstance(have_amount, Wad))
-        assert(isinstance(want_token, Address))
-        assert(isinstance(want_amount, Wad))
+        assert(isinstance(pay_token, Address))
+        assert(isinstance(pay_amount, Wad))
+        assert(isinstance(buy_token, Address))
+        assert(isinstance(buy_amount, Wad))
 
-        orders = filter(lambda o: o.sell_which_token == have_token and
-                                  o.buy_which_token == want_token and
-                                  o.sell_how_much / o.buy_how_much >= have_amount / want_amount, self.get_orders())
+        orders = filter(lambda o: o.pay_token == pay_token and
+                                  o.buy_token == buy_token and
+                                  o.pay_amount / o.buy_amount >= pay_amount / buy_amount, self.get_orders())
 
-        sorted_orders = sorted(orders, key=lambda o: o.sell_how_much / o.buy_how_much)
+        sorted_orders = sorted(orders, key=lambda o: o.pay_amount / o.buy_amount)
         return sorted_orders[0].order_id if len(sorted_orders) > 0 else 0
 
     def __repr__(self):

@@ -47,19 +47,19 @@ class GeneralMarketTest:
 
         # when
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # then
         assert self.otc.get_last_order_id() == 1
 
         # and
         assert self.otc.get_order(1).order_id == 1
-        assert self.otc.get_order(1).sell_which_token == self.token1.address
-        assert self.otc.get_order(1).sell_how_much == Wad.from_number(1)
-        assert self.otc.get_order(1).buy_which_token == self.token2.address
-        assert self.otc.get_order(1).buy_how_much == Wad.from_number(2)
-        assert self.otc.get_order(1).owner == self.our_address
+        assert self.otc.get_order(1).pay_token == self.token1.address
+        assert self.otc.get_order(1).pay_amount == Wad.from_number(1)
+        assert self.otc.get_order(1).buy_token == self.token2.address
+        assert self.otc.get_order(1).buy_amount == Wad.from_number(2)
+        assert self.otc.get_order(1).maker == self.our_address
         assert self.otc.get_order(1).timestamp != 0
 
         # and
@@ -68,12 +68,12 @@ class GeneralMarketTest:
     def test_order_comparison(self):
         # when
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # and
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(3),
-                      want_token=self.token2.address, want_amount=Wad.from_number(4)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(3),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(4)).transact()
 
         # then
         assert self.otc.get_last_order_id() == 2
@@ -83,8 +83,8 @@ class GeneralMarketTest:
     def test_order_hashable(self):
         # given
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # expect
         assert is_hashable(self.otc.get_order(1))
@@ -92,24 +92,24 @@ class GeneralMarketTest:
     def test_take_partial(self):
         # given
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # when
         self.otc.approve([self.token2], directly())
         self.otc.take(1, Wad.from_number(0.25)).transact()
 
         # then
-        assert self.otc.get_order(1).sell_how_much == Wad.from_number(0.75)
-        assert self.otc.get_order(1).buy_how_much == Wad.from_number(1.5)
+        assert self.otc.get_order(1).pay_amount == Wad.from_number(0.75)
+        assert self.otc.get_order(1).buy_amount == Wad.from_number(1.5)
         assert self.otc.get_orders() == [self.otc.get_order(1)]
         assert self.otc.get_last_order_id() == 1
 
     def test_take_complete(self):
         # given
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # when
         self.otc.approve([self.token2], directly())
@@ -123,8 +123,8 @@ class GeneralMarketTest:
     def test_kill(self):
         # given
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # when
         self.otc.kill(1).transact(gas=4000000)
@@ -143,8 +143,8 @@ class GeneralMarketTest:
     def test_past_make(self):
         # when
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # then
         past_make = self.otc.past_make(PAST_BLOCKS)
@@ -160,8 +160,8 @@ class GeneralMarketTest:
     def test_past_bump(self):
         # when
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
         self.otc.bump(1).transact()
 
         # then
@@ -178,8 +178,8 @@ class GeneralMarketTest:
     def test_past_take(self):
         # when
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # and
         self.otc.approve([self.token2], directly())
@@ -200,8 +200,8 @@ class GeneralMarketTest:
     def test_past_kill(self):
         # when
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # and
         self.otc.kill(1).transact()
@@ -225,8 +225,8 @@ class GeneralMarketTest:
 
         # when
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # then
         on_make = wait_until_mock_called(on_make_mock)[0]
@@ -246,8 +246,8 @@ class GeneralMarketTest:
 
         # when
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
         self.otc.bump(1).transact()
 
         # then
@@ -268,8 +268,8 @@ class GeneralMarketTest:
 
         # when
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # and
         self.otc.approve([self.token2], directly())
@@ -294,8 +294,8 @@ class GeneralMarketTest:
 
         # when
         self.otc.approve([self.token1], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # and
         self.otc.kill(1).transact()
@@ -353,12 +353,12 @@ class TestMatchingMarket(GeneralMarketTest):
     def test_simple_matching(self):
         # given
         self.otc.approve([self.token1, self.token2], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
 
         # when
-        self.otc.make(have_token=self.token2.address, have_amount=Wad.from_number(2.5),
-                      want_token=self.token1.address, want_amount=Wad.from_number(1)).transact()
+        self.otc.make(pay_token=self.token2.address, pay_amount=Wad.from_number(2.5),
+                      buy_token=self.token1.address, buy_amount=Wad.from_number(1)).transact()
 
         # then
         assert self.otc.get_order(1) is None
@@ -370,20 +370,20 @@ class TestMatchingMarket(GeneralMarketTest):
     def test_advanced_matching(self):
         # given
         self.otc.approve([self.token1, self.token2], directly())
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2)).transact()
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2.2)).transact()
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(1.8)).transact()
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(2.1)).transact()
-        self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                      want_token=self.token2.address, want_amount=Wad.from_number(1.9)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2.2)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(1.8)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2.1)).transact()
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(1.9)).transact()
 
         # when
-        self.otc.make(have_token=self.token2.address, have_amount=Wad.from_number(20.1),
-                      want_token=self.token1.address, want_amount=Wad.from_number(10)).transact(gas=4000000)
+        self.otc.make(pay_token=self.token2.address, pay_amount=Wad.from_number(20.1),
+                      buy_token=self.token1.address, buy_amount=Wad.from_number(10)).transact(gas=4000000)
 
         # then
         assert self.otc.get_order(1) is None
@@ -397,11 +397,11 @@ class TestMatchingMarket(GeneralMarketTest):
 
         # and
         assert self.otc.get_order(6).order_id == 6
-        assert self.otc.get_order(6).sell_which_token == self.token2.address
-        assert self.otc.get_order(6).sell_how_much == Wad.from_number(14.07)
-        assert self.otc.get_order(6).buy_which_token == self.token1.address
-        assert self.otc.get_order(6).buy_how_much == Wad.from_number(7)
-        assert self.otc.get_order(6).owner == self.our_address
+        assert self.otc.get_order(6).pay_token == self.token2.address
+        assert self.otc.get_order(6).pay_amount == Wad.from_number(14.07)
+        assert self.otc.get_order(6).buy_token == self.token1.address
+        assert self.otc.get_order(6).buy_amount == Wad.from_number(7)
+        assert self.otc.get_order(6).maker == self.our_address
         assert self.otc.get_order(6).timestamp != 0
 
     def test_should_have_printable_representation(self):
@@ -421,8 +421,8 @@ class TestMatchingMarketPosition:
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
         self.otc.approve([self.token1, self.token2], directly())
         for amount in [11,55,44,34,36,21,45,51,15]:
-            self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                          want_token=self.token2.address, want_amount=Wad.from_number(amount)).transact()
+            self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                          buy_token=self.token2.address, buy_amount=Wad.from_number(amount)).transact()
 
     def test_buy_enabled(self):
         # when
@@ -452,22 +452,22 @@ class TestMatchingMarketPosition:
 
     def test_should_calculate_correct_order_position(self):
         # expect
-        assert self.otc.position(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                                 want_token=self.token2.address, want_amount=Wad.from_number(35)) == 4
+        assert self.otc.position(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                                 buy_token=self.token2.address, buy_amount=Wad.from_number(35)) == 4
 
     def test_should_use_correct_order_position_by_default(self):
         # when
-        explicit_position = self.otc.position(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                                              want_token=self.token2.address, want_amount=Wad.from_number(35))
-        explicit_receipt = self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                                         want_token=self.token2.address, want_amount=Wad.from_number(35),
+        explicit_position = self.otc.position(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                                              buy_token=self.token2.address, buy_amount=Wad.from_number(35))
+        explicit_receipt = self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                                         buy_token=self.token2.address, buy_amount=Wad.from_number(35),
                                          pos=explicit_position).transact()
         explicit_gas_used = explicit_receipt.gas_used
 
         # and
         self.setup_method()
-        implicit_receipt = self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                                         want_token=self.token2.address, want_amount=Wad.from_number(35)).transact()
+        implicit_receipt = self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                                         buy_token=self.token2.address, buy_amount=Wad.from_number(35)).transact()
         implicit_gas_used = implicit_receipt.gas_used
 
         # then
@@ -475,22 +475,22 @@ class TestMatchingMarketPosition:
 
     def test_calculated_order_position_should_bring_gas_savings(self):
         # when
-        position = self.otc.position(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                                     want_token=self.token2.address, want_amount=Wad.from_number(35))
-        gas_used_optimal = self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                                         want_token=self.token2.address, want_amount=Wad.from_number(35),
+        position = self.otc.position(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                                     buy_token=self.token2.address, buy_amount=Wad.from_number(35))
+        gas_used_optimal = self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                                         buy_token=self.token2.address, buy_amount=Wad.from_number(35),
                                          pos=position).transact().gas_used
 
         # and
         self.setup_method()
-        gas_used_minus_1 = self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                                         want_token=self.token2.address, want_amount=Wad.from_number(35),
+        gas_used_minus_1 = self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                                         buy_token=self.token2.address, buy_amount=Wad.from_number(35),
                                          pos=position-1).transact().gas_used
 
         # and
         self.setup_method()
-        gas_used_plus_1 = self.otc.make(have_token=self.token1.address, have_amount=Wad.from_number(1),
-                                        want_token=self.token2.address, want_amount=Wad.from_number(35),
+        gas_used_plus_1 = self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                                        buy_token=self.token2.address, buy_amount=Wad.from_number(35),
                                         pos=position+1).transact().gas_used
 
         # then
