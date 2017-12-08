@@ -41,6 +41,10 @@ class Web3Lifecycle:
     `Web3Lifecycle` does some tricks to monitor for it, and shutdowns the keeper the
     moment it detects something may be wrong with the listener threads.
 
+    It also handles:
+    - waiting for the node to have at least one peer and sync before starting the keeper,
+    - checking if the keeper account (`web3.eth.defaultAccount`) is unlocked.
+
     Also, once the lifecycle is initialized, keeper starts listening for SIGINT/SIGTERM
     signals and starts a graceful shutdown if it receives any of them.
 
@@ -157,6 +161,11 @@ class Web3Lifecycle:
 
     # TODO should queue the callback and apply it only after keeper startup
     def on_block(self, callback):
+        """Register the specified callback to be run for each new block received by the node.
+
+        Args:
+            callback: Function to be called for each new blocks.
+        """
         def new_block_callback(block_hash):
             self._last_block_time = datetime.datetime.now()
             block = self.web3.eth.getBlock(block_hash)
@@ -189,6 +198,13 @@ class Web3Lifecycle:
 
     # TODO should queue the every and apply it only after keeper startup
     def every(self, frequency_in_seconds: int, callback):
+        """Register the specified callback to be called by a timer.
+
+        Args:
+            frequency_in_seconds: Execution frequency (in seconds).
+            callback: Function to be called by the timer.
+        """
+
         def setup_timer(delay):
             timer = threading.Timer(delay, func)
             timer.daemon = True
@@ -205,7 +221,7 @@ class Web3Lifecycle:
         setup_timer(1)
         self._at_least_one_every = True
 
-    def sigint_sigterm_handler(self, sig, frame):
+    def _sigint_sigterm_handler(self, sig, frame):
         if self.terminated_externally:
             self.logger.warning("Graceful keeper termination due to SIGINT/SIGTERM already in progress")
         else:
@@ -214,8 +230,8 @@ class Web3Lifecycle:
 
     def _main_loop(self):
         # terminate gracefully on either SIGINT or SIGTERM
-        signal.signal(signal.SIGINT, self.sigint_sigterm_handler)
-        signal.signal(signal.SIGTERM, self.sigint_sigterm_handler)
+        signal.signal(signal.SIGINT, self._sigint_sigterm_handler)
+        signal.signal(signal.SIGTERM, self._sigint_sigterm_handler)
 
         # in case at least one filter has been set up, we enter an infinite loop and let
         # the callbacks do the job. in case of no filters, we will not enter this loop
