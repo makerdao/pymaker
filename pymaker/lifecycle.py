@@ -41,6 +41,11 @@ class Web3Lifecycle:
     `Web3Lifecycle` does some tricks to monitor for it, and shutdowns the keeper the
     moment it detects something may be wrong with the listener threads.
 
+    Other quirk is the new block filter callback taking more time to execute that
+    the time between subsequent blocks. If you do not handle it explicitly,
+    the event queue will pile up and the keeper won't work as expected.
+    `Web3Lifecycle` used :py:class:`pymaker.util.AsyncCallback` to handle it properly.
+
     It also handles:
     - waiting for the node to have at least one peer and sync before starting the keeper,
     - checking if the keeper account (`web3.eth.defaultAccount`) is unlocked.
