@@ -97,17 +97,17 @@ class TestEtherDelta:
         self.etherdelta.deposit_token(self.token2.address, Wad.from_number(10)).transact()
 
         # when
-        order = self.etherdelta.create_order(token_give=self.token1.address, amount_give=Wad.from_number(2),
-                                             token_get=self.token2.address, amount_get=Wad.from_number(4),
+        order = self.etherdelta.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(2),
+                                             buy_token=self.token2.address, buy_amount=Wad.from_number(4),
                                              expires=100000000)
 
         # then
-        assert order.token_give == self.token1.address
-        assert order.amount_give == Wad.from_number(2)
-        assert order.token_get == self.token2.address
-        assert order.amount_get == Wad.from_number(4)
+        assert order.maker == self.our_address
+        assert order.pay_token == self.token1.address
+        assert order.pay_amount == Wad.from_number(2)
+        assert order.buy_token == self.token2.address
+        assert order.buy_amount == Wad.from_number(4)
         assert order.expires == 100000000
-        assert order.user == self.our_address
 
         # and
         assert self.etherdelta.amount_available(order) == Wad.from_number(4)
@@ -141,13 +141,13 @@ class TestEtherDelta:
 
     def test_order_comparison(self):
         # given
-        order1 = self.etherdelta.create_order(token_give=self.token1.address, amount_give=Wad.from_number(2),
-                                              token_get=self.token2.address, amount_get=Wad.from_number(4),
+        order1 = self.etherdelta.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(2),
+                                              buy_token=self.token2.address, buy_amount=Wad.from_number(4),
                                               expires=100000000)
 
         # and
-        order2 = self.etherdelta.create_order(token_give=self.token1.address, amount_give=Wad.from_number(2),
-                                              token_get=self.token2.address, amount_get=Wad.from_number(4),
+        order2 = self.etherdelta.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(2),
+                                              buy_token=self.token2.address, buy_amount=Wad.from_number(4),
                                               expires=100000000)
 
         # then
@@ -157,8 +157,8 @@ class TestEtherDelta:
 
     def test_order_hashable(self):
         # given
-        order1 = self.etherdelta.create_order(token_give=self.token1.address, amount_give=Wad.from_number(2),
-                                              token_get=self.token2.address, amount_get=Wad.from_number(4),
+        order1 = self.etherdelta.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(2),
+                                              buy_token=self.token2.address, buy_amount=Wad.from_number(4),
                                               expires=100000000)
 
         # expect

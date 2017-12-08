@@ -40,112 +40,104 @@ class Order:
     """An off-chain order placed on the EtherDelta exchange.
 
     Attributes:
-        ether_delta: Reference to the EtherDelta object.
-        token_get: Address of the ERC20 token to be bought.
-        amount_get: Amount of the `token_get` to be bought.
-        token_give: Address of the ERC20 token put on sale.
-        amount_give: Amount of the `token_give` token put on sale.
+        maker: Order creator.
+        pay_token: Address of the ERC20 token put on sale.
+        pay_amount: Amount of the `pay_token` token put on sale.
+        buy_token: Address of the ERC20 token to be bought.
+        buy_amount: Amount of the `buy_token` to be bought.
         expires: The block number after which the order will expire.
         nonce: Nonce number, used to make orders similar unique and randomize signatures.
-        user: Order creator.
         v: V component of the order signature.
         r: R component of the order signature.
         s: S component of the order signature.
     """
-    def __init__(self, ether_delta, token_get: Address, amount_get: Wad, token_give: Address, amount_give: Wad, expires: int,
-                 nonce: int, user: Address, v: int, r: bytes, s: bytes):
+    def __init__(self, ether_delta, maker: Address, pay_token: Address, pay_amount: Wad, buy_token: Address,
+                 buy_amount: Wad, expires: int, nonce: int, v: int, r: bytes, s: bytes):
 
-        assert(isinstance(token_get, Address))
-        assert(isinstance(amount_get, Wad))
-        assert(isinstance(token_give, Address))
-        assert(isinstance(amount_give, Wad))
+        assert(isinstance(maker, Address))
+        assert(isinstance(pay_token, Address))
+        assert(isinstance(pay_amount, Wad))
+        assert(isinstance(buy_token, Address))
+        assert(isinstance(buy_amount, Wad))
         assert(isinstance(expires, int))
         assert(isinstance(nonce, int))
-        assert(isinstance(user, Address))
         assert(isinstance(v, int))
         assert(isinstance(r, bytes))
         assert(isinstance(s, bytes))
 
         self._ether_delta = ether_delta
-        self.token_get = token_get
-        self.amount_get = amount_get
-        self.token_give = token_give
-        self.amount_give = amount_give
+        self.maker = maker
+        self.pay_token = pay_token
+        self.pay_amount = pay_amount
+        self.buy_token = buy_token
+        self.buy_amount = buy_amount
         self.expires = expires
         self.nonce = nonce
-        self.user = user
         self.v = v
         self.r = r
         self.s = s
 
     @property
     def sell_to_buy_price(self) -> Wad:
-        return self.amount_give / self.amount_get
+        return self.pay_amount / self.buy_amount
 
     @property
     def buy_to_sell_price(self) -> Wad:
-        return self.amount_get / self.amount_give
+        return self.buy_amount / self.pay_amount
 
     @property
     def remaining_sell_amount(self) -> Wad:
-        return self.amount_give - (self._ether_delta.amount_filled(self) * self.amount_give / self.amount_get)
+        return self.pay_amount - (self._ether_delta.amount_filled(self) * self.pay_amount / self.buy_amount)
 
     @staticmethod
     def from_json(ether_delta, data: dict):
         assert(isinstance(data, dict))
-        return Order(ether_delta=ether_delta,
-                     token_get=Address(data['tokenGet']),
-                     amount_get=Wad(int(data['amountGet'])),
-                     token_give=Address(data['tokenGive']),
-                     amount_give=Wad(int(data['amountGive'])),
-                     expires=int(data['expires']),
-                     nonce=int(data['nonce']),
-                     v=int(data['v']),
-                     r=hexstring_to_bytes(data['r']),
-                     s=hexstring_to_bytes(data['s']),
-                     user=Address(data['user']))
+        return Order(ether_delta=ether_delta, maker=Address(data['user']), pay_token=Address(data['tokenGive']),
+                     pay_amount=Wad(int(data['amountGive'])), buy_token=Address(data['tokenGet']),
+                     buy_amount=Wad(int(data['amountGet'])), expires=int(data['expires']), nonce=int(data['nonce']),
+                     v=int(data['v']), r=hexstring_to_bytes(data['r']), s=hexstring_to_bytes(data['s']))
 
     def to_json(self, etherdelta_contract_address: Address) -> dict:
         return {'contractAddr': etherdelta_contract_address.address,
-                'tokenGet': self.token_get.address,
-                'amountGet': self.amount_get.value,
-                'tokenGive': self.token_give.address,
-                'amountGive': self.amount_give.value,
+                'tokenGet': self.buy_token.address,
+                'amountGet': self.buy_amount.value,
+                'tokenGive': self.pay_token.address,
+                'amountGive': self.pay_amount.value,
                 'expires': self.expires,
                 'nonce': self.nonce,
                 'v': self.v,
                 'r': bytes_to_hexstring(self.r),
                 's': bytes_to_hexstring(self.s),
-                'user': self.user.address}
+                'user': self.maker.address}
 
     def __eq__(self, other):
         assert(isinstance(other, Order))
-        return self.token_get == other.token_get and \
-               self.amount_get == other.amount_get and \
-               self.token_give == other.token_give and \
-               self.amount_give == other.amount_give and \
+        return self.maker == other.maker and \
+               self.pay_token == other.pay_token and \
+               self.pay_amount == other.pay_amount and \
+               self.buy_token == other.buy_token and \
+               self.buy_amount == other.buy_amount and \
                self.expires == other.expires and \
                self.nonce == other.nonce and \
-               self.user == other.user and \
                self.v == other.v and \
                self.r == other.r and \
                self.s == other.s
 
     def __hash__(self):
-        return hash((self.token_get,
-                     self.amount_get,
-                     self.token_give,
-                     self.amount_give,
+        return hash((self.maker,
+                     self.pay_token,
+                     self.pay_amount,
+                     self.buy_token,
+                     self.buy_amount,
                      self.expires,
                      self.nonce,
-                     self.user,
                      self.v,
                      self.r,
                      self.s))
 
     def __str__(self):
-        return f"('{self.token_get}', '{self.amount_get}'," \
-               f" '{self.token_give}', '{self.amount_give}'," \
+        return f"('{self.buy_token}', '{self.buy_amount}'," \
+               f" '{self.pay_token}', '{self.pay_amount}'," \
                f" '{self.expires}', '{self.nonce}')"
 
     def __repr__(self):
@@ -357,30 +349,38 @@ class EtherDelta(Contract):
         return Wad(self._contract.call().balanceOf(token.address, user.address))
 
     def create_order(self,
-                     token_give: Address,
-                     amount_give: Wad,
-                     token_get: Address,
-                     amount_get: Wad,
+                     pay_token: Address,
+                     pay_amount: Wad,
+                     buy_token: Address,
+                     buy_amount: Wad,
                      expires: int) -> Order:
         """Creates a new off-chain order.
 
-        Although it's not necessary to have any amount of `token_give` deposited to EtherDelta
+        Although it's not necessary to have any amount of `pay_token` deposited to EtherDelta
         before placing an order, nobody will be able to take this order until some balance of
-        'token_give' is provided.
+        'pay_token' is provided.
 
         If you want to trade raw ETH, pass `Address('0x0000000000000000000000000000000000000000')`
-        as either `token_get` or `token_give`.
+        as either `pay_token` or `buy_token`.
 
         Args:
-            token_give: Address of the ERC20 token you want to put on sale.
-            amount_give: Amount of the `token_give` token you want to put on sale.
-            token_get: Address of the ERC20 token you want to be paid with.
-            amount_get:  Amount of the `token_get` you want to receive.
+            pay_token: Address of the ERC20 token you want to put on sale.
+            pay_amount: Amount of the `pay_token` token you want to put on sale.
+            buy_token: Address of the ERC20 token you want to be paid with.
+            buy_amount:  Amount of the `buy_token` you want to receive.
             expires: The block number after which the order will expire.
 
         Returns:
             Newly created order as an instance of the :py:class:`pymaker.etherdelta.Order` class.
         """
+
+        assert(isinstance(pay_token, Address))
+        assert(isinstance(pay_amount, Wad))
+        assert(isinstance(buy_token, Address))
+        assert(isinstance(buy_amount, Wad))
+        assert(isinstance(expires, int) and (expires > 0))
+        assert(pay_amount > Wad(0))
+        assert(buy_amount > Wad(0))
 
         def encode_address(address: Address) -> bytes:
             return get_single_encoder("address", None, None)(address.address)[12:]
@@ -390,10 +390,10 @@ class EtherDelta(Contract):
 
         nonce = self.random_nonce()
         order_hash = hashlib.sha256(encode_address(self.address) +
-                                    encode_address(token_get) +
-                                    encode_uint256(amount_get.value) +
-                                    encode_address(token_give) +
-                                    encode_uint256(amount_give.value) +
+                                    encode_address(buy_token) +
+                                    encode_uint256(buy_amount.value) +
+                                    encode_address(pay_token) +
+                                    encode_uint256(pay_amount.value) +
                                     encode_uint256(expires) +
                                     encode_uint256(nonce)).digest()
         # TODO duplicate code below
@@ -402,28 +402,30 @@ class EtherDelta(Contract):
         s = bytes.fromhex(signed_hash[64:128])
         v = ord(bytes.fromhex(signed_hash[128:130]))
 
-        return Order(self, token_get, amount_get, token_give, amount_give, expires, nonce,
-                     Address(self.web3.eth.defaultAccount), v, r, s)
+        return Order(self, Address(self.web3.eth.defaultAccount), pay_token, pay_amount, buy_token, buy_amount,
+                     expires, nonce, v, r, s)
 
     def amount_available(self, order: Order) -> Wad:
         """Returns the amount that is still available (tradeable) for an order.
 
-        The result will never be greater than `order.amount_get - amount_filled(order)`.
+        The result will never be greater than `order.buy_amount - amount_filled(order)`.
         It can be lower though if the order maker does not have enough balance on EtherDelta.
 
         Args:
             order: The order object you want to know the available amount of.
 
         Returns:
-            The available amount for the order, in terms of `token_get`.
+            The available amount for the order, in terms of `buy_token`.
         """
-        return Wad(self._contract.call().availableVolume(order.token_get.address,
-                                                         order.amount_get.value,
-                                                         order.token_give.address,
-                                                         order.amount_give.value,
+        assert(isinstance(order, Order))
+
+        return Wad(self._contract.call().availableVolume(order.buy_token.address,
+                                                         order.buy_amount.value,
+                                                         order.pay_token.address,
+                                                         order.pay_amount.value,
                                                          order.expires,
                                                          order.nonce,
-                                                         order.user.address,
+                                                         order.maker.address,
                                                          order.v if hasattr(order, 'v') else 0,
                                                          order.r if hasattr(order, 'r') else bytes(),
                                                          order.s if hasattr(order, 's') else bytes()))
@@ -431,25 +433,27 @@ class EtherDelta(Contract):
     def amount_filled(self, order: Order) -> Wad:
         """Returns the amount that has been already filled for an order.
 
-        The result will never be greater than `order.amount_get`. It can be lower though
+        The result will never be greater than `order.buy_amount`. It can be lower though
         if the order maker does not have enough balance on EtherDelta.
 
         If an order has been cancelled, `amount_filled(order)` will be always equal
-        to `order.amount_get`. Cancelled orders basically look like completely filled ones.
+        to `order.buy_amount`. Cancelled orders basically look like completely filled ones.
 
         Args:
             order: The order object you want to know the filled amount of.
 
         Returns:
-            The amount already filled for the order, in terms of `token_get`.
+            The amount already filled for the order, in terms of `buy_token`.
         """
-        return Wad(self._contract.call().amountFilled(order.token_get.address,
-                                                      order.amount_get.value,
-                                                      order.token_give.address,
-                                                      order.amount_give.value,
+        assert(isinstance(order, Order))
+
+        return Wad(self._contract.call().amountFilled(order.buy_token.address,
+                                                      order.buy_amount.value,
+                                                      order.pay_token.address,
+                                                      order.pay_amount.value,
                                                       order.expires,
                                                       order.nonce,
-                                                      order.user.address,
+                                                      order.maker.address,
                                                       order.v if hasattr(order, 'v') else 0,
                                                       order.r if hasattr(order, 'r') else bytes(),
                                                       order.s if hasattr(order, 's') else bytes()))
@@ -457,16 +461,16 @@ class EtherDelta(Contract):
     def trade(self, order: Order, amount: Wad) -> Transact:
         """Takes (buys) an order.
 
-        `amount` is in `token_get` terms, it is the amount you want to buy with. It can not be higher
+        `amount` is in `buy_token` terms, it is the amount you want to buy with. It can not be higher
         than `amount_available(order)`.
 
-        The 'amount' of `token_get` tokens will get deducted from your EtherDelta balance if the trade was
-        successful. The corresponding amount of `token_have` tokens will be added to your EtherDelta balance.
+        The 'amount' of `buy_token` tokens will get deducted from your EtherDelta balance if the trade was
+        successful. The corresponding amount of `pay_token` tokens will be added to your EtherDelta balance.
 
         Args:
             order: The order you want to take (buy).
-            amount: Amount of `token_get` tokens that you want to be deducted from your EtherDelta balance
-                in order to buy a corresponding amount of `token_have` tokens.
+            amount: Amount of `buy_token` tokens that you want to be deducted from your EtherDelta balance
+                in order to buy a corresponding amount of `pay_token` tokens.
 
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
@@ -475,13 +479,13 @@ class EtherDelta(Contract):
         assert(isinstance(amount, Wad))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'trade',
-                        [order.token_get.address,
-                         order.amount_get.value,
-                         order.token_give.address,
-                         order.amount_give.value,
+                        [order.buy_token.address,
+                         order.buy_amount.value,
+                         order.pay_token.address,
+                         order.pay_amount.value,
                          order.expires,
                          order.nonce,
-                         order.user.address,
+                         order.maker.address,
                          order.v if hasattr(order, 'v') else 0,
                          order.r if hasattr(order, 'r') else bytes(),
                          order.s if hasattr(order, 's') else bytes(),
@@ -495,7 +499,7 @@ class EtherDelta(Contract):
 
         Args:
             order: The order you want to verify the trade for.
-            amount: Amount expressed in terms of `token_get` that you want to verify the trade for.
+            amount: Amount expressed in terms of `buy_token` that you want to verify the trade for.
 
         Returns:
             'True' if the given amount can be traded on this order. `False` otherwise.
@@ -503,13 +507,13 @@ class EtherDelta(Contract):
         assert(isinstance(order, Order))
         assert(isinstance(amount, Wad))
 
-        return self._contract.call().testTrade(order.token_get.address,
-                                               order.amount_get.value,
-                                               order.token_give.address,
-                                               order.amount_give.value,
+        return self._contract.call().testTrade(order.buy_token.address,
+                                               order.buy_amount.value,
+                                               order.pay_token.address,
+                                               order.pay_amount.value,
                                                order.expires,
                                                order.nonce,
-                                               order.user.address,
+                                               order.maker.address,
                                                order.v if hasattr(order, 'v') else 0,
                                                order.r if hasattr(order, 'r') else bytes(),
                                                order.s if hasattr(order, 's') else bytes(),
@@ -530,10 +534,10 @@ class EtherDelta(Contract):
         assert(isinstance(order, Order))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'cancelOrder',
-                        [order.token_get.address,
-                         order.amount_get.value,
-                         order.token_give.address,
-                         order.amount_give.value,
+                        [order.buy_token.address,
+                         order.buy_amount.value,
+                         order.pay_token.address,
+                         order.pay_amount.value,
                          order.expires,
                          order.nonce,
                          order.v if hasattr(order, 'v') else 0,
