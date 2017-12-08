@@ -24,7 +24,7 @@ from pymaker.etherdelta import EtherDelta, EtherDeltaApi
 from pymaker.logger import Logger
 from pymaker.numeric import Wad
 from pymaker.token import DSToken
-from tests.pymaker.helpers import is_hashable
+from tests.helpers import is_hashable
 
 
 class TestEtherDelta:

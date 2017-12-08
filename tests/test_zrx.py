@@ -26,7 +26,7 @@ from pymaker.deployment import deploy_contract
 from pymaker.numeric import Wad
 from pymaker.token import DSToken, ERC20Token
 from pymaker.zrx import ZrxExchange, Order
-from tests.pymaker.helpers import is_hashable
+from tests.helpers import is_hashable
 
 
 class TestZrx:

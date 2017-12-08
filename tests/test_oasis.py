@@ -25,7 +25,7 @@ from pymaker import Address, Wad
 from pymaker.approval import directly
 from pymaker.oasis import SimpleMarket, ExpiringMarket, MatchingMarket
 from pymaker.token import DSToken
-from tests.pymaker.helpers import wait_until_mock_called, is_hashable
+from tests.helpers import wait_until_mock_called, is_hashable
 
 PAST_BLOCKS = 100
 

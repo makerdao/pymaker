@@ -19,7 +19,7 @@ import pytest
 
 from pymaker import Address, Calldata, Receipt, Transfer
 from pymaker.numeric import Wad
-from tests.pymaker.helpers import is_hashable
+from tests.helpers import is_hashable
 
 
 class TestAddress:
