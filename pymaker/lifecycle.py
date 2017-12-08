@@ -141,6 +141,7 @@ class Web3Lifecycle:
         """
         assert(callable(callback))
 
+        assert(self.startup_function is None)
         self.startup_function = callback
 
     def on_shutdown(self, callback):
@@ -151,6 +152,7 @@ class Web3Lifecycle:
         """
         assert(callable(callback))
 
+        assert(self.shutdown_function is None)
         self.shutdown_function = callback
 
     def terminate(self, message=None):

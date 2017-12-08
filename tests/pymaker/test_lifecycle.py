@@ -47,6 +47,13 @@ class TestLifecycle:
         # then
         startup_mock.assert_called()
 
+    def test_should_fail_to_register_two_startup_callbacks(self):
+        # expect
+        with pytest.raises(BaseException):
+            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+                lifecycle.on_startup(lambda: 1)
+                lifecycle.on_startup(lambda: 2)
+
     def test_should_call_shutdown_callback(self):
         # given
         ordering = []
@@ -61,6 +68,13 @@ class TestLifecycle:
 
         # then
         assert ordering == ['STARTUP', 'SHUTDOWN']
+
+    def test_should_fail_to_register_two_shutdown_callbacks(self):
+        # expect
+        with pytest.raises(BaseException):
+            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+                lifecycle.on_shutdown(lambda: 1)
+                lifecycle.on_shutdown(lambda: 2)
 
     def test_every(self):
         self.counter = 0
