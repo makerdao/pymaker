@@ -68,6 +68,7 @@ class Web3Lifecycle:
 
         self.startup_function = None
         self.shutdown_function = None
+        self.block_function = None
         self.every_timers = []
 
         self.terminated_internally = False
@@ -94,6 +95,7 @@ class Web3Lifecycle:
 
         # Bind `on_block`, bind `every`
         # Enter the main loop
+        self._start_watching_blocks()
         self._start_every_timers()
         self._main_loop()
 
@@ -172,13 +174,34 @@ class Web3Lifecycle:
 
         self.terminated_internally = True
 
-    # TODO should queue the callback and apply it only after keeper startup
     def on_block(self, callback):
         """Register the specified callback to be run for each new block received by the node.
 
         Args:
             callback: Function to be called for each new blocks.
         """
+        assert(callable(callback))
+
+        assert(self.block_function is None)
+        self.block_function = callback
+
+    def every(self, frequency_in_seconds: int, callback):
+        """Register the specified callback to be called by a timer.
+
+        Args:
+            frequency_in_seconds: Execution frequency (in seconds).
+            callback: Function to be called by the timer.
+        """
+        self.every_timers.append((frequency_in_seconds, callback))
+
+    def _sigint_sigterm_handler(self, sig, frame):
+        if self.terminated_externally:
+            self.logger.warning("Graceful keeper termination due to SIGINT/SIGTERM already in progress")
+        else:
+            self.logger.warning("Keeper received SIGINT/SIGTERM signal, will terminate gracefully")
+            self.terminated_externally = True
+
+    def _start_watching_blocks(self):
         def new_block_callback(block_hash):
             self._last_block_time = datetime.datetime.now()
             block = self.web3.eth.getBlock(block_hash)
@@ -201,33 +224,21 @@ class Web3Lifecycle:
             else:
                 self.logger.info(f"Ignoring block #{block_number} ({block_hash}), as the node is syncing")
 
-        self._on_block_callback = AsyncCallback(callback)
+        if self.block_function:
+            self._on_block_callback = AsyncCallback(self.block_function)
 
-        block_filter = self.web3.eth.filter('latest')
-        block_filter.watch(new_block_callback)
-        register_filter_thread(block_filter)
+            block_filter = self.web3.eth.filter('latest')
+            block_filter.watch(new_block_callback)
+            register_filter_thread(block_filter)
 
-        self.logger.info("Watching for new blocks")
-
-    def every(self, frequency_in_seconds: int, callback):
-        """Register the specified callback to be called by a timer.
-
-        Args:
-            frequency_in_seconds: Execution frequency (in seconds).
-            callback: Function to be called by the timer.
-        """
-        self.every_timers.append((frequency_in_seconds, callback))
-
-    def _sigint_sigterm_handler(self, sig, frame):
-        if self.terminated_externally:
-            self.logger.warning("Graceful keeper termination due to SIGINT/SIGTERM already in progress")
-        else:
-            self.logger.warning("Keeper received SIGINT/SIGTERM signal, will terminate gracefully")
-            self.terminated_externally = True
+            self.logger.info("Watching for new blocks")
 
     def _start_every_timers(self):
         for timer in self.every_timers:
             self._start_every_timer(timer[0], timer[1])
+
+        if len(self.every_timers) > 0:
+            self.logger.info("Started timer(s)")
 
     def _start_every_timer(self, frequency_in_seconds: int, callback):
         def setup_timer(delay):
