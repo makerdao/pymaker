@@ -75,9 +75,6 @@ class Web3Lifecycle:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # self.logger.info(f"{self.executable_name()}")
-        # self.logger.info(f"{'-' * len(self.executable_name())}")
-        # on {self.chain},
         self.logger.info(f"Keeper connected to {self.web3.providers[0]}")
         self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
         self._check_account_unlocked()
@@ -101,7 +98,7 @@ class Web3Lifecycle:
         exit(10 if self.fatal_termination else 0)
 
     def _wait_for_init(self):
-        # In unit-tests waiting for the note to sync does not work correctly.
+        # In unit-tests waiting for the node to sync does not work correctly.
         # So we skip it.
         if str(self.web3.providers[0]) == 'EthereumTesterProvider':
             return
