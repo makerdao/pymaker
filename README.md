@@ -1,6 +1,6 @@
-# Maker Keeper Framework
+# pymaker
 
-Reference Maker Keeper Framework.
+Python API for Maker contracts.
 
 [![Build Status](https://travis-ci.org/makerdao/keeper.svg?branch=master)](https://travis-ci.org/makerdao/keeper)
 [![codecov](https://codecov.io/gh/makerdao/keeper/branch/master/graph/badge.svg)](https://codecov.io/gh/makerdao/keeper)
@@ -12,15 +12,13 @@ Reference Maker Keeper Framework.
 ## Introduction
 
 The _DAI Stablecoin System_ incentivizes external agents, called _keepers_,
-to automate certain operations around the Ethereum blockchain.
+to automate certain operations around the Ethereum blockchain. In order to ease their
+development, an API around most of the Maker contracts has been created. It can be used
+not only by keepers, but may also be found useful by authors of some other, unrelated
+utilities aiming to interact with these contracts.
 
-In order to ease keeper development, an API around most of the Maker contracts
-has been created. It can be used not only by keepers, but may also be found useful
-by authors of some other, unrelated utilities aiming to interact with these contracts.
-
-Based on this API, a set of reference keepers is being developed. They used to reside
-in this repository, but now they are being successfully moved to their individual
-repositories: [bite-keeper](https://github.com/makerdao/bite-keeper),
+Based on this API, a set of reference Maker keepers is being developed. They all used to reside
+in this repository, but now each of them has an individual one: [bite-keeper](https://github.com/makerdao/bite-keeper),
 [arbitrage-keeper](https://github.com/makerdao/arbitrage-keeper),
 [cdp-keeper](https://github.com/makerdao/cdp-keeper),
 [market-maker-keeper](https://github.com/makerdao/market-maker-keeper).
