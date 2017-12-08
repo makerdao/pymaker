@@ -1,4 +1,0 @@
-#!/bin/sh
-# Used by the other programs to set up their Python library path.
-dir="$(dirname "$0")"/..
-export PYTHONPATH=$PYTHONPATH:$dir

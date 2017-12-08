@@ -1,3 +1,0 @@
-#!/bin/sh
-. "$(dirname "$0")"/_prelude
-exec python3 -m market_maker_keeper.radarrelay_market_maker_keeper $@
