@@ -33,32 +33,19 @@ from pymaker.util import bytes_to_hexstring, hexstring_to_bytes, eth_sign
 
 
 class Order:
-    def __init__(self,
-                 exchange,
-                 maker: Address,
-                 taker: Address,
-                 maker_fee: Wad,
-                 taker_fee: Wad,
-                 maker_token_amount: Wad,
-                 taker_token_amount: Wad,
-                 maker_token_address: Address,
-                 taker_token_address: Address,
-                 salt: int,
-                 fee_recipient: Address,
-                 expiration: int,
-                 exchange_contract_address: Address,
-                 ec_signature_r: Optional[str],
-                 ec_signature_s: Optional[str],
-                 ec_signature_v: Optional[int]):
+    def __init__(self, exchange, maker: Address, taker: Address, maker_fee: Wad, taker_fee: Wad, pay_token: Address,
+                 pay_amount: Wad, buy_token: Address, buy_amount: Wad, salt: int, fee_recipient: Address,
+                 expiration: int, exchange_contract_address: Address, ec_signature_r: Optional[str],
+                 ec_signature_s: Optional[str], ec_signature_v: Optional[int]):
 
         assert(isinstance(maker, Address))
         assert(isinstance(taker, Address))
         assert(isinstance(maker_fee, Wad))
         assert(isinstance(taker_fee, Wad))
-        assert(isinstance(maker_token_amount, Wad))
-        assert(isinstance(taker_token_amount, Wad))
-        assert(isinstance(maker_token_address, Address))
-        assert(isinstance(taker_token_address, Address))
+        assert(isinstance(pay_token, Address))
+        assert(isinstance(pay_amount, Wad))
+        assert(isinstance(buy_token, Address))
+        assert(isinstance(buy_amount, Wad))
         assert(isinstance(salt, int))
         assert(isinstance(fee_recipient, Address))
         assert(isinstance(expiration, int))
@@ -71,10 +58,10 @@ class Order:
         self.taker = taker
         self.maker_fee = maker_fee
         self.taker_fee = taker_fee
-        self.maker_token_amount = maker_token_amount
-        self.taker_token_amount = taker_token_amount
-        self.maker_token_address = maker_token_address
-        self.taker_token_address = taker_token_address
+        self.pay_token = pay_token
+        self.pay_amount = pay_amount
+        self.buy_token = buy_token
+        self.buy_amount = buy_amount
         self.salt = salt
         self.fee_recipient = fee_recipient
         self.expiration = expiration
@@ -85,16 +72,16 @@ class Order:
 
     @property
     def sell_to_buy_price(self) -> Wad:
-        return self.maker_token_amount / self.taker_token_amount
+        return self.pay_amount / self.buy_amount
 
     @property
     def buy_to_sell_price(self) -> Wad:
-        return self.taker_token_amount / self.maker_token_amount
+        return self.buy_amount / self.pay_amount
 
     @property
     def remaining_sell_amount(self) -> Wad:
-        return self.maker_token_amount - (self._exchange.get_unavailable_taker_token_amount(self)
-                                          * self.maker_token_amount / self.taker_token_amount)
+        return self.pay_amount - (self._exchange.get_unavailable_buy_amount(self)
+                                  * self.pay_amount / self.buy_amount)
 
     @staticmethod
     def from_json(exchange, data: dict):
@@ -105,10 +92,10 @@ class Order:
                      taker=Address(data['taker']),
                      maker_fee=Wad(int(data['makerFee'])),
                      taker_fee=Wad(int(data['takerFee'])),
-                     maker_token_amount=Wad(int(data['makerTokenAmount'])),
-                     taker_token_amount=Wad(int(data['takerTokenAmount'])),
-                     maker_token_address=Address(data['makerTokenAddress']),
-                     taker_token_address=Address(data['takerTokenAddress']),
+                     pay_token=Address(data['makerTokenAddress']),
+                     pay_amount=Wad(int(data['makerTokenAmount'])),
+                     buy_token=Address(data['takerTokenAddress']),
+                     buy_amount=Wad(int(data['takerTokenAmount'])),
                      salt=int(data['salt']),
                      fee_recipient=Address(data['feeRecipient']),
                      expiration=int(data['expirationUnixTimestampSec']),
@@ -122,10 +109,10 @@ class Order:
             "exchangeContractAddress": self.exchange_contract_address.address,
             "maker": self.maker.address,
             "taker": self.taker.address,
-            "makerTokenAddress": self.maker_token_address.address,
-            "takerTokenAddress": self.taker_token_address.address,
-            "makerTokenAmount": str(self.maker_token_amount.value),
-            "takerTokenAmount": str(self.taker_token_amount.value),
+            "makerTokenAddress": self.pay_token.address,
+            "takerTokenAddress": self.buy_token.address,
+            "makerTokenAmount": str(self.pay_amount.value),
+            "takerTokenAmount": str(self.buy_amount.value),
             "expirationUnixTimestampSec": str(self.expiration),
             "salt": str(self.salt)
         }
@@ -135,11 +122,11 @@ class Order:
             "exchangeContractAddress": self.exchange_contract_address.address,
             "maker": self.maker.address,
             "taker": self.taker.address,
-            "makerTokenAddress": self.maker_token_address.address,
-            "takerTokenAddress": self.taker_token_address.address,
+            "makerTokenAddress": self.pay_token.address,
+            "takerTokenAddress": self.buy_token.address,
             "feeRecipient": self.fee_recipient.address,
-            "makerTokenAmount": str(self.maker_token_amount.value),
-            "takerTokenAmount": str(self.taker_token_amount.value),
+            "makerTokenAmount": str(self.pay_amount.value),
+            "takerTokenAmount": str(self.buy_amount.value),
             "makerFee": str(self.maker_fee.value),
             "takerFee": str(self.taker_fee.value),
             "expirationUnixTimestampSec": str(self.expiration),
@@ -157,10 +144,10 @@ class Order:
                self.taker == other.taker and \
                self.maker_fee == other.maker_fee and \
                self.taker_fee == other.taker_fee and \
-               self.maker_token_amount == other.maker_token_amount and \
-               self.taker_token_amount == other.taker_token_amount and \
-               self.maker_token_address == other.maker_token_address and \
-               self.taker_token_address == other.taker_token_address and \
+               self.pay_token == other.pay_token and \
+               self.pay_amount == other.pay_amount and \
+               self.buy_token == other.buy_token and \
+               self.buy_amount == other.buy_amount and \
                self.salt == other.salt and \
                self.fee_recipient == other.fee_recipient and \
                self.expiration == other.expiration and \
@@ -174,10 +161,10 @@ class Order:
                      self.taker,
                      self.maker_fee,
                      self.taker_fee,
-                     self.maker_token_amount,
-                     self.taker_token_amount,
-                     self.maker_token_address,
-                     self.taker_token_address,
+                     self.pay_token,
+                     self.pay_amount,
+                     self.buy_token,
+                     self.buy_amount,
                      self.salt,
                      self.fee_recipient,
                      self.expiration,
@@ -187,8 +174,8 @@ class Order:
                      self.ec_signature_v))
 
     def __str__(self):
-        return f"('{self.taker_token_address}', '{self.taker_token_amount}'," \
-               f" '{self.maker_token_address}', '{self.maker_token_amount}'," \
+        return f"('{self.buy_token}', '{self.buy_amount}'," \
+               f" '{self.pay_token}', '{self.pay_amount}'," \
                f" '{self.exchange_contract_address}', '{self.salt}')"
 
     def __repr__(self):
@@ -275,15 +262,15 @@ class ZrxExchange(Contract):
             approval_function(token, self.token_transfer_proxy(), '0x Exchange contract')
 
     def create_order(self,
-                     maker_token_amount: Wad,
-                     taker_token_amount: Wad,
-                     maker_token_address: Address,
-                     taker_token_address: Address,
+                     pay_token: Address,
+                     pay_amount: Wad,
+                     buy_token: Address,
+                     buy_amount: Wad,
                      expiration: int):
-        assert(isinstance(maker_token_amount, Wad))
-        assert(isinstance(taker_token_amount, Wad))
-        assert(isinstance(maker_token_address, Address))
-        assert(isinstance(taker_token_address, Address))
+        assert(isinstance(pay_token, Address))
+        assert(isinstance(pay_amount, Wad))
+        assert(isinstance(buy_token, Address))
+        assert(isinstance(buy_amount, Wad))
         assert(isinstance(expiration, int))
 
         return Order(exchange=self,
@@ -291,10 +278,10 @@ class ZrxExchange(Contract):
                      taker=self._ZERO_ADDRESS,
                      maker_fee=Wad(0),
                      taker_fee=Wad(0),
-                     maker_token_amount=maker_token_amount,
-                     taker_token_amount=taker_token_amount,
-                     maker_token_address=maker_token_address,
-                     taker_token_address=taker_token_address,
+                     pay_token=pay_token,
+                     pay_amount=pay_amount,
+                     buy_token=buy_token,
+                     buy_amount=buy_amount,
                      salt=self.random_salt(),
                      fee_recipient=self._ZERO_ADDRESS,
                      expiration=expiration,
@@ -312,7 +299,7 @@ class ZrxExchange(Contract):
         result = self._contract.call().getOrderHash(self._order_addresses(order), self._order_values(order))
         return bytes_to_hexstring(array.array('B', [ord(x) for x in result]).tobytes())
 
-    def get_unavailable_taker_token_amount(self, order: Order) -> Wad:
+    def get_unavailable_buy_amount(self, order: Order) -> Wad:
         assert(isinstance(order, Order))
 
         return Wad(self._contract.call().getUnavailableTakerTokenAmount(hexstring_to_bytes(self.get_order_hash(order))))
@@ -336,12 +323,12 @@ class ZrxExchange(Contract):
         assert(isinstance(order, Order))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'cancelOrder',
-                        [self._order_addresses(order), self._order_values(order), order.taker_token_amount.value])
+                        [self._order_addresses(order), self._order_values(order), order.buy_amount.value])
 
     @staticmethod
     def _order_values(order):
-        return [order.maker_token_amount.value,
-                order.taker_token_amount.value,
+        return [order.pay_amount.value,
+                order.buy_amount.value,
                 order.maker_fee.value,
                 order.taker_fee.value,
                 order.expiration,
@@ -351,8 +338,8 @@ class ZrxExchange(Contract):
     def _order_addresses(order):
         return [order.maker.address,
                 order.taker.address,
-                order.maker_token_address.address,
-                order.taker_token_address.address,
+                order.pay_token.address,
+                order.buy_token.address,
                 order.fee_recipient.address]
 
     @staticmethod

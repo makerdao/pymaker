@@ -68,19 +68,18 @@ class TestZrx:
 
     def test_create_order(self):
         # when
-        order = self.exchange.create_order(maker_token_amount=Wad.from_number(100),
-                                           taker_token_amount=Wad.from_number(2.5),
-                                           maker_token_address=Address("0x0202020202020202020202020202020202020202"),
-                                           taker_token_address=Address("0x0101010101010101010101010101010101010101"),
-                                           expiration=1763920792)
+        order = self.exchange.create_order(pay_token=Address("0x0202020202020202020202020202020202020202"),
+                                           pay_amount=Wad.from_number(100),
+                                           buy_token=Address("0x0101010101010101010101010101010101010101"),
+                                           buy_amount=Wad.from_number(2.5), expiration=1763920792)
 
         # then
         assert order.maker == Address(self.web3.eth.defaultAccount)
         assert order.taker == Address("0x0000000000000000000000000000000000000000")
-        assert order.maker_token_amount == Wad.from_number(100)
-        assert order.taker_token_amount == Wad.from_number(2.5)
-        assert order.maker_token_address == Address("0x0202020202020202020202020202020202020202")
-        assert order.taker_token_address == Address("0x0101010101010101010101010101010101010101")
+        assert order.pay_token == Address("0x0202020202020202020202020202020202020202")
+        assert order.pay_amount == Wad.from_number(100)
+        assert order.buy_token == Address("0x0101010101010101010101010101010101010101")
+        assert order.buy_amount == Wad.from_number(2.5)
         assert order.salt >= 0
         assert order.expiration == 1763920792
         assert order.exchange_contract_address == self.exchange.address
@@ -93,11 +92,10 @@ class TestZrx:
 
     def test_get_order_hash(self):
         # given
-        order = self.exchange.create_order(maker_token_amount=Wad.from_number(100),
-                                           taker_token_amount=Wad.from_number(2.5),
-                                           maker_token_address=Address("0x0202020202020202020202020202020202020202"),
-                                           taker_token_address=Address("0x0101010101010101010101010101010101010101"),
-                                           expiration=1763920792)
+        order = self.exchange.create_order(pay_token=Address("0x0202020202020202020202020202020202020202"),
+                                           pay_amount=Wad.from_number(100),
+                                           buy_token=Address("0x0101010101010101010101010101010101010101"),
+                                           buy_amount=Wad.from_number(2.5), expiration=1763920792)
 
         # when
         order_hash = self.exchange.get_order_hash(order)
@@ -108,11 +106,10 @@ class TestZrx:
 
     def test_sign_order(self):
         # given
-        order = self.exchange.create_order(maker_token_amount=Wad.from_number(100),
-                                           taker_token_amount=Wad.from_number(2.5),
-                                           maker_token_address=Address("0x0202020202020202020202020202020202020202"),
-                                           taker_token_address=Address("0x0101010101010101010101010101010101010101"),
-                                           expiration=1763920792)
+        order = self.exchange.create_order(pay_token=Address("0x0202020202020202020202020202020202020202"),
+                                           pay_amount=Wad.from_number(100),
+                                           buy_token=Address("0x0101010101010101010101010101010101010101"),
+                                           buy_amount=Wad.from_number(2.5), expiration=1763920792)
 
         # when
         signed_order = self.exchange.sign_order(order)
@@ -137,22 +134,20 @@ class TestZrx:
         self.exchange.approve([token1, token2], directly())
 
         # when
-        order = self.exchange.create_order(maker_token_amount=Wad.from_number(10),
-                                           taker_token_amount=Wad.from_number(4),
-                                           maker_token_address=token1.address,
-                                           taker_token_address=token2.address,
+        order = self.exchange.create_order(pay_token=token1.address, pay_amount=Wad.from_number(10),
+                                           buy_token=token2.address, buy_amount=Wad.from_number(4),
                                            expiration=1763920792)
         # and
         signed_order = self.exchange.sign_order(order)
 
         # then
-        assert self.exchange.get_unavailable_taker_token_amount(signed_order) == Wad(0)
+        assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad(0)
 
         # when
 
         self.exchange.cancel_order(signed_order).transact()
         # then
-        assert self.exchange.get_unavailable_taker_token_amount(signed_order) == Wad.from_number(4)
+        assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad.from_number(4)
 
     def test_should_have_printable_representation(self):
         assert repr(self.exchange) == f"ZrxExchange('{self.exchange.address}')"
@@ -166,10 +161,10 @@ class TestOrder:
                        taker=Address("0x0000000000000000000000000000000000000000"),
                        maker_fee=Wad.from_number(123),
                        taker_fee=Wad.from_number(456),
-                       maker_token_amount=Wad(10000000000000000),
-                       taker_token_amount=Wad(20000000000000000),
-                       maker_token_address=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
-                       taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                       pay_token=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
+                       pay_amount=Wad(10000000000000000),
+                       buy_token=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                       buy_amount=Wad(20000000000000000),
                        salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
                        fee_recipient=Address('0x6666666666666666666666666666666666666666'),
                        expiration=42,
@@ -183,10 +178,10 @@ class TestOrder:
                        taker=Address("0x0000000000000000000000000000000000000000"),
                        maker_fee=Wad.from_number(123),
                        taker_fee=Wad.from_number(456),
-                       maker_token_amount=Wad(10000000000000000),
-                       taker_token_amount=Wad(20000000000000000),
-                       maker_token_address=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
-                       taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                       pay_token=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
+                       pay_amount=Wad(10000000000000000),
+                       buy_token=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                       buy_amount=Wad(20000000000000000),
                        salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
                        fee_recipient=Address('0x6666666666666666666666666666666666666666'),
                        expiration=42,
@@ -217,10 +212,10 @@ class TestOrder:
                       taker=Address("0x0000000000000000000000000000000000000000"),
                       maker_fee=Wad.from_number(123),
                       taker_fee=Wad.from_number(456),
-                      maker_token_amount=Wad(10000000000000000),
-                      taker_token_amount=Wad(20000000000000000),
-                      maker_token_address=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
-                      taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                      pay_token=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
+                      pay_amount=Wad(10000000000000000),
+                      buy_token=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                      buy_amount=Wad(20000000000000000),
                       salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
                       expiration=42,
@@ -262,11 +257,11 @@ class TestOrder:
         assert order.exchange_contract_address == Address("0x12459c951127e0c374ff9105dda097662a027093")
         assert order.maker == Address("0x0046cac6668bef45b517a1b816a762f4f8add2a9")
         assert order.taker == Address("0x0000000000000000000000000000000000000000")
-        assert order.maker_token_address == Address("0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4")
-        assert order.taker_token_address == Address("0x2956356cd2a2bf3202f771f50d3d14a367b48070")
+        assert order.pay_token == Address("0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4")
+        assert order.buy_token == Address("0x2956356cd2a2bf3202f771f50d3d14a367b48070")
         assert order.fee_recipient == Address("0xa258b39954cef5cb142fd567a46cddb31a670124")
-        assert order.maker_token_amount == Wad.from_number(11)
-        assert order.taker_token_amount == Wad.from_number(0.0308)
+        assert order.pay_amount == Wad.from_number(11)
+        assert order.buy_amount == Wad.from_number(0.0308)
         assert order.maker_fee == Wad.from_number(0)
         assert order.taker_fee == Wad.from_number(0)
         assert order.expiration == 1511988904
@@ -300,11 +295,11 @@ class TestOrder:
         assert order.exchange_contract_address == Address("0x12459c951127e0c374ff9105dda097662a027093")
         assert order.maker == Address("0x0046cac6668bef45b517a1b816a762f4f8add2a9")
         assert order.taker == Address("0x0000000000000000000000000000000000000000")
-        assert order.maker_token_address == Address("0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4")
-        assert order.taker_token_address == Address("0x2956356cd2a2bf3202f771f50d3d14a367b48070")
+        assert order.pay_token == Address("0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4")
+        assert order.buy_token == Address("0x2956356cd2a2bf3202f771f50d3d14a367b48070")
         assert order.fee_recipient == Address("0xa258b39954cef5cb142fd567a46cddb31a670124")
-        assert order.maker_token_amount == Wad.from_number(11)
-        assert order.taker_token_amount == Wad.from_number(0.0308)
+        assert order.pay_amount == Wad.from_number(11)
+        assert order.buy_amount == Wad.from_number(0.0308)
         assert order.maker_fee == Wad.from_number(0)
         assert order.taker_fee == Wad.from_number(0)
         assert order.expiration == 1511988904
@@ -320,10 +315,10 @@ class TestOrder:
                       taker=Address("0x0000000000000000000000000000000000000000"),
                       maker_fee=Wad.from_number(123),
                       taker_fee=Wad.from_number(456),
-                      maker_token_amount=Wad(10000000000000000),
-                      taker_token_amount=Wad(20000000000000000),
-                      maker_token_address=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
-                      taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                      pay_token=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
+                      pay_amount=Wad(10000000000000000),
+                      buy_token=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                      buy_amount=Wad(20000000000000000),
                       salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
                       expiration=42,
@@ -355,10 +350,10 @@ class TestOrder:
                       taker=Address("0x0000000000000000000000000000000000000000"),
                       maker_fee=Wad.from_number(123),
                       taker_fee=Wad.from_number(456),
-                      maker_token_amount=Wad(10000000000000000),
-                      taker_token_amount=Wad(20000000000000000),
-                      maker_token_address=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
-                      taker_token_address=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                      pay_token=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
+                      pay_amount=Wad(10000000000000000),
+                      buy_token=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
+                      buy_amount=Wad(20000000000000000),
                       salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
                       expiration=42,
