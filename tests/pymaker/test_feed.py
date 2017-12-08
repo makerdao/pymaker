@@ -16,10 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-from pymaker import Address
-from web3 import EthereumTesterProvider
-from web3 import Web3
+from web3 import Web3, EthereumTesterProvider
 
+from pymaker import Address
 from pymaker.feed import DSValue
 
 
@@ -28,6 +27,11 @@ class TestDSValue:
         self.web3 = Web3(EthereumTesterProvider())
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.dsvalue = DSValue.deploy(self.web3)
+
+    def test_fail_when_no_contract_under_that_address(self):
+        # expect
+        with pytest.raises(Exception):
+            DSValue(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
     def test_address(self):
         assert isinstance(self.dsvalue.address, Address)

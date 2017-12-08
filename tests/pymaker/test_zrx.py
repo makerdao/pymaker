@@ -38,6 +38,11 @@ class TestZrx:
         self.token_transfer_proxy_address = deploy_contract(self.web3, 'TokenTransferProxy')
         self.exchange = ZrxExchange.deploy(self.web3, self.zrx_token.address, self.token_transfer_proxy_address)
 
+    def test_fail_when_no_contract_under_that_address(self):
+        # expect
+        with pytest.raises(Exception):
+            ZrxExchange(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
+
     def test_correct_deployment(self):
         # expect
         assert self.exchange is not None

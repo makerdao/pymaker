@@ -316,6 +316,11 @@ class TestSimpleMarket(GeneralMarketTest):
         GeneralMarketTest.setup_method(self)
         self.otc = SimpleMarket.deploy(self.web3)
 
+    def test_fail_when_no_contract_under_that_address(self):
+        # expect
+        with pytest.raises(Exception):
+            SimpleMarket(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
+
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"SimpleMarket('{self.otc.address}')"
 
@@ -324,6 +329,11 @@ class TestExpiringMarket(GeneralMarketTest):
     def setup_method(self):
         GeneralMarketTest.setup_method(self)
         self.otc = ExpiringMarket.deploy(self.web3, 2500000000)
+
+    def test_fail_when_no_contract_under_that_address(self):
+        # expect
+        with pytest.raises(Exception):
+            ExpiringMarket(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"ExpiringMarket('{self.otc.address}')"
@@ -334,6 +344,11 @@ class TestMatchingMarket(GeneralMarketTest):
         GeneralMarketTest.setup_method(self)
         self.otc = MatchingMarket.deploy(self.web3, 2500000000)
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
+
+    def test_fail_when_no_contract_under_that_address(self):
+        # expect
+        with pytest.raises(Exception):
+            MatchingMarket(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
     def test_simple_matching(self):
         # given

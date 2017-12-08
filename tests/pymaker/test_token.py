@@ -133,6 +133,11 @@ class TestDSToken:
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.dstoken = DSToken.deploy(self.web3, 'ABC')
 
+    def test_fail_when_no_contract_under_that_address(self):
+        # expect
+        with pytest.raises(Exception):
+            DSToken(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
+
     def test_authority(self):
         # given
         some_address = Address('0x4545454545676767676789898989890101010101')
@@ -170,6 +175,11 @@ class TestDSEthToken:
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.dsethtoken = DSEthToken.deploy(self.web3)
+
+    def test_fail_when_no_contract_under_that_address(self):
+        # expect
+        with pytest.raises(Exception):
+            DSEthToken(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
     def test_deposit(self):
         # when

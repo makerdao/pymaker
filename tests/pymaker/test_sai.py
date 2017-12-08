@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
+
 from pymaker import Address
 from pymaker.deployment import Deployment
 from pymaker.feed import DSValue
@@ -23,6 +25,11 @@ from pymaker.sai import Tub, Tap, Top
 
 
 class TestTub:
+    def test_fail_when_no_contract_under_that_address(self, deployment: Deployment):
+        # expect
+        with pytest.raises(Exception):
+            Tub(web3=deployment.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
+
     def test_warp_and_era(self, deployment: Deployment):
         # given
         old_era = deployment.tub.era()
@@ -326,6 +333,11 @@ class TestTub:
 
 
 class TestTap:
+    def test_fail_when_no_contract_under_that_address(self, deployment: Deployment):
+        # expect
+        with pytest.raises(Exception):
+            Tap(web3=deployment.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
+
     def test_jump_and_gap(self, deployment: Deployment):
         # given
         assert deployment.tap.gap() == Wad.from_number(1)
@@ -421,6 +433,11 @@ class TestTap:
 
 
 class TestTop:
+    def test_fail_when_no_contract_under_that_address(self, deployment: Deployment):
+        # expect
+        with pytest.raises(Exception):
+            Top(web3=deployment.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
+
     def test_comparison(self, deployment: Deployment):
         # expect
         assert deployment.top == deployment.top

@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from web3 import EthereumTesterProvider
-from web3 import Web3
+import pytest
+from web3 import Web3, EthereumTesterProvider
 
 from pymaker import Address
 from pymaker.vault import DSVault
@@ -28,6 +28,11 @@ class TestDSVault:
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.dsvault = DSVault.deploy(self.web3)
+
+    def test_fail_when_no_contract_under_that_address(self):
+        # expect
+        with pytest.raises(Exception):
+            DSVault(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
     def test_authority(self):
         # given

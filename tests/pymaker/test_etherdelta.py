@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
 from web3 import Web3, EthereumTesterProvider
 
 from pymaker import Address
@@ -42,6 +43,11 @@ class TestEtherDelta:
         self.token1.mint(Wad.from_number(100)).transact()
         self.token2 = DSToken.deploy(self.web3, 'BBB')
         self.token2.mint(Wad.from_number(100)).transact()
+
+    def test_fail_when_no_contract_under_that_address(self):
+        # expect
+        with pytest.raises(Exception):
+            EtherDelta(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
     def test_addresses(self):
         # expect

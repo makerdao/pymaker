@@ -15,12 +15,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from web3 import EthereumTesterProvider
-from web3 import Web3
+import pytest
+from web3 import Web3, EthereumTesterProvider
 
 from pymaker import Address
-from pymaker import Wad
 from pymaker.approval import directly
+from pymaker.numeric import Wad
 from pymaker.token import DSToken
 from pymaker.transactional import TxManager
 
@@ -36,6 +36,11 @@ class TestTxManager:
         self.token1.mint(Wad.from_number(1000000)).transact()
         self.token2 = DSToken.deploy(self.web3, 'DEF')
         self.token2.mint(Wad.from_number(1000000)).transact()
+
+    def test_fail_when_no_contract_under_that_address(self):
+        # expect
+        with pytest.raises(Exception):
+            TxManager(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
     def test_owner(self):
         assert self.tx.owner() == self.our_address
