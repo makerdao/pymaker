@@ -27,7 +27,7 @@ This project uses *Python 3.6.2*.
 
 In order to clone the project and install required third-party packages please execute:
 ```
-git clone https://github.com/makerdao/keeper.git
+git clone https://github.com/makerdao/pymaker.git
 pip3 install -r requirements.txt
 ```
 
