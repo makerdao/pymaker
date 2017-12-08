@@ -40,9 +40,6 @@ class ERC20Token(Contract):
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
 
-    def name(self):
-        return ERC20Token.registry.get(self.address, '???')
-
     def total_supply(self) -> Wad:
         """Returns the total supply of the token.
         
@@ -124,21 +121,6 @@ class ERC20Token(Contract):
 
     def __repr__(self):
         return f"ERC20Token('{self.address}')"
-
-    @staticmethod
-    def register_token(address: Address, name):
-        ERC20Token.registry[address] = name
-
-    @staticmethod
-    def token_address_by_name(token_name):
-        for address, name in ERC20Token.registry.items():
-            if name == token_name:
-                return address
-        raise Exception(f"Token {token_name} not found")
-
-    @staticmethod
-    def token_name_by_address(token_address: Address):
-        return ERC20Token.registry[token_address]
 
 
 class DSToken(ERC20Token):

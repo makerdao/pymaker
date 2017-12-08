@@ -34,26 +34,6 @@ class TestERC20Token:
         self.token = DSToken.deploy(self.web3, 'ABC')
         self.token.mint(Wad(1000000)).transact()
 
-    def test_token_registry(self):
-        # given
-        ERC20Token.register_token(Address('0x0100000000000000000000000000000000000000'), 'ABC')
-        ERC20Token.register_token(Address('0x0200000000000000000000000000000000000000'), 'DEF')
-        ERC20Token.register_token(Address('0x0300000000000000000000000000000000000000'), 'GHI')
-
-        # expect
-        assert ERC20Token.token_name_by_address(Address('0x0100000000000000000000000000000000000000')) == 'ABC'
-        assert ERC20Token.token_name_by_address(Address('0x0200000000000000000000000000000000000000')) == 'DEF'
-        assert ERC20Token.token_name_by_address(Address('0x0300000000000000000000000000000000000000')) == 'GHI'
-        with pytest.raises(Exception):
-            assert ERC20Token.token_name_by_address(Address('0x0400000000000000000000000000000000000000'))
-
-        # and
-        assert ERC20Token.token_address_by_name('ABC') == Address('0x0100000000000000000000000000000000000000')
-        assert ERC20Token.token_address_by_name('DEF') == Address('0x0200000000000000000000000000000000000000')
-        assert ERC20Token.token_address_by_name('GHI') == Address('0x0300000000000000000000000000000000000000')
-        with pytest.raises(Exception):
-            ERC20Token.token_address_by_name('XXX')
-
     def test_fail_when_no_token_with_that_address(self):
         with pytest.raises(Exception):
             ERC20Token(web3=self.web3, address=Address('0x0123456789012345678901234567890123456789'))

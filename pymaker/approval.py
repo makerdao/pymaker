@@ -31,7 +31,7 @@ def directly():
 
     def approval_function(token: ERC20Token, spender_address: Address, spender_name: str):
         if token.allowance_of(Address(token.web3.eth.defaultAccount), spender_address) < Wad(2 ** 128 - 1):
-            Contract.logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.name()} directly")
+            Contract.logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.address} directly")
             if not token.approve(spender_address).transact():
                 raise RuntimeError("Approval failed!")
 
@@ -48,7 +48,7 @@ def via_tx_manager(tx_manager: TxManager):
 
     def approval_function(token: ERC20Token, spender_address: Address, spender_name: str):
         if token.allowance_of(tx_manager.address, spender_address) < Wad(2 ** 128 - 1):
-            Contract.logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.name()}"
+            Contract.logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.address}"
                                  f" via TxManager {tx_manager.address}")
             if not tx_manager.execute([], [(token.approve(spender_address).invocation())]).transact():
                 raise RuntimeError("Approval failed!")
