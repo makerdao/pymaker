@@ -28,12 +28,42 @@ from pymaker.util import AsyncCallback
 
 
 class Web3Lifecycle:
+    """Main keeper lifecycle controller.
+
+    This is a utility class helping to build a proper keeper lifecycle. Lifecycle
+    consists of startup phase, subscribing to Web3 events and/or timers, and
+    a shutdown phase at the end.
+
+    One could as well initialize the keeper and start listening for events themselves
+    i.e. without using `Web3Lifecycle`, just that this class takes care of some quirks.
+    For example the listener threads of web3.py tend to die at times, which causes
+    the client to stop receiving events without even knowing something might be wrong.
+    `Web3Lifecycle` does some tricks to monitor for it, and shutdowns the keeper the
+    moment it detects something may be wrong with the listener threads.
+
+    Also, once the lifecycle is initialized, keeper starts listening for SIGINT/SIGTERM
+    signals and starts a graceful shutdown if it receives any of them.
+
+    The typical usage pattern is as follows:
+
+        with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            lifecycle.on_startup(self.some_startup_function)
+            lifecycle.on_block(self.do_something)
+            lifecycle.every(15, self.do_something_else)
+            lifecycle.on_shutdown(self.some_shutdown_function)
+
+    once called like that, `Web3Lifecycle` will enter an infinite loop.
+
+    Attributes:
+        web3: Instance of the `Web3` class from `web3.py`.
+        logger: Instance of the :py:class:`pymaker.Logger` class for event logging.
+    """
     def __init__(self, web3: Web3, logger: Logger):
         self.web3 = web3
         self.logger = logger
+
         self.startup_function = None
         self.shutdown_function = None
-
         self.terminated_internally = False
         self.terminated_externally = False
         self.fatal_termination = False
