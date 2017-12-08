@@ -21,7 +21,6 @@ from typing import Optional
 import pkg_resources
 from web3 import Web3, EthereumTesterProvider
 
-from keeper import Config
 from pymaker import Address
 from pymaker.approval import directly
 from pymaker.auth import DSGuard
@@ -124,14 +123,3 @@ class Deployment:
         self.web3.providers[0].rpc_methods.evm_revert()
         self.web3.providers[0].rpc_methods.evm_snapshot()
         self.otc._none_orders = set()
-
-    # TODO this will go away the moment we give up the idea of a config file with contract addresses
-    def get_config(self):
-        return Config({
-            'contracts': {
-                "otc": self.otc.address.address,
-                "saiTub": self.tub.address.address,
-                "saiTap": self.tap.address.address,
-                "saiTop": self.top.address.address
-            }
-        })
