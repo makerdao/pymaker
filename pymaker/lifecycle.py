@@ -68,6 +68,8 @@ class Web3Lifecycle:
 
         self.startup_function = None
         self.shutdown_function = None
+        self.every_timers = []
+
         self.terminated_internally = False
         self.terminated_externally = False
         self.fatal_termination = False
@@ -79,14 +81,23 @@ class Web3Lifecycle:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # Initialization phase
         self.logger.info(f"Keeper connected to {self.web3.providers[0]}")
         self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
         self._check_account_unlocked()
         self._wait_for_init()
         self.logger.info("Keeper started")
+
+        # Startup phase
         if self.startup_function:
             self.startup_function()
+
+        # Bind `on_block`, bind `every`
+        # Enter the main loop
+        self._start_every_timers()
         self._main_loop()
+
+        # Shutdown phase
         self.logger.info("Shutting down the keeper")
         if any_filter_thread_present():
             self.logger.info("Waiting for all threads to terminate...")
@@ -198,7 +209,6 @@ class Web3Lifecycle:
 
         self.logger.info("Watching for new blocks")
 
-    # TODO should queue the every and apply it only after keeper startup
     def every(self, frequency_in_seconds: int, callback):
         """Register the specified callback to be called by a timer.
 
@@ -206,7 +216,20 @@ class Web3Lifecycle:
             frequency_in_seconds: Execution frequency (in seconds).
             callback: Function to be called by the timer.
         """
+        self.every_timers.append((frequency_in_seconds, callback))
 
+    def _sigint_sigterm_handler(self, sig, frame):
+        if self.terminated_externally:
+            self.logger.warning("Graceful keeper termination due to SIGINT/SIGTERM already in progress")
+        else:
+            self.logger.warning("Keeper received SIGINT/SIGTERM signal, will terminate gracefully")
+            self.terminated_externally = True
+
+    def _start_every_timers(self):
+        for timer in self.every_timers:
+            self._start_every_timer(timer[0], timer[1])
+
+    def _start_every_timer(self, frequency_in_seconds: int, callback):
         def setup_timer(delay):
             timer = threading.Timer(delay, func)
             timer.daemon = True
@@ -222,13 +245,6 @@ class Web3Lifecycle:
 
         setup_timer(1)
         self._at_least_one_every = True
-
-    def _sigint_sigterm_handler(self, sig, frame):
-        if self.terminated_externally:
-            self.logger.warning("Graceful keeper termination due to SIGINT/SIGTERM already in progress")
-        else:
-            self.logger.warning("Keeper received SIGINT/SIGTERM signal, will terminate gracefully")
-            self.terminated_externally = True
 
     def _main_loop(self):
         # terminate gracefully on either SIGINT or SIGTERM

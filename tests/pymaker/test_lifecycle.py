@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+import time
 from mock import MagicMock
 from web3 import EthereumTesterProvider, Web3
 
@@ -95,3 +96,24 @@ class TestLifecycle:
         # then
         assert mock.call_count >= 2
         assert lifecycle.terminated_internally
+
+    def test_every_does_not_start_operating_until_startup_callback_is_finished(self):
+        # given
+        self.every_triggered = False
+
+        def startup_callback():
+            time.sleep(3)
+            assert not self.every_triggered
+
+        def every_callback():
+            self.every_triggered = True
+            lifecycle.terminate("Unit test is over")
+
+        # when
+        with pytest.raises(SystemExit):
+            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+                lifecycle.on_startup(startup_callback)
+                lifecycle.every(1, every_callback)
+
+        # then
+        assert self.every_triggered
