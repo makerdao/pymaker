@@ -2,8 +2,8 @@
 
 Python API for Maker contracts.
 
-[![Build Status](https://travis-ci.org/makerdao/keeper.svg?branch=master)](https://travis-ci.org/makerdao/keeper)
-[![codecov](https://codecov.io/gh/makerdao/keeper/branch/master/graph/badge.svg)](https://codecov.io/gh/makerdao/keeper)
+[![Build Status](https://travis-ci.org/makerdao/pymaker.svg?branch=master)](https://travis-ci.org/makerdao/pymaker)
+[![codecov](https://codecov.io/gh/makerdao/pymaker/branch/master/graph/badge.svg)](https://codecov.io/gh/makerdao/pymaker)
 
 <https://chat.makerdao.com/channel/keeper>
 
