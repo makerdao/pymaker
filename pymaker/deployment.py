@@ -68,18 +68,17 @@ class Deployment:
         our_address = Address(web3.eth.defaultAccount)
         sai = DSToken.deploy(web3, 'SAI')
         sin = DSToken.deploy(web3, 'SIN')
-        gem = DSToken.deploy(web3, 'ETH')
-        pip = DSValue.deploy(web3)
         skr = DSToken.deploy(web3, 'SKR')
-        pot = DSVault.deploy(web3)
+        gem = DSToken.deploy(web3, 'ETH')
+        gov = DSToken.deploy(web3, 'MKR')
+        pip = DSValue.deploy(web3)
+        pep = DSValue.deploy(web3)
         pit = DSVault.deploy(web3)
-        tip = deploy_contract(web3, 'Tip')
-        dad = DSGuard.deploy(web3)
-        jug = deploy_contract(web3, 'SaiJug', [sai.address.address, sin.address.address])
-        jar = deploy_contract(web3, 'SaiJar', [skr.address.address, gem.address.address, pip.address.address])
 
-        tub = Tub.deploy(web3, jar, jug, pot.address, pit.address, tip)
-        tap = Tap.deploy(web3, tub.address, pit.address)
+        vox = deploy_contract(web3, 'SaiVox')
+        tub = Tub.deploy(web3, sai=sai.address, sin=sin.address, skr=skr.address, gem=gem.address, gov=gov.address,
+                         pip=pip.address, pep=pep.address, vox=vox, pit=pit.address)
+        tap = Tap.deploy(web3, tub.address)
         top = Top.deploy(web3, tub.address, tap.address)
 
         otc = MatchingMarket.deploy(web3, 2600000000)
@@ -92,9 +91,10 @@ class Deployment:
                                        fee_rebate=Wad.from_number(0.03))
 
         # set permissions
+        dad = DSGuard.deploy(web3)
         dad.permit(DSGuard.ANY, DSGuard.ANY, DSGuard.ANY).transact()
         tub.set_authority(dad.address)
-        for auth in [sai, sin, skr, pot, pit, tap, top]:
+        for auth in [sai, sin, skr, gem, gov, pit, tap, top]:
             auth.set_authority(dad.address).transact()
 
         # whitelist pairs
@@ -108,10 +108,11 @@ class Deployment:
 
         self.web3 = web3
         self.our_address = our_address
-        self.gem = gem
         self.sai = sai
         self.sin = sin
         self.skr = skr
+        self.gem = gem
+        self.gov = gov
         self.tub = tub
         self.tap = tap
         self.top = top
