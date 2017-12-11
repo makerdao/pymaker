@@ -123,7 +123,7 @@ class Tub(Contract):
         Returns:
             Timestamp as a unix timestamp.
         """
-        return self._contractTip.call().era()
+        return self._contract.call().era()
 
     def warp(self, seconds: int) -> Transact:
         """Move the SAI contracts forward in time.
@@ -137,7 +137,7 @@ class Tub(Contract):
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
-        return Transact(self, self.web3, self.abiTip, self.tip(), self._contractTip, 'warp', [seconds])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'warp', [seconds])
 
     def sai(self) -> Address:
         """Get the SAI token.
@@ -162,14 +162,6 @@ class Tub(Contract):
             The address of the MKR token.
         """
         return Address(self._contract.call().gov())
-
-    def jug(self) -> Address:
-        """Get the SAI/SIN tracker.
-
-        Returns:
-            The address of the SAI/SIN tracker token.
-        """
-        return Address(self._contract.call().jug())
 
     def jar(self) -> Address:
         """Get the collateral vault.
@@ -212,20 +204,20 @@ class Tub(Contract):
         return Address(self._contract.call().gem())
 
     def pip(self) -> Address:
-        """Get the GEM price feed.
+        """Get the reference (GEM) price feed.
 
         Returns:
-            The address of the GEM price feed, which could be a `DSValue`, a `DSCache`, a `Mednianizer` etc.
+            The address of the reference (GEM) price feed, which could be a `DSValue`, a `DSCache`, `Mednianizer` etc.
         """
-        return Address(self._contractJar.call().pip())
+        return Address(self._contract.call().pip())
 
-    def tip(self) -> Address:
-        """Get the target price engine.
+    def pep(self) -> Address:
+        """Get the governance (MKR) price feed.
 
         Returns:
-            The address of the target price engine. It is an internal component of Sai.
+            The address of the governance (MKR) price feed, which could be a `DSValue`, a `DSCache`, `Mednianizer` etc.
         """
-        return Address(self._contract.call().tip())
+        return Address(self._contract.call().pep())
 
     def axe(self) -> Ray:
         """Get the liquidation penalty.
@@ -235,13 +227,13 @@ class Tub(Contract):
         """
         return Ray(self._contract.call().axe())
 
-    def hat(self) -> Wad:
+    def cap(self) -> Wad:
         """Get the debt ceiling.
 
         Returns:
             The debt ceiling in SAI.
         """
-        return Wad(self._contract.call().hat())
+        return Wad(self._contract.call().cap())
 
     def mat(self) -> Ray:
         """Get the liquidation ratio.
@@ -258,14 +250,6 @@ class Tub(Contract):
             Per-second value of the stability fee. `1.0` means no stability fee.
         """
         return Ray(self._contract.call().tax())
-
-    def way(self) -> Ray:
-        """Get the holder fee (interest rate).
-
-        Returns:
-            Per-second value of the holder fee. `1.0` means no holder fee.
-        """
-        return Ray(self._contractTip.call().way())
 
     def reg(self) -> int:
         """Get the Tub stage ('register').
@@ -311,7 +295,7 @@ class Tub(Contract):
         """
         return Ray(self._contract.call().chi())
 
-    def chop(self, new_axe: Ray) -> Transact:
+    def mold_axe(self, new_axe: Ray) -> Transact:
         """Update the liquidation penalty.
 
         Args:
@@ -321,21 +305,21 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_axe, Ray)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'chop', [new_axe.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['axe', new_axe.value])
 
-    def cork(self, new_hat: Wad) -> Transact:
+    def mold_cap(self, new_cap: Wad) -> Transact:
         """Update the debt ceiling.
 
         Args:
-            new_hat: The new value of the debt ceiling (`hat`), in SAI.
+            new_cap: The new value of the debt ceiling (`cap`), in SAI.
 
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
-        assert isinstance(new_hat, Wad)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'cork', [new_hat.value])
+        assert isinstance(new_cap, Wad)
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['cap', new_cap.value])
 
-    def cuff(self, new_mat: Ray) -> Transact:
+    def mold_mat(self, new_mat: Ray) -> Transact:
         """Update the liquidation ratio.
 
         Args:
@@ -345,9 +329,9 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_mat, Ray)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'cuff', [new_mat.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['mat', new_mat.value])
 
-    def crop(self, new_tax: Ray) -> Transact:
+    def mold_tax(self, new_tax: Ray) -> Transact:
         """Update the stability fee.
 
         Args:
@@ -357,19 +341,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_tax, Ray)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'crop', [new_tax.value])
-
-    def coax(self, new_way: Ray) -> Transact:
-        """Update the holder fee.
-
-        Args:
-            new_way: The new per-second value of the holder fee (`way`). `1.0` means no holder fee.
-
-        Returns:
-            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
-        """
-        assert isinstance(new_way, Ray)
-        return Transact(self, self.web3, self.abiTip, self.tip(), self._contractTip, 'coax', [new_way.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['tax', new_tax.value])
 
     def drip(self) -> Transact:
         """Recalculate the internal debt price (`chi`).
@@ -411,7 +383,7 @@ class Tub(Contract):
         """
         return Wad(self._contract.call().air())
 
-    def tag(self) -> Wad:
+    def tag(self) -> Ray:
         """Get the reference price (REF per SKR).
 
         The price is read from the price feed (`tip()`) every time this method gets called.
@@ -420,30 +392,18 @@ class Tub(Contract):
         Returns:
             The reference price (REF per SKR).
         """
-        return Wad(self._contractJar.call().tag())
-
-    def par(self) -> Wad:
-        """Get the accrued holder fee (REF per SAI).
-
-        Every invocation of this method calls `prod()` internally, so the value you receive is always up-to-date.
-        But as calling it doesn't result in an Ethereum transaction, the actual `_par` value in the smart
-        contract storage does not get updated.
-
-        Returns:
-            The accrued holder fee.
-        """
-        return Wad(self._contractTip.call().par())
+        return Ray(self._contract.call().tag())
 
     def per(self) -> Ray:
         """Get the current average entry/exit price (GEM per SKR).
 
         In order to get the price that will be actually used on `join()` or `exit()`, see
-        `jar_ask()` and `jar_bid()` respectively.
+        `ask()` and `bid()` respectively. The difference is due to the spread (`gap`).
 
         Returns:
             The current GEM per SKR price.
         """
-        return Ray(self._contractJar.call().per())
+        return Ray(self._contract.call().per())
 
     def gap(self) -> Wad:
         """Get the current spread for `join` and `exit`.
