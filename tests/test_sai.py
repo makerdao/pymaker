@@ -310,21 +310,21 @@ class TestTub:
 
     def test_jar_jump_and_gap(self, deployment: Deployment):
         # given
-        assert deployment.tub.jar_gap() == Wad.from_number(1)
+        assert deployment.tub.gap() == Wad.from_number(1)
 
         # when
         deployment.tub.jar_jump(Wad.from_number(1.05)).transact()
 
         # then
-        assert deployment.tub.jar_gap() == Wad.from_number(1.05)
+        assert deployment.tub.gap() == Wad.from_number(1.05)
 
     def test_jar_bid_and_ask(self, deployment: Deployment):
         # when
         deployment.tub.jar_jump(Wad.from_number(1.05)).transact()
 
         # then
-        assert deployment.tub.jar_bid() == Ray.from_number(0.95)
-        assert deployment.tub.jar_ask() == Ray.from_number(1.05)
+        assert deployment.tub.bid() == Ray.from_number(0.95)
+        assert deployment.tub.ask() == Ray.from_number(1.05)
 
     def test_comparison(self, deployment: Deployment):
         # expect

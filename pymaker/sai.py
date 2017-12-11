@@ -70,11 +70,8 @@ class Tub(Contract):
         address: Ethereum address of the `Tub` contract.
     """
 
-    abiTub = Contract._load_abi(__name__, 'abi/Tub.abi')
-    binTub = Contract._load_bin(__name__, 'abi/Tub.bin')
-    abiTip = Contract._load_abi(__name__, 'abi/Tip.abi')
-    abiJar = Contract._load_abi(__name__, 'abi/SaiJar.abi')
-    abiJug = Contract._load_abi(__name__, 'abi/SaiJug.abi')
+    abi = Contract._load_abi(__name__, 'abi/SaiTub.abi')
+    bin = Contract._load_bin(__name__, 'abi/SaiTub.bin')
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -82,27 +79,27 @@ class Tub(Contract):
 
         self.web3 = web3
         self.address = address
-        self._contractTub = self._get_contract(web3, self.abiTub, address)
-        self._contractTip = self._get_contract(web3, self.abiTip, Address(self._contractTub.call().tip()))
-        self._contractJar = self._get_contract(web3, self.abiJar, Address(self._contractTub.call().jar()))
-        self._contractJug = self._get_contract(web3, self.abiJug, Address(self._contractTub.call().jug()))
+        self._contract = self._get_contract(web3, self.abi, address)
 
     @staticmethod
-    def deploy(web3: Web3, jar: Address, jug: Address, pot: Address, pit: Address, tip: Address):
-        assert(isinstance(jar, Address))
-        assert(isinstance(jug, Address))
-        assert(isinstance(pot, Address))
+    def deploy(web3: Web3, sai: Address, sin: Address, skr: Address, gem: Address, gov: Address, pip: Address, pep: Address, vox: Address, pit: Address):
+        assert(isinstance(sai, Address))
+        assert(isinstance(sin, Address))
+        assert(isinstance(skr, Address))
+        assert(isinstance(gem, Address))
+        assert(isinstance(gov, Address))
+        assert(isinstance(pip, Address))
+        assert(isinstance(pep, Address))
+        assert(isinstance(vox, Address))
         assert(isinstance(pit, Address))
-        assert(isinstance(tip, Address))
-        return Tub(web3=web3, address=Contract._deploy(web3, Tub.abiTub, Tub.binTub,
-                                                       [jar.address, jug.address, pot.address, pit.address, tip.address]))
 
-    def set_authority(self, address: Address):
+        return Tub(web3=web3, address=Contract._deploy(web3, Tub.abi, Tub.bin,
+                                                       [sai.address, sin.address, skr.address, gem.address, gov.address,
+                                                        pip.address, pep.address, vox.address, pit.address]))
+
+    def set_authority(self, address: Address) -> Transact:
         assert(isinstance(address, Address))
-        Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'setAuthority', [address.address]).transact()
-        Transact(self, self.web3, self.abiTip, self.tip(), self._contractTip, 'setAuthority', [address.address]).transact()
-        Transact(self, self.web3, self.abiJar, self.jar(), self._contractJar, 'setAuthority', [address.address]).transact()
-        Transact(self, self.web3, self.abiJug, self.jug(), self._contractJug, 'setAuthority', [address.address]).transact()
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
 
     def approve(self, approval_function):
         """Approve the SAI contracts to access our GEM, SKR and SAI balances.
@@ -115,11 +112,10 @@ class Tub(Contract):
         """
         assert(callable(approval_function))
 
-        approval_function(ERC20Token(web3=self.web3, address=self.gem()), self.jar(), 'Tub.jar')
-        approval_function(ERC20Token(web3=self.web3, address=self.skr()), self.jar(), 'Tub.jar')
-        approval_function(ERC20Token(web3=self.web3, address=self.sai()), self.pot(), 'Tub.pot')
-        approval_function(ERC20Token(web3=self.web3, address=self.skr()), self.pit(), 'Tub.pit')
-        approval_function(ERC20Token(web3=self.web3, address=self.sai()), self.pit(), 'Tub.pit')
+        approval_function(ERC20Token(web3=self.web3, address=self.gem()), self.address, 'Tub')
+        approval_function(ERC20Token(web3=self.web3, address=self.skr()), self.address, 'Tub')
+        approval_function(ERC20Token(web3=self.web3, address=self.sai()), self.address, 'Tub')
+        approval_function(ERC20Token(web3=self.web3, address=self.gov()), self.address, 'Tub')
 
     def era(self) -> int:
         """Return the current SAI contracts timestamp.
@@ -149,7 +145,7 @@ class Tub(Contract):
         Returns:
             The address of the SAI token.
         """
-        return Address(self._contractTub.call().sai())
+        return Address(self._contract.call().sai())
 
     def sin(self) -> Address:
         """Get the SIN token.
@@ -157,7 +153,15 @@ class Tub(Contract):
         Returns:
             The address of the SIN token.
         """
-        return Address(self._contractTub.call().sin())
+        return Address(self._contract.call().sin())
+
+    def gov(self) -> Address:
+        """Get the MKR token.
+
+        Returns:
+            The address of the MKR token.
+        """
+        return Address(self._contract.call().gov())
 
     def jug(self) -> Address:
         """Get the SAI/SIN tracker.
@@ -165,7 +169,7 @@ class Tub(Contract):
         Returns:
             The address of the SAI/SIN tracker token.
         """
-        return Address(self._contractTub.call().jug())
+        return Address(self._contract.call().jug())
 
     def jar(self) -> Address:
         """Get the collateral vault.
@@ -173,7 +177,7 @@ class Tub(Contract):
         Returns:
             The address of the `SaiJar` vault. It is an internal component of Sai.
         """
-        return Address(self._contractTub.call().jar())
+        return Address(self._contract.call().jar())
 
     def pit(self) -> Address:
         """Get the liquidator vault.
@@ -181,7 +185,7 @@ class Tub(Contract):
         Returns:
             The address of the `DSVault` holding the bad debt.
         """
-        return Address(self._contractTub.call().pit())
+        return Address(self._contract.call().pit())
 
     def pot(self) -> Address:
         """Get the good debt vault.
@@ -189,7 +193,7 @@ class Tub(Contract):
         Returns:
             The address of the `DSVault` holding the good debt.
         """
-        return Address(self._contractTub.call().pot())
+        return Address(self._contract.call().pot())
 
     def skr(self) -> Address:
         """Get the SKR token.
@@ -197,7 +201,7 @@ class Tub(Contract):
         Returns:
             The address of the SKR token.
         """
-        return Address(self._contractTub.call().skr())
+        return Address(self._contract.call().skr())
 
     def gem(self) -> Address:
         """Get the collateral token (eg. W-ETH).
@@ -205,7 +209,7 @@ class Tub(Contract):
         Returns:
             The address of the collateral token.
         """
-        return Address(self._contractTub.call().gem())
+        return Address(self._contract.call().gem())
 
     def pip(self) -> Address:
         """Get the GEM price feed.
@@ -221,7 +225,7 @@ class Tub(Contract):
         Returns:
             The address of the target price engine. It is an internal component of Sai.
         """
-        return Address(self._contractTub.call().tip())
+        return Address(self._contract.call().tip())
 
     def axe(self) -> Ray:
         """Get the liquidation penalty.
@@ -229,7 +233,7 @@ class Tub(Contract):
         Returns:
             The liquidation penalty. `1.0` means no penalty. `1.2` means 20% penalty.
         """
-        return Ray(self._contractTub.call().axe())
+        return Ray(self._contract.call().axe())
 
     def hat(self) -> Wad:
         """Get the debt ceiling.
@@ -237,7 +241,7 @@ class Tub(Contract):
         Returns:
             The debt ceiling in SAI.
         """
-        return Wad(self._contractTub.call().hat())
+        return Wad(self._contract.call().hat())
 
     def mat(self) -> Ray:
         """Get the liquidation ratio.
@@ -245,7 +249,7 @@ class Tub(Contract):
         Returns:
             The liquidation ratio. `1.5` means the liquidation ratio is 150%.
         """
-        return Ray(self._contractTub.call().mat())
+        return Ray(self._contract.call().mat())
 
     def tax(self) -> Ray:
         """Get the stability fee.
@@ -253,7 +257,7 @@ class Tub(Contract):
         Returns:
             Per-second value of the stability fee. `1.0` means no stability fee.
         """
-        return Ray(self._contractTub.call().tax())
+        return Ray(self._contract.call().tax())
 
     def way(self) -> Ray:
         """Get the holder fee (interest rate).
@@ -269,7 +273,7 @@ class Tub(Contract):
         Returns:
             The current Tub stage (0=Usual, 1=Caged).
         """
-        return self._contractTub.call().reg()
+        return self._contract.call().reg()
 
     def fit(self) -> Ray:
         """Get the GEM per SKR settlement price.
@@ -277,7 +281,7 @@ class Tub(Contract):
         Returns:
             The GEM per SKR settlement (kill) price.
         """
-        return Ray(self._contractTub.call().fit())
+        return Ray(self._contract.call().fit())
 
     def rho(self) -> int:
         """Get the time of the last drip.
@@ -285,7 +289,7 @@ class Tub(Contract):
         Returns:
             The time of the last drip as a unix timestamp.
         """
-        return self._contractTub.call().rho()
+        return self._contract.call().rho()
 
     def tau(self) -> int:
         """Get the time of the last prod.
@@ -305,7 +309,7 @@ class Tub(Contract):
         Returns:
             The internal debt price in SAI.
         """
-        return Ray(self._contractTub.call().chi())
+        return Ray(self._contract.call().chi())
 
     def chop(self, new_axe: Ray) -> Transact:
         """Update the liquidation penalty.
@@ -317,7 +321,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_axe, Ray)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'chop', [new_axe.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'chop', [new_axe.value])
 
     def cork(self, new_hat: Wad) -> Transact:
         """Update the debt ceiling.
@@ -329,7 +333,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_hat, Wad)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'cork', [new_hat.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'cork', [new_hat.value])
 
     def cuff(self, new_mat: Ray) -> Transact:
         """Update the liquidation ratio.
@@ -341,7 +345,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_mat, Ray)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'cuff', [new_mat.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'cuff', [new_mat.value])
 
     def crop(self, new_tax: Ray) -> Transact:
         """Update the stability fee.
@@ -353,7 +357,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_tax, Ray)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'crop', [new_tax.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'crop', [new_tax.value])
 
     def coax(self, new_way: Ray) -> Transact:
         """Update the holder fee.
@@ -373,7 +377,7 @@ class Tub(Contract):
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'drip', [])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [])
 
     def prod(self) -> Transact:
         """Recalculate the accrued holder fee (`par`).
@@ -389,7 +393,7 @@ class Tub(Contract):
         Returns:
             The amount of good debt in SAI.
         """
-        return Wad(self._contractTub.call().ice())
+        return Wad(self._contract.call().ice())
 
     def pie(self) -> Wad:
         """Get the amount of raw collateral.
@@ -397,7 +401,7 @@ class Tub(Contract):
         Returns:
             The amount of raw collateral in GEM.
         """
-        return Wad(self._contractTub.call().pie())
+        return Wad(self._contract.call().pie())
 
     def air(self) -> Wad:
         """Get the amount of backing collateral.
@@ -405,7 +409,7 @@ class Tub(Contract):
         Returns:
             The amount of backing collateral in SKR.
         """
-        return Wad(self._contractTub.call().air())
+        return Wad(self._contract.call().air())
 
     def tag(self) -> Wad:
         """Get the reference price (REF per SKR).
@@ -441,14 +445,13 @@ class Tub(Contract):
         """
         return Ray(self._contractJar.call().per())
 
-    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
-    def jar_gap(self) -> Wad:
+    def gap(self) -> Wad:
         """Get the current spread for `join` and `exit`.
 
         Returns:
             The current spread for `join` and `exit`. `1.0` means no spread, `1.01` means 1% spread.
         """
-        return Wad(self._contractJar.call().gap())
+        return Wad(self._contract.call().gap())
 
     # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
     def jar_jump(self, new_gap: Wad) -> Transact:
@@ -463,23 +466,25 @@ class Tub(Contract):
         assert isinstance(new_gap, Wad)
         return Transact(self, self.web3, self.abiJar, self.jar(), self._contractJar, 'jump', [new_gap.value])
 
-    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
-    def jar_bid(self) -> Ray:
-        """Get the current `exit()` price (GEM per SKR).
+    def bid(self, amount: Wad) -> Wad:
+        """Get the current `exit()`.
 
         Returns:
-            The GEM per SKR price that will be used on `exit()`.
+            The amount of GEM you will get for `amount` SKR in `join()`.
         """
-        return Ray(self._contractJar.call().bid())
+        assert(isinstance(amount, Wad))
 
-    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
-    def jar_ask(self) -> Ray:
-        """Get the current `join()` price (GEM per SKR).
+        return Wad(self._contract.call().bid(amount.value))
+
+    def ask(self, amount: Wad) -> Wad:
+        """Get the current `join()` price.
 
         Returns:
-            The GEM per SKR price that will be used on `join()`.
+            The amount of GEM you will have to pay to get `amount` SKR fromm `join()`.
         """
-        return Ray(self._contractJar.call().ask())
+        assert(isinstance(amount, Wad))
+
+        return Wad(self._contract.call().ask(amount.value))
 
     def cupi(self) -> int:
         """Get the last cup id
@@ -487,7 +492,7 @@ class Tub(Contract):
         Returns:
             The id of the last cup created. Zero if no cups have been created so far.
         """
-        return self._contractTub.call().cupi()
+        return self._contract.call().cupi()
 
     def cups(self, cup_id: int) -> Cup:
         """Get the cup details.
@@ -499,7 +504,7 @@ class Tub(Contract):
             Class encapsulating cup details.
         """
         assert isinstance(cup_id, int)
-        array = self._contractTub.call().cups(int_to_bytes32(cup_id))
+        array = self._contract.call().cups(int_to_bytes32(cup_id))
         return Cup(cup_id, Address(array[0]), Wad(array[1]), Wad(array[2]))
 
     def tab(self, cup_id: int) -> Wad:
@@ -512,7 +517,7 @@ class Tub(Contract):
             Amount of debt in the cup, in SAI.
         """
         assert isinstance(cup_id, int)
-        return Wad(self._contractTub.call().tab(int_to_bytes32(cup_id)))
+        return Wad(self._contract.call().tab(int_to_bytes32(cup_id)))
 
     def ink(self, cup_id: int) -> Wad:
         """Get the amount of SKR collateral locked in a cup.
@@ -524,7 +529,7 @@ class Tub(Contract):
             Amount of SKR collateral locked in the cup, in SKR.
         """
         assert isinstance(cup_id, int)
-        return Wad(self._contractTub.call().ink(int_to_bytes32(cup_id)))
+        return Wad(self._contract.call().ink(int_to_bytes32(cup_id)))
 
     def lad(self, cup_id: int) -> Address:
         """Get the owner of a cup.
@@ -536,7 +541,7 @@ class Tub(Contract):
             Address of the owner of the cup.
         """
         assert isinstance(cup_id, int)
-        return Address(self._contractTub.call().lad(int_to_bytes32(cup_id)))
+        return Address(self._contract.call().lad(int_to_bytes32(cup_id)))
 
     def safe(self, cup_id: int) -> bool:
         """Determine if a cup is safe.
@@ -548,19 +553,19 @@ class Tub(Contract):
             `True` if the cup is safe. `False` otherwise.
         """
         assert isinstance(cup_id, int)
-        return self._contractTub.call().safe(int_to_bytes32(cup_id))
+        return self._contract.call().safe(int_to_bytes32(cup_id))
 
-    def join(self, amount_in_gem: Wad) -> Transact:
+    def join(self, amount_in_skr: Wad) -> Transact:
         """Buy SKR for GEMs.
 
         Args:
-            amount_in_gem: The amount of GEMs to buy SKR for.
+            amount_in_skr: The amount of SKRs to buy for GEM.
 
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
-        assert isinstance(amount_in_gem, Wad)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'join', [amount_in_gem.value])
+        assert isinstance(amount_in_skr, Wad)
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'join', [amount_in_skr.value])
 
     def exit(self, amount_in_skr: Wad) -> Transact:
         """Sell SKR for GEMs.
@@ -572,7 +577,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(amount_in_skr, Wad)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'exit', [amount_in_skr.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'exit', [amount_in_skr.value])
 
     #TODO make it return the id of the newly created cup
     def open(self) -> Transact:
@@ -581,7 +586,7 @@ class Tub(Contract):
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'open', [])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'open', [])
 
     def shut(self, cup_id: int) -> Transact:
         """Close a cup.
@@ -596,7 +601,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'shut', [int_to_bytes32(cup_id)])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'shut', [int_to_bytes32(cup_id)])
 
     def lock(self, cup_id: int, amount_in_skr: Wad) -> Transact:
         """Post additional SKR collateral to a cup.
@@ -610,7 +615,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'lock',
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'lock',
                         [int_to_bytes32(cup_id), amount_in_skr.value])
 
     def free(self, cup_id: int, amount_in_skr: Wad) -> Transact:
@@ -625,7 +630,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_skr, Wad)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'free',
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'free',
                         [int_to_bytes32(cup_id), amount_in_skr.value])
 
     def draw(self, cup_id: int, amount_in_sai: Wad) -> Transact:
@@ -640,7 +645,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'draw',
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'draw',
                         [int_to_bytes32(cup_id), amount_in_sai.value])
 
     def wipe(self, cup_id: int, amount_in_sai: Wad) -> Transact:
@@ -655,7 +660,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(amount_in_sai, Wad)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'wipe',
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'wipe',
                         [int_to_bytes32(cup_id), amount_in_sai.value])
 
     def give(self, cup_id: int, new_lad: Address) -> Transact:
@@ -670,7 +675,7 @@ class Tub(Contract):
         """
         assert isinstance(cup_id, int)
         assert isinstance(new_lad, Address)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'give',
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'give',
                         [int_to_bytes32(cup_id), new_lad.address])
 
     def bite(self, cup_id: int) -> Transact:
@@ -683,7 +688,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(cup_id, int)
-        return Transact(self, self.web3, self.abiTub, self.address, self._contractTub, 'bite', [int_to_bytes32(cup_id)])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'bite', [int_to_bytes32(cup_id)])
 
     def __eq__(self, other):
         assert(isinstance(other, Tub))
@@ -694,15 +699,15 @@ class Tub(Contract):
 
 
 class Tap(Contract):
-    """A client for the `Tap` contract, on of the contracts driving the `SAI Stablecoin System`.
+    """A client for the `Tap` contract.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `Tap` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/Tap.abi')
-    bin = Contract._load_bin(__name__, 'abi/Tap.bin')
+    abi = Contract._load_abi(__name__, 'abi/SaiTap.abi')
+    bin = Contract._load_bin(__name__, 'abi/SaiTap.bin')
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -713,10 +718,9 @@ class Tap(Contract):
         self._contract = self._get_contract(web3, self.abi, address)
 
     @staticmethod
-    def deploy(web3: Web3, tub: Address, pit: Address):
+    def deploy(web3: Web3, tub: Address):
         assert(isinstance(tub, Address))
-        assert(isinstance(pit, Address))
-        return Tap(web3=web3, address=Contract._deploy(web3, Tap.abi, Tap.bin, [tub.address, pit.address]))
+        return Tap(web3=web3, address=Contract._deploy(web3, Tap.abi, Tap.bin, [tub.address]))
 
     def set_authority(self, address: Address) -> Transact:
         assert(isinstance(address, Address))
@@ -833,8 +837,8 @@ class Top(Contract):
         address: Ethereum address of the `Top` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/Top.abi')
-    bin = Contract._load_bin(__name__, 'abi/Top.bin')
+    abi = Contract._load_abi(__name__, 'abi/SaiTop.abi')
+    bin = Contract._load_bin(__name__, 'abi/SaiTop.bin')
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))

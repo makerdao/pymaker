@@ -93,7 +93,7 @@ class Deployment:
         # set permissions
         dad = DSGuard.deploy(web3)
         dad.permit(DSGuard.ANY, DSGuard.ANY, DSGuard.ANY).transact()
-        tub.set_authority(dad.address)
+        tub.set_authority(dad.address).transact()
         for auth in [sai, sin, skr, gem, gov, pit, tap, top]:
             auth.set_authority(dad.address).transact()
 
