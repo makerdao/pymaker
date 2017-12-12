@@ -221,11 +221,11 @@ class Web3Lifecycle:
                         self.logger.debug(f"Finished processing block #{block_number} ({block_hash})")
 
                     if not self._on_block_callback.trigger(on_start, on_finish):
-                        self.logger.info(f"Ignoring block #{block_number} ({block_hash}),"
-                                         f" as previous callback is still running")
+                        self.logger.debug(f"Ignoring block #{block_number} ({block_hash}),"
+                                          f" as previous callback is still running")
                 else:
-                    self.logger.info(f"Ignoring block #{block_number} ({block_hash}),"
-                                     f" as there is already block #{max_block_number} available")
+                    self.logger.debug(f"Ignoring block #{block_number} ({block_hash}),"
+                                      f" as there is already block #{max_block_number} available")
             else:
                 self.logger.info(f"Ignoring block #{block_number} ({block_hash}), as the node is syncing")
 
