@@ -17,6 +17,9 @@
 
 from typing import Optional
 
+from pymaker.config import ReloadableConfig
+from pymaker.logger import Logger
+
 
 class GasPrice(object):
     """Abstract class, which can be inherited for implementing different gas price strategies.
@@ -137,3 +140,41 @@ class IncreasingGasPrice(GasPrice):
             result = min(result, self.max_price)
 
         return result
+
+
+class GasPriceFile(GasPrice):
+    """Gas price configuration dynamically reloadable from a file.
+
+    It is roughly an equivalent of implementation of :py:class:`pymaker.gas.IncreasingGasPrice`,
+    but it uses :py:class:`pymaker.config.ReloadableConfig` to read the gas parameters from
+    a file, and will dynamically reload that file whenever it changes. It allows to update
+    the gas price dynamically for running keepers.
+
+    Attributes:
+        filename: Filename of the configuration file.
+        logger: Logger used to log events.
+    """
+    def __init__(self, filename: str, logger: Logger):
+        assert(isinstance(filename, str))
+        assert(isinstance(logger, Logger))
+
+        self.reloadable_config = ReloadableConfig(filename, logger)
+
+    def get_gas_price(self, time_elapsed: int) -> Optional[int]:
+        assert(isinstance(time_elapsed, int))
+
+        config = self.reloadable_config.get_config()
+        gas_price = config.get('gasPrice', None)
+        gas_price_increase = config.get('gasPriceIncrease', None)
+        gas_price_increase_every = config.get('gasPriceIncreaseEvery', None)
+        gas_price_max = config.get('gasPriceMax', None)
+
+        if gas_price is not None:
+            if gas_price_increase and gas_price_increase_every:
+                strategy = IncreasingGasPrice(gas_price, gas_price_increase, gas_price_increase_every, gas_price_max)
+            else:
+                strategy = FixedGasPrice(gas_price)
+        else:
+            strategy = DefaultGasPrice()
+
+        return strategy.get_gas_price(time_elapsed=time_elapsed)

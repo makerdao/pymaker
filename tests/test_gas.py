@@ -17,7 +17,8 @@
 
 import pytest
 
-from pymaker.gas import DefaultGasPrice, FixedGasPrice, IncreasingGasPrice, GasPrice
+from pymaker.logger import Logger
+from pymaker.gas import DefaultGasPrice, FixedGasPrice, IncreasingGasPrice, GasPrice, GasPriceFile
 
 
 class TestGasPrice:
@@ -132,3 +133,68 @@ class TestIncreasingGasPrice:
 
         with pytest.raises(Exception):
             IncreasingGasPrice(1000, 1000, 60, -1)
+
+
+class TestGasPriceFile:
+    logger = Logger('-', '-')
+
+    @staticmethod
+    def config_file(body, tmpdir):
+        file = tmpdir.join("gas_price.json")
+        file.write(body)
+        return str(file)
+
+    def test_can_behave_as_default_gas_price(self, tmpdir):
+        # given
+        file = self.config_file("""{}""", tmpdir)
+        file_gas_price = GasPriceFile(file, self.logger)
+
+        # expect
+        assert file_gas_price.get_gas_price(0) is None
+        assert file_gas_price.get_gas_price(1) is None
+        assert file_gas_price.get_gas_price(1000000) is None
+
+    def test_can_behave_as_fixed_gas_price(self, tmpdir):
+        # given
+        file = self.config_file("""{"gasPrice": 7000000000}""", tmpdir)
+        file_gas_price = GasPriceFile(file, self.logger)
+
+        # expect
+        assert file_gas_price.get_gas_price(0) == 7000000000
+        assert file_gas_price.get_gas_price(1) == 7000000000
+        assert file_gas_price.get_gas_price(1000000) == 7000000000
+
+    def test_can_behave_as_increasing_gas_price_without_max(self, tmpdir):
+        # given
+        file = self.config_file("""{
+            "gasPrice": 7000000000,
+            "gasPriceIncrease": 1000000000,
+            "gasPriceIncreaseEvery": 60}""", tmpdir)
+        file_gas_price = GasPriceFile(file, self.logger)
+
+        # expect
+        assert file_gas_price.get_gas_price(0) == 7000000000
+        assert file_gas_price.get_gas_price(1) == 7000000000
+        assert file_gas_price.get_gas_price(59) == 7000000000
+        assert file_gas_price.get_gas_price(60) == 8000000000
+        assert file_gas_price.get_gas_price(119) == 8000000000
+        assert file_gas_price.get_gas_price(120) == 9000000000
+        assert file_gas_price.get_gas_price(1200) == 27000000000
+
+    def test_can_behave_as_increasing_gas_price_with_max(self, tmpdir):
+        # given
+        file = self.config_file("""{
+            "gasPrice": 7000000000,
+            "gasPriceIncrease": 1000000000,
+            "gasPriceIncreaseEvery": 60,
+            "gasPriceMax": 12000000000}""", tmpdir)
+        file_gas_price = GasPriceFile(file, self.logger)
+
+        # expect
+        assert file_gas_price.get_gas_price(0) == 7000000000
+        assert file_gas_price.get_gas_price(1) == 7000000000
+        assert file_gas_price.get_gas_price(59) == 7000000000
+        assert file_gas_price.get_gas_price(60) == 8000000000
+        assert file_gas_price.get_gas_price(119) == 8000000000
+        assert file_gas_price.get_gas_price(120) == 9000000000
+        assert file_gas_price.get_gas_price(1200) == 12000000000
