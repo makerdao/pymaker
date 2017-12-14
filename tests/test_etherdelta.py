@@ -168,6 +168,7 @@ class TestEtherDelta:
         assert past_trade[0].buy_token == self.token2.address
         assert past_trade[0].take_amount == Wad.from_number(0.75)
         assert past_trade[0].give_amount == Wad.from_number(1.5)
+        assert past_trade[0].raw['blockNumber'] > 0
 
     @pytest.mark.timeout(10)
     def test_on_take(self):
@@ -196,6 +197,7 @@ class TestEtherDelta:
         assert on_trade.buy_token == self.token2.address
         assert on_trade.take_amount == Wad.from_number(0.75)
         assert on_trade.give_amount == Wad.from_number(1.5)
+        assert on_trade.raw['blockNumber'] > 0
 
     def test_order_comparison(self):
         # given

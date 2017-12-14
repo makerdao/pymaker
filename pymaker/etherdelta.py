@@ -142,13 +142,14 @@ class Order:
 
 
 class LogTrade:
-    def __init__(self, args):
-        self.maker = Address(args['get'])
-        self.taker = Address(args['give'])
-        self.pay_token = Address(args['tokenGive'])
-        self.take_amount = Wad(args['amountGive'])
-        self.buy_token = Address(args['tokenGet'])
-        self.give_amount = Wad(args['amountGet'])
+    def __init__(self, log):
+        self.maker = Address(log['args']['get'])
+        self.taker = Address(log['args']['give'])
+        self.pay_token = Address(log['args']['tokenGive'])
+        self.take_amount = Wad(log['args']['amountGive'])
+        self.buy_token = Address(log['args']['tokenGet'])
+        self.give_amount = Wad(log['args']['amountGet'])
+        self.raw = log
 
     def __repr__(self):
         return pformat(vars(self))
