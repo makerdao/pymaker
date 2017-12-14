@@ -141,6 +141,19 @@ class Order:
         return pformat(vars(self))
 
 
+class LogTrade:
+    def __init__(self, args):
+        self.maker = Address(args['get'])
+        self.taker = Address(args['give'])
+        self.pay_token = Address(args['tokenGive'])
+        self.take_amount = Wad(args['amountGive'])
+        self.buy_token = Address(args['tokenGet'])
+        self.give_amount = Wad(args['amountGet'])
+
+    def __repr__(self):
+        return pformat(vars(self))
+
+
 class EtherDelta(Contract):
     """A client for the EtherDelta exchange contract.
 
@@ -256,6 +269,34 @@ class EtherDelta(Contract):
             The rebate fee.
         """
         return Wad(self._contract.call().feeRebate())
+
+    def on_trade(self, handler):
+        """Subscribe to LogTrade events.
+
+        `LogTrade` events are emitted by the EtherDelta contract every time someone takes an order.
+
+        Args:
+            handler: Function which will be called for each subsequent `LogTrade` event.
+                This handler will receive a :py:class:`pymaker.etherdelta.LogTrade` class instance.
+        """
+        assert(callable(handler))
+
+        self._on_event(self._contract, 'Trade', LogTrade, handler)
+
+    def past_trade(self, number_of_past_blocks: int) -> List[LogTrade]:
+        """Synchronously retrieve past LogTrade events.
+
+        `LogTrade` events are emitted by the EtherDelta contract every time someone takes an order.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+
+        Returns:
+            List of past `LogTrade` events represented as :py:class:`pymaker.etherdelta.LogTrade` class.
+        """
+        assert(isinstance(number_of_past_blocks, int))
+
+        return self._past_events(self._contract, 'Trade', LogTrade, number_of_past_blocks)
 
     def deposit(self, amount: Wad) -> Transact:
         """Deposits `amount` of raw ETH to EtherDelta.
