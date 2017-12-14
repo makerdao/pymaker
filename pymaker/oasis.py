@@ -333,13 +333,13 @@ class SimpleMarket(Contract):
             return None
 
         array = self._contract.call().offers(order_id)
-        if array[5] is not True:
+        if array[5] == 0:
             self._none_orders.add(order_id)
             return None
         else:
             return Order(market=self, order_id=order_id, maker=Address(array[4]), pay_token=Address(array[1]),
                          pay_amount=Wad(array[0]), buy_token=Address(array[3]), buy_amount=Wad(array[2]),
-                         timestamp=array[6])
+                         timestamp=array[5])
 
     def get_orders(self) -> List[Order]:
         """Get all active order details.
