@@ -173,6 +173,7 @@ class TestEtherDeltaApi:
         self.etherdelta_api = EtherDeltaApi(client_tool_directory='some-dir',
                                             client_tool_command='some command',
                                             api_server='https://127.0.0.1:66666',
+                                            number_of_attempts=1,
                                             retry_interval=15,
                                             timeout=90,
                                             logger=Logger('-', '-'))
