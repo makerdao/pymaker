@@ -15,13 +15,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
 import time
+
+import pytest
 from mock import MagicMock
 from web3 import EthereumTesterProvider, Web3
 
-from pymaker import Address, Logger
+import pymaker
+from pymaker import Address
 from pymaker.lifecycle import Web3Lifecycle
+from pymaker.logger import Logger
 
 
 class TestLifecycle:
@@ -30,6 +33,11 @@ class TestLifecycle:
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.logger = Logger('-', '-')
+
+        # `test_etherdelta.py` executes before this test file and creates some event filters,
+        # so we need to clear the list of filter threads as otherwise `Web3Lifecycle` will
+        # be waiting forever for them to terminate and the test harness will never finish
+        pymaker.filter_threads = []
 
     def test_should_always_exit(self):
         with pytest.raises(SystemExit):
