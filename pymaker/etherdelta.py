@@ -19,9 +19,6 @@ import hashlib
 import json
 import random
 import threading
-import time
-from fcntl import fcntl, F_GETFL, F_SETFL
-from os import O_NONBLOCK, read
 from pprint import pformat
 from subprocess import Popen, PIPE
 from typing import List
@@ -97,8 +94,8 @@ class Order:
                      buy_amount=Wad(int(data['amountGet'])), expires=int(data['expires']), nonce=int(data['nonce']),
                      v=int(data['v']), r=hexstring_to_bytes(data['r']), s=hexstring_to_bytes(data['s']))
 
-    def to_json(self, etherdelta_contract_address: Address) -> dict:
-        return {'contractAddr': etherdelta_contract_address.address,
+    def to_json(self) -> dict:
+        return {'contractAddr': self._ether_delta.address.address,
                 'tokenGet': self.buy_token.address,
                 'amountGet': self.buy_amount.value,
                 'tokenGive': self.pay_token.address,
@@ -556,56 +553,60 @@ class EtherDeltaApi:
     """A client for the EtherDelta API backend.
 
     Attributes:
-        contract_address: Address of the EtherDelta contract.
+        client_tool_directory: Directory containing the `etherdelta-client` tool.
+        client_tool_command: Command for running the `etherdelta-client` tool.
         api_server: Base URL of the EtherDelta API backend server.
+        retry_interval: Interval between subsequent retries if order placement failed.
+        timeout: Timeout after which publish order is considered as failed.
         logger: Instance of the :py:class:`pymaker.Logger` class for event logging.
     """
-    def __init__(self, contract_address: Address, api_server: str, logger: Logger):
-        assert(isinstance(contract_address, Address))
+    def __init__(self,
+                 client_tool_directory: str,
+                 client_tool_command: str,
+                 api_server: str,
+                 retry_interval: int,
+                 timeout: int,
+                 logger: Logger):
+        assert(isinstance(client_tool_directory, str))
+        assert(isinstance(client_tool_command, str))
         assert(isinstance(api_server, str))
+        assert(isinstance(retry_interval, int))
+        assert(isinstance(timeout, int))
         assert(isinstance(logger, Logger))
 
-        self.contract_address = contract_address
+        self.client_tool_directory = client_tool_directory
+        self.client_tool_command = client_tool_command
         self.api_server = api_server
+        self.retry_interval = retry_interval
+        self.timeout = timeout
         self.logger = logger
-        self.thread = threading.Thread(target=self._run, daemon=True)
-        self.thread.start()
-
-    def _run(self):
-        self.process = Popen(['node', 'main.js', self.api_server], cwd='utils/etherdelta-socket',
-                             stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
-        self._set_nonblock(self.process.stdout)
-        self._set_nonblock(self.process.stderr)
-
-        while True:
-            try:
-                lines = read(self.process.stdout.fileno(), 1024).decode('utf-8').splitlines()
-                for line in lines:
-                    self.logger.info(f"EtherDelta interface: {line}")
-            except OSError:
-                pass  # the os throws an exception if there is no data
-
-            try:
-                lines = read(self.process.stderr.fileno(), 1024).decode('utf-8').splitlines()
-                for line in lines:
-                    self.logger.info(f"EtherDelta interface error: {line}")
-            except OSError:
-                pass  # the os throws an exception if there is no data
-
-            time.sleep(0.1)
-
-    @staticmethod
-    def _set_nonblock(pipe):
-        flags = fcntl(pipe, F_GETFL)  # get current p.stdout flags
-        fcntl(pipe, F_SETFL, flags | O_NONBLOCK)
 
     def publish_order(self, order: Order):
         assert(isinstance(order, Order))
 
+        def _run():
+            process = Popen(self.client_tool_command.split() + ['--url', self.api_server,
+                                                                '--timeout', str(self.timeout),
+                                                                '--retry-interval', str(self.retry_interval),
+                                                                json.dumps(order.to_json())],
+                            cwd=self.client_tool_directory, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
+
+            result = process.communicate(None, timeout=self.timeout+15)
+            stdout = result[0].decode("utf-8").rstrip().replace('\n', ' -> ')
+            stderr = result[1].decode("utf-8").rstrip().replace('\n', ' -> ')
+
+            if len(stdout) > 0:
+                if process.returncode == 0:
+                    self.logger.info(f"Output from 'etherdelta-client': {stdout}")
+                else:
+                    self.logger.warning(f"Non-zero exit code output from 'etherdelta-client': {stdout}")
+
+            if len(stderr) > 0:
+                self.logger.fatal(f"Error from 'etherdelta-client': {stderr}")
+
         self.logger.info(f"Sending off-chain EtherDelta order {order}")
 
-        self.process.stdin.write((json.dumps(order.to_json(self.contract_address)) + '\n').encode('ascii'))
-        self.process.stdin.flush()
+        threading.Thread(target=_run, daemon=True).start()
 
     def __repr__(self):
         return f"EtherDeltaApi()"
