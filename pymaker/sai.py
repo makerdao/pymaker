@@ -343,6 +343,18 @@ class Tub(Contract):
         assert isinstance(new_tax, Ray)
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['tax', new_tax.value])
 
+    def mold_gap(self, new_gap: Wad) -> Transact:
+        """Update the current spread (`gap`) for `join` and `exit`.
+
+        Args:
+            new_tax: The new value of the spread (`gap`). `1.0` means no spread, `1.01` means 1% spread.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
+        assert isinstance(new_gap, Wad)
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['gap', new_gap.value])
+
     def drip(self) -> Transact:
         """Recalculate the internal debt price (`chi`).
 
@@ -412,19 +424,6 @@ class Tub(Contract):
             The current spread for `join` and `exit`. `1.0` means no spread, `1.01` means 1% spread.
         """
         return Wad(self._contract.call().gap())
-
-    # TODO these prefixed methods are ugly, the ultimate solution would be to have a class per smart contract
-    def jar_jump(self, new_gap: Wad) -> Transact:
-        """Update the current spread (`gap`) for `join` and `exit`.
-
-        Args:
-            new_tax: The new value of the spread (`gap`). `1.0` means no spread, `1.01` means 1% spread.
-
-        Returns:
-            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
-        """
-        assert isinstance(new_gap, Wad)
-        return Transact(self, self.web3, self.abiJar, self.jar(), self._contractJar, 'jump', [new_gap.value])
 
     def bid(self, amount: Wad) -> Wad:
         """Get the current `exit()`.
@@ -721,7 +720,7 @@ class Tap(Contract):
         """
         return Wad(self._contract.call().gap())
 
-    def jump(self, new_gap: Wad) -> Transact:
+    def mold_gap(self, new_gap: Wad) -> Transact:
         """Update the current spread (`gap`) for `boom` and `bust`.
 
         Args:
@@ -731,7 +730,7 @@ class Tap(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_gap, Wad)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'jump', [new_gap.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['gap', new_gap.value])
 
     def s2s(self) -> Wad:
         """Get the current SKR per SAI rate (for `boom` and `bust`).
@@ -741,21 +740,23 @@ class Tap(Contract):
         """
         return Wad(self._contract.call().s2s())
 
-    def bid(self) -> Wad:
-        """Get the current price of SKR in SAI for `boom`.
+    def bid(self, amount_in_skr: Wad) -> Wad:
+        """Get the current price of `amount_in_skr` SKR in SAI for `boom`.
 
         Returns:
-            The SKR in SAI price that will be used on `boom()`.
+            The amount in SAI which will be received from `boom` in return of
+                `amount_in_skr` SKR.
         """
-        return Wad(self._contract.call().bid())
+        return Wad(self._contract.call().bid(amount_in_skr.value))
 
-    def ask(self) -> Wad:
-        """Get the current price of SKR in SAI for `bust`.
+    def ask(self, amount_in_skr: Wad) -> Wad:
+        """Get the current price of `amount_in_skr` SKR in SAI for `bust`.
 
         Returns:
-            The SKR in SAI price that will be used on `bust()`.
+            The amount in SAI which will be consumed by `bust` if we want
+                to receive `amount_in_skr` SKR from it.
         """
-        return Wad(self._contract.call().ask())
+        return Wad(self._contract.call().ask(amount_in_skr.value))
 
     def boom(self, amount_in_skr: Wad) -> Transact:
         """Buy some amount of SAI to process `joy` (surplus).

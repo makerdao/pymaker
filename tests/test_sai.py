@@ -281,23 +281,23 @@ class TestTub:
         # then
         assert deployment.tub.safe(1)
 
-    def test_jar_jump_and_gap(self, deployment: Deployment):
+    def test_mold_gap_and_gap(self, deployment: Deployment):
         # given
         assert deployment.tub.gap() == Wad.from_number(1)
 
         # when
-        deployment.tub.jar_jump(Wad.from_number(1.05)).transact()
+        deployment.tub.mold_gap(Wad.from_number(1.05)).transact()
 
         # then
         assert deployment.tub.gap() == Wad.from_number(1.05)
 
-    def test_jar_bid_and_ask(self, deployment: Deployment):
+    def test_bid_and_ask(self, deployment: Deployment):
         # when
-        deployment.tub.jar_jump(Wad.from_number(1.05)).transact()
+        deployment.tub.mold_gap(Wad.from_number(1.05)).transact()
 
         # then
-        assert deployment.tub.bid() == Ray.from_number(0.95)
-        assert deployment.tub.ask() == Ray.from_number(1.05)
+        assert deployment.tub.bid(Wad.from_number(2)) == Wad.from_number(0.95)*Wad.from_number(2)
+        assert deployment.tub.ask(Wad.from_number(2)) == Wad.from_number(1.05)*Wad.from_number(2)
 
     def test_comparison(self, deployment: Deployment):
         # expect
@@ -311,12 +311,12 @@ class TestTap:
         with pytest.raises(Exception):
             Tap(web3=deployment.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
-    def test_jump_and_gap(self, deployment: Deployment):
+    def test_mold_gap_and_gap(self, deployment: Deployment):
         # given
         assert deployment.tap.gap() == Wad.from_number(1)
 
         # when
-        deployment.tap.jump(Wad.from_number(1.05)).transact()
+        deployment.tap.mold_gap(Wad.from_number(1.05)).transact()
 
         # then
         assert deployment.tap.gap() == Wad.from_number(1.05)
@@ -333,12 +333,12 @@ class TestTap:
     def test_s2s_and_bid_and_ask(self, deployment: Deployment):
         # when
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
-        deployment.tap.jump(Wad.from_number(1.05)).transact()
+        deployment.tap.mold_gap(Wad.from_number(1.05)).transact()
 
         # then
-        assert deployment.tap.bid() == Wad.from_number(475)
+        assert deployment.tap.bid(Wad.from_number(2)) == Wad.from_number(475)*Wad.from_number(2)
         assert deployment.tap.s2s() == Wad.from_number(500)
-        assert deployment.tap.ask() == Wad.from_number(525)
+        assert deployment.tap.ask(Wad.from_number(2)) == Wad.from_number(525)*Wad.from_number(2)
 
     def test_joy_and_boom(self, deployment: Deployment):
         # given
