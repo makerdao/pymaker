@@ -125,20 +125,6 @@ class Tub(Contract):
         """
         return self._contract.call().era()
 
-    def warp(self, seconds: int) -> Transact:
-        """Move the SAI contracts forward in time.
-
-        If the `seconds` parameter is equal to `0`, time travel will get permanently disabled
-        and subsequent `warp()` calls will always fail.
-
-        Args:
-            seconds: Number of seconds to warp the time forward, or `0` to permanently disable time travel.
-
-        Returns:
-            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
-        """
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'warp', [seconds])
-
     def tap(self) -> Address:
         """Get the address of the `Tap` contract.
 
