@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+from mock import Mock
 from web3 import Web3, EthereumTesterProvider
 
 from pymaker import Address
@@ -24,7 +25,9 @@ from pymaker.etherdelta import EtherDelta, EtherDeltaApi
 from pymaker.logger import Logger
 from pymaker.numeric import Wad
 from pymaker.token import DSToken
-from tests.helpers import is_hashable
+from tests.helpers import is_hashable, wait_until_mock_called
+
+PAST_BLOCKS = 100
 
 
 class TestEtherDelta:
@@ -139,6 +142,63 @@ class TestEtherDelta:
         assert self.etherdelta.amount_available(order) == Wad.from_number(0)
         assert self.etherdelta.amount_filled(order) == Wad.from_number(4)
 
+    def test_no_past_events_on_startup(self):
+        assert self.etherdelta.past_trade(PAST_BLOCKS) == []
+
+    def test_past_take(self):
+        # given
+        self.etherdelta.approve([self.token1, self.token2], directly())
+        self.etherdelta.deposit_token(self.token1.address, Wad.from_number(10)).transact()
+        self.etherdelta.deposit_token(self.token2.address, Wad.from_number(10)).transact()
+
+        # when
+        order = self.etherdelta.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(2),
+                                             buy_token=self.token2.address, buy_amount=Wad.from_number(4),
+                                             expires=100000000)
+
+        # and
+        self.etherdelta.trade(order, Wad.from_number(1.5)).transact()
+
+        # then
+        past_trade = self.etherdelta.past_trade(PAST_BLOCKS)
+        assert len(past_trade) == 1
+        assert past_trade[0].maker == self.our_address
+        assert past_trade[0].taker == self.our_address
+        assert past_trade[0].pay_token == self.token1.address
+        assert past_trade[0].buy_token == self.token2.address
+        assert past_trade[0].take_amount == Wad.from_number(0.75)
+        assert past_trade[0].give_amount == Wad.from_number(1.5)
+        assert past_trade[0].raw['blockNumber'] > 0
+
+    @pytest.mark.timeout(10)
+    def test_on_take(self):
+        # given
+        on_trade_mock = Mock()
+        self.etherdelta.on_trade(on_trade_mock)
+
+        # and
+        self.etherdelta.approve([self.token1, self.token2], directly())
+        self.etherdelta.deposit_token(self.token1.address, Wad.from_number(10)).transact()
+        self.etherdelta.deposit_token(self.token2.address, Wad.from_number(10)).transact()
+
+        # when
+        order = self.etherdelta.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(2),
+                                             buy_token=self.token2.address, buy_amount=Wad.from_number(4),
+                                             expires=100000000)
+
+        # and
+        self.etherdelta.trade(order, Wad.from_number(1.5)).transact()
+
+        # then
+        on_trade = wait_until_mock_called(on_trade_mock)[0]
+        assert on_trade.maker == self.our_address
+        assert on_trade.taker == self.our_address
+        assert on_trade.pay_token == self.token1.address
+        assert on_trade.buy_token == self.token2.address
+        assert on_trade.take_amount == Wad.from_number(0.75)
+        assert on_trade.give_amount == Wad.from_number(1.5)
+        assert on_trade.raw['blockNumber'] > 0
+
     def test_order_comparison(self):
         # given
         order1 = self.etherdelta.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(2),
@@ -170,18 +230,12 @@ class TestEtherDelta:
 
 class TestEtherDeltaApi:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
-        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
-        self.our_address = Address(self.web3.eth.defaultAccount)
-        self.etherdelta = EtherDelta.deploy(self.web3,
-                                            admin=Address('0x1111100000999998888877777666665555544444'),
-                                            fee_account=Address('0x8888877777666665555544444111110000099999'),
-                                            account_levels_addr=Address('0x0000000000000000000000000000000000000000'),
-                                            fee_make=Wad.from_number(0.01),
-                                            fee_take=Wad.from_number(0.02),
-                                            fee_rebate=Wad.from_number(0.03))
-        self.etherdelta_api = EtherDeltaApi(contract_address=self.etherdelta.address,
+        self.etherdelta_api = EtherDeltaApi(client_tool_directory='some-dir',
+                                            client_tool_command='some command',
                                             api_server='https://127.0.0.1:66666',
+                                            number_of_attempts=1,
+                                            retry_interval=15,
+                                            timeout=90,
                                             logger=Logger('-', '-'))
 
     def test_should_have_printable_representation(self):

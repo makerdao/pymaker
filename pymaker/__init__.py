@@ -152,7 +152,7 @@ class Contract:
             else:
                 self.logger.debug(f"Event {log['event']} discovered, block_number={log['blockNumber']},"
                                   f" tx_hash={log['transactionHash']}")
-            handler(cls(log['args']))
+            handler(cls(log))
         return callback
 
     @staticmethod

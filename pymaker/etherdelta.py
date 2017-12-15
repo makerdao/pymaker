@@ -19,9 +19,6 @@ import hashlib
 import json
 import random
 import threading
-import time
-from fcntl import fcntl, F_GETFL, F_SETFL
-from os import O_NONBLOCK, read
 from pprint import pformat
 from subprocess import Popen, PIPE
 from typing import List
@@ -97,8 +94,8 @@ class Order:
                      buy_amount=Wad(int(data['amountGet'])), expires=int(data['expires']), nonce=int(data['nonce']),
                      v=int(data['v']), r=hexstring_to_bytes(data['r']), s=hexstring_to_bytes(data['s']))
 
-    def to_json(self, etherdelta_contract_address: Address) -> dict:
-        return {'contractAddr': etherdelta_contract_address.address,
+    def to_json(self) -> dict:
+        return {'contractAddr': self._ether_delta.address.address,
                 'tokenGet': self.buy_token.address,
                 'amountGet': self.buy_amount.value,
                 'tokenGive': self.pay_token.address,
@@ -139,6 +136,20 @@ class Order:
         return f"('{self.buy_token}', '{self.buy_amount}'," \
                f" '{self.pay_token}', '{self.pay_amount}'," \
                f" '{self.expires}', '{self.nonce}')"
+
+    def __repr__(self):
+        return pformat(vars(self))
+
+
+class LogTrade:
+    def __init__(self, log):
+        self.maker = Address(log['args']['get'])
+        self.taker = Address(log['args']['give'])
+        self.pay_token = Address(log['args']['tokenGive'])
+        self.take_amount = Wad(log['args']['amountGive'])
+        self.buy_token = Address(log['args']['tokenGet'])
+        self.give_amount = Wad(log['args']['amountGet'])
+        self.raw = log
 
     def __repr__(self):
         return pformat(vars(self))
@@ -259,6 +270,34 @@ class EtherDelta(Contract):
             The rebate fee.
         """
         return Wad(self._contract.call().feeRebate())
+
+    def on_trade(self, handler):
+        """Subscribe to LogTrade events.
+
+        `LogTrade` events are emitted by the EtherDelta contract every time someone takes an order.
+
+        Args:
+            handler: Function which will be called for each subsequent `LogTrade` event.
+                This handler will receive a :py:class:`pymaker.etherdelta.LogTrade` class instance.
+        """
+        assert(callable(handler))
+
+        self._on_event(self._contract, 'Trade', LogTrade, handler)
+
+    def past_trade(self, number_of_past_blocks: int) -> List[LogTrade]:
+        """Synchronously retrieve past LogTrade events.
+
+        `LogTrade` events are emitted by the EtherDelta contract every time someone takes an order.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+
+        Returns:
+            List of past `LogTrade` events represented as :py:class:`pymaker.etherdelta.LogTrade` class.
+        """
+        assert(isinstance(number_of_past_blocks, int))
+
+        return self._past_events(self._contract, 'Trade', LogTrade, number_of_past_blocks)
 
     def deposit(self, amount: Wad) -> Transact:
         """Deposits `amount` of raw ETH to EtherDelta.
@@ -556,56 +595,76 @@ class EtherDeltaApi:
     """A client for the EtherDelta API backend.
 
     Attributes:
-        contract_address: Address of the EtherDelta contract.
+        client_tool_directory: Directory containing the `etherdelta-client` tool.
+        client_tool_command: Command for running the `etherdelta-client` tool.
         api_server: Base URL of the EtherDelta API backend server.
+        number_of_attempts: Number of attempts to run the `etherdelta-client` tool.
+        retry_interval: Interval between subsequent retries if order placement failed,
+            within one `etherdelta-client` run.
+        timeout: Timeout after which publish order is considered as failed by the
+            `etherdelta-client` tool. If number_of_attempts > 1, this tool will be
+            run several times though.
         logger: Instance of the :py:class:`pymaker.Logger` class for event logging.
     """
-    def __init__(self, contract_address: Address, api_server: str, logger: Logger):
-        assert(isinstance(contract_address, Address))
+    def __init__(self,
+                 client_tool_directory: str,
+                 client_tool_command: str,
+                 api_server: str,
+                 number_of_attempts: int,
+                 retry_interval: int,
+                 timeout: int,
+                 logger: Logger):
+        assert(isinstance(client_tool_directory, str))
+        assert(isinstance(client_tool_command, str))
         assert(isinstance(api_server, str))
+        assert(isinstance(number_of_attempts, int))
+        assert(isinstance(retry_interval, int))
+        assert(isinstance(timeout, int))
         assert(isinstance(logger, Logger))
 
-        self.contract_address = contract_address
+        self.client_tool_directory = client_tool_directory
+        self.client_tool_command = client_tool_command
         self.api_server = api_server
+        self.number_of_attempts = number_of_attempts
+        self.retry_interval = retry_interval
+        self.timeout = timeout
         self.logger = logger
-        self.thread = threading.Thread(target=self._run, daemon=True)
-        self.thread.start()
-
-    def _run(self):
-        self.process = Popen(['node', 'main.js', self.api_server], cwd='utils/etherdelta-socket',
-                             stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
-        self._set_nonblock(self.process.stdout)
-        self._set_nonblock(self.process.stderr)
-
-        while True:
-            try:
-                lines = read(self.process.stdout.fileno(), 1024).decode('utf-8').splitlines()
-                for line in lines:
-                    self.logger.info(f"EtherDelta interface: {line}")
-            except OSError:
-                pass  # the os throws an exception if there is no data
-
-            try:
-                lines = read(self.process.stderr.fileno(), 1024).decode('utf-8').splitlines()
-                for line in lines:
-                    self.logger.info(f"EtherDelta interface error: {line}")
-            except OSError:
-                pass  # the os throws an exception if there is no data
-
-            time.sleep(0.1)
-
-    @staticmethod
-    def _set_nonblock(pipe):
-        flags = fcntl(pipe, F_GETFL)  # get current p.stdout flags
-        fcntl(pipe, F_SETFL, flags | O_NONBLOCK)
 
     def publish_order(self, order: Order):
         assert(isinstance(order, Order))
 
-        self.logger.info(f"Sending off-chain EtherDelta order {order}")
+        def _publish_order_via_client() -> bool:
+            process = Popen(self.client_tool_command.split() + ['--url', self.api_server,
+                                                                '--timeout', str(self.timeout),
+                                                                '--retry-interval', str(self.retry_interval),
+                                                                json.dumps(order.to_json())],
+                            cwd=self.client_tool_directory, stdin=PIPE, stdout=PIPE, stderr=PIPE, shell=False)
 
-        self.process.stdin.write((json.dumps(order.to_json(self.contract_address)) + '\n').encode('ascii'))
-        self.process.stdin.flush()
+            result = process.communicate(None, timeout=self.timeout+15)
+            stdout = result[0].decode("utf-8").rstrip().replace('\n', ' -> ')
+            stderr = result[1].decode("utf-8").rstrip().replace('\n', ' -> ')
+
+            if len(stdout) > 0:
+                if process.returncode == 0:
+                    self.logger.info(f"Output from 'etherdelta-client': {stdout}")
+                else:
+                    self.logger.warning(f"Non-zero exit code output from 'etherdelta-client': {stdout}")
+
+            if len(stderr) > 0:
+                self.logger.fatal(f"Error from 'etherdelta-client': {stderr}")
+
+            return process.returncode == 0
+
+        def _run():
+            for attempt in range(self.number_of_attempts):
+                self.logger.info(f"Sending order (attempt #{attempt+1}): {order}")
+                if _publish_order_via_client():
+                    self.logger.info(f"Order {order} sent successfully")
+                    return
+
+            self.logger.warning(f"Failed to send order {order}")
+
+        threading.Thread(target=_run, daemon=True).start()
 
     def __repr__(self):
         return f"EtherDeltaApi()"

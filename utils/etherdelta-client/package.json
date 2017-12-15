@@ -1,5 +1,5 @@
 {
-  "name": "etherdelta-socket",
+  "name": "etherdelta-client",
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
@@ -9,6 +9,7 @@
   "author": "",
   "license": "AGPL",
   "dependencies": {
+    "minimist": "^1.2.0",
     "socket.io-client": "^2.0.4"
   }
 }

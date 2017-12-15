@@ -71,6 +71,7 @@ class Web3Lifecycle:
         self.web3 = web3
         self.logger = logger
 
+        self.delay = 0
         self.startup_function = None
         self.shutdown_function = None
         self.block_function = None
@@ -92,10 +93,15 @@ class Web3Lifecycle:
         self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
         self._check_account_unlocked()
         self._wait_for_init()
-        self.logger.info("Keeper started")
+
+        # Initial delay
+        if self.delay > 0:
+            self.logger.info(f"Waiting for {self.delay} seconds of initial delay...")
+            time.sleep(self.delay)
 
         # Startup phase
         if self.startup_function:
+            self.logger.info("Executing keeper startup logic")
             self.startup_function()
 
         # Bind `on_block`, bind `every`
@@ -150,6 +156,20 @@ class Web3Lifecycle:
             self.logger.fatal(f"Account {self.web3.eth.defaultAccount} is not unlocked")
             self.logger.fatal(f"Unlocking the account is necessary for the keeper to operate")
             exit(-1)
+
+    def initial_delay(self, initial_delay: int):
+        """Make the keeper wait for specified amount of time before startup.
+
+        The primary use case is to allow background threads to have a chance to pull necessary
+        information like prices, gas prices etc. At the same time we may not want to wait indefinitely
+        for that information to become available as the price source may be down etc.
+
+        Args:
+            initial_delay: Initial delay on keeper startup (in seconds).
+        """
+        assert(isinstance(initial_delay, int))
+
+        self.delay = initial_delay
 
     def on_startup(self, callback):
         """Register the specified callback to be run on keeper startup.
@@ -221,11 +241,11 @@ class Web3Lifecycle:
                         self.logger.debug(f"Finished processing block #{block_number} ({block_hash})")
 
                     if not self._on_block_callback.trigger(on_start, on_finish):
-                        self.logger.info(f"Ignoring block #{block_number} ({block_hash}),"
-                                         f" as previous callback is still running")
+                        self.logger.debug(f"Ignoring block #{block_number} ({block_hash}),"
+                                          f" as previous callback is still running")
                 else:
-                    self.logger.info(f"Ignoring block #{block_number} ({block_hash}),"
-                                     f" as there is already block #{max_block_number} available")
+                    self.logger.debug(f"Ignoring block #{block_number} ({block_hash}),"
+                                      f" as there is already block #{max_block_number} available")
             else:
                 self.logger.info(f"Ignoring block #{block_number} ({block_hash}), as the node is syncing")
 
