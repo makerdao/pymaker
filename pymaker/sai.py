@@ -704,8 +704,11 @@ class Tap(Contract):
         """
         assert(callable(approval_function))
 
+        tub = Tub(web3=self.web3, address=self.tub())
+
         approval_function(ERC20Token(web3=self.web3, address=self.sai()), self.address, 'Tap')
         approval_function(ERC20Token(web3=self.web3, address=self.skr()), self.address, 'Tap')
+        approval_function(ERC20Token(web3=self.web3, address=tub.gem()), self.address, 'Tap')
 
     def tub(self) -> Address:
         """Get the address of the `Tub` contract.
@@ -846,6 +849,17 @@ class Tap(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'cash', [amount_in_sai.value])
+
+    def mock(self, amount_in_sai: Wad) -> Transact:
+        """Exchange GEM to SAI after cage.
+
+        Args:
+            amount_in_sai: The amount of SAI to buy for GEM.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mock', [amount_in_sai.value])
 
     def __eq__(self, other):
         assert(isinstance(other, Tap))

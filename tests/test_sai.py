@@ -442,6 +442,29 @@ class TestTap:
         gem_after = deployment.gem.balance_of(deployment.our_address)
         assert gem_after - gem_before == Wad.from_number(4)
 
+    def test_mock(self, deployment: Deployment):
+        # given
+        deployment.tub.join(Wad.from_number(10)).transact()
+        deployment.tub.mold_cap(Wad.from_number(100000)).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
+
+        # and
+        deployment.tub.open().transact()
+        deployment.tub.lock(1, Wad.from_number(4)).transact()
+        deployment.tub.draw(1, Wad.from_number(1000)).transact()
+
+        # and
+        gem_before = deployment.gem.balance_of(deployment.our_address)
+
+        # when
+        deployment.top.cage().transact()
+        deployment.tap.cash(Wad.from_number(500)).transact()
+        deployment.tap.mock(Wad.from_number(250)).transact()
+
+        # then
+        gem_after = deployment.gem.balance_of(deployment.our_address)
+        assert gem_after - gem_before == Wad.from_number(1)
+
     def test_comparison(self, deployment: Deployment):
         # expect
         assert deployment.tap == deployment.tap
