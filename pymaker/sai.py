@@ -173,14 +173,6 @@ class Tub(Contract):
         """
         return Address(self._contract.call().pit())
 
-    def pot(self) -> Address:
-        """Get the good debt vault.
-
-        Returns:
-            The address of the `DSVault` holding the good debt.
-        """
-        return Address(self._contract.call().pot())
-
     def skr(self) -> Address:
         """Get the SKR token.
 
