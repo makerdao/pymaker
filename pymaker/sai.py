@@ -789,13 +789,13 @@ class Tap(Contract):
         assert isinstance(new_gap, Wad)
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['gap', new_gap.value])
 
-    def s2s(self) -> Wad:
+    def s2s(self) -> Ray:
         """Get the current SKR per SAI rate (for `boom` and `bust`).
 
         Returns:
             The current SKR per SAI rate.
         """
-        return Wad(self._contract.call().s2s())
+        return Ray(self._contract.call().s2s())
 
     def bid(self, amount_in_skr: Wad) -> Wad:
         """Get the current price of `amount_in_skr` SKR in SAI for `boom`.

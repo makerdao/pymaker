@@ -352,7 +352,7 @@ class TestTap:
 
         # then
         assert deployment.tap.bid(Wad.from_number(2)) == Wad.from_number(475)*Wad.from_number(2)
-        assert deployment.tap.s2s() == Wad.from_number(500)
+        assert deployment.tap.s2s() == Ray.from_number(500)
         assert deployment.tap.ask(Wad.from_number(2)) == Wad.from_number(525)*Wad.from_number(2)
 
     def test_joy_and_boom(self, deployment: Deployment):
