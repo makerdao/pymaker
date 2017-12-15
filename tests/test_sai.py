@@ -21,7 +21,7 @@ from pymaker import Address
 from pymaker.deployment import Deployment
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray
-from pymaker.sai import Tub, Tap, Top
+from pymaker.sai import Tub, Tap, Top, Vox
 
 
 class TestTub:
@@ -117,6 +117,9 @@ class TestTub:
 
     def test_gov(self, deployment: Deployment):
         assert deployment.tub.gov() == deployment.gov.address
+
+    def test_vox(self, deployment: Deployment):
+        assert deployment.tub.vox() == deployment.vox.address
 
     def test_pip_and_pep(self, deployment: Deployment):
         assert isinstance(deployment.tub.pip(), Address)
@@ -519,3 +522,27 @@ class TestTop:
         # then
         assert deployment.top.fix() == Ray.from_number(0.005)
 
+
+class TestVox:
+    def test_fail_when_no_contract_under_that_address(self, deployment: Deployment):
+        # expect
+        with pytest.raises(Exception):
+            Vox(web3=deployment.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
+
+    def test_comparison(self, deployment: Deployment):
+        # expect
+        assert deployment.vox == deployment.vox
+        assert deployment.vox == Vox(web3=deployment.web3, address=deployment.vox.address)
+        assert deployment.vox != Vox(web3=deployment.web3, address=deployment.top.address)
+
+    def test_era(self, deployment: Deployment):
+        # when
+        era = deployment.vox.era()
+        deployment.web3.providers[0].rpc_methods.evm_mine()
+
+        # then
+        assert era == deployment.web3.eth.getBlock('latest').timestamp
+
+    def test_default_par(self, deployment: Deployment):
+        # expect
+        assert deployment.vox.par() == Ray.from_number(1)

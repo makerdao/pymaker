@@ -28,7 +28,7 @@ from pymaker.etherdelta import EtherDelta
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad
 from pymaker.oasis import MatchingMarket
-from pymaker.sai import Tub, Tap, Top
+from pymaker.sai import Tub, Tap, Top, Vox
 from pymaker.token import DSToken
 from pymaker.vault import DSVault
 
@@ -75,9 +75,9 @@ class Deployment:
         pep = DSValue.deploy(web3)
         pit = DSVault.deploy(web3)
 
-        vox = deploy_contract(web3, 'SaiVox')
+        vox = Vox.deploy(web3)
         tub = Tub.deploy(web3, sai=sai.address, sin=sin.address, skr=skr.address, gem=gem.address, gov=gov.address,
-                         pip=pip.address, pep=pep.address, vox=vox, pit=pit.address)
+                         pip=pip.address, pep=pep.address, vox=vox.address, pit=pit.address)
         tap = Tap.deploy(web3, tub.address)
         top = Top.deploy(web3, tub.address, tap.address)
 
@@ -118,6 +118,7 @@ class Deployment:
         self.skr = skr
         self.gem = gem
         self.gov = gov
+        self.vox = vox
         self.tub = tub
         self.tap = tap
         self.top = top

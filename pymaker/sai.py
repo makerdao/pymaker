@@ -171,6 +171,14 @@ class Tub(Contract):
         """
         return Address(self._contract.call().gov())
 
+    def vox(self) -> Address:
+        """Get the address of the `Vox` contract.
+
+        Returns:
+            The address of the `Vox` contract.
+        """
+        return Address(self._contract.call().vox())
+
     def jar(self) -> Address:
         """Get the collateral vault.
 
@@ -929,3 +937,58 @@ class Top(Contract):
 
     def __repr__(self):
         return f"Top('{self.address}')"
+
+
+class Vox(Contract):
+    """A client for the `Vox` contract, one of the `SAI Stablecoin System` contracts.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `Vox` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/SaiVox.abi')
+    bin = Contract._load_bin(__name__, 'abi/SaiVox.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(address, Address))
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+
+    @staticmethod
+    def deploy(web3: Web3):
+        return Vox(web3=web3, address=Contract._deploy(web3, Vox.abi, Vox.bin, []))
+
+    def set_authority(self, address: Address) -> Transact:
+        assert(isinstance(address, Address))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
+
+    def era(self) -> int:
+        """Return the current `Vox` timestamp.
+
+        Returns:
+            Timestamp as a unix timestamp.
+        """
+        return self._contract.call().era()
+
+    def par(self) -> Ray:
+        """Get the accrued holder fee (REF per SAI).
+
+        Every invocation of this method calls `prod()` internally, so the value you receive is always up-to-date.
+        But as calling it doesn't result in an Ethereum transaction, the actual `_par` value in the smart
+        contract storage does not get updated.
+
+        Returns:
+            The accrued holder fee.
+        """
+        return Ray(self._contract.call().par())
+
+    def __eq__(self, other):
+        assert(isinstance(other, Vox))
+        return self.address == other.address
+
+    def __repr__(self):
+        return f"Vox('{self.address}')"
