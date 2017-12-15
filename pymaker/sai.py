@@ -359,13 +359,13 @@ class Tub(Contract):
         """
         return Transact(self, self.web3, self.abiTip, self.tip(), self._contractTip, 'prod', [])
 
-    def ice(self) -> Wad:
-        """Get the amount of good debt.
+    def din(self) -> Wad:
+        """Get the amount of total debt.
 
         Returns:
-            The amount of good debt in SAI.
+            The amount of total debt in SAI.
         """
-        return Wad(self._contract.call().ice())
+        return Wad(self._contract.call().din())
 
     def pie(self) -> Wad:
         """Get the amount of raw collateral.

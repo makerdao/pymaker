@@ -229,7 +229,7 @@ class TestTub:
         assert deployment.tub.ink(1) == Wad.from_number(2)
         assert deployment.tub.air() == Wad.from_number(2)
 
-    def test_draw_and_tab_and_ice_and_wipe(self, deployment: Deployment):
+    def test_draw_and_tab_and_din_and_wipe(self, deployment: Deployment):
         # given
         deployment.tub.join(Wad.from_number(10)).transact()
         deployment.tub.mold_cap(Wad.from_number(100000)).transact()
@@ -245,7 +245,7 @@ class TestTub:
         # then
         assert deployment.sai.balance_of(deployment.our_address) == Wad.from_number(50)
         assert deployment.tub.tab(1) == Wad.from_number(50)
-        assert deployment.tub.ice() == Wad.from_number(50)
+        assert deployment.tub.din() == Wad.from_number(50)
 
         # when
         deployment.tub.wipe(1, Wad.from_number(30)).transact()
@@ -253,7 +253,7 @@ class TestTub:
         # then
         assert deployment.sai.balance_of(deployment.our_address) == Wad.from_number(20)
         assert deployment.tub.tab(1) == Wad.from_number(20)
-        assert deployment.tub.ice() == Wad.from_number(20)
+        assert deployment.tub.din() == Wad.from_number(20)
 
     def test_bite_and_safe(self, deployment: Deployment):
         # given
