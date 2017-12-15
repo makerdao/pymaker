@@ -81,6 +81,8 @@ class Deployment:
         tap = Tap.deploy(web3, tub.address)
         top = Top.deploy(web3, tub.address, tap.address)
 
+        tub._contract.transact().turn(tap.address.address)
+
         otc = MatchingMarket.deploy(web3, 2600000000)
         etherdelta = EtherDelta.deploy(web3,
                                        admin=Address('0x1111100000999998888877777666665555544444'),
@@ -100,8 +102,11 @@ class Deployment:
         # whitelist pairs
         otc.add_token_pair_whitelist(sai.address, gem.address).transact()
 
-        # approve, mint some GEMs
+        # approve
         tub.approve(directly())
+        tap.approve(directly())
+
+        # mint some GEMs
         gem.mint(Wad.from_number(1000000)).transact()
 
         web3.providers[0].rpc_methods.evm_snapshot()

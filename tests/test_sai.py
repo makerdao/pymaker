@@ -30,6 +30,9 @@ class TestTub:
         with pytest.raises(Exception):
             Tub(web3=deployment.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
+    def test_tap(self, deployment: Deployment):
+        assert deployment.tub.tap() == deployment.tap.address
+
     def test_warp_and_era(self, deployment: Deployment):
         # given
         old_era = deployment.tub.era()
@@ -311,6 +314,18 @@ class TestTap:
         with pytest.raises(Exception):
             Tap(web3=deployment.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
+    def test_tub(self, deployment: Deployment):
+        assert deployment.tap.tub() == deployment.tub.address
+
+    def test_sai(self, deployment: Deployment):
+        assert deployment.tap.sai() == deployment.sai.address
+
+    def test_sin(self, deployment: Deployment):
+        assert deployment.tap.sin() == deployment.sin.address
+
+    def test_skr(self, deployment: Deployment):
+        assert deployment.tap.skr() == deployment.skr.address
+
     def test_mold_gap_and_gap(self, deployment: Deployment):
         # given
         assert deployment.tap.gap() == Wad.from_number(1)
@@ -398,6 +413,35 @@ class TestTap:
         assert deployment.skr.balance_of(deployment.our_address) == Wad.from_number(8)
         assert deployment.sai.balance_of(deployment.our_address) == Wad.from_number(700)
 
+    def test_cash(self, deployment: Deployment):
+        # given
+        deployment.tub.join(Wad.from_number(10)).transact()
+        deployment.tub.mold_cap(Wad.from_number(100000)).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
+
+        # and
+        deployment.tub.open().transact()
+        deployment.tub.lock(1, Wad.from_number(4)).transact()
+        deployment.tub.draw(1, Wad.from_number(1000)).transact()
+
+        # and
+        gem_before = deployment.gem.balance_of(deployment.our_address)
+
+        # when
+        deployment.top.cage().transact()
+        deployment.tap.cash(Wad.from_number(500)).transact()
+
+        # then
+        gem_after = deployment.gem.balance_of(deployment.our_address)
+        assert gem_after - gem_before == Wad.from_number(2)
+
+        # when
+        deployment.tap.cash(Wad.from_number(500)).transact()
+
+        # then
+        gem_after = deployment.gem.balance_of(deployment.our_address)
+        assert gem_after - gem_before == Wad.from_number(4)
+
     def test_comparison(self, deployment: Deployment):
         # expect
         assert deployment.tap == deployment.tap
@@ -455,24 +499,3 @@ class TestTop:
         # then
         assert deployment.top.fix() == Ray.from_number(0.005)
 
-    def test_cash(self, deployment: Deployment):
-        # given
-        deployment.tub.join(Wad.from_number(10)).transact()
-        deployment.tub.mold_cap(Wad.from_number(100000)).transact()
-        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
-
-        # and
-        deployment.tub.open().transact()
-        deployment.tub.lock(1, Wad.from_number(4)).transact()
-        deployment.tub.draw(1, Wad.from_number(1000)).transact()
-
-        # and
-        gem_before = deployment.gem.balance_of(deployment.our_address)
-
-        # when
-        deployment.top.cage().transact()
-        deployment.top.cash().transact()
-
-        # then
-        gem_after = deployment.gem.balance_of(deployment.our_address)
-        assert gem_after - gem_before == Wad.from_number(4)

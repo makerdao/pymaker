@@ -102,7 +102,7 @@ class Tub(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
 
     def approve(self, approval_function):
-        """Approve the SAI contracts to access our GEM, SKR and SAI balances.
+        """Approve the `Tub` to access our GEM, SKR, SAI and GOV balances.
 
         For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
         in `pymaker.approval`.
@@ -138,6 +138,14 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'warp', [seconds])
+
+    def tap(self) -> Address:
+        """Get the address of the `Tap` contract.
+
+        Returns:
+            The address of the `Tap` contract.
+        """
+        return Address(self._contract.call().tap())
 
     def sai(self) -> Address:
         """Get the SAI token.
@@ -685,6 +693,52 @@ class Tap(Contract):
         assert(isinstance(address, Address))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
 
+    def approve(self, approval_function):
+        """Approve the `Tap` to access our SAI and SKR balances.
+
+        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+        in `pymaker.approval`.
+
+        Args:
+            approval_function: Approval function (i.e. approval mode).
+        """
+        assert(callable(approval_function))
+
+        approval_function(ERC20Token(web3=self.web3, address=self.sai()), self.address, 'Tap')
+        approval_function(ERC20Token(web3=self.web3, address=self.skr()), self.address, 'Tap')
+
+    def tub(self) -> Address:
+        """Get the address of the `Tub` contract.
+
+        Returns:
+            The address of the `Tub` contract.
+        """
+        return Address(self._contract.call().tub())
+
+    def sai(self) -> Address:
+        """Get the SAI token.
+
+        Returns:
+            The address of the SAI token.
+        """
+        return Address(self._contract.call().sai())
+
+    def sin(self) -> Address:
+        """Get the SIN token.
+
+        Returns:
+            The address of the SIN token.
+        """
+        return Address(self._contract.call().sin())
+
+    def skr(self) -> Address:
+        """Get the SKR token.
+
+        Returns:
+            The address of the SKR token.
+        """
+        return Address(self._contract.call().skr())
+
     def woe(self) -> Wad:
         """Get the amount of bad debt.
 
@@ -782,6 +836,17 @@ class Tap(Contract):
         assert isinstance(amount_in_skr, Wad)
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'bust', [amount_in_skr.value])
 
+    def cash(self, amount_in_sai: Wad) -> Transact:
+        """Exchange SAI to GEM after cage.
+
+        Args:
+            amount_in_sai: The amount of SAI to exchange to GEM.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'cash', [amount_in_sai.value])
+
     def __eq__(self, other):
         assert(isinstance(other, Tap))
         return self.address == other.address
@@ -841,14 +906,6 @@ class Top(Contract):
             return Transact(self, self.web3, self.abi, self.address, self._contract, 'cage', [price.value])
         else:
             return Transact(self, self.web3, self.abi, self.address, self._contract, 'cage', [])
-
-    def cash(self) -> Transact:
-        """Exchange SAI to GEM after cage.
-
-        Returns:
-            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
-        """
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'cash', [])
 
     # TODO vent
 
