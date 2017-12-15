@@ -44,6 +44,32 @@ class TestLifecycle:
             with Web3Lifecycle(self.web3, self.logger):
                 pass
 
+    def test_should_start_instantly_if_no_initial_delay(self):
+        # given
+        start_time = int(time.time())
+
+        # when
+        with pytest.raises(SystemExit):
+            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+                pass
+
+        # then
+        end_time = int(time.time())
+        assert end_time - start_time <= 2
+
+    def test_should_obey_initial_delay(self):
+        # given
+        start_time = int(time.time())
+
+        # when
+        with pytest.raises(SystemExit):
+            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+                lifecycle.initial_delay(5)
+
+        # then
+        end_time = int(time.time())
+        assert end_time - start_time >= 4
+
     def test_should_call_startup_callback(self):
         # given
         startup_mock = MagicMock()
