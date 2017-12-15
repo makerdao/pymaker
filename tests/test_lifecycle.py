@@ -15,13 +15,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import pytest
 import time
+
+import pytest
 from mock import MagicMock
 from web3 import EthereumTesterProvider, Web3
 
-from pymaker import Address, Logger
+import pymaker
+from pymaker import Address
 from pymaker.lifecycle import Web3Lifecycle
+from pymaker.logger import Logger
 
 
 class TestLifecycle:
@@ -31,10 +34,41 @@ class TestLifecycle:
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.logger = Logger('-', '-')
 
+        # `test_etherdelta.py` executes before this test file and creates some event filters,
+        # so we need to clear the list of filter threads as otherwise `Web3Lifecycle` will
+        # be waiting forever for them to terminate and the test harness will never finish
+        pymaker.filter_threads = []
+
     def test_should_always_exit(self):
         with pytest.raises(SystemExit):
             with Web3Lifecycle(self.web3, self.logger):
                 pass
+
+    def test_should_start_instantly_if_no_initial_delay(self):
+        # given
+        start_time = int(time.time())
+
+        # when
+        with pytest.raises(SystemExit):
+            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+                pass
+
+        # then
+        end_time = int(time.time())
+        assert end_time - start_time <= 2
+
+    def test_should_obey_initial_delay(self):
+        # given
+        start_time = int(time.time())
+
+        # when
+        with pytest.raises(SystemExit):
+            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+                lifecycle.initial_delay(5)
+
+        # then
+        end_time = int(time.time())
+        assert end_time - start_time >= 4
 
     def test_should_call_startup_callback(self):
         # given

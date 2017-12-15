@@ -86,57 +86,61 @@ class Order:
 
 
 class LogMake:
-    def __init__(self, args):
-        self.order_id = bytes_to_int(args['id'])
-        self.maker = Address(args['maker'])
-        self.pay_token = Address(args['pay_gem'])
-        self.pay_amount = Wad(args['pay_amt'])
-        self.buy_token = Address(args['buy_gem'])
-        self.buy_amount = Wad(args['buy_amt'])
-        self.timestamp = args['timestamp']
+    def __init__(self, log):
+        self.order_id = bytes_to_int(log['args']['id'])
+        self.maker = Address(log['args']['maker'])
+        self.pay_token = Address(log['args']['pay_gem'])
+        self.pay_amount = Wad(log['args']['pay_amt'])
+        self.buy_token = Address(log['args']['buy_gem'])
+        self.buy_amount = Wad(log['args']['buy_amt'])
+        self.timestamp = log['args']['timestamp']
+        self.raw = log
 
     def __repr__(self):
         return pformat(vars(self))
 
 
 class LogBump:
-    def __init__(self, args):
-        self.order_id = bytes_to_int(args['id'])
-        self.maker = Address(args['maker'])
-        self.pay_token = Address(args['pay_gem'])
-        self.pay_amount = Wad(args['pay_amt'])
-        self.buy_token = Address(args['buy_gem'])
-        self.buy_amount = Wad(args['buy_amt'])
-        self.timestamp = args['timestamp']
+    def __init__(self, log):
+        self.order_id = bytes_to_int(log['args']['id'])
+        self.maker = Address(log['args']['maker'])
+        self.pay_token = Address(log['args']['pay_gem'])
+        self.pay_amount = Wad(log['args']['pay_amt'])
+        self.buy_token = Address(log['args']['buy_gem'])
+        self.buy_amount = Wad(log['args']['buy_amt'])
+        self.timestamp = log['args']['timestamp']
+        self.raw = log
 
     def __repr__(self):
         return pformat(vars(self))
 
 
 class LogTake:
-    def __init__(self, args):
-        self.order_id = bytes_to_int(args['id'])
-        self.maker = Address(args['maker'])
-        self.taker = Address(args['taker'])
-        self.pay_token = Address(args['pay_gem'])
-        self.take_amount = Wad(args['take_amt'])
-        self.buy_token = Address(args['buy_gem'])
-        self.give_amount = Wad(args['give_amt'])
-        self.timestamp = args['timestamp']
+    def __init__(self, log):
+        self.order_id = bytes_to_int(log['args']['id'])
+        self.maker = Address(log['args']['maker'])
+        self.taker = Address(log['args']['taker'])
+        self.pay_token = Address(log['args']['pay_gem'])
+        self.take_amount = Wad(log['args']['take_amt'])
+        self.buy_token = Address(log['args']['buy_gem'])
+        self.give_amount = Wad(log['args']['give_amt'])
+        self.timestamp = log['args']['timestamp']
+        self.raw = log
 
     def __repr__(self):
         return pformat(vars(self))
 
 
 class LogKill:
-    def __init__(self, args):
-        self.order_id = bytes_to_int(args['id'])
-        self.maker = Address(args['maker'])
-        self.pay_token = Address(args['pay_gem'])
-        self.pay_amount = Wad(args['pay_amt'])
-        self.buy_token = Address(args['buy_gem'])
-        self.buy_amount = Wad(args['buy_amt'])
-        self.timestamp = args['timestamp']
+    def __init__(self, log):
+        self.order_id = bytes_to_int(log['args']['id'])
+        self.maker = Address(log['args']['maker'])
+        self.pay_token = Address(log['args']['pay_gem'])
+        self.pay_amount = Wad(log['args']['pay_amt'])
+        self.buy_token = Address(log['args']['buy_gem'])
+        self.buy_amount = Wad(log['args']['buy_amt'])
+        self.timestamp = log['args']['timestamp']
+        self.raw = log
 
     def __repr__(self):
         return pformat(vars(self))

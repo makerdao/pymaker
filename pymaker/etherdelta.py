@@ -141,6 +141,20 @@ class Order:
         return pformat(vars(self))
 
 
+class LogTrade:
+    def __init__(self, log):
+        self.maker = Address(log['args']['get'])
+        self.taker = Address(log['args']['give'])
+        self.pay_token = Address(log['args']['tokenGive'])
+        self.take_amount = Wad(log['args']['amountGive'])
+        self.buy_token = Address(log['args']['tokenGet'])
+        self.give_amount = Wad(log['args']['amountGet'])
+        self.raw = log
+
+    def __repr__(self):
+        return pformat(vars(self))
+
+
 class EtherDelta(Contract):
     """A client for the EtherDelta exchange contract.
 
@@ -256,6 +270,34 @@ class EtherDelta(Contract):
             The rebate fee.
         """
         return Wad(self._contract.call().feeRebate())
+
+    def on_trade(self, handler):
+        """Subscribe to LogTrade events.
+
+        `LogTrade` events are emitted by the EtherDelta contract every time someone takes an order.
+
+        Args:
+            handler: Function which will be called for each subsequent `LogTrade` event.
+                This handler will receive a :py:class:`pymaker.etherdelta.LogTrade` class instance.
+        """
+        assert(callable(handler))
+
+        self._on_event(self._contract, 'Trade', LogTrade, handler)
+
+    def past_trade(self, number_of_past_blocks: int) -> List[LogTrade]:
+        """Synchronously retrieve past LogTrade events.
+
+        `LogTrade` events are emitted by the EtherDelta contract every time someone takes an order.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+
+        Returns:
+            List of past `LogTrade` events represented as :py:class:`pymaker.etherdelta.LogTrade` class.
+        """
+        assert(isinstance(number_of_past_blocks, int))
+
+        return self._past_events(self._contract, 'Trade', LogTrade, number_of_past_blocks)
 
     def deposit(self, amount: Wad) -> Transact:
         """Deposits `amount` of raw ETH to EtherDelta.
@@ -556,20 +598,26 @@ class EtherDeltaApi:
         client_tool_directory: Directory containing the `etherdelta-client` tool.
         client_tool_command: Command for running the `etherdelta-client` tool.
         api_server: Base URL of the EtherDelta API backend server.
-        retry_interval: Interval between subsequent retries if order placement failed.
-        timeout: Timeout after which publish order is considered as failed.
+        number_of_attempts: Number of attempts to run the `etherdelta-client` tool.
+        retry_interval: Interval between subsequent retries if order placement failed,
+            within one `etherdelta-client` run.
+        timeout: Timeout after which publish order is considered as failed by the
+            `etherdelta-client` tool. If number_of_attempts > 1, this tool will be
+            run several times though.
         logger: Instance of the :py:class:`pymaker.Logger` class for event logging.
     """
     def __init__(self,
                  client_tool_directory: str,
                  client_tool_command: str,
                  api_server: str,
+                 number_of_attempts: int,
                  retry_interval: int,
                  timeout: int,
                  logger: Logger):
         assert(isinstance(client_tool_directory, str))
         assert(isinstance(client_tool_command, str))
         assert(isinstance(api_server, str))
+        assert(isinstance(number_of_attempts, int))
         assert(isinstance(retry_interval, int))
         assert(isinstance(timeout, int))
         assert(isinstance(logger, Logger))
@@ -577,6 +625,7 @@ class EtherDeltaApi:
         self.client_tool_directory = client_tool_directory
         self.client_tool_command = client_tool_command
         self.api_server = api_server
+        self.number_of_attempts = number_of_attempts
         self.retry_interval = retry_interval
         self.timeout = timeout
         self.logger = logger
@@ -584,7 +633,7 @@ class EtherDeltaApi:
     def publish_order(self, order: Order):
         assert(isinstance(order, Order))
 
-        def _run():
+        def _publish_order_via_client() -> bool:
             process = Popen(self.client_tool_command.split() + ['--url', self.api_server,
                                                                 '--timeout', str(self.timeout),
                                                                 '--retry-interval', str(self.retry_interval),
@@ -604,7 +653,16 @@ class EtherDeltaApi:
             if len(stderr) > 0:
                 self.logger.fatal(f"Error from 'etherdelta-client': {stderr}")
 
-        self.logger.info(f"Sending off-chain EtherDelta order {order}")
+            return process.returncode == 0
+
+        def _run():
+            for attempt in range(self.number_of_attempts):
+                self.logger.info(f"Sending order (attempt #{attempt+1}): {order}")
+                if _publish_order_via_client():
+                    self.logger.info(f"Order {order} sent successfully")
+                    return
+
+            self.logger.warning(f"Failed to send order {order}")
 
         threading.Thread(target=_run, daemon=True).start()
 

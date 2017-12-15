@@ -156,6 +156,7 @@ class GeneralMarketTest:
         assert past_make[0].buy_token == self.token2.address
         assert past_make[0].buy_amount == Wad.from_number(2)
         assert past_make[0].timestamp != 0
+        assert past_make[0].raw['blockNumber'] > 0
 
     def test_past_bump(self):
         # when
@@ -174,6 +175,7 @@ class GeneralMarketTest:
         assert past_bump[0].buy_token == self.token2.address
         assert past_bump[0].buy_amount == Wad.from_number(2)
         assert past_bump[0].timestamp != 0
+        assert past_bump[0].raw['blockNumber'] > 0
 
     def test_past_take(self):
         # when
@@ -196,6 +198,7 @@ class GeneralMarketTest:
         assert past_take[0].take_amount == Wad.from_number(0.5)
         assert past_take[0].give_amount == Wad.from_number(1)
         assert past_take[0].timestamp != 0
+        assert past_take[0].raw['blockNumber'] > 0
 
     def test_past_kill(self):
         # when
@@ -216,6 +219,7 @@ class GeneralMarketTest:
         assert past_kill[0].buy_token == self.token2.address
         assert past_kill[0].buy_amount == Wad.from_number(2)
         assert past_kill[0].timestamp != 0
+        assert past_kill[0].raw['blockNumber'] > 0
 
     @pytest.mark.timeout(10)
     def test_on_make(self):
@@ -237,6 +241,7 @@ class GeneralMarketTest:
         assert on_make.buy_token == self.token2.address
         assert on_make.buy_amount == Wad.from_number(2)
         assert on_make.timestamp != 0
+        assert on_make.raw['blockNumber'] > 0
 
     @pytest.mark.timeout(10)
     def test_on_bump(self):
@@ -259,6 +264,7 @@ class GeneralMarketTest:
         assert on_bump.buy_token == self.token2.address
         assert on_bump.buy_amount == Wad.from_number(2)
         assert on_bump.timestamp != 0
+        assert on_bump.raw['blockNumber'] > 0
 
     @pytest.mark.timeout(10)
     def test_on_take(self):
@@ -285,6 +291,7 @@ class GeneralMarketTest:
         assert on_take.take_amount == Wad.from_number(0.5)
         assert on_take.give_amount == Wad.from_number(1)
         assert on_take.timestamp != 0
+        assert on_take.raw['blockNumber'] > 0
 
     @pytest.mark.timeout(10)
     def test_on_kill(self):
@@ -309,6 +316,7 @@ class GeneralMarketTest:
         assert on_kill.buy_token == self.token2.address
         assert on_kill.buy_amount == Wad.from_number(2)
         assert on_kill.timestamp != 0
+        assert on_kill.raw['blockNumber'] > 0
 
 
 class TestSimpleMarket(GeneralMarketTest):
