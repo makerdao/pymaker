@@ -166,10 +166,10 @@ class Tub(Contract):
         return Address(self._contract.call().vox())
 
     def pit(self) -> Address:
-        """Get the liquidator vault.
+        """Get the governance vault.
 
         Returns:
-            The address of the `DSVault` holding the bad debt.
+            The address of the `DSVault` holding the governance tokens awaiting burn.
         """
         return Address(self._contract.call().pit())
 

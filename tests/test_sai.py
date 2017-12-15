@@ -125,6 +125,9 @@ class TestTub:
         assert isinstance(deployment.tub.pip(), Address)
         assert isinstance(deployment.tub.pep(), Address)
 
+    def test_pit(self, deployment: Deployment):
+        assert isinstance(deployment.tub.pit(), Address)
+
     def test_per(self, deployment: Deployment):
         assert deployment.tub.per() == Ray.from_number(1.0)
 
