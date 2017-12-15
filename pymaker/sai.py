@@ -118,7 +118,7 @@ class Tub(Contract):
         approval_function(ERC20Token(web3=self.web3, address=self.gov()), self.address, 'Tub')
 
     def era(self) -> int:
-        """Return the current SAI contracts timestamp.
+        """Return the current `Tub` timestamp.
 
         Returns:
             Timestamp as a unix timestamp.
@@ -694,7 +694,7 @@ class Tap(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
 
     def approve(self, approval_function):
-        """Approve the `Tap` to access our SAI and SKR balances.
+        """Approve the `Tap` to access our SAI, SKR and GEM balances.
 
         For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
         in `pymaker.approval`.

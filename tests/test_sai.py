@@ -33,15 +33,13 @@ class TestTub:
     def test_tap(self, deployment: Deployment):
         assert deployment.tub.tap() == deployment.tap.address
 
-    def test_warp_and_era(self, deployment: Deployment):
-        # given
-        old_era = deployment.tub.era()
-
+    def test_era(self, deployment: Deployment):
         # when
-        deployment.tub.warp(30).transact()
+        era = deployment.tub.era()
+        deployment.web3.providers[0].rpc_methods.evm_mine()
 
         # then
-        assert deployment.tub.era() == old_era + 30
+        assert era == deployment.web3.eth.getBlock('latest').timestamp
 
     def test_join_and_pie_and_exit(self, deployment: Deployment):
         # given
@@ -141,7 +139,7 @@ class TestTub:
         old_rho = deployment.tub.rho()
 
         # when
-        deployment.tub.warp(1000).transact()
+        deployment.time_travel_by(1000)
         deployment.tub.drip().transact()
 
         # then
@@ -368,8 +366,7 @@ class TestTap:
         deployment.tub.draw(1, Wad.from_number(1000)).transact()
 
         # when
-        deployment.tub.drip().transact()
-        deployment.tub.warp(3600).transact()
+        deployment.time_travel_by(3600)
         deployment.tub.drip().transact()
 
         # then
