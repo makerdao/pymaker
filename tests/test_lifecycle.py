@@ -24,7 +24,6 @@ from web3 import EthereumTesterProvider, Web3
 import pymaker
 from pymaker import Address
 from pymaker.lifecycle import Web3Lifecycle
-from pymaker.logger import Logger
 
 
 class TestLifecycle:
@@ -32,7 +31,6 @@ class TestLifecycle:
         self.web3 = Web3(EthereumTesterProvider())
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
-        self.logger = Logger('-', '-')
 
         # `test_etherdelta.py` executes before this test file and creates some event filters,
         # so we need to clear the list of filter threads as otherwise `Web3Lifecycle` will
@@ -41,7 +39,7 @@ class TestLifecycle:
 
     def test_should_always_exit(self):
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3, self.logger):
+            with Web3Lifecycle(self.web3):
                 pass
 
     def test_should_start_instantly_if_no_initial_delay(self):
@@ -50,7 +48,7 @@ class TestLifecycle:
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            with Web3Lifecycle(self.web3) as lifecycle:
                 pass
 
         # then
@@ -63,7 +61,7 @@ class TestLifecycle:
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            with Web3Lifecycle(self.web3) as lifecycle:
                 lifecycle.initial_delay(5)
 
         # then
@@ -76,7 +74,7 @@ class TestLifecycle:
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            with Web3Lifecycle(self.web3) as lifecycle:
                 lifecycle.on_startup(startup_mock)
 
         # then
@@ -85,7 +83,7 @@ class TestLifecycle:
     def test_should_fail_to_register_two_startup_callbacks(self):
         # expect
         with pytest.raises(BaseException):
-            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            with Web3Lifecycle(self.web3) as lifecycle:
                 lifecycle.on_startup(lambda: 1)
                 lifecycle.on_startup(lambda: 2)
 
@@ -97,7 +95,7 @@ class TestLifecycle:
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            with Web3Lifecycle(self.web3) as lifecycle:
                 lifecycle.on_startup(startup_mock)
                 lifecycle.on_shutdown(shutdown_mock)
 
@@ -107,14 +105,14 @@ class TestLifecycle:
     def test_should_fail_to_register_two_shutdown_callbacks(self):
         # expect
         with pytest.raises(BaseException):
-            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            with Web3Lifecycle(self.web3) as lifecycle:
                 lifecycle.on_shutdown(lambda: 1)
                 lifecycle.on_shutdown(lambda: 2)
 
     def test_should_fail_to_register_two_block_callbacks(self):
         # expect
         with pytest.raises(BaseException):
-            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            with Web3Lifecycle(self.web3) as lifecycle:
                 lifecycle.on_block(lambda: 1)
                 lifecycle.on_block(lambda: 2)
 
@@ -131,7 +129,7 @@ class TestLifecycle:
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            with Web3Lifecycle(self.web3) as lifecycle:
                 lifecycle.every(1, mock)
 
         # then
@@ -152,7 +150,7 @@ class TestLifecycle:
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+            with Web3Lifecycle(self.web3) as lifecycle:
                 lifecycle.on_startup(startup_callback)
                 lifecycle.every(1, every_callback)
 

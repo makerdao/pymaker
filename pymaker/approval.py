@@ -15,7 +15,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from pymaker import Address, Contract
+import logging
+
+from pymaker import Address
 from pymaker.numeric import Wad
 from pymaker.token import ERC20Token
 from pymaker.transactional import TxManager
@@ -31,7 +33,8 @@ def directly():
 
     def approval_function(token: ERC20Token, spender_address: Address, spender_name: str):
         if token.allowance_of(Address(token.web3.eth.defaultAccount), spender_address) < Wad(2 ** 128 - 1):
-            Contract.logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.address} directly")
+            logger = logging.getLogger('approval')
+            logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.address} directly")
             if not token.approve(spender_address).transact():
                 raise RuntimeError("Approval failed!")
 
@@ -48,8 +51,9 @@ def via_tx_manager(tx_manager: TxManager):
 
     def approval_function(token: ERC20Token, spender_address: Address, spender_name: str):
         if token.allowance_of(tx_manager.address, spender_address) < Wad(2 ** 128 - 1):
-            Contract.logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.address}"
-                                 f" via TxManager {tx_manager.address}")
+            logger = logging.getLogger('approval')
+            logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.address}"
+                        f" via TxManager {tx_manager.address}")
             if not tx_manager.execute([], [(token.approve(spender_address).invocation())]).transact():
                 raise RuntimeError("Approval failed!")
 
