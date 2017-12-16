@@ -394,6 +394,7 @@ class Transact:
         # Get or calculate `gas`. Get `gas_price`, which in fact refers to a gas pricing algorithm.
         gas = self._gas(gas_estimate, **kwargs)
         gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
+        assert(isinstance(gas_price, GasPrice))
 
         # Initialize variables which will be used in the main loop.
         nonce = None
