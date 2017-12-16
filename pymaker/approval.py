@@ -23,7 +23,7 @@ from pymaker.token import ERC20Token
 from pymaker.transactional import TxManager
 
 
-def directly():
+def directly(**kwargs):
     """Approval function: Approves the caller to access tokens directly.
 
     This function is meant to be passed as a parameter to the `approve(...)` method
@@ -35,26 +35,27 @@ def directly():
         if token.allowance_of(Address(token.web3.eth.defaultAccount), spender_address) < Wad(2 ** 128 - 1):
             logger = logging.getLogger('approval')
             logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.address} directly")
-            if not token.approve(spender_address).transact():
+            if not token.approve(spender_address).transact(**kwargs):
                 raise RuntimeError("Approval failed!")
 
     return approval_function
 
 
-def via_tx_manager(tx_manager: TxManager):
+def via_tx_manager(tx_manager: TxManager, **kwargs):
     """Approval function: Approves the caller to access tokens via the `TxManager`.
 
     This function is meant to be passed as a parameter to the `approve(...)` method
     of `Tub`, `SimpleMarket`, 'EtherDelta', 'TxManager', `ZrxExchange` and possibly
     others in the future.
     """
+    assert(isinstance(tx_manager, TxManager))
 
     def approval_function(token: ERC20Token, spender_address: Address, spender_name: str):
         if token.allowance_of(tx_manager.address, spender_address) < Wad(2 ** 128 - 1):
             logger = logging.getLogger('approval')
             logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.address}"
                         f" via TxManager {tx_manager.address}")
-            if not tx_manager.execute([], [(token.approve(spender_address).invocation())]).transact():
+            if not tx_manager.execute([], [(token.approve(spender_address).invocation())]).transact(**kwargs):
                 raise RuntimeError("Approval failed!")
 
     return approval_function

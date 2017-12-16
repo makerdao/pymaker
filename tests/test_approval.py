@@ -25,6 +25,7 @@ from web3 import Web3
 from pymaker import Address
 from pymaker import Wad
 from pymaker.approval import directly, via_tx_manager
+from pymaker.gas import FixedGasPrice
 from pymaker.token import DSToken
 from pymaker.transactional import TxManager
 
@@ -61,6 +62,17 @@ def test_direct_approval():
     assert token.allowance_of(our_address, second_address) == Wad(2**256-1)
 
 
+def test_direct_approval_should_obey_gas_price():
+    # given
+    global web3, our_address, second_address, token
+
+    # when
+    directly(gas_price=FixedGasPrice(25000000000))(token, second_address, "some-name")
+
+    # then
+    assert web3.eth.getBlock('latest', full_transactions=True).transactions[0].gasPrice == 25000000000
+
+
 def test_direct_approval_should_not_approve_if_already_approved():
     # given
     global web3, our_address, second_address, token
@@ -93,6 +105,18 @@ def test_via_tx_manager_approval():
 
     # then
     assert token.allowance_of(tx.address, second_address) == Wad(2**256-1)
+
+
+def test_via_tx_manager_approval_should_obey_gas_price():
+    # given
+    global web3, our_address, second_address, token
+    tx = TxManager.deploy(web3)
+
+    # when
+    via_tx_manager(tx, gas_price=FixedGasPrice(15000000000))(token, second_address, "some-name")
+
+    # then
+    assert web3.eth.getBlock('latest', full_transactions=True).transactions[0].gasPrice == 15000000000
 
 
 def test_via_tx_manager_approval_should_not_approve_if_already_approved():
