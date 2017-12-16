@@ -22,7 +22,6 @@ from pprint import pformat
 from typing import List, Optional
 
 import requests
-from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
 
 from pymaker import Contract, Address, Transact
