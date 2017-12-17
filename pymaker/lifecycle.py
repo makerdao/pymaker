@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
+import logging
 import signal
 import threading
 import time
@@ -23,7 +24,6 @@ import time
 from web3 import Web3
 
 from pymaker import register_filter_thread, any_filter_thread_present, stop_all_filter_threads, all_filter_threads_alive
-from pymaker.logger import Logger
 from pymaker.util import AsyncCallback
 
 
@@ -55,7 +55,7 @@ class Web3Lifecycle:
 
     The typical usage pattern is as follows:
 
-        with Web3Lifecycle(self.web3, self.logger) as lifecycle:
+        with Web3Lifecycle(self.web3) as lifecycle:
             lifecycle.on_startup(self.some_startup_function)
             lifecycle.on_block(self.do_something)
             lifecycle.every(15, self.do_something_else)
@@ -65,11 +65,11 @@ class Web3Lifecycle:
 
     Attributes:
         web3: Instance of the `Web3` class from `web3.py`.
-        logger: Instance of the :py:class:`pymaker.Logger` class for event logging.
     """
-    def __init__(self, web3: Web3, logger: Logger):
+    logger = logging.getLogger('lifecycle')
+
+    def __init__(self, web3: Web3):
         self.web3 = web3
-        self.logger = logger
 
         self.delay = 0
         self.startup_function = None

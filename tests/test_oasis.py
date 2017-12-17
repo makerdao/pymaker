@@ -343,6 +343,19 @@ class TestExpiringMarket(GeneralMarketTest):
         with pytest.raises(Exception):
             ExpiringMarket(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
+    def test_is_closed(self):
+        # when
+        # (market is open)
+
+        # then
+        assert self.otc.is_closed() is False
+
+        # when
+        self.otc._contract.transact().stop()
+
+        # then
+        assert self.otc.is_closed() is True
+
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"ExpiringMarket('{self.otc.address}')"
 
