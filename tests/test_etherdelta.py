@@ -22,7 +22,6 @@ from web3 import Web3, EthereumTesterProvider
 from pymaker import Address
 from pymaker.approval import directly
 from pymaker.etherdelta import EtherDelta, EtherDeltaApi
-from pymaker.logger import Logger
 from pymaker.numeric import Wad
 from pymaker.token import DSToken
 from tests.helpers import is_hashable, wait_until_mock_called
@@ -235,8 +234,7 @@ class TestEtherDeltaApi:
                                             api_server='https://127.0.0.1:66666',
                                             number_of_attempts=1,
                                             retry_interval=15,
-                                            timeout=90,
-                                            logger=Logger('-', '-'))
+                                            timeout=90)
 
     def test_should_have_printable_representation(self):
         assert repr(self.etherdelta_api) == f"EtherDeltaApi()"

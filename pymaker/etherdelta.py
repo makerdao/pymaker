@@ -17,6 +17,7 @@
 
 import hashlib
 import json
+import logging
 import random
 import threading
 from pprint import pformat
@@ -27,7 +28,6 @@ from eth_abi.encoding import get_single_encoder
 from web3 import Web3
 
 from pymaker import Contract, Address, Transact
-from pymaker.logger import Logger
 from pymaker.numeric import Wad
 from pymaker.token import ERC20Token
 from pymaker.util import bytes_to_hexstring, hexstring_to_bytes, eth_sign
@@ -604,23 +604,22 @@ class EtherDeltaApi:
         timeout: Timeout after which publish order is considered as failed by the
             `etherdelta-client` tool. If number_of_attempts > 1, this tool will be
             run several times though.
-        logger: Instance of the :py:class:`pymaker.Logger` class for event logging.
     """
+    logger = logging.getLogger('etherdelta-api')
+
     def __init__(self,
                  client_tool_directory: str,
                  client_tool_command: str,
                  api_server: str,
                  number_of_attempts: int,
                  retry_interval: int,
-                 timeout: int,
-                 logger: Logger):
+                 timeout: int):
         assert(isinstance(client_tool_directory, str))
         assert(isinstance(client_tool_command, str))
         assert(isinstance(api_server, str))
         assert(isinstance(number_of_attempts, int))
         assert(isinstance(retry_interval, int))
         assert(isinstance(timeout, int))
-        assert(isinstance(logger, Logger))
 
         self.client_tool_directory = client_tool_directory
         self.client_tool_command = client_tool_command
@@ -628,7 +627,6 @@ class EtherDeltaApi:
         self.number_of_attempts = number_of_attempts
         self.retry_interval = retry_interval
         self.timeout = timeout
-        self.logger = logger
 
     def publish_order(self, order: Order):
         assert(isinstance(order, Order))

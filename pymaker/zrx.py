@@ -17,16 +17,15 @@
 
 import array
 import copy
+import logging
 import random
 from pprint import pformat
 from typing import List, Optional
 
 import requests
-from eth_utils import coerce_return_to_text, encode_hex
 from web3 import Web3
 
 from pymaker import Contract, Address, Transact
-from pymaker.logger import Logger
 from pymaker.numeric import Wad
 from pymaker.token import ERC20Token
 from pymaker.util import bytes_to_hexstring, hexstring_to_bytes, eth_sign
@@ -358,16 +357,15 @@ class ZrxRelayerApi:
     Attributes:
         exchange: The 0x Exchange contract.
         api_server: Base URL of the Standard Relayer API server.
-        logger: Instance of the :py:class:`pymaker.Logger` class for event logging.
     """
-    def __init__(self, exchange: ZrxExchange, api_server: str, logger: Logger):
+    logger = logging.getLogger('0x-relayer-api')
+
+    def __init__(self, exchange: ZrxExchange, api_server: str):
         assert(isinstance(exchange, ZrxExchange))
         assert(isinstance(api_server, str))
-        assert(isinstance(logger, Logger))
 
         self.exchange = exchange
         self.api_server = api_server
-        self.logger = logger
 
     def get_orders_by_maker(self, maker: Address) -> List[Order]:
         assert(isinstance(maker, Address))

@@ -17,6 +17,7 @@
 
 import asyncio
 import json
+import logging
 import sys
 import time
 from functools import total_ordering
@@ -28,7 +29,6 @@ from web3 import Web3
 from web3.utils.events import get_event_data
 
 from pymaker.gas import DefaultGasPrice, GasPrice
-from pymaker.logger import Logger, Event
 from pymaker.numeric import Wad
 from pymaker.util import synchronize
 
@@ -103,7 +103,7 @@ class Address:
 
 
 class Contract:
-    logger = Logger('-', '-')
+    logger = logging.getLogger('contract')
 
     @staticmethod
     def _deploy(web3: Web3, abi: list, bytecode: bytes, args: list) -> Address:
@@ -246,6 +246,8 @@ class Receipt:
 class Transact:
     """Represents an Ethereum transaction before it gets executed."""
 
+    logger = logging.getLogger('transact')
+
     def __init__(self,
                  origin: object,
                  web3: Web3,
@@ -265,7 +267,6 @@ class Transact:
         assert(isinstance(extra, dict) or (extra is None))
 
         self.origin = origin
-        self.logger = origin.logger
         self.web3 = web3
         self.abi = abi
         self.address = address
@@ -393,15 +394,13 @@ class Transact:
         # Get or calculate `gas`. Get `gas_price`, which in fact refers to a gas pricing algorithm.
         gas = self._gas(gas_estimate, **kwargs)
         gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
+        assert(isinstance(gas_price, GasPrice))
 
         # Initialize variables which will be used in the main loop.
         nonce = None
         tx_hashes = []
         initial_time = time.time()
-        last_time = initial_time
         gas_price_last = 0
-        frequency_of_pending_events = 30
-        number_of_pending_events_sent = 0
 
         while True:
             seconds_elapsed = int(time.time() - initial_time)
@@ -411,25 +410,21 @@ class Transact:
             for tx_hash in tx_hashes:
                 receipt = self._get_receipt(tx_hash)
                 if receipt:
-                    tx_data = self.web3.eth.getTransaction(tx_hash)
-                    event = Event.transaction_mined(self.name(), tx_data, receipt, initial_time, last_time)
-
                     if receipt.successful:
-                        self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})", event)
+                        self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
                         return receipt
                     else:
                         self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
-                                            f" log entry, assuming it has failed (tx_hash={tx_hash})", event)
+                                            f" log entry, assuming it has failed (tx_hash={tx_hash})")
                         return None
 
             # Send a transaction if:
             # - no transaction has been sent yet, or
             # - the gas price requested has changed since the last transaction has been sent
             gas_price_value = gas_price.get_gas_price(seconds_elapsed)
-            if len(tx_hashes) == 0 or gas_price_value != gas_price_last:
+            if len(tx_hashes) == 0 or ((gas_price_value is not None) and (gas_price_last is not None) and
+                                           (gas_price_value > gas_price_last)):
                 gas_price_last = gas_price_value
-                if len(tx_hashes) > 0:
-                    last_time = time.time()
 
                 try:
                     tx_hash = self._func(gas, gas_price_value, nonce)
@@ -449,14 +444,6 @@ class Transact:
 
                     if len(tx_hashes) == 0:
                         raise
-
-            # Send a pending transaction event every `frequency_of_pending_events` seconds.
-            if seconds_elapsed > number_of_pending_events_sent*frequency_of_pending_events:
-                if len(tx_hashes) > 0:
-                    tx_data = self.web3.eth.getTransaction(tx_hashes[len(tx_hashes) - 1])
-                    if tx_data:
-                        self.logger.info(None, Event.transaction_pending(self.name(), tx_data, initial_time, last_time))
-                        number_of_pending_events_sent = number_of_pending_events_sent + 1
 
             await asyncio.sleep(0.25)
 

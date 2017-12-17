@@ -465,6 +465,14 @@ class ExpiringMarket(SimpleMarket):
         return ExpiringMarket(web3=web3, address=Contract._deploy(web3, ExpiringMarket.abi, ExpiringMarket.bin,
                                                                   [close_time]))
 
+    def is_closed(self) -> bool:
+        """Check if the market is closed.
+
+        Returns:
+            `True` if the market is closed. `False` otherwise.
+        """
+        return self._contract.call().isClosed()
+
     def __repr__(self):
         return f"ExpiringMarket('{self.address}')"
 
