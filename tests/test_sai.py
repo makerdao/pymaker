@@ -21,7 +21,7 @@ from pymaker import Address
 from pymaker.deployment import Deployment
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray
-from pymaker.sai import Tub, Tap, Top
+from pymaker.sai import Tub, Tap, Top, Vox
 
 
 class TestTub:
@@ -30,15 +30,16 @@ class TestTub:
         with pytest.raises(Exception):
             Tub(web3=deployment.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
-    def test_warp_and_era(self, deployment: Deployment):
-        # given
-        old_era = deployment.tub.era()
+    def test_tap(self, deployment: Deployment):
+        assert deployment.tub.tap() == deployment.tap.address
 
+    def test_era(self, deployment: Deployment):
         # when
-        deployment.tub.warp(30).transact()
+        era = deployment.tub.era()
+        deployment.web3.providers[0].rpc_methods.evm_mine()
 
         # then
-        assert deployment.tub.era() == old_era + 30
+        assert era == deployment.web3.eth.getBlock('latest').timestamp
 
     def test_join_and_pie_and_exit(self, deployment: Deployment):
         # given
@@ -61,56 +62,46 @@ class TestTub:
         assert deployment.skr.total_supply() == Wad.from_number(1)
         assert deployment.tub.pie() == Wad.from_number(1)
 
-    def test_cork_and_hat(self, deployment: Deployment):
+    def test_mold_cap_and_cap(self, deployment: Deployment):
         # given
-        assert deployment.tub.hat() == Wad(0)
+        assert deployment.tub.cap() == Wad(0)
 
         # when
-        deployment.tub.cork(Wad.from_number(150000)).transact()
+        deployment.tub.mold_cap(Wad.from_number(150000)).transact()
 
         # then
-        assert deployment.tub.hat() == Wad.from_number(150000)
+        assert deployment.tub.cap() == Wad.from_number(150000)
 
-    def test_crop_and_tax(self, deployment: Deployment):
+    def test_mold_tax_and_tax(self, deployment: Deployment):
         # given
         assert deployment.tub.tax() == Ray.from_number(1)
 
         # when
-        deployment.tub.crop(Ray(1000000000000000020000000000)).transact()
+        deployment.tub.mold_tax(Ray(1000000000000000020000000000)).transact()
 
         # then
         assert deployment.tub.tax() == Ray(1000000000000000020000000000)
 
-    def test_cuff_and_mat(self, deployment: Deployment):
+    def test_mold_mat_and_mat(self, deployment: Deployment):
         # given
         assert deployment.tub.mat() == Ray.from_number(1)
 
         # when
-        deployment.tub.cuff(Ray.from_number(1.5)).transact()
+        deployment.tub.mold_mat(Ray.from_number(1.5)).transact()
 
         # then
         assert deployment.tub.mat() == Ray.from_number(1.5)
 
-    def test_chop_and_axe(self, deployment: Deployment):
+    def test_mold_axe_and_axe(self, deployment: Deployment):
         # given
         assert deployment.tub.axe() == Ray.from_number(1)
-        deployment.tub.cuff(Ray.from_number(1.5)).transact()
+        deployment.tub.mold_mat(Ray.from_number(1.5)).transact()
 
         # when
-        deployment.tub.chop(Ray.from_number(1.2)).transact()
+        deployment.tub.mold_axe(Ray.from_number(1.2)).transact()
 
         # then
         assert deployment.tub.axe() == Ray.from_number(1.2)
-
-    def test_coax_and_way(self, deployment: Deployment):
-        # given
-        assert deployment.tub.way() == Ray.from_number(1)
-
-        # when
-        deployment.tub.coax(Ray(1000000000000000070000000000)).transact()
-
-        # then
-        assert deployment.tub.way() == Ray(1000000000000000070000000000)
 
     def test_sai(self, deployment: Deployment):
         assert deployment.tub.sai() == deployment.sai.address
@@ -124,15 +115,18 @@ class TestTub:
     def test_skr(self, deployment: Deployment):
         assert deployment.tub.skr() == deployment.skr.address
 
-    def test_jug_pip(self, deployment: Deployment):
-        assert isinstance(deployment.tub.jug(), Address)
+    def test_gov(self, deployment: Deployment):
+        assert deployment.tub.gov() == deployment.gov.address
+
+    def test_vox(self, deployment: Deployment):
+        assert deployment.tub.vox() == deployment.vox.address
+
+    def test_pip_and_pep(self, deployment: Deployment):
         assert isinstance(deployment.tub.pip(), Address)
+        assert isinstance(deployment.tub.pep(), Address)
 
-    def test_tip(self, deployment: Deployment):
-        assert isinstance(deployment.tub.tip(), Address)
-
-    def test_reg(self, deployment: Deployment):
-        assert deployment.tub.reg() == 0
+    def test_pit(self, deployment: Deployment):
+        assert isinstance(deployment.tub.pit(), Address)
 
     def test_per(self, deployment: Deployment):
         assert deployment.tub.per() == Ray.from_number(1.0)
@@ -142,35 +136,21 @@ class TestTub:
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250.45).value).transact()
 
         # then
-        assert deployment.tub.tag() == Wad.from_number(250.45)
+        assert deployment.tub.tag() == Ray.from_number(250.45)
 
     def test_drip_and_chi_and_rho(self, deployment: Deployment):
         # given
-        deployment.tub.crop(Ray(1000000000000000020000000000)).transact()
+        deployment.tub.mold_tax(Ray(1000000000000000020000000000)).transact()
         old_chi = deployment.tub.chi()
         old_rho = deployment.tub.rho()
 
         # when
-        deployment.tub.warp(1000).transact()
+        deployment.time_travel_by(1000)
         deployment.tub.drip().transact()
 
         # then
         assert deployment.tub.chi() > old_chi
         assert deployment.tub.rho() > old_rho
-
-    def test_prod_and_par_and_tau(self, deployment: Deployment):
-        # given
-        deployment.tub.coax(Ray(1000000000000000070000000000)).transact()
-        old_par = deployment.tub.par()
-        old_tau = deployment.tub.tau()
-
-        # when
-        deployment.tub.warp(1000).transact()
-        deployment.tub.prod().transact()
-
-        # then
-        assert deployment.tub.par() > old_par
-        assert deployment.tub.tau() > old_tau
 
     def test_open_and_cupi(self, deployment: Deployment):
         # when
@@ -190,8 +170,8 @@ class TestTub:
 
     def test_safe(self, deployment: Deployment):
         # given
-        deployment.tub.cuff(Ray.from_number(1.5)).transact()
-        deployment.tub.chop(Ray.from_number(1.2)).transact()
+        deployment.tub.mold_mat(Ray.from_number(1.5)).transact()
+        deployment.tub.mold_axe(Ray.from_number(1.2)).transact()
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
 
         # when
@@ -256,10 +236,10 @@ class TestTub:
         assert deployment.tub.ink(1) == Wad.from_number(2)
         assert deployment.tub.air() == Wad.from_number(2)
 
-    def test_draw_and_tab_and_ice_and_wipe(self, deployment: Deployment):
+    def test_draw_and_tab_and_din_and_wipe(self, deployment: Deployment):
         # given
         deployment.tub.join(Wad.from_number(10)).transact()
-        deployment.tub.cork(Wad.from_number(100000)).transact()
+        deployment.tub.mold_cap(Wad.from_number(100000)).transact()
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250.45).value).transact()
 
         # and
@@ -272,7 +252,7 @@ class TestTub:
         # then
         assert deployment.sai.balance_of(deployment.our_address) == Wad.from_number(50)
         assert deployment.tub.tab(1) == Wad.from_number(50)
-        assert deployment.tub.ice() == Wad.from_number(50)
+        assert deployment.tub.din() == Wad.from_number(50)
 
         # when
         deployment.tub.wipe(1, Wad.from_number(30)).transact()
@@ -280,12 +260,12 @@ class TestTub:
         # then
         assert deployment.sai.balance_of(deployment.our_address) == Wad.from_number(20)
         assert deployment.tub.tab(1) == Wad.from_number(20)
-        assert deployment.tub.ice() == Wad.from_number(20)
+        assert deployment.tub.din() == Wad.from_number(20)
 
     def test_bite_and_safe(self, deployment: Deployment):
         # given
         deployment.tub.join(Wad.from_number(10)).transact()
-        deployment.tub.cork(Wad.from_number(100000)).transact()
+        deployment.tub.mold_cap(Wad.from_number(100000)).transact()
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
 
         # when
@@ -308,23 +288,23 @@ class TestTub:
         # then
         assert deployment.tub.safe(1)
 
-    def test_jar_jump_and_gap(self, deployment: Deployment):
+    def test_mold_gap_and_gap(self, deployment: Deployment):
         # given
-        assert deployment.tub.jar_gap() == Wad.from_number(1)
+        assert deployment.tub.gap() == Wad.from_number(1)
 
         # when
-        deployment.tub.jar_jump(Wad.from_number(1.05)).transact()
+        deployment.tub.mold_gap(Wad.from_number(1.05)).transact()
 
         # then
-        assert deployment.tub.jar_gap() == Wad.from_number(1.05)
+        assert deployment.tub.gap() == Wad.from_number(1.05)
 
-    def test_jar_bid_and_ask(self, deployment: Deployment):
+    def test_bid_and_ask(self, deployment: Deployment):
         # when
-        deployment.tub.jar_jump(Wad.from_number(1.05)).transact()
+        deployment.tub.mold_gap(Wad.from_number(1.05)).transact()
 
         # then
-        assert deployment.tub.jar_bid() == Ray.from_number(0.95)
-        assert deployment.tub.jar_ask() == Ray.from_number(1.05)
+        assert deployment.tub.bid(Wad.from_number(2)) == Wad.from_number(0.95)*Wad.from_number(2)
+        assert deployment.tub.ask(Wad.from_number(2)) == Wad.from_number(1.05)*Wad.from_number(2)
 
     def test_comparison(self, deployment: Deployment):
         # expect
@@ -338,12 +318,24 @@ class TestTap:
         with pytest.raises(Exception):
             Tap(web3=deployment.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
-    def test_jump_and_gap(self, deployment: Deployment):
+    def test_tub(self, deployment: Deployment):
+        assert deployment.tap.tub() == deployment.tub.address
+
+    def test_sai(self, deployment: Deployment):
+        assert deployment.tap.sai() == deployment.sai.address
+
+    def test_sin(self, deployment: Deployment):
+        assert deployment.tap.sin() == deployment.sin.address
+
+    def test_skr(self, deployment: Deployment):
+        assert deployment.tap.skr() == deployment.skr.address
+
+    def test_mold_gap_and_gap(self, deployment: Deployment):
         # given
         assert deployment.tap.gap() == Wad.from_number(1)
 
         # when
-        deployment.tap.jump(Wad.from_number(1.05)).transact()
+        deployment.tap.mold_gap(Wad.from_number(1.05)).transact()
 
         # then
         assert deployment.tap.gap() == Wad.from_number(1.05)
@@ -360,18 +352,18 @@ class TestTap:
     def test_s2s_and_bid_and_ask(self, deployment: Deployment):
         # when
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(500).value).transact()
-        deployment.tap.jump(Wad.from_number(1.05)).transact()
+        deployment.tap.mold_gap(Wad.from_number(1.05)).transact()
 
         # then
-        assert deployment.tap.bid() == Wad.from_number(475)
-        assert deployment.tap.s2s() == Wad.from_number(500)
-        assert deployment.tap.ask() == Wad.from_number(525)
+        assert deployment.tap.bid(Wad.from_number(2)) == Wad.from_number(475)*Wad.from_number(2)
+        assert deployment.tap.s2s() == Ray.from_number(500)
+        assert deployment.tap.ask(Wad.from_number(2)) == Wad.from_number(525)*Wad.from_number(2)
 
     def test_joy_and_boom(self, deployment: Deployment):
         # given
         deployment.tub.join(Wad.from_number(10)).transact()
-        deployment.tub.cork(Wad.from_number(100000)).transact()
-        deployment.tub.crop(Ray(1000100000000000000000000000)).transact()
+        deployment.tub.mold_cap(Wad.from_number(100000)).transact()
+        deployment.tub.mold_tax(Ray(1000100000000000000000000000)).transact()
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
 
         # and
@@ -380,8 +372,7 @@ class TestTap:
         deployment.tub.draw(1, Wad.from_number(1000)).transact()
 
         # when
-        deployment.tub.drip().transact()
-        deployment.tub.warp(3600).transact()
+        deployment.time_travel_by(3600)
         deployment.tub.drip().transact()
 
         # then
@@ -398,7 +389,7 @@ class TestTap:
     def test_fog_and_woe_and_bust(self, deployment: Deployment):
         # given
         deployment.tub.join(Wad.from_number(10)).transact()
-        deployment.tub.cork(Wad.from_number(100000)).transact()
+        deployment.tub.mold_cap(Wad.from_number(100000)).transact()
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
 
         # and
@@ -425,6 +416,58 @@ class TestTap:
         assert deployment.skr.balance_of(deployment.our_address) == Wad.from_number(8)
         assert deployment.sai.balance_of(deployment.our_address) == Wad.from_number(700)
 
+    def test_cash(self, deployment: Deployment):
+        # given
+        deployment.tub.join(Wad.from_number(10)).transact()
+        deployment.tub.mold_cap(Wad.from_number(100000)).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
+
+        # and
+        deployment.tub.open().transact()
+        deployment.tub.lock(1, Wad.from_number(4)).transact()
+        deployment.tub.draw(1, Wad.from_number(1000)).transact()
+
+        # and
+        gem_before = deployment.gem.balance_of(deployment.our_address)
+
+        # when
+        deployment.top.cage().transact()
+        deployment.tap.cash(Wad.from_number(500)).transact()
+
+        # then
+        gem_after = deployment.gem.balance_of(deployment.our_address)
+        assert gem_after - gem_before == Wad.from_number(2)
+
+        # when
+        deployment.tap.cash(Wad.from_number(500)).transact()
+
+        # then
+        gem_after = deployment.gem.balance_of(deployment.our_address)
+        assert gem_after - gem_before == Wad.from_number(4)
+
+    def test_mock(self, deployment: Deployment):
+        # given
+        deployment.tub.join(Wad.from_number(10)).transact()
+        deployment.tub.mold_cap(Wad.from_number(100000)).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
+
+        # and
+        deployment.tub.open().transact()
+        deployment.tub.lock(1, Wad.from_number(4)).transact()
+        deployment.tub.draw(1, Wad.from_number(1000)).transact()
+
+        # and
+        gem_before = deployment.gem.balance_of(deployment.our_address)
+
+        # when
+        deployment.top.cage().transact()
+        deployment.tap.cash(Wad.from_number(500)).transact()
+        deployment.tap.mock(Wad.from_number(250)).transact()
+
+        # then
+        gem_after = deployment.gem.balance_of(deployment.our_address)
+        assert gem_after - gem_before == Wad.from_number(1)
+
     def test_comparison(self, deployment: Deployment):
         # expect
         assert deployment.tap == deployment.tap
@@ -448,10 +491,10 @@ class TestTop:
         # expect
         assert deployment.top.fix() == Ray.from_number(0)
 
-    def test_cage_without_price(self, deployment: Deployment):
+    def test_cage(self, deployment: Deployment):
         # given
         deployment.tub.join(Wad.from_number(10)).transact()
-        deployment.tub.cork(Wad.from_number(100000)).transact()
+        deployment.tub.mold_cap(Wad.from_number(100000)).transact()
         DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
 
         # and
@@ -465,41 +508,27 @@ class TestTop:
         # then
         assert deployment.top.fix() == Ray.from_number(0.004)
 
-    def test_cage_with_price(self, deployment: Deployment):
-        # given
-        deployment.tub.join(Wad.from_number(10)).transact()
-        deployment.tub.cork(Wad.from_number(100000)).transact()
-        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
 
-        # and
-        deployment.tub.open().transact()
-        deployment.tub.lock(1, Wad.from_number(4)).transact()
-        deployment.tub.draw(1, Wad.from_number(1000)).transact()
+class TestVox:
+    def test_fail_when_no_contract_under_that_address(self, deployment: Deployment):
+        # expect
+        with pytest.raises(Exception):
+            Vox(web3=deployment.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
+    def test_comparison(self, deployment: Deployment):
+        # expect
+        assert deployment.vox == deployment.vox
+        assert deployment.vox == Vox(web3=deployment.web3, address=deployment.vox.address)
+        assert deployment.vox != Vox(web3=deployment.web3, address=deployment.top.address)
+
+    def test_era(self, deployment: Deployment):
         # when
-        deployment.top.cage(Wad.from_number(200)).transact()
+        era = deployment.vox.era()
+        deployment.web3.providers[0].rpc_methods.evm_mine()
 
         # then
-        assert deployment.top.fix() == Ray.from_number(0.005)
+        assert era == deployment.web3.eth.getBlock('latest').timestamp
 
-    def test_cash(self, deployment: Deployment):
-        # given
-        deployment.tub.join(Wad.from_number(10)).transact()
-        deployment.tub.cork(Wad.from_number(100000)).transact()
-        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250).value).transact()
-
-        # and
-        deployment.tub.open().transact()
-        deployment.tub.lock(1, Wad.from_number(4)).transact()
-        deployment.tub.draw(1, Wad.from_number(1000)).transact()
-
-        # and
-        gem_before = deployment.gem.balance_of(deployment.our_address)
-
-        # when
-        deployment.top.cage().transact()
-        deployment.top.cash().transact()
-
-        # then
-        gem_after = deployment.gem.balance_of(deployment.our_address)
-        assert gem_after - gem_before == Wad.from_number(4)
+    def test_default_par(self, deployment: Deployment):
+        # expect
+        assert deployment.vox.par() == Ray.from_number(1)
