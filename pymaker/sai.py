@@ -884,20 +884,13 @@ class Top(Contract):
         """
         return Ray(self._contract.call().fix())
 
-    def cage(self, price: Optional[Wad] = None) -> Transact:
-        """Force settlement of the system at a current or given price (SAI per GEM).
-
-        Args:
-            price: The settlement price (SAI per GEM), or `None` if current price should be used.
+    def cage(self) -> Transact:
+        """Force settlement of the system at a current price.
 
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
-        assert(isinstance(price, Wad) or price is None)
-        if price:
-            return Transact(self, self.web3, self.abi, self.address, self._contract, 'cage', [price.value])
-        else:
-            return Transact(self, self.web3, self.abi, self.address, self._contract, 'cage', [])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'cage', [])
 
     # TODO vent
 
