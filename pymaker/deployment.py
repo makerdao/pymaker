@@ -26,7 +26,7 @@ from pymaker.approval import directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
 from pymaker.feed import DSValue
-from pymaker.numeric import Wad
+from pymaker.numeric import Wad, Ray
 from pymaker.oasis import MatchingMarket
 from pymaker.sai import Tub, Tap, Top, Vox
 from pymaker.token import DSToken
@@ -66,16 +66,16 @@ class Deployment:
         web3 = Web3(EthereumTesterProvider())
         web3.eth.defaultAccount = web3.eth.accounts[0]
         our_address = Address(web3.eth.defaultAccount)
-        sai = DSToken.deploy(web3, 'SAI')
+        sai = DSToken.deploy(web3, 'DAI')
         sin = DSToken.deploy(web3, 'SIN')
-        skr = DSToken.deploy(web3, 'SKR')
-        gem = DSToken.deploy(web3, 'ETH')
+        skr = DSToken.deploy(web3, 'PETH')
+        gem = DSToken.deploy(web3, 'WETH')
         gov = DSToken.deploy(web3, 'MKR')
         pip = DSValue.deploy(web3)
         pep = DSValue.deploy(web3)
         pit = DSVault.deploy(web3)
 
-        vox = Vox.deploy(web3)
+        vox = Vox.deploy(web3, per=Ray.from_number(1))
         tub = Tub.deploy(web3, sai=sai.address, sin=sin.address, skr=skr.address, gem=gem.address, gov=gov.address,
                          pip=pip.address, pep=pep.address, vox=vox.address, pit=pit.address)
         tap = Tap.deploy(web3, tub.address)

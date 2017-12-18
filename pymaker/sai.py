@@ -929,8 +929,9 @@ class Vox(Contract):
         self._contract = self._get_contract(web3, self.abi, address)
 
     @staticmethod
-    def deploy(web3: Web3):
-        return Vox(web3=web3, address=Contract._deploy(web3, Vox.abi, Vox.bin, []))
+    def deploy(web3: Web3, per: Ray):
+        assert(isinstance(per, Ray))
+        return Vox(web3=web3, address=Contract._deploy(web3, Vox.abi, Vox.bin, [per.value]))
 
     def set_authority(self, address: Address) -> Transact:
         assert(isinstance(address, Address))
