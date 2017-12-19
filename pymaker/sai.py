@@ -38,7 +38,7 @@ class Cup:
         art: The amount of outstanding debt (denominated in internal debt units).
         ink: The amount of SKR collateral locked in the cup.
     """
-    def __init__(self, cup_id: int, lad: Address, art: Wad, ink: Wad):
+    def __init__(self, cup_id: int, lad: Address, ink: Wad, art: Wad):
         assert(isinstance(cup_id, int))
         assert(isinstance(lad, Address))
         assert(isinstance(art, Wad))

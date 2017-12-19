@@ -168,6 +168,23 @@ class TestTub:
         assert deployment.tub.cups(1).ink == Wad(0)
         assert deployment.tub.cups(1).lad == deployment.our_address
 
+    def test_not_empty_cups(self, deployment: Deployment):
+        # given
+        deployment.tub.join(Wad.from_number(10)).transact()
+        deployment.tub.mold_cap(Wad.from_number(100000)).transact()
+        DSValue(web3=deployment.web3, address=deployment.tub.pip()).poke_with_int(Wad.from_number(250.45).value).transact()
+
+        # and
+        deployment.tub.open().transact()
+        deployment.tub.lock(1, Wad.from_number(3)).transact()
+
+        # when
+        deployment.tub.draw(1, Wad.from_number(50)).transact()
+
+        # then
+        assert deployment.tub.cups(1).art == Wad.from_number(50)
+        assert deployment.tub.cups(1).ink == Wad.from_number(3)
+
     def test_safe(self, deployment: Deployment):
         # given
         deployment.tub.mold_mat(Ray.from_number(1.5)).transact()
