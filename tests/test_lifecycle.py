@@ -156,3 +156,23 @@ class TestLifecycle:
 
         # then
         assert self.every_triggered
+
+    def test_every_should_not_fire_when_keeper_is_already_terminating(self):
+        # given
+        self.every_counter = 0
+
+        def shutdown_callback():
+            time.sleep(5)
+
+        def every_callback():
+            self.every_counter = self.every_counter + 1
+            lifecycle.terminate("Unit test is over")
+
+        # when
+        with pytest.raises(SystemExit):
+            with Web3Lifecycle(self.web3) as lifecycle:
+                lifecycle.every(1, every_callback)
+                lifecycle.on_shutdown(shutdown_callback)
+
+        # then
+        assert self.every_counter <= 2

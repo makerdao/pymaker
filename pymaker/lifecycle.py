@@ -217,7 +217,7 @@ class Web3Lifecycle:
             frequency_in_seconds: Execution frequency (in seconds).
             callback: Function to be called by the timer.
         """
-        self.every_timers.append((frequency_in_seconds, callback))
+        self.every_timers.append((frequency_in_seconds, AsyncCallback(callback)))
 
     def _sigint_sigterm_handler(self, sig, frame):
         if self.terminated_externally:
@@ -240,9 +240,12 @@ class Web3Lifecycle:
                     def on_finish():
                         self.logger.debug(f"Finished processing block #{block_number} ({block_hash})")
 
-                    if not self._on_block_callback.trigger(on_start, on_finish):
-                        self.logger.debug(f"Ignoring block #{block_number} ({block_hash}),"
-                                          f" as previous callback is still running")
+                    if not self.terminated_internally and not self.terminated_externally:
+                        if not self._on_block_callback.trigger(on_start, on_finish):
+                            self.logger.debug(f"Ignoring block #{block_number} ({block_hash}),"
+                                              f" as previous callback is still running")
+                    else:
+                        self.logger.debug(f"Ignoring block #{block_number} as keeper is already terminating")
                 else:
                     self.logger.debug(f"Ignoring block #{block_number} ({block_hash}),"
                                       f" as there is already block #{max_block_number} available")
@@ -273,7 +276,11 @@ class Web3Lifecycle:
 
         def func():
             try:
-                callback()
+                if not self.terminated_internally and not self.terminated_externally:
+                    if not callback.trigger():
+                        self.logger.debug(f"Ignoring timer as previous one is already running")
+                else:
+                    self.logger.debug(f"Ignoring timer as keeper is already terminating")
             except:
                 setup_timer(frequency_in_seconds)
                 raise
