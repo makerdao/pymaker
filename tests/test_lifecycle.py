@@ -176,3 +176,29 @@ class TestLifecycle:
 
         # then
         assert self.every_counter <= 2
+
+    def test_should_not_call_shutdown_until_every_timer_has_finished(self):
+        # given
+        self.every1_finished = False
+        self.every2_finished = False
+
+        def shutdown_callback():
+            assert self.every1_finished
+            assert self.every2_finished
+
+        def every_callback_1():
+            time.sleep(1)
+            lifecycle.terminate("Unit test is over")
+            time.sleep(4)
+            self.every1_finished = True
+
+        def every_callback_2():
+            time.sleep(2)
+            self.every2_finished = True
+
+        # expect
+        with pytest.raises(SystemExit):
+            with Web3Lifecycle(self.web3) as lifecycle:
+                lifecycle.every(1, every_callback_1)
+                lifecycle.every(1, every_callback_2)
+                lifecycle.on_shutdown(shutdown_callback)  # assertions are in `shutdown_callback`

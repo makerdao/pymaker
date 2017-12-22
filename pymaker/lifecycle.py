@@ -110,14 +110,26 @@ class Web3Lifecycle:
         self._start_every_timers()
         self._main_loop()
 
-        # Shutdown phase
+        # Enter shutdown process
         self.logger.info("Shutting down the keeper")
+
+        # Disable all filters
         if any_filter_thread_present():
             self.logger.info("Waiting for all threads to terminate...")
             stop_all_filter_threads()
+
+        # If the `on_block` callback is still running, wait for it to terminate
         if self._on_block_callback is not None:
             self.logger.info("Waiting for outstanding callback to terminate...")
             self._on_block_callback.wait()
+
+        # If any every (timer) callback is still running, wait for it to terminate
+        if len(self.every_timers) > 0:
+            self.logger.info("Waiting for outstanding timers to terminate...")
+            for timer in self.every_timers:
+                timer[1].wait()
+
+        # Shutdown phase
         if self.shutdown_function:
             self.logger.info("Executing keeper shutdown logic...")
             self.shutdown_function()
