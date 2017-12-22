@@ -48,7 +48,7 @@ export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openss
 
 The current version provides APIs around:
 * `ERC20Token`,
-* `Tub`, `Tap` and `Top` (<https://github.com/makerdao/sai>),
+* `Tub`, `Tap`,`Top` and `Vox` (<https://github.com/makerdao/sai>),
 * `SimpleMarket`, `ExpiringMarket` and `MatchingMarket` (<https://github.com/makerdao/maker-otc>),
 * `TxManager` (<https://github.com/makerdao/tx-manager>),
 * `DSGuard` (<https://github.com/dapphub/ds-guard>),
