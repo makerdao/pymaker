@@ -17,6 +17,7 @@
 
 import json
 
+import pkg_resources
 import pytest
 from mock import Mock
 from web3 import EthereumTesterProvider, Web3
@@ -40,6 +41,7 @@ class TestZrx:
         self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))
         self.token_transfer_proxy_address = deploy_contract(self.web3, 'TokenTransferProxy')
         self.exchange = ZrxExchange.deploy(self.web3, self.zrx_token.address, self.token_transfer_proxy_address)
+        self.web3.eth.contract(abi=json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/TokenTransferProxy.abi')))(address=self.token_transfer_proxy_address.address).transact().addAuthorizedAddress(self.exchange.address.address)
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1.mint(Wad.from_number(100)).transact()
         self.token2 = DSToken.deploy(self.web3, 'BBB')
@@ -139,10 +141,57 @@ class TestZrx:
         assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad(0)
 
         # when
-
         self.exchange.cancel_order(signed_order).transact()
+
         # then
         assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad.from_number(4)
+
+    def test_fill_order(self):
+        # given
+        self.exchange.approve([self.token1, self.token2], directly())
+
+        # when
+        order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
+                                           buy_token=self.token2.address, buy_amount=Wad.from_number(4),
+                                           expiration=1763920792)
+        # and
+        signed_order = self.exchange.sign_order(order)
+
+        # then
+        assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad(0)
+
+        # when
+        self.exchange.fill_order(signed_order, Wad.from_number(3.5)).transact()
+
+        # then
+        assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad.from_number(3.5)
+
+    def test_past_fill(self):
+        # given
+        self.exchange.approve([self.token1, self.token2], directly())
+
+        # when
+        order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
+                                           buy_token=self.token2.address, buy_amount=Wad.from_number(4),
+                                           expiration=1763920792)
+        # and
+        self.exchange.fill_order(self.exchange.sign_order(order), Wad.from_number(3)).transact()
+
+        # then
+        past_fill = self.exchange.past_fill(PAST_BLOCKS)
+        assert len(past_fill) == 1
+        assert past_fill[0].maker == self.our_address
+        assert past_fill[0].taker == self.our_address
+        assert past_fill[0].fee_recipient == Address("0x0000000000000000000000000000000000000000")
+        assert past_fill[0].pay_token == self.token1.address
+        assert past_fill[0].buy_token == self.token2.address
+        assert past_fill[0].filled_pay_amount == Wad.from_number(7.5)
+        assert past_fill[0].filled_buy_amount == Wad.from_number(3)
+        assert past_fill[0].paid_maker_fee == Wad.from_number(0)
+        assert past_fill[0].paid_taker_fee == Wad.from_number(0)
+        assert past_fill[0].tokens.startswith('0x')
+        assert past_fill[0].order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
+        assert past_fill[0].raw['blockNumber'] > 0
 
     def test_past_cancel(self):
         # given
@@ -167,6 +216,38 @@ class TestZrx:
         assert past_cancel[0].tokens.startswith('0x')
         assert past_cancel[0].order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
         assert past_cancel[0].raw['blockNumber'] > 0
+
+    @pytest.mark.timeout(10)
+    def test_on_fill(self):
+        # given
+        on_fill_mock = Mock()
+        self.exchange.on_fill(on_fill_mock)
+
+        # when
+        self.exchange.approve([self.token1, self.token2], directly())
+
+        # when
+        order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
+                                           buy_token=self.token2.address, buy_amount=Wad.from_number(4),
+                                           expiration=1763920792)
+
+        # and
+        self.exchange.fill_order(self.exchange.sign_order(order), Wad.from_number(3)).transact()
+
+        # then
+        on_fill = wait_until_mock_called(on_fill_mock)[0]
+        assert on_fill.maker == self.our_address
+        assert on_fill.taker == self.our_address
+        assert on_fill.fee_recipient == Address("0x0000000000000000000000000000000000000000")
+        assert on_fill.pay_token == self.token1.address
+        assert on_fill.buy_token == self.token2.address
+        assert on_fill.filled_pay_amount == Wad.from_number(7.5)
+        assert on_fill.filled_buy_amount == Wad.from_number(3)
+        assert on_fill.paid_maker_fee == Wad.from_number(0)
+        assert on_fill.paid_taker_fee == Wad.from_number(0)
+        assert on_fill.tokens.startswith('0x')
+        assert on_fill.order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
+        assert on_fill.raw['blockNumber'] > 0
 
     @pytest.mark.timeout(10)
     def test_on_cancel(self):

@@ -197,6 +197,25 @@ class LogCancel:
         return pformat(vars(self))
 
 
+class LogFill:
+    def __init__(self, log):
+        self.maker = Address(log['args']['maker'])
+        self.taker = Address(log['args']['taker'])
+        self.fee_recipient = Address(log['args']['feeRecipient'])
+        self.pay_token = Address(log['args']['makerToken'])
+        self.buy_token = Address(log['args']['takerToken'])
+        self.filled_pay_amount = Wad(int(log['args']['filledMakerTokenAmount']))
+        self.filled_buy_amount = Wad(int(log['args']['filledTakerTokenAmount']))
+        self.paid_maker_fee = Wad(int(log['args']['paidMakerFee']))
+        self.paid_taker_fee = Wad(int(log['args']['paidTakerFee']))
+        self.tokens = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['tokens']]).tobytes())
+        self.order_hash = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['orderHash']]).tobytes())
+        self.raw = log
+
+    def __repr__(self):
+        return pformat(vars(self))
+
+
 class ZrxExchange(Contract):
     """A client for the 0x exchange contract.
 
@@ -276,10 +295,23 @@ class ZrxExchange(Contract):
         for token in tokens + [ERC20Token(web3=self.web3, address=self.zrx_token())]:
             approval_function(token, self.token_transfer_proxy(), '0x Exchange contract')
 
+    def on_fill(self, handler):
+        """Subscribe to LogFill events.
+
+        `LogFill` events are emitted by the 0x contract every time someone fills an order.
+
+        Args:
+            handler: Function which will be called for each subsequent `LogFill` event.
+                This handler will receive a :py:class:`pymaker.`zrx.LogFill` class instance.
+        """
+        assert(callable(handler))
+
+        self._on_event(self._contract, 'LogFill', LogFill, handler)
+
     def on_cancel(self, handler):
         """Subscribe to LogCancel events.
 
-        `LogCancel` events are emitted by the Oasis contract every time someone cancels an order.
+        `LogCancel` events are emitted by the 0x contract every time someone cancels an order.
 
         Args:
             handler: Function which will be called for each subsequent `LogCancel` event.
@@ -288,6 +320,21 @@ class ZrxExchange(Contract):
         assert(callable(handler))
 
         self._on_event(self._contract, 'LogCancel', LogCancel, handler)
+
+    def past_fill(self, number_of_past_blocks: int) -> List[LogFill]:
+        """Synchronously retrieve past LogFill events.
+
+        `LogFill` events are emitted by the 0x contract every time someone fills an order.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+
+        Returns:
+            List of past `LogFill` events represented as :py:class:`pymaker.zrx.LogFill` class.
+        """
+        assert(isinstance(number_of_past_blocks, int))
+
+        return self._past_events(self._contract, 'LogFill', LogFill, number_of_past_blocks)
 
     def past_cancel(self, number_of_past_blocks: int) -> List[LogCancel]:
         """Synchronously retrieve past LogCancel events.
@@ -361,6 +408,16 @@ class ZrxExchange(Contract):
         signed_order.ec_signature_s = bytes_to_hexstring(s)
         signed_order.ec_signature_v = v
         return signed_order
+
+    def fill_order(self, order: Order, fill_buy_amount: Wad) -> Transact:
+        assert(isinstance(order, Order))
+        assert(isinstance(fill_buy_amount, Wad))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'fillOrder',
+                        [self._order_addresses(order), self._order_values(order), fill_buy_amount.value,
+                         True, order.ec_signature_v,
+                         hexstring_to_bytes(order.ec_signature_r),
+                         hexstring_to_bytes(order.ec_signature_s)])
 
     def cancel_order(self, order: Order) -> Transact:
         assert(isinstance(order, Order))
