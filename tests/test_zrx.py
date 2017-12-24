@@ -37,6 +37,10 @@ class TestZrx:
         self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))
         self.token_transfer_proxy_address = deploy_contract(self.web3, 'TokenTransferProxy')
         self.exchange = ZrxExchange.deploy(self.web3, self.zrx_token.address, self.token_transfer_proxy_address)
+        self.token1 = DSToken.deploy(self.web3, 'AAA')
+        self.token1.mint(Wad.from_number(100)).transact()
+        self.token2 = DSToken.deploy(self.web3, 'BBB')
+        self.token2.mint(Wad.from_number(100)).transact()
 
     def test_fail_when_no_contract_under_that_address(self):
         # expect
@@ -52,18 +56,14 @@ class TestZrx:
 
     def test_approval(self):
         # given
-        token1 = DSToken.deploy(self.web3, 'AAA')
-        token1.mint(Wad.from_number(100)).transact()
-
-        # and
-        assert token1.allowance_of(self.our_address, self.token_transfer_proxy_address) == Wad(0)
+        assert self.token1.allowance_of(self.our_address, self.token_transfer_proxy_address) == Wad(0)
         assert self.zrx_token.allowance_of(self.our_address, self.token_transfer_proxy_address) == Wad(0)
 
         # when
-        self.exchange.approve([token1], directly())
+        self.exchange.approve([self.token1], directly())
 
         # then
-        assert token1.allowance_of(self.our_address, self.token_transfer_proxy_address) > Wad(0)
+        assert self.token1.allowance_of(self.our_address, self.token_transfer_proxy_address) > Wad(0)
         assert self.zrx_token.allowance_of(self.our_address, self.token_transfer_proxy_address) > Wad(0)
 
     def test_create_order(self):
@@ -123,19 +123,11 @@ class TestZrx:
 
     def test_cancel_order(self):
         # given
-        token1 = DSToken.deploy(self.web3, 'AAA')
-        token1.mint(Wad.from_number(100)).transact()
-
-        # and
-        token2 = DSToken.deploy(self.web3, 'BBB')
-        token2.mint(Wad.from_number(100)).transact()
-
-        # and
-        self.exchange.approve([token1, token2], directly())
+        self.exchange.approve([self.token1, self.token2], directly())
 
         # when
-        order = self.exchange.create_order(pay_token=token1.address, pay_amount=Wad.from_number(10),
-                                           buy_token=token2.address, buy_amount=Wad.from_number(4),
+        order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
+                                           buy_token=self.token2.address, buy_amount=Wad.from_number(4),
                                            expiration=1763920792)
         # and
         signed_order = self.exchange.sign_order(order)
