@@ -18,6 +18,7 @@
 import json
 
 import pytest
+from mock import Mock
 from web3 import EthereumTesterProvider, Web3
 
 from pymaker import Address
@@ -26,7 +27,9 @@ from pymaker.deployment import deploy_contract
 from pymaker.numeric import Wad
 from pymaker.token import DSToken, ERC20Token
 from pymaker.zrx import ZrxExchange, Order
-from tests.helpers import is_hashable
+from tests.helpers import is_hashable, wait_until_mock_called
+
+PAST_BLOCKS = 100
 
 
 class TestZrx:
@@ -140,6 +143,59 @@ class TestZrx:
         self.exchange.cancel_order(signed_order).transact()
         # then
         assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad.from_number(4)
+
+    def test_past_cancel(self):
+        # given
+        self.exchange.approve([self.token1, self.token2], directly())
+
+        # when
+        order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
+                                           buy_token=self.token2.address, buy_amount=Wad.from_number(4),
+                                           expiration=1763920792)
+        # and
+        self.exchange.cancel_order(self.exchange.sign_order(order)).transact()
+
+        # then
+        past_cancel = self.exchange.past_cancel(PAST_BLOCKS)
+        assert len(past_cancel) == 1
+        assert past_cancel[0].maker == self.our_address
+        assert past_cancel[0].fee_recipient == Address("0x0000000000000000000000000000000000000000")
+        assert past_cancel[0].pay_token == self.token1.address
+        assert past_cancel[0].cancelled_pay_amount == Wad.from_number(10)
+        assert past_cancel[0].buy_token == self.token2.address
+        assert past_cancel[0].cancelled_buy_amount == Wad.from_number(4)
+        assert past_cancel[0].tokens.startswith('0x')
+        assert past_cancel[0].order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
+        assert past_cancel[0].raw['blockNumber'] > 0
+
+    @pytest.mark.timeout(10)
+    def test_on_cancel(self):
+        # given
+        on_cancel_mock = Mock()
+        self.exchange.on_cancel(on_cancel_mock)
+
+        # when
+        self.exchange.approve([self.token1, self.token2], directly())
+
+        # when
+        order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
+                                           buy_token=self.token2.address, buy_amount=Wad.from_number(4),
+                                           expiration=1763920792)
+
+        # and
+        self.exchange.cancel_order(self.exchange.sign_order(order)).transact()
+
+        # then
+        on_cancel = wait_until_mock_called(on_cancel_mock)[0]
+        assert on_cancel.maker == self.our_address
+        assert on_cancel.fee_recipient == Address("0x0000000000000000000000000000000000000000")
+        assert on_cancel.pay_token == self.token1.address
+        assert on_cancel.cancelled_pay_amount == Wad.from_number(10)
+        assert on_cancel.buy_token == self.token2.address
+        assert on_cancel.cancelled_buy_amount == Wad.from_number(4)
+        assert on_cancel.tokens.startswith('0x')
+        assert on_cancel.order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
+        assert on_cancel.raw['blockNumber'] > 0
 
     def test_should_have_printable_representation(self):
         assert repr(self.exchange) == f"ZrxExchange('{self.exchange.address}')"

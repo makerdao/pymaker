@@ -181,6 +181,22 @@ class Order:
         return pformat(vars(self))
 
 
+class LogCancel:
+    def __init__(self, log):
+        self.maker = Address(log['args']['maker'])
+        self.fee_recipient = Address(log['args']['feeRecipient'])
+        self.pay_token = Address(log['args']['makerToken'])
+        self.buy_token = Address(log['args']['takerToken'])
+        self.cancelled_pay_amount = Wad(int(log['args']['cancelledMakerTokenAmount']))
+        self.cancelled_buy_amount = Wad(int(log['args']['cancelledTakerTokenAmount']))
+        self.tokens = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['tokens']]).tobytes())
+        self.order_hash = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['orderHash']]).tobytes())
+        self.raw = log
+
+    def __repr__(self):
+        return pformat(vars(self))
+
+
 class ZrxExchange(Contract):
     """A client for the 0x exchange contract.
 
@@ -259,6 +275,34 @@ class ZrxExchange(Contract):
 
         for token in tokens + [ERC20Token(web3=self.web3, address=self.zrx_token())]:
             approval_function(token, self.token_transfer_proxy(), '0x Exchange contract')
+
+    def on_cancel(self, handler):
+        """Subscribe to LogCancel events.
+
+        `LogCancel` events are emitted by the Oasis contract every time someone cancels an order.
+
+        Args:
+            handler: Function which will be called for each subsequent `LogCancel` event.
+                This handler will receive a :py:class:`pymaker.`zrx.LogCancel` class instance.
+        """
+        assert(callable(handler))
+
+        self._on_event(self._contract, 'LogCancel', LogCancel, handler)
+
+    def past_cancel(self, number_of_past_blocks: int) -> List[LogCancel]:
+        """Synchronously retrieve past LogCancel events.
+
+        `LogCancel` events are emitted by the 0x contract every time someone cancels an order.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+
+        Returns:
+            List of past `LogCancel` events represented as :py:class:`pymaker.zrx.LogCancel` class.
+        """
+        assert(isinstance(number_of_past_blocks, int))
+
+        return self._past_events(self._contract, 'LogCancel', LogCancel, number_of_past_blocks)
 
     def create_order(self,
                      pay_token: Address,
