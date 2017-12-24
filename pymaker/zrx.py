@@ -185,7 +185,7 @@ class ZrxExchange(Contract):
     """A client for the 0x exchange contract.
 
     You can find the source code of the `0x` exchange contract here:
-    <https://etherscan.io/address/0x12459c951127e0c374ff9105dda097662a027093#code.
+    <https://etherscan.io/address/0x12459c951127e0c374ff9105dda097662a027093#code>.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
