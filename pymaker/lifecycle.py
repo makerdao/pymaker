@@ -90,8 +90,13 @@ class Web3Lifecycle:
     def __exit__(self, exc_type, exc_val, exc_tb):
         # Initialization phase
         self.logger.info(f"Keeper connected to {self.web3.providers[0]}")
-        self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
-        self._check_account_unlocked()
+        if self.web3.eth.defaultAccount:
+            self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
+            self._check_account_unlocked()
+        else:
+            self.logger.info(f"Keeper operating in read-only mode regarding the chain as no keeper account configured")
+
+        # Wait for sync and peers
         self._wait_for_init()
 
         # Initial delay
