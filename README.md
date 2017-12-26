@@ -60,7 +60,7 @@ The current version provides APIs around:
 * `Bibox` (<https://github.com/Biboxcom/api_reference/wiki/home_en>),
 * `0x` (<https://etherscan.io/address/0x12459c951127e0c374ff9105dda097662a027093#code>, <https://github.com/0xProject/standard-relayer-api>).
 
-You can find the full documentation of the APIs here: http://maker-keeper-docs.surge.sh.
+You can find the full documentation of the APIs here: <http://maker-keeper-docs.surge.sh>.
 
 ## Code samples
 
@@ -286,4 +286,4 @@ You can then run all tests with:
 
 ## License
 
-See [COPYING](https://github.com/makerdao/keeper/blob/master/COPYING) file.
+See [COPYING](https://github.com/makerdao/pymaker/blob/master/COPYING) file.
