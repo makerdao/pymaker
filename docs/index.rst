@@ -151,7 +151,8 @@ Exchanges
 ~~~~~~~~~
 
 `OaaisDEX`, `EtherDelta` and `0x` are decentralized exchanges which also provide some arbitrage opportunities
-for profit-seeking agents. Because of that an API has been created around them as well.
+for profit-seeking agents. Because of that an API has been created around them as well. Also an API for
+the `Bibox` centralized exchange is present.
 
 OasisDEX
 """"""""
@@ -169,6 +170,12 @@ EtherDelta
 ""
 
 .. automodule:: pymaker.zrx
+    :members:
+
+Bibox
+"""""
+
+.. automodule:: pymaker.bibox
     :members:
 
 
