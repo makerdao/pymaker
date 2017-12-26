@@ -356,7 +356,23 @@ class ZrxExchange(Contract):
                      pay_amount: Wad,
                      buy_token: Address,
                      buy_amount: Wad,
-                     expiration: int):
+                     expiration: int) -> Order:
+        """Creates a new order.
+
+        The `maker_fee`, `taker_fee` and `fee_recipient` fields are by default set to zero.
+        Before signing the order and submitting it to the relayer, they may need to be
+        populated using the `calculate_fees()` method of the `ZrxRelayerApi` class.
+
+        Args:
+            pay_token: Address of the ERC20 token you want to put on sale.
+            pay_amount: Amount of the `pay_token` token you want to put on sale.
+            buy_token: Address of the ERC20 token you want to be paid with.
+            buy_amount: Amount of the `buy_token` you want to receive.
+            expiration: Unix timestamp (in seconds) when the order will expire.
+
+        Returns:
+            New order as an instance of the :py:class:`pymaker.zrx.Order` class.
+        """
         assert(isinstance(pay_token, Address))
         assert(isinstance(pay_amount, Wad))
         assert(isinstance(buy_token, Address))
@@ -381,6 +397,14 @@ class ZrxExchange(Contract):
                      ec_signature_v=None)
 
     def get_order_hash(self, order: Order) -> str:
+        """Calculates hash of an order.
+
+        Args:
+            order: Order you want to calculate the hash of.
+
+        Returns:
+            Order hash as a hex string starting with `0x`.
+        """
         assert(isinstance(order, Order))
 
         # the hash depends on the exchange contract address as well
@@ -390,11 +414,31 @@ class ZrxExchange(Contract):
         return bytes_to_hexstring(array.array('B', [ord(x) for x in result]).tobytes())
 
     def get_unavailable_buy_amount(self, order: Order) -> Wad:
+        """Return the order amount which was either taken or cancelled.
+
+        Args:
+            order: Order you want to get the unavailable amount of.
+
+        Returns:
+            The unavailable amount of the order (i.e. the amount which was either taken or cancelled),
+            expressed in terms of the `buy_token` token.
+        """
         assert(isinstance(order, Order))
 
         return Wad(self._contract.call().getUnavailableTakerTokenAmount(hexstring_to_bytes(self.get_order_hash(order))))
 
     def sign_order(self, order: Order) -> Order:
+        """Signs an order so it can be submitted to the relayer.
+
+        Order will be signed by the `web3.eth.defaultAccount` account.
+
+        Args:
+            order: Order you want to sign.
+
+        Returns:
+            Signed order. Copy of the order passed as a parameter with the `ec_signature_r`, `ec_signature_s`
+            and `ec_signature_v` fields filled with signature values.
+        """
         assert(isinstance(order, Order))
 
         # TODO duplicate code below
@@ -410,6 +454,15 @@ class ZrxExchange(Contract):
         return signed_order
 
     def fill_order(self, order: Order, fill_buy_amount: Wad) -> Transact:
+        """Fills an order.
+
+        Args:
+            order: The order to be filled.
+            fill_buy_amount: The amount (in terms of `buy_token` of the original order) to be filled.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
         assert(isinstance(order, Order))
         assert(isinstance(fill_buy_amount, Wad))
 
@@ -420,6 +473,14 @@ class ZrxExchange(Contract):
                          hexstring_to_bytes(order.ec_signature_s)])
 
     def cancel_order(self, order: Order) -> Transact:
+        """Cancels an order.
+
+        Args:
+            order: Order you want to cancel.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
         assert(isinstance(order, Order))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'cancelOrder',
