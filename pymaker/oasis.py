@@ -358,7 +358,7 @@ class SimpleMarket(Contract):
     def make(self, pay_token: Address, pay_amount: Wad, buy_token: Address, buy_amount: Wad) -> Transact:
         """Create a new order.
 
-        The `have_amount` of `have_token` token will be taken from you on order creation and deposited
+        The `pay_amount` of `pay_token` token will be taken from you on order creation and deposited
         in the market contract. Allowance needs to be set first - refer to the `approve()` method.
 
         Args:
