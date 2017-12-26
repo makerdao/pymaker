@@ -44,7 +44,7 @@ and set the `LDFLAGS` environment variable before you run `pip3 install -r requi
 export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
 ```
 
-## Available APIs for smart contracts
+## Available APIs
 
 The current version provides APIs around:
 * `ERC20Token`,
@@ -56,7 +56,9 @@ The current version provides APIs around:
 * `DSEthToken` (<https://github.com/dapphub/ds-eth-token>),
 * `DSValue` (<https://github.com/dapphub/ds-value>),
 * `DSVault` (<https://github.com/dapphub/ds-vault>),
-* `EtherDelta` (<https://github.com/etherdelta/etherdelta.github.io>).
+* `EtherDelta` (<https://github.com/etherdelta/etherdelta.github.io>),
+* `Bibox` (<https://github.com/Biboxcom/api_reference/wiki/home_en>),
+* `0x` (<https://etherscan.io/address/0x12459c951127e0c374ff9105dda097662a027093#code>, <https://github.com/0xProject/standard-relayer-api>).
 
 You can find the full documentation of the APIs here: http://maker-keeper-docs.surge.sh.
 
