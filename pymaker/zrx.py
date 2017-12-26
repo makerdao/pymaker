@@ -470,6 +470,16 @@ class ZrxRelayerApi:
         self.api_server = api_server
 
     def get_orders_by_maker(self, maker: Address) -> List[Order]:
+        """Returns all active orders created by `maker`.
+
+        In order to get them, issues a `/v0/orders` call to the Standard Relayer API.
+
+        Args:
+            maker: Address of the `maker` to filter the orders by.
+
+        Returns:
+            Active orders created by `maker`, as a list of instances of the :py:class:`pymaker.zrx.Order` class.
+        """
         assert(isinstance(maker, Address))
 
         url = f"{self.api_server}/v0/orders?" \
@@ -481,6 +491,25 @@ class ZrxRelayerApi:
         return list(map(lambda item: Order.from_json(self.exchange, item), response))
 
     def calculate_fees(self, order: Order) -> Order:
+        """Takes and order and returns the same order with proper relayer fees.
+
+        Issues a call to the `/v0/fees` endpoint of the Standard Relayer API, as a result of it
+        new order is returned being the copy of the original one with the `maker_fee`, `taker_fee`
+        and `fee_recipient` fields filled in according to the relayer.
+
+        Relayers will very likely reject orders submitted if proper fees are not set first.
+        The standard approach is to call `calculate_fees()` first and then call `submit_order()`
+        passing the order received from `calculate_fees()` as parameter.
+
+        Args:
+            order: Order which should have fees calculated. The values of `maker_fee`, `taker_fee`
+                and `fee_recipient` are irrelevant and may as well be zeros as they will be overwritten
+                by this method anyway.
+
+        Returns:
+            Copy of the order received as a parameter with the `maker_fee`, `taker_fee` and `fee_recipient`
+            fields updated according to the relayer.
+        """
         assert(isinstance(order, Order))
 
         response = requests.post(f"{self.api_server}/v0/fees", json=order.to_json_without_fees(), timeout=self.timeout)
@@ -496,6 +525,16 @@ class ZrxRelayerApi:
             raise Exception(f"Failed to fetch fees for order: {response.text} ({response.status_code})")
 
     def submit_order(self, order: Order) -> bool:
+        """Submits the order to the relayer.
+
+        Posts the order to the `/v0/order` endpoint of the Standard Relayer API
+
+        Args:
+            order: Order to be submitted.
+
+        Return:
+            `True` if order submission was successful. `False` otherwise.
+        """
         assert(isinstance(order, Order))
 
         response = requests.post(f"{self.api_server}/v0/order", json=order.to_json(), timeout=self.timeout)
