@@ -125,6 +125,12 @@ Top
 .. autoclass:: pymaker.sai.Top
     :members:
 
+Vox
+"""
+
+.. autoclass:: pymaker.sai.Vox
+    :members:
+
 ERC20
 ~~~~~
 
