@@ -53,7 +53,7 @@ class Cup:
 
 
 class Tub(Contract):
-    """A client for the `Tub` contract, the primary contract driving the `SAI Stablecoin System`.
+    """A client for the `Tub` contract.
 
     SAI is a simple version of the diversely collateralized DAI stablecoin.
 
@@ -848,7 +848,7 @@ class Tap(Contract):
 
 
 class Top(Contract):
-    """A client for the `Top` contract, one of the `SAI Stablecoin System` contracts.
+    """A client for the `Top` contract.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
@@ -903,7 +903,7 @@ class Top(Contract):
 
 
 class Vox(Contract):
-    """A client for the `Vox` contract, one of the `SAI Stablecoin System` contracts.
+    """A client for the `Vox` contract.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
