@@ -460,6 +460,7 @@ class ZrxRelayerApi:
         api_server: Base URL of the Standard Relayer API server.
     """
     logger = logging.getLogger('0x-relayer-api')
+    timeout = 15.5
 
     def __init__(self, exchange: ZrxExchange, api_server: str):
         assert(isinstance(exchange, ZrxExchange))
@@ -476,13 +477,13 @@ class ZrxRelayerApi:
               f"maker={maker.address}&" \
               f"per_page=10000"
 
-        response = requests.get(url).json()
+        response = requests.get(url, timeout=self.timeout).json()
         return list(map(lambda item: Order.from_json(self.exchange, item), response))
 
     def calculate_fees(self, order: Order) -> Order:
         assert(isinstance(order, Order))
 
-        response = requests.post(f"{self.api_server}/v0/fees", json=order.to_json_without_fees())
+        response = requests.post(f"{self.api_server}/v0/fees", json=order.to_json_without_fees(), timeout=self.timeout)
         if response.status_code == 200:
             data = response.json()
 
@@ -497,7 +498,7 @@ class ZrxRelayerApi:
     def submit_order(self, order: Order) -> bool:
         assert(isinstance(order, Order))
 
-        response = requests.post(f"{self.api_server}/v0/order", json=order.to_json())
+        response = requests.post(f"{self.api_server}/v0/order", json=order.to_json(), timeout=self.timeout)
         if response.status_code == 201:
             self.logger.info(f"Placed 0x order: {order}")
             return True
