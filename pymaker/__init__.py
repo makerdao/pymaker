@@ -405,18 +405,25 @@ class Transact:
         while True:
             seconds_elapsed = int(time.time() - initial_time)
 
-            # Check if any transaction sent so far has been mined (has a receipt).
-            # If it has, we return either the receipt (if if was successful) or `None`.
-            for tx_hash in tx_hashes:
-                receipt = self._get_receipt(tx_hash)
-                if receipt:
-                    if receipt.successful:
-                        self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
-                        return receipt
-                    else:
-                        self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
-                                            f" log entry, assuming it has failed (tx_hash={tx_hash})")
-                        return None
+            if nonce and self.web3.eth.getTransactionCount(self.web3.eth.defaultAccount) > nonce:
+                # Check if any transaction sent so far has been mined (has a receipt).
+                # If it has, we return either the receipt (if if was successful) or `None`.
+                for tx_hash in tx_hashes:
+                    receipt = self._get_receipt(tx_hash)
+                    if receipt:
+                        if receipt.successful:
+                            self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
+                            return receipt
+                        else:
+                            self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
+                                                f" log entry, assuming it has failed (tx_hash={tx_hash})")
+                            return None
+
+                # If we can not find a mined receipt but at the same time we know last used nonce
+                # has increased, then it means that the transaction we tried to send failed.
+                self.logger.warning(f"Transaction {self.name()} has been overridden by another transaction"
+                                    f" with the same nonce, which means it has failed")
+                return None
 
             # Send a transaction if:
             # - no transaction has been sent yet, or
