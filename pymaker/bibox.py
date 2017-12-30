@@ -20,9 +20,11 @@ import hmac
 import json
 import logging
 from pprint import pformat
+from random import random
 from typing import List
 
 import requests
+import time
 
 from pymaker import Wad
 
@@ -159,6 +161,10 @@ class BiboxApi:
 
     logger = logging.getLogger('bibox-api')
 
+    MAX_RETRIES = 5
+    MIN_RETRY_DELAY = 0.1
+    MAX_RETRY_DELAY = 0.3
+
     def __init__(self, api_server: str, api_key: str, secret: str):
         assert(isinstance(api_server, str))
         assert(isinstance(api_key, str))
@@ -168,9 +174,10 @@ class BiboxApi:
         self.api_key = api_key
         self.secret = secret
 
-    def _request(self, path: str, cmd: dict):
+    def _request(self, path: str, cmd: dict, retry: bool):
         assert(isinstance(path, str))
         assert(isinstance(cmd, dict))
+        assert(isinstance(retry, bool))
 
         cmds = json.dumps([cmd])
         call = {
@@ -179,32 +186,45 @@ class BiboxApi:
             "sign": self._sign(cmds)
         }
 
-        result = requests.post(self.api_path + path, json=call, timeout=15.5)
-        result_json = result.json()
+        for try_number in range(1, self.MAX_RETRIES+1):
+            result = requests.post(self.api_path + path, json=call, timeout=15.5)
+            result_json = result.json()
 
-        if 'error' in result_json:
-            raise Exception(f"API error, code {result_json['error']['code']}, msg: '{result_json['error']['msg']}'")
+            if retry and try_number < self.MAX_RETRIES:
+                try:
+                    if str(result_json['error']['code']) == '4003':
+                        self.logger.info(f"BiBox API busy ({result_json['error']['code']}: '{result_json['error']['msg']}'), retrying")
+                        time.sleep(self.MIN_RETRY_DELAY + random()*(self.MAX_RETRY_DELAY-self.MIN_RETRY_DELAY))
+                        continue
+                except:
+                    pass
 
-        return result_json['result'][0]['result']
+            if 'error' in result_json:
+                raise Exception(f"API error, code {result_json['error']['code']}, msg: '{result_json['error']['msg']}'")
+
+            return result_json['result'][0]['result']
 
     def _sign(self, msg: str) -> str:
         assert(isinstance(msg, str))
         return hmac.new(key=self.secret.encode('utf-8'), msg=msg.encode('utf-8'), digestmod=hashlib.md5).hexdigest()
 
-    def user_info(self) -> dict:
-        return self._request('/v1/user', {"cmd": "user/userInfo", "body": {}})
+    def user_info(self, retry: bool = False) -> dict:
+        assert(isinstance(retry, bool))
+        return self._request('/v1/user', {"cmd": "user/userInfo", "body": {}}, retry)
 
-    def coin_list(self) -> list:
-        return self._request('/v1/transfer', {"cmd": "transfer/coinList", "body": {}})
+    def coin_list(self, retry: bool = False) -> list:
+        assert(isinstance(retry, bool))
+        return self._request('/v1/transfer', {"cmd": "transfer/coinList", "body": {}}, retry)
 
-    def assets(self) -> dict:
-        return self._request('/v1/transfer', {"cmd": "transfer/assets", "body": {}})
+    def assets(self, retry: bool = False) -> dict:
+        assert(isinstance(retry, bool))
+        return self._request('/v1/transfer', {"cmd": "transfer/assets", "body": {}}, retry)
 
-    def get_orders(self, pair: str) -> List[Order]:
+    def get_orders(self, pair: str, retry: bool = False) -> List[Order]:
         result = self._request('/v1/orderpending', {"cmd": "orderpending/orderPendingList", "body": {"pair": pair,
                                                                                                      "account_type": 0,
                                                                                                      "page": 1,
-                                                                                                     "size": 900}})
+                                                                                                     "size": 900}}, retry)
 
         # We are interested in limit orders only ("order_type":2)
         items = filter(lambda item: item['order_type'] == 2, result['items'])
@@ -218,12 +238,13 @@ class BiboxApi:
                                            money=Wad.from_number(item['money']),
                                            money_symbol=item['currency_symbol']), items))
 
-    def place_order(self, is_sell: bool, amount: Wad, amount_symbol: str, money: Wad, money_symbol: str) -> int:
+    def place_order(self, is_sell: bool, amount: Wad, amount_symbol: str, money: Wad, money_symbol: str, retry: bool = False) -> int:
         assert(isinstance(is_sell, bool))
         assert(isinstance(amount, Wad))
         assert(isinstance(amount_symbol, str))
         assert(isinstance(money, Wad))
         assert(isinstance(money_symbol, str))
+        assert(isinstance(retry, bool))
 
         order_id = self._request('/v1/orderpending', {"cmd": "orderpending/trade",
                                                       "body": {
@@ -235,22 +256,24 @@ class BiboxApi:
                                                           "price": float(money / amount),
                                                           "amount": float(amount),
                                                           "money": float(money)
-                                                      }})
+                                                      }}, retry)
 
         self.logger.info(f"Placed order #{order_id} ({'SELL' if is_sell else 'BUY'}, amount {amount} {amount_symbol},"
                          f" money {money} {money_symbol})")
 
         return order_id
 
-    def cancel_order(self, order_id: int):
+    def cancel_order(self, order_id: int, retry: bool = False):
         assert(isinstance(order_id, int))
+        assert(isinstance(retry, bool))
 
-        self._request('/v1/orderpending', {"cmd": "orderpending/cancelTrade", "body": {"orders_id": order_id}})
+        self._request('/v1/orderpending', {"cmd": "orderpending/cancelTrade", "body": {"orders_id": order_id}}, retry)
         self.logger.info(f"Cancelled order #{order_id}")
 
-    def get_trade_history(self, pair: str, number_of_trades: int) -> List[Trade]:
+    def get_trade_history(self, pair: str, number_of_trades: int, retry: bool = False) -> List[Trade]:
         assert(isinstance(pair, str))
         assert(isinstance(number_of_trades, int))
+        assert(isinstance(retry, bool))
 
         items = []
         for page in range(1, 100):
@@ -260,7 +283,7 @@ class BiboxApi:
                                                             "account_type": 0,
                                                             "page": page,
                                                             "size": 200
-                                                        }})['items']
+                                                        }}, retry)['items']
 
             # We are interested in limit orders only ("order_type":2)
             items = items + list(filter(lambda item: item['order_type'] == 2, result))
