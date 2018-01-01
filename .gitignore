@@ -1,5 +1,6 @@
 .idea
 *.iml
+.*.swp
 
 __pycache__
 .cache
