@@ -520,7 +520,7 @@ class ZrxRelayerApi:
         exchange: The 0x Exchange contract.
         api_server: Base URL of the Standard Relayer API server.
     """
-    logger = logging.getLogger('0x-relayer-api')
+    logger = logging.getLogger()
     timeout = 15.5
 
     def __init__(self, exchange: ZrxExchange, api_server: str):

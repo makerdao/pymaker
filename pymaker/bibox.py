@@ -159,7 +159,7 @@ class BiboxApi:
     <https://github.com/Biboxcom/api_reference/wiki/home_en>.
     """
 
-    logger = logging.getLogger('bibox-api')
+    logger = logging.getLogger()
 
     MAX_RETRIES = 5
     MIN_RETRY_DELAY = 0.1

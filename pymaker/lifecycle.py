@@ -66,7 +66,7 @@ class Web3Lifecycle:
     Attributes:
         web3: Instance of the `Web3` class from `web3.py`.
     """
-    logger = logging.getLogger('lifecycle')
+    logger = logging.getLogger()
 
     def __init__(self, web3: Web3):
         self.web3 = web3

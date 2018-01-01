@@ -605,7 +605,7 @@ class EtherDeltaApi:
             `etherdelta-client` tool. If number_of_attempts > 1, this tool will be
             run several times though.
     """
-    logger = logging.getLogger('etherdelta-api')
+    logger = logging.getLogger()
 
     def __init__(self,
                  client_tool_directory: str,

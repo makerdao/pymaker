@@ -103,7 +103,7 @@ class Address:
 
 
 class Contract:
-    logger = logging.getLogger('contract')
+    logger = logging.getLogger()
 
     @staticmethod
     def _deploy(web3: Web3, abi: list, bytecode: bytes, args: list) -> Address:
@@ -246,7 +246,7 @@ class Receipt:
 class Transact:
     """Represents an Ethereum transaction before it gets executed."""
 
-    logger = logging.getLogger('transact')
+    logger = logging.getLogger()
 
     def __init__(self,
                  origin: object,
