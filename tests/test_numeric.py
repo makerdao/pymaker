@@ -17,6 +17,7 @@
 
 import pytest
 
+from decimal import *
 from pymaker.numeric import Wad, Ray
 from tests.helpers import is_hashable
 
@@ -224,6 +225,37 @@ class TestWad:
         round_difference = x - round(x, ndigits)
         round_distance = Wad(abs(round_difference.value))
         assert round_distance <= Wad.from_number(0.5 * 10**(-ndigits))    
+
+    def test_non_18_decimal(self):
+        str(Wad(1, 1)) == "0.1"
+        str(Wad(1, 2)) == "0.01"
+        str(Wad(5, 2)) == "0.05"
+        Wad.from_number(0.001, 3) == Wad(1, 3)
+        Wad.from_number(0.00005, 5) == Wad(5, 5)
+        Wad.from_number(0.00105, 5) == Wad(105, 5)
+        Wad.from_number(0.00105, 3) == Wad(1, 3)
+        Wad(1, 2).to_decimal == Decimal('0.01')
+        Wad(1, 3).to_decimal == Decimal('0.001')
+        Wad(100, 8).to_decimal == Decimal('0.00000001')
+        Wad(101, 8).to_decimal == Decimal('0.00000101')
+
+    def test_non_18_decimal_add_should_reject(self):
+        with pytest.raises(ArithmeticError):
+            Wad(1) + Wad(1, 3)
+
+    def test_non_18_decimal_sub_should_reject(self):
+        with pytest.raises(ArithmeticError):
+            Wad(1) - Wad(1, 3)
+
+    def test_non_18_decimal_mul_should_reject(self):
+        with pytest.raises(ArithmeticError):
+            Wad(1) * Wad(1, 3)
+        with pytest.raises(ArithmeticError):
+            Wad(1, 3) * 1
+
+    def test_non_18_decimal_div_should_reject(self):
+        with pytest.raises(ArithmeticError):
+            Wad(1) / Wad(1, 3)
 
 
 class TestRay:
