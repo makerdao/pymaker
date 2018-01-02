@@ -65,6 +65,35 @@ class GeneralMarketTest:
         # and
         assert self.otc.get_orders() == [self.otc.get_order(1)]
 
+    def test_get_orders_by_maker(self):
+        # given
+        maker1 = self.our_address
+        maker2 = Address(self.web3.eth.accounts[1])
+
+        # and
+        self.token1.transfer(maker2, Wad.from_number(500)).transact()
+
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
+
+        # and
+        self.web3.eth.defaultAccount = self.web3.eth.accounts[1]
+        self.otc.approve([self.token1], directly())
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
+        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
+
+        # then
+        assert len(self.otc.get_orders()) == 2
+        assert len(self.otc.get_orders_by_maker(maker1)) == 1
+        assert len(self.otc.get_orders_by_maker(maker2)) == 1
+
+        # and
+        assert self.otc.get_orders_by_maker(maker1)[0].maker == maker1
+        assert self.otc.get_orders_by_maker(maker2)[0].maker == maker2
+
     def test_order_comparison(self):
         # when
         self.otc.approve([self.token1], directly())

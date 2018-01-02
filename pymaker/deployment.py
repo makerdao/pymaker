@@ -130,6 +130,7 @@ class Deployment:
         self.web3.providers[0].rpc_methods.evm_revert()
         self.web3.providers[0].rpc_methods.evm_snapshot()
         self.otc._none_orders = set()
+        self.otc._alien_orders = {}
 
     def time_travel_by(self, seconds: int):
         assert(isinstance(seconds, int))

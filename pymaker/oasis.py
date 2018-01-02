@@ -171,6 +171,7 @@ class SimpleMarket(Contract):
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
         self._none_orders = set()
+        self._alien_orders = {}
 
     @staticmethod
     def deploy(web3: Web3):
@@ -346,13 +347,51 @@ class SimpleMarket(Contract):
                          timestamp=array[5])
 
     def get_orders(self) -> List[Order]:
-        """Get all active order details.
+        """Get all active orders.
 
         Returns:
             A list of `Order` objects representing all active orders on Oasis.
         """
         orders = [self.get_order(order_id + 1) for order_id in range(self.get_last_order_id())]
         return [order for order in orders if order is not None]
+
+    def get_orders_by_maker(self, maker: Address) -> List[Order]:
+        """Get all active orders created by `maker`.
+
+        Args:
+            maker: Address of the `maker` to filter the orders by.
+
+        Returns:
+            A list of `Order` objects representing all active orders belonging to this `maker`.
+        """
+        assert(isinstance(maker, Address))
+
+        # `self._alien_orders[maker]` is a set containing ids of orders which are *not* *owned* by
+        # a particular maker. We initialize it with an empty set if this maker hasn't been queried yet.
+        if maker not in self._alien_orders:
+            self._alien_orders[maker] = set()
+
+        result = []
+        for order_id in range(self.get_last_order_id()):
+            # If we already know this order cannot be owned by this particular maker, we skip it.
+            if order_id in self._alien_orders[maker]:
+                continue
+
+            # Query the order.
+            order = self.get_order(order_id + 1)
+            if order is None:
+                continue
+
+            # We are only interested in orders owned by `maker`. In case the order is not owned by `maker`,
+            # we add it to `_alien_orders[maker]` so the next time `get_orders_by_maker()` is called
+            # with the same parameter we will be able to rule out these orders straight away.
+            if order.maker != maker:
+                self._alien_orders[maker].add(order_id)
+                continue
+
+            result.append(order)
+
+        return result
 
     #TODO make it return the id of the newly created order
     def make(self, pay_token: Address, pay_amount: Wad, buy_token: Address, buy_amount: Wad) -> Transact:
