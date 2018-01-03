@@ -248,6 +248,9 @@ class BiboxApi:
         assert(isinstance(money_symbol, str))
         assert(isinstance(retry, bool))
 
+        self.logger.info(f"Placing order ({'SELL' if is_sell else 'BUY'}, amount {amount} {amount_symbol},"
+                         f" money {money} {money_symbol})...")
+
         order_id = self._request('/v1/orderpending', {"cmd": "orderpending/trade",
                                                       "body": {
                                                           "pair": amount_symbol + "_" + money_symbol,
@@ -260,8 +263,8 @@ class BiboxApi:
                                                           "money": float(money)
                                                       }}, retry)
 
-        self.logger.info(f"Placed order #{order_id} ({'SELL' if is_sell else 'BUY'}, amount {amount} {amount_symbol},"
-                         f" money {money} {money_symbol})")
+        self.logger.info(f"Placed order ({'SELL' if is_sell else 'BUY'}, amount {amount} {amount_symbol},"
+                         f" money {money} {money_symbol}) as #{order_id}")
 
         return order_id
 
