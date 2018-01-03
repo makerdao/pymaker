@@ -165,11 +165,11 @@ class BiboxApi:
     MIN_RETRY_DELAY = 0.1
     MAX_RETRY_DELAY = 0.3
 
-    def __init__(self, api_server: str, api_key: str, secret: str, timeout: int):
+    def __init__(self, api_server: str, api_key: str, secret: str, timeout: float):
         assert(isinstance(api_server, str))
         assert(isinstance(api_key, str))
         assert(isinstance(secret, str))
-        assert(isinstance(timeout, int))
+        assert(isinstance(timeout, float))
 
         self.api_path = api_server
         self.api_key = api_key
