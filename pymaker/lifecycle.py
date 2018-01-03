@@ -294,7 +294,13 @@ class Web3Lifecycle:
         def func():
             try:
                 if not self.terminated_internally and not self.terminated_externally:
-                    if not callback.trigger():
+                    def on_start():
+                        self.logger.debug(f"Processing the timer")
+
+                    def on_finish():
+                        self.logger.debug(f"Finished processing the timer")
+
+                    if not callback.trigger(on_start, on_finish):
                         self.logger.debug(f"Ignoring timer as previous one is already running")
                 else:
                     self.logger.debug(f"Ignoring timer as keeper is already terminating")
