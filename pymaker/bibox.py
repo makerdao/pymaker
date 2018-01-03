@@ -269,6 +269,7 @@ class BiboxApi:
         assert(isinstance(order_id, int))
         assert(isinstance(retry, bool))
 
+        self.logger.info(f"Cancelling order #{order_id}...")
         self._request('/v1/orderpending', {"cmd": "orderpending/cancelTrade", "body": {"orders_id": order_id}}, retry)
         self.logger.info(f"Cancelled order #{order_id}")
 
