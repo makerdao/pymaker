@@ -80,3 +80,13 @@ class TestTransact:
         with pytest.raises(Exception):
             synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas=129995,
                                                                                            gas_buffer=3000000)])
+
+    def test_custom_from_address(self):
+        # given
+        self.token.transfer(self.second_address, Wad(self.token.balance_of(self.our_address))).transact()
+
+        # when
+        receipt = self.token.transfer(self.our_address, Wad(250)).transact(from_address=self.second_address)
+
+        # then
+        assert Address(self.web3.eth.getTransaction(receipt.transaction_hash)['from']) == self.second_address
