@@ -349,8 +349,9 @@ class Transact:
 
         Out-of-gas exceptions are automatically recognized as transaction failures.
 
-        Allowed keyword arguments are: `gas`, `gas_buffer`, `gas_price`. `gas_price` needs
-        to be an instance of a class inheriting from :py:class:`pymaker.gas.GasPrice`.
+        Allowed keyword arguments are: `from_address`, `gas`, `gas_buffer`, `gas_price`. `gas_price`
+        needs to be an instance of a class inheriting from :py:class:`pymaker.gas.GasPrice`.
+        `from_address` needs to be an instance of :py:class:`pymaker.Address`.
 
         The `gas` keyword argument is the gas limit for the transaction, whereas `gas_buffer`
         specifies how much gas should be added to the estimate. They can not be present
