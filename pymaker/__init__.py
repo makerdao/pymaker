@@ -249,21 +249,21 @@ class Transact:
     logger = logging.getLogger()
 
     def __init__(self,
-                 origin: object,
+                 origin: Optional[object],
                  web3: Web3,
-                 abi: list,
+                 abi: Optional[list],
                  address: Address,
-                 contract: object,
-                 function_name: str,
-                 parameters: list,
+                 contract: Optional[object],
+                 function_name: Optional[str],
+                 parameters: Optional[list],
                  extra: Optional[dict] = None):
-        assert(isinstance(origin, object))
+        assert(isinstance(origin, object) or (origin is None))
         assert(isinstance(web3, Web3))
-        assert(isinstance(abi, list))
+        assert(isinstance(abi, list) or (abi is None))
         assert(isinstance(address, Address))
-        assert(isinstance(contract, object))
-        assert(isinstance(function_name, str))
-        assert(isinstance(parameters, list))
+        assert(isinstance(contract, object) or (contract is None))
+        assert(isinstance(function_name, str) or (function_name is None))
+        assert(isinstance(parameters, list) or (parameters is None))
         assert(isinstance(extra, dict) or (extra is None))
 
         self.origin = origin
@@ -303,9 +303,15 @@ class Transact:
         gas_price_dict = {'gasPrice': gas_price} if gas_price is not None else {}
         nonce_dict = {'nonce': nonce} if nonce is not None else {}
 
-        return self.contract.\
-            transact({**{'from': from_account, 'gas': gas}, **gas_price_dict, **nonce_dict, **self._as_dict(self.extra)}).\
-            __getattr__(self.function_name)(*self.parameters)
+        transaction_params = {**{'from': from_account, 'gas': gas},
+                              **gas_price_dict,
+                              **nonce_dict,
+                              **self._as_dict(self.extra)}
+
+        if self.contract is not None:
+            return self.contract.transact(transaction_params).__getattr__(self.function_name)(*self.parameters)
+        else:
+            return self.web3.eth.sendTransaction({**transaction_params, **{'to': self.address.address}})
 
     def name(self) -> str:
         """Returns the nicely formatted name of this pending Ethereum transaction.
@@ -313,7 +319,11 @@ class Transact:
         Returns:
             Nicely formatted name of this pending Ethereum transaction.
         """
-        name = f"{repr(self.origin)}.{self.function_name}({self.parameters})"
+        if self.origin:
+            name = f"{repr(self.origin)}.{self.function_name}({self.parameters})"
+        else:
+            name = f"Regular transfer to {self.address}"
+
         return name if self.extra is None else name + f" with {self.extra}"
 
     def estimated_gas(self, from_address: Address) -> int:
@@ -329,13 +339,16 @@ class Transact:
         """
         assert(isinstance(from_address, Address))
 
-        estimate = self.contract.estimateGas({**self._as_dict(self.extra), **{'from': from_address.address}})\
-            .__getattr__(self.function_name)(*self.parameters)
+        if self.contract is not None:
+            estimate = self.contract.estimateGas({**self._as_dict(self.extra), **{'from': from_address.address}})\
+                .__getattr__(self.function_name)(*self.parameters)
 
-        # testrpc does estimate too little gas at times, it did happen with TxManager definitely
-        # so we always add 1mio tp the estimate as in testrpc gas block limit doesn't matter
-        if str(self.web3.providers[0]) == 'EthereumTesterProvider':
-            estimate = estimate + 1000000
+            # testrpc does estimate too little gas at times, it did happen with TxManager definitely
+            # so we always add 1mio tp the estimate as in testrpc gas block limit doesn't matter
+            if str(self.web3.providers[0]) == 'EthereumTesterProvider':
+                estimate = estimate + 1000000
+        else:
+            estimate = 21000
 
         return estimate
 
@@ -511,3 +524,7 @@ class Transfer:
 
     def __hash__(self):
         return hash((self.token_address, self.from_address, self.token_address, self.value))
+
+
+def eth_transfer(web3: Web3, to: Address, amount: Wad) -> Transact:
+    return Transact(None, web3, None, to, None, None, None, {'value': amount.value})

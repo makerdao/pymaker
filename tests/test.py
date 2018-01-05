@@ -18,10 +18,10 @@
 import pytest
 from web3 import Web3, EthereumTesterProvider
 
-from pymaker import Address
+from pymaker import Address, eth_transfer
 from pymaker.numeric import Wad
 from pymaker.token import DSToken
-from pymaker.util import synchronize
+from pymaker.util import synchronize, eth_balance
 
 
 class TestTransact:
@@ -30,6 +30,7 @@ class TestTransact:
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.second_address = Address(self.web3.eth.accounts[1])
+        self.third_address = Address(self.web3.eth.accounts[2])
         self.token = DSToken.deploy(self.web3, 'ABC')
         self.token.mint(Wad(1000000)).transact()
 
@@ -90,3 +91,25 @@ class TestTransact:
 
         # then
         assert Address(self.web3.eth.getTransaction(receipt.transaction_hash)['from']) == self.second_address
+
+    def test_eth_transfer(self):
+        # given
+        assert eth_balance(self.web3, self.second_address) == Wad.from_number(1000000)
+
+        # when
+        eth_transfer(self.web3, self.second_address, Wad.from_number(1.5)).transact()
+
+        # then
+        assert eth_balance(self.web3, self.second_address) == Wad.from_number(1000000) + Wad.from_number(1.5)
+
+    def test_eth_transfer_from_other_account(self):
+        # given
+        assert eth_balance(self.web3, self.second_address) == Wad.from_number(1000000)
+        assert eth_balance(self.web3, self.third_address) == Wad.from_number(1000000)
+
+        # when
+        eth_transfer(self.web3, self.third_address, Wad.from_number(1.5)).transact(from_address=self.second_address)
+
+        # then
+        assert eth_balance(self.web3, self.second_address) < Wad.from_number(1000000)
+        assert eth_balance(self.web3, self.third_address) == Wad.from_number(1000000) + Wad.from_number(1.5)
