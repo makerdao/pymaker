@@ -31,6 +31,7 @@ class TestERC20Token:
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.second_address = Address(self.web3.eth.accounts[1])
+        self.third_address = Address(self.web3.eth.accounts[2])
         self.token = DSToken.deploy(self.web3, 'ABC')
         self.token.mint(Wad(1000000)).transact()
 
@@ -98,6 +99,16 @@ class TestERC20Token:
         # then
         assert self.token.balance_of(self.our_address) == Wad(1000000)
         assert self.token.balance_of(self.second_address) == Wad(0)
+
+    def test_transfer_from(self):
+        # given
+        self.token.approve(self.second_address).transact()
+
+        # when
+        self.token.transfer_from(self.our_address, self.third_address, Wad(500)).transact(from_address=self.second_address)
+
+        # then
+        assert self.token.balance_of(self.third_address) == Wad(500)
 
     def test_allowance_of(self):
         assert self.token.allowance_of(self.our_address, self.second_address) == Wad(0)

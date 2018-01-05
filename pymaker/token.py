@@ -94,6 +94,25 @@ class ERC20Token(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'transfer', [address.address, value.value])
 
+    def transfer_from(self, source_address: Address, destination_address: Address, value: Wad) -> Transact:
+        """Transfers tokens to a specified address.
+
+        Args:
+            source_address: Source address to transfer the tokens from.
+            destination_address: Destination address to transfer the tokens to.
+            value: The value of tokens to transfer.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
+        assert(isinstance(source_address, Address))
+        assert(isinstance(destination_address, Address))
+        assert(isinstance(value, Wad))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'transferFrom', [source_address.address,
+                                                                                                  destination_address.address,
+                                                                                                  value.value])
+
     def approve(self, payee: Address, limit: Wad = Wad(2**256 - 1)) -> Transact:
         """Modifies the current allowance of a specified `payee` (delegate account).
 
