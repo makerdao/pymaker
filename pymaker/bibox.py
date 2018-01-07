@@ -223,6 +223,9 @@ class BiboxApi:
         return self._request('/v1/transfer', {"cmd": "transfer/assets", "body": {}}, retry)
 
     def get_orders(self, pair: str, retry: bool = False) -> List[Order]:
+        assert(isinstance(pair, str))
+        assert(isinstance(retry, bool))
+
         result = self._request('/v1/orderpending', {"cmd": "orderpending/orderPendingList", "body": {"pair": pair,
                                                                                                      "account_type": 0,
                                                                                                      "page": 1,
