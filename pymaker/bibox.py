@@ -195,7 +195,8 @@ class BiboxApi:
             if retry and try_number < self.MAX_RETRIES:
                 try:
                     if str(result_json['error']['code']) == '4003':
-                        self.logger.info(f"BiBox API busy ({result_json['error']['code']}: '{result_json['error']['msg']}'), retrying")
+                        self.logger.info(f"BiBox API busy for '{cmd['cmd']}' ({result_json['error']['code']}:"
+                                         f" '{result_json['error']['msg']}'), retrying")
                         time.sleep(self.MIN_RETRY_DELAY + random()*(self.MAX_RETRY_DELAY-self.MIN_RETRY_DELAY))
                         continue
                 except:
