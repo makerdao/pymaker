@@ -272,13 +272,15 @@ class BiboxApi:
 
         return order_id
 
-    def cancel_order(self, order_id: int, retry: bool = False):
+    def cancel_order(self, order_id: int, retry: bool = False) -> bool:
         assert(isinstance(order_id, int))
         assert(isinstance(retry, bool))
 
         self.logger.info(f"Cancelling order #{order_id}...")
-        self._request('/v1/orderpending', {"cmd": "orderpending/cancelTrade", "body": {"orders_id": order_id}}, retry)
+        result = self._request('/v1/orderpending', {"cmd": "orderpending/cancelTrade", "body": {"orders_id": order_id}}, retry)
         self.logger.info(f"Cancelled order #{order_id}")
+
+        return result == "撤销中"
 
     def get_trade_history(self, pair: str, number_of_trades: int, retry: bool = False) -> List[Trade]:
         assert(isinstance(pair, str))
