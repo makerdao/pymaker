@@ -20,6 +20,8 @@ import hashlib
 
 import requests
 
+from pymaker import Wad
+
 
 class OKCoinApi:
     """OKCoin and OKEX API interface.
@@ -54,17 +56,20 @@ class OKCoinApi:
     def user_info(self):
         return self._http_post("/api/v1/userinfo.do", {})
 
-    def place_order(self, symbol, trade_type, price='', amount=''):
-        params = {
-            'symbol': symbol,
-            'type': trade_type
-        }
-        if price:
-            params['price'] = price
-        if amount:
-            params['amount'] = amount
+    def place_order(self, symbol: str, is_sell: bool, price: Wad, amount: Wad) -> int:
+        assert(isinstance(symbol, str))
+        assert(isinstance(is_sell, bool))
+        assert(isinstance(price, Wad))
+        assert(isinstance(amount, Wad))
 
-        return self._http_post("/api/v1/trade.do", params)
+        result = self._http_post("/api/v1/trade.do", {
+            'symbol': symbol,
+            'type': 'sell' if is_sell else 'buy',
+            'price': float(price),
+            'amount': float(amount)
+        })
+
+        return int(result['order_id'])
 
     def batch_place_order(self, symbol, trade_type, orders_data):
         params = {
@@ -74,12 +79,16 @@ class OKCoinApi:
         }
         return self._http_post("/api/v1/batch_trade.do", params)
 
-    def cancel_order(self, symbol, order_id):
-        params = {
-             'symbol': symbol,
-             'order_id': order_id
-        }
-        return self._http_post("/api/v1/cancel_order.do", params)
+    def cancel_order(self, symbol: str, order_id: int) -> bool:
+        assert(isinstance(symbol, str))
+        assert(isinstance(order_id, int))
+
+        result = self._http_post("/api/v1/cancel_order.do", {
+            'symbol': symbol,
+            'order_id': order_id
+        })
+
+        return int(result['order_id']) == order_id
 
     def orderinfo(self, symbol, order_id):
         params = {
@@ -114,12 +123,24 @@ class OKCoinApi:
         data = sign + 'secret_key=' + self.secret_key
         return hashlib.md5(data.encode("utf8")).hexdigest().upper()
 
+    @staticmethod
+    def _result(result) -> dict:
+        data = result.json()
+
+        if 'error_code' in data:
+            raise Exception(f"OKCoin API error: {data['error_code']}")
+
+        if 'result' not in data or data['result'] is not True:
+            raise Exception(f"Negative OKCoin response: {data}")
+
+        return data
+
     def _http_get(self, resource: str, params: str):
         assert(isinstance(resource, str))
         assert(isinstance(params, str))
 
-        result = requests.get(url=f"https://{self.api_server}{resource}?{params}", timeout=self.timeout)
-        return result.json()
+        return self._result(requests.get(url=f"https://{self.api_server}{resource}?{params}",
+                                         timeout=self.timeout))
 
     def _http_post(self, resource: str, params: dict):
         assert(isinstance(resource, str))
@@ -128,9 +149,7 @@ class OKCoinApi:
         params['api_key'] = self.api_key
         params['sign'] = self._create_signature(params)
 
-        result = requests.post(url=f"https://{self.api_server}{resource}",
-                               data=urllib.parse.urlencode(params),
-                               headers={"Content-Type": "application/x-www-form-urlencoded"},
-                               timeout=self.timeout)
-
-        return result.json()
+        return self._result(requests.post(url=f"https://{self.api_server}{resource}",
+                                          data=urllib.parse.urlencode(params),
+                                          headers={"Content-Type": "application/x-www-form-urlencoded"},
+                                          timeout=self.timeout))
