@@ -15,9 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import http.client
 import urllib
-import json
 import hashlib
 
 import requests
@@ -107,7 +105,9 @@ class OKCoinApi:
         }
         return self._http_post("/api/v1/order_history.do", params)
 
-    def _create_signature(self, params):
+    def _create_signature(self, params: dict):
+        assert(isinstance(params, dict))
+
         sign = ''
         for key in sorted(params.keys()):
             sign += key + '=' + str(params[key]) + '&'
@@ -118,23 +118,19 @@ class OKCoinApi:
         assert(isinstance(resource, str))
         assert(isinstance(params, str))
 
-        result = requests.get(f"https://{self.api_server}{resource}?{params}", timeout=self.timeout)
+        result = requests.get(url=f"https://{self.api_server}{resource}?{params}", timeout=self.timeout)
         return result.json()
 
     def _http_post(self, resource: str, params: dict):
         assert(isinstance(resource, str))
         assert(isinstance(params, dict))
 
-        headers = {
-            "Content-type": "application/x-www-form-urlencoded",
-        }
-        conn = http.client.HTTPSConnection(self.api_server, timeout=self.timeout)
         params['api_key'] = self.api_key
         params['sign'] = self._create_signature(params)
-        temp_params = urllib.parse.urlencode(params)
-        conn.request("POST", resource, temp_params, headers)
-        response = conn.getresponse()
-        data = response.read().decode('utf-8')
-        params.clear()
-        conn.close()
-        return data
+
+        result = requests.post(url=f"https://{self.api_server}{resource}",
+                               data=urllib.parse.urlencode(params),
+                               headers={"Content-Type": "application/x-www-form-urlencoded"},
+                               timeout=self.timeout)
+
+        return result.json()
