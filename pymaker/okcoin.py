@@ -44,26 +44,39 @@ class OKCoinApi:
         self.secret_key = secret_key
         self.timeout = timeout
 
-    def ticker(self, symbol: str):
-        return self._http_get("/api/v1/ticker.do", f"symbol={symbol}")
+    def ticker(self, pair: str):
+        assert(isinstance(pair, str))
+        return self._http_get("/api/v1/ticker.do", f"symbol={pair}")
 
-    def depth(self, symbol: str):
-        return self._http_get("/api/v1/depth.do", f"symbol={symbol}")
+    def depth(self, pair: str):
+        assert(isinstance(pair, str))
+        return self._http_get("/api/v1/depth.do", f"symbol={pair}")
 
-    def trades(self, symbol: str):
-        return self._http_get("/api/v1/trades.do", f"symbol={symbol}")
+    def trades(self, pair: str):
+        assert(isinstance(pair, str))
+        return self._http_get("/api/v1/trades.do", f"symbol={pair}")
     
     def user_info(self):
         return self._http_post("/api/v1/userinfo.do", {})
 
-    def place_order(self, symbol: str, is_sell: bool, price: Wad, amount: Wad) -> int:
-        assert(isinstance(symbol, str))
+    def get_orders(self, pair: str):
+        assert(isinstance(pair, str))
+
+        result = self._http_post("/api/v1/order_info.do", {
+            'symbol': pair,
+            'order_id': '-1'
+        })
+
+        return result['orders']
+
+    def place_order(self, pair: str, is_sell: bool, price: Wad, amount: Wad) -> int:
+        assert(isinstance(pair, str))
         assert(isinstance(is_sell, bool))
         assert(isinstance(price, Wad))
         assert(isinstance(amount, Wad))
 
         result = self._http_post("/api/v1/trade.do", {
-            'symbol': symbol,
+            'symbol': pair,
             'type': 'sell' if is_sell else 'buy',
             'price': float(price),
             'amount': float(amount)
@@ -71,48 +84,16 @@ class OKCoinApi:
 
         return int(result['order_id'])
 
-    def batch_place_order(self, symbol, trade_type, orders_data):
-        params = {
-            'symbol': symbol,
-            'type': trade_type,
-            'orders_data': orders_data
-        }
-        return self._http_post("/api/v1/batch_trade.do", params)
-
-    def cancel_order(self, symbol: str, order_id: int) -> bool:
-        assert(isinstance(symbol, str))
+    def cancel_order(self, pair: str, order_id: int) -> bool:
+        assert(isinstance(pair, str))
         assert(isinstance(order_id, int))
 
         result = self._http_post("/api/v1/cancel_order.do", {
-            'symbol': symbol,
+            'symbol': pair,
             'order_id': order_id
         })
 
         return int(result['order_id']) == order_id
-
-    def orderinfo(self, symbol, order_id):
-        params = {
-         'symbol': symbol,
-         'order_id': order_id
-        }
-        return self._http_post("/api/v1/order_info.do", params)
-
-    def ordersinfo(self, symbol, order_id, trade_type):
-        params = {
-         'symbol': symbol,
-         'order_id': order_id,
-         'type': trade_type
-        }
-        return self._http_post("/api/v1/orders_info.do", params)
-
-    def order_history(self, symbol, status, current_page, page_length):
-        params = {
-          'symbol': symbol,
-          'status': status,
-          'current_page': current_page,
-          'page_length': page_length
-        }
-        return self._http_post("/api/v1/order_history.do", params)
 
     def _create_signature(self, params: dict):
         assert(isinstance(params, dict))
