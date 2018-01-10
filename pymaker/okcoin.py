@@ -42,22 +42,22 @@ class OKCoinApi:
         self.secret_key = secret_key
         self.timeout = timeout
 
-    def ticker(self, symbol):
-        return self._http_get("/api/v1/ticker.do", 'symbol=%(symbol)s' % {'symbol':symbol})
+    def ticker(self, symbol: str):
+        return self._http_get("/api/v1/ticker.do", f"symbol={symbol}")
 
-    def depth(self, symbol):
-        return self._http_get("/api/v1/depth.do", 'symbol=%(symbol)s' % {'symbol':symbol})
+    def depth(self, symbol: str):
+        return self._http_get("/api/v1/depth.do", f"symbol={symbol}")
 
-    def trades(self, symbol):
-        return self._http_get("/api/v1/trades.do", 'symbol=%(symbol)s' % {'symbol':symbol})
+    def trades(self, symbol: str):
+        return self._http_get("/api/v1/trades.do", f"symbol={symbol}")
     
     def user_info(self):
         return self._http_post("/api/v1/userinfo.do", {})
 
-    def place_order(self, symbol, tradeType, price='', amount=''):
+    def place_order(self, symbol, trade_type, price='', amount=''):
         params = {
-            'symbol':symbol,
-            'type':tradeType
+            'symbol': symbol,
+            'type': trade_type
         }
         if price:
             params['price'] = price
@@ -68,40 +68,40 @@ class OKCoinApi:
 
     def batch_place_order(self, symbol, trade_type, orders_data):
         params = {
-            'symbol':symbol,
-            'type':trade_type,
-            'orders_data':orders_data
+            'symbol': symbol,
+            'type': trade_type,
+            'orders_data': orders_data
         }
         return self._http_post("/api/v1/batch_trade.do", params)
 
     def cancel_order(self, symbol, order_id):
         params = {
-             'symbol':symbol,
-             'order_id':order_id
+             'symbol': symbol,
+             'order_id': order_id
         }
         return self._http_post("/api/v1/cancel_order.do", params)
 
     def orderinfo(self, symbol, order_id):
         params = {
-         'symbol':symbol,
-         'order_id':order_id
+         'symbol': symbol,
+         'order_id': order_id
         }
         return self._http_post("/api/v1/order_info.do", params)
 
     def ordersinfo(self, symbol, order_id, trade_type):
         params = {
-         'symbol':symbol,
-         'order_id':order_id,
-         'type':trade_type
+         'symbol': symbol,
+         'order_id': order_id,
+         'type': trade_type
         }
         return self._http_post("/api/v1/orders_info.do", params)
 
     def order_history(self, symbol, status, current_page, page_length):
         params = {
-          'symbol':symbol,
-          'status':status,
-          'current_page':current_page,
-          'page_length':page_length
+          'symbol': symbol,
+          'status': status,
+          'current_page': current_page,
+          'page_length': page_length
         }
         return self._http_post("/api/v1/order_history.do", params)
 
