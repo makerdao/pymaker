@@ -17,10 +17,44 @@
 
 import urllib
 import hashlib
+from pprint import pformat
+from typing import List
 
 import requests
 
 from pymaker import Wad
+
+
+class Order:
+    def __init__(self, order_id: int, timestamp: int, pair: str,
+                 is_sell: bool, price: Wad, amount: Wad, deal_amount: Wad):
+        assert(isinstance(order_id, int))
+        assert(isinstance(timestamp, int))
+        assert(isinstance(pair, str))
+        assert(isinstance(is_sell, bool))
+        assert(isinstance(price, Wad))
+        assert(isinstance(amount, Wad))
+        assert(isinstance(deal_amount, Wad))
+
+        self.order_id = order_id
+        self.timestamp = timestamp
+        self.pair = pair
+        self.is_sell = is_sell
+        self.price = price
+        self.amount = amount
+        self.deal_amount = deal_amount
+
+    def __eq__(self, other):
+        assert(isinstance(other, Order))
+
+        return self.order_id == other.order_id and \
+               self.pair == other.pair
+
+    def __hash__(self):
+        return hash((self.order_id, self.pair))
+
+    def __repr__(self):
+        return pformat(vars(self))
 
 
 class OKCoinApi:
@@ -59,7 +93,7 @@ class OKCoinApi:
     def user_info(self):
         return self._http_post("/api/v1/userinfo.do", {})
 
-    def get_orders(self, pair: str):
+    def get_orders(self, pair: str) -> List[Order]:
         assert(isinstance(pair, str))
 
         result = self._http_post("/api/v1/order_info.do", {
@@ -67,7 +101,14 @@ class OKCoinApi:
             'order_id': '-1'
         })
 
-        return result['orders']
+        orders = filter(lambda item: item['type'] in ['buy', 'sell'], result['orders'])
+        return list(map(lambda item: Order(order_id=item['order_id'],
+                                           timestamp=int(item['create_date']/1000),
+                                           pair=item['symbol'],
+                                           is_sell=item['type'] == 'sell',
+                                           price=Wad.from_number(item['price']),
+                                           amount=Wad.from_number(item['amount']),
+                                           deal_amount=Wad.from_number(item['deal_amount'])), orders))
 
     def place_order(self, pair: str, is_sell: bool, price: Wad, amount: Wad) -> int:
         assert(isinstance(pair, str))
