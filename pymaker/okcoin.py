@@ -27,43 +27,20 @@ class OKCoinApi:
         self.secret_key = secret_key
         self.timeout = timeout
 
-    #Get OKCOIN spot market information
     def ticker(self, symbol):
-        TICKER_RESOURCE = "/api/v1/ticker.do"
-        params=''
-        if symbol:
-            params = 'symbol=%(symbol)s' %{'symbol':symbol}
-        return self._http_get(TICKER_RESOURCE, params)
+        return self._http_get("/api/v1/ticker.do", 'symbol=%(symbol)s' % {'symbol':symbol})
 
-    #Obtain OKCOIN spot market depth information
     def depth(self, symbol):
-        DEPTH_RESOURCE = "/api/v1/depth.do"
-        params=''
-        if symbol:
-            params = 'symbol=%(symbol)s' %{'symbol':symbol}
-        return self._http_get(DEPTH_RESOURCE, params)
+        return self._http_get("/api/v1/depth.do", 'symbol=%(symbol)s' % {'symbol':symbol})
 
-    #Obtain OKCOIN spot historical transaction information
     def trades(self, symbol):
-        TRADES_RESOURCE = "/api/v1/trades.do"
-        params=''
-        if symbol:
-            params = 'symbol=%(symbol)s' %{'symbol':symbol}
-        return self._http_get(TRADES_RESOURCE, params)
+        return self._http_get("/api/v1/trades.do", 'symbol=%(symbol)s' % {'symbol':symbol})
     
-    #Get customer cash account information
-    def userinfo(self):
-        USERINFO_RESOURCE = "/api/v1/userinfo.do"
-        params ={}
-        params['api_key'] = self.api_key
-        params['sign'] = self._build_my_sign(params)
-        return self._http_post(USERINFO_RESOURCE, params)
+    def user_info(self):
+        return self._http_post("/api/v1/userinfo.do", {})
 
-    #Spot Trading
-    def trade(self, symbol, tradeType, price='', amount=''):
-        TRADE_RESOURCE = "/api/v1/trade.do"
+    def place_order(self, symbol, tradeType, price='', amount=''):
         params = {
-            'api_key':self.api_key,
             'symbol':symbol,
             'type':tradeType
         }
@@ -71,88 +48,75 @@ class OKCoinApi:
             params['price'] = price
         if amount:
             params['amount'] = amount
-            
-        params['sign'] = self._build_my_sign(params)
-        return self._http_post(TRADE_RESOURCE, params)
 
-    #Spot bulk orders
-    def batchTrade(self, symbol, tradeType, orders_data):
-        BATCH_TRADE_RESOURCE = "/api/v1/batch_trade.do"
+        return self._http_post("/api/v1/trade.do", params)
+
+    def batch_place_order(self, symbol, trade_type, orders_data):
         params = {
-            'api_key':self.api_key,
             'symbol':symbol,
-            'type':tradeType,
+            'type':trade_type,
             'orders_data':orders_data
         }
-        params['sign'] = self._build_my_sign(params)
-        return self._http_post(BATCH_TRADE_RESOURCE, params)
+        return self._http_post("/api/v1/batch_trade.do", params)
 
-    #Spot cancel the order
-    def cancelOrder(self, symbol, orderId):
-        CANCEL_ORDER_RESOURCE = "/api/v1/cancel_order.do"
+    def cancel_order(self, symbol, order_id):
         params = {
-             'api_key':self.api_key,
              'symbol':symbol,
-             'order_id':orderId
+             'order_id':order_id
         }
-        params['sign'] = self._build_my_sign(params)
-        return self._http_post(CANCEL_ORDER_RESOURCE, params)
+        return self._http_post("/api/v1/cancel_order.do", params)
 
-    #Spot order information inquiry
-    def orderinfo(self, symbol, orderId):
-         ORDER_INFO_RESOURCE = "/api/v1/order_info.do"
-         params = {
-             'api_key':self.api_key,
-             'symbol':symbol,
-             'order_id':orderId
-         }
-         params['sign'] = self._build_my_sign(params)
-         return self._http_post(ORDER_INFO_RESOURCE, params)
+    def orderinfo(self, symbol, order_id):
+        params = {
+         'symbol':symbol,
+         'order_id':order_id
+        }
+        return self._http_post("/api/v1/order_info.do", params)
 
-    #Spot bulk order information query
-    def ordersinfo(self, symbol, orderId, tradeType):
-         ORDERS_INFO_RESOURCE = "/api/v1/orders_info.do"
-         params = {
-             'api_key':self.api_key,
-             'symbol':symbol,
-             'order_id':orderId,
-             'type':tradeType
-         }
-         params['sign'] = self._build_my_sign(params)
-         return self._http_post(ORDERS_INFO_RESOURCE, params)
+    def ordersinfo(self, symbol, order_id, trade_type):
+        params = {
+         'symbol':symbol,
+         'order_id':order_id,
+         'type':trade_type
+        }
+        return self._http_post("/api/v1/orders_info.do", params)
 
-    #Spot to get historical order information
-    def orderHistory(self, symbol, status, currentPage, pageLength):
-           ORDER_HISTORY_RESOURCE = "/api/v1/order_history.do"
-           params = {
-              'api_key':self.api_key,
-              'symbol':symbol,
-              'status':status,
-              'current_page':currentPage,
-              'page_length':pageLength
-           }
-           params['sign'] = self._build_my_sign(params)
-           return self._http_post(ORDER_HISTORY_RESOURCE, params)
+    def order_history(self, symbol, status, current_page, page_length):
+        params = {
+          'symbol':symbol,
+          'status':status,
+          'current_page':current_page,
+          'page_length':page_length
+        }
+        return self._http_post("/api/v1/order_history.do", params)
 
-    def _build_my_sign(self, params):
+    def _create_signature(self, params):
         sign = ''
         for key in sorted(params.keys()):
             sign += key + '=' + str(params[key]) + '&'
         data = sign + 'secret_key=' + self.secret_key
         return hashlib.md5(data.encode("utf8")).hexdigest().upper()
 
-    def _http_get(self, resource, params=''):
+    def _http_get(self, resource: str, params: str):
+        assert(isinstance(resource, str))
+        assert(isinstance(params, str))
+
         conn = http.client.HTTPSConnection(self.api_server, timeout=self.timeout)
         conn.request("GET", resource + '?' + params)
         response = conn.getresponse()
         data = response.read().decode('utf-8')
         return json.loads(data)
 
-    def _http_post(self, resource, params):
+    def _http_post(self, resource: str, params: dict):
+        assert(isinstance(resource, str))
+        assert(isinstance(params, dict))
+
         headers = {
             "Content-type": "application/x-www-form-urlencoded",
         }
         conn = http.client.HTTPSConnection(self.api_server, timeout=self.timeout)
+        params['api_key'] = self.api_key
+        params['sign'] = self._create_signature(params)
         temp_params = urllib.parse.urlencode(params)
         conn.request("POST", resource, temp_params, headers)
         response = conn.getresponse()
