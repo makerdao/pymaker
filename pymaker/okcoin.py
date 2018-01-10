@@ -20,6 +20,8 @@ import urllib
 import json
 import hashlib
 
+import requests
+
 
 class OKCoinApi:
     """OKCoin and OKEX API interface.
@@ -116,11 +118,8 @@ class OKCoinApi:
         assert(isinstance(resource, str))
         assert(isinstance(params, str))
 
-        conn = http.client.HTTPSConnection(self.api_server, timeout=self.timeout)
-        conn.request("GET", resource + '?' + params)
-        response = conn.getresponse()
-        data = response.read().decode('utf-8')
-        return json.loads(data)
+        result = requests.get(f"https://{self.api_server}{resource}?{params}", timeout=self.timeout)
+        return result.json()
 
     def _http_post(self, resource: str, params: dict):
         assert(isinstance(resource, str))
