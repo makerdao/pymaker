@@ -1,41 +1,9 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
-#用于访问OKCOIN 现货REST API
 
 import http.client
 import urllib
 import json
 import hashlib
-
-
-def buildMySign(params,secretKey):
-    sign = ''
-    for key in sorted(params.keys()):
-        sign += key + '=' + str(params[key]) + '&'
-    data = sign + 'secret_key=' + secretKey
-    return hashlib.md5(data.encode("utf8")).hexdigest().upper()
-
-
-def httpGet(url,resource,params=''):
-    conn = http.client.HTTPSConnection(url, timeout=10)
-    conn.request("GET", resource + '?' + params)
-    response = conn.getresponse()
-    data = response.read().decode('utf-8')
-    return json.loads(data)
-
-
-def httpPost(url,resource,params):
-    headers = {
-        "Content-type": "application/x-www-form-urlencoded",
-    }
-    conn = http.client.HTTPSConnection(url, timeout=10)
-    temp_params = urllib.parse.urlencode(params)
-    conn.request("POST", resource, temp_params, headers)
-    response = conn.getresponse()
-    data = response.read().decode('utf-8')
-    params.clear()
-    conn.close()
-    return data
 
 
 class OKCoinApi:
@@ -58,39 +26,39 @@ class OKCoinApi:
         self.__secretkey = secret_key
 
     #Get OKCOIN spot market information
-    def ticker(self,symbol = ''):
+    def ticker(self, symbol):
         TICKER_RESOURCE = "/api/v1/ticker.do"
         params=''
         if symbol:
             params = 'symbol=%(symbol)s' %{'symbol':symbol}
-        return httpGet(self.__url,TICKER_RESOURCE,params)
+        return self.httpGet(self.__url,TICKER_RESOURCE,params)
 
     #Obtain OKCOIN spot market depth information
-    def depth(self,symbol = ''):
+    def depth(self, symbol):
         DEPTH_RESOURCE = "/api/v1/depth.do"
         params=''
         if symbol:
             params = 'symbol=%(symbol)s' %{'symbol':symbol}
-        return httpGet(self.__url,DEPTH_RESOURCE,params) 
+        return self.httpGet(self.__url,DEPTH_RESOURCE,params)
 
     #Obtain OKCOIN spot historical transaction information
-    def trades(self,symbol = ''):
+    def trades(self, symbol):
         TRADES_RESOURCE = "/api/v1/trades.do"
         params=''
         if symbol:
             params = 'symbol=%(symbol)s' %{'symbol':symbol}
-        return httpGet(self.__url,TRADES_RESOURCE,params)
+        return self.httpGet(self.__url,TRADES_RESOURCE,params)
     
     #Get customer cash account information
     def userinfo(self):
         USERINFO_RESOURCE = "/api/v1/userinfo.do"
         params ={}
         params['api_key'] = self.__apikey
-        params['sign'] = buildMySign(params,self.__secretkey)
-        return httpPost(self.__url,USERINFO_RESOURCE,params)
+        params['sign'] = self.buildMySign(params,self.__secretkey)
+        return self.httpPost(self.__url,USERINFO_RESOURCE,params)
 
     #Spot Trading
-    def trade(self,symbol,tradeType,price='',amount=''):
+    def trade(self, symbol, tradeType, price='', amount=''):
         TRADE_RESOURCE = "/api/v1/trade.do"
         params = {
             'api_key':self.__apikey,
@@ -102,11 +70,11 @@ class OKCoinApi:
         if amount:
             params['amount'] = amount
             
-        params['sign'] = buildMySign(params,self.__secretkey)
-        return httpPost(self.__url,TRADE_RESOURCE,params)
+        params['sign'] = self.buildMySign(params,self.__secretkey)
+        return self.httpPost(self.__url,TRADE_RESOURCE,params)
 
     #Spot bulk orders
-    def batchTrade(self,symbol,tradeType,orders_data):
+    def batchTrade(self, symbol, tradeType, orders_data):
         BATCH_TRADE_RESOURCE = "/api/v1/batch_trade.do"
         params = {
             'api_key':self.__apikey,
@@ -114,33 +82,33 @@ class OKCoinApi:
             'type':tradeType,
             'orders_data':orders_data
         }
-        params['sign'] = buildMySign(params,self.__secretkey)
-        return httpPost(self.__url,BATCH_TRADE_RESOURCE,params)
+        params['sign'] = self.buildMySign(params,self.__secretkey)
+        return self.httpPost(self.__url,BATCH_TRADE_RESOURCE,params)
 
     #Spot cancel the order
-    def cancelOrder(self,symbol,orderId):
+    def cancelOrder(self, symbol, orderId):
         CANCEL_ORDER_RESOURCE = "/api/v1/cancel_order.do"
         params = {
              'api_key':self.__apikey,
              'symbol':symbol,
              'order_id':orderId
         }
-        params['sign'] = buildMySign(params,self.__secretkey)
-        return httpPost(self.__url,CANCEL_ORDER_RESOURCE,params)
+        params['sign'] = self.buildMySign(params,self.__secretkey)
+        return self.httpPost(self.__url,CANCEL_ORDER_RESOURCE,params)
 
     #Spot order information inquiry
-    def orderinfo(self,symbol,orderId):
+    def orderinfo(self, symbol, orderId):
          ORDER_INFO_RESOURCE = "/api/v1/order_info.do"
          params = {
              'api_key':self.__apikey,
              'symbol':symbol,
              'order_id':orderId
          }
-         params['sign'] = buildMySign(params,self.__secretkey)
-         return httpPost(self.__url,ORDER_INFO_RESOURCE,params)
+         params['sign'] = self.buildMySign(params,self.__secretkey)
+         return self.httpPost(self.__url,ORDER_INFO_RESOURCE,params)
 
     #Spot bulk order information query
-    def ordersinfo(self,symbol,orderId,tradeType):
+    def ordersinfo(self, symbol, orderId, tradeType):
          ORDERS_INFO_RESOURCE = "/api/v1/orders_info.do"
          params = {
              'api_key':self.__apikey,
@@ -148,11 +116,11 @@ class OKCoinApi:
              'order_id':orderId,
              'type':tradeType
          }
-         params['sign'] = buildMySign(params,self.__secretkey)
-         return httpPost(self.__url,ORDERS_INFO_RESOURCE,params)
+         params['sign'] = self.buildMySign(params,self.__secretkey)
+         return self.httpPost(self.__url,ORDERS_INFO_RESOURCE,params)
 
     #Spot to get historical order information
-    def orderHistory(self,symbol,status,currentPage,pageLength):
+    def orderHistory(self, symbol, status, currentPage, pageLength):
            ORDER_HISTORY_RESOURCE = "/api/v1/order_history.do"
            params = {
               'api_key':self.__apikey,
@@ -161,5 +129,34 @@ class OKCoinApi:
               'current_page':currentPage,
               'page_length':pageLength
            }
-           params['sign'] = buildMySign(params,self.__secretkey)
-           return httpPost(self.__url,ORDER_HISTORY_RESOURCE,params)
+           params['sign'] = self.buildMySign(params,self.__secretkey)
+           return self.httpPost(self.__url,ORDER_HISTORY_RESOURCE,params)
+
+    def buildMySign(self, params, secretKey):
+        sign = ''
+        for key in sorted(params.keys()):
+            sign += key + '=' + str(params[key]) + '&'
+        data = sign + 'secret_key=' + secretKey
+        return hashlib.md5(data.encode("utf8")).hexdigest().upper()
+
+
+    def httpGet(self, url ,resource, params=''):
+        conn = http.client.HTTPSConnection(url, timeout=10)
+        conn.request("GET", resource + '?' + params)
+        response = conn.getresponse()
+        data = response.read().decode('utf-8')
+        return json.loads(data)
+
+
+    def httpPost(self, url, resource, params):
+        headers = {
+            "Content-type": "application/x-www-form-urlencoded",
+        }
+        conn = http.client.HTTPSConnection(url, timeout=10)
+        temp_params = urllib.parse.urlencode(params)
+        conn.request("POST", resource, temp_params, headers)
+        response = conn.getresponse()
+        data = response.read().decode('utf-8')
+        params.clear()
+        conn.close()
+        return data
