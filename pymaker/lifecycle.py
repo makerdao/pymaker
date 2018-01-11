@@ -71,6 +71,7 @@ class Web3Lifecycle:
     def __init__(self, web3: Web3):
         self.web3 = web3
 
+        self.do_wait_for_sync = True
         self.delay = 0
         self.startup_function = None
         self.shutdown_function = None
@@ -97,7 +98,8 @@ class Web3Lifecycle:
             self.logger.info(f"Keeper operating in read-only mode regarding the chain as no keeper account configured")
 
         # Wait for sync and peers
-        self._wait_for_init()
+        if self.do_wait_for_sync:
+            self._wait_for_init()
 
         # Initial delay
         if self.delay > 0:
@@ -173,6 +175,11 @@ class Web3Lifecycle:
             self.logger.fatal(f"Account {self.web3.eth.defaultAccount} is not unlocked")
             self.logger.fatal(f"Unlocking the account is necessary for the keeper to operate")
             exit(-1)
+
+    def wait_for_sync(self, wait_for_sync: bool):
+        assert(isinstance(wait_for_sync, bool))
+
+        self.do_wait_for_sync = wait_for_sync
 
     def initial_delay(self, initial_delay: int):
         """Make the keeper wait for specified amount of time before startup.
