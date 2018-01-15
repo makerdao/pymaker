@@ -211,6 +211,11 @@ class BiboxApi:
         assert(isinstance(msg, str))
         return hmac.new(key=self.secret.encode('utf-8'), msg=msg.encode('utf-8'), digestmod=hashlib.md5).hexdigest()
 
+    def ticker(self, pair: str, retry: bool = False) -> dict:
+        assert(isinstance(pair, str))
+        assert(isinstance(retry, bool))
+        return self._request('/v1/mdata', {"cmd": "api/ticker", "body": {"pair": pair}}, retry)
+
     def user_info(self, retry: bool = False) -> dict:
         assert(isinstance(retry, bool))
         return self._request('/v1/user', {"cmd": "user/userInfo", "body": {}}, retry)
