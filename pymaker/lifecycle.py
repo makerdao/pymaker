@@ -27,7 +27,7 @@ from pymaker import register_filter_thread, any_filter_thread_present, stop_all_
 from pymaker.util import AsyncCallback
 
 
-class Web3Lifecycle:
+class Lifecycle:
     """Main keeper lifecycle controller.
 
     This is a utility class helping to build a proper keeper lifecycle. Lifecycle
@@ -68,7 +68,7 @@ class Web3Lifecycle:
     """
     logger = logging.getLogger()
 
-    def __init__(self, web3: Web3):
+    def __init__(self, web3: Web3 = None):
         self.web3 = web3
 
         self.do_wait_for_sync = True
@@ -90,15 +90,18 @@ class Web3Lifecycle:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # Initialization phase
-        self.logger.info(f"Keeper connected to {self.web3.providers[0]}")
-        if self.web3.eth.defaultAccount:
-            self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
-            self._check_account_unlocked()
+        if self.web3:
+            self.logger.info(f"Keeper connected to {self.web3.providers[0]}")
+            if self.web3.eth.defaultAccount:
+                self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
+                self._check_account_unlocked()
+            else:
+                self.logger.info(f"Keeper operating in read-only mode regarding the chain as no keeper account configured")
         else:
-            self.logger.info(f"Keeper operating in read-only mode regarding the chain as no keeper account configured")
+            self.logger.info(f"Keeper initializing")
 
         # Wait for sync and peers
-        if self.do_wait_for_sync:
+        if self.web3 and self.do_wait_for_sync:
             self._wait_for_init()
 
         # Initial delay
@@ -231,6 +234,7 @@ class Web3Lifecycle:
         """
         assert(callable(callback))
 
+        assert(self.web3 is not None)
         assert(self.block_function is None)
         self.block_function = callback
 

@@ -23,7 +23,7 @@ from web3 import EthereumTesterProvider, Web3
 
 import pymaker
 from pymaker import Address
-from pymaker.lifecycle import Web3Lifecycle
+from pymaker.lifecycle import Lifecycle
 
 
 class TestLifecycle:
@@ -37,57 +37,66 @@ class TestLifecycle:
         # be waiting forever for them to terminate and the test harness will never finish
         pymaker.filter_threads = []
 
-    def test_should_always_exit(self):
+    def use_web3(self, with_web3: bool):
+        return self.web3 if with_web3 else None
+
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_should_always_exit(self, with_web3):
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3):
+            with Lifecycle(self.use_web3(with_web3)):
                 pass
 
-    def test_should_start_instantly_if_no_initial_delay(self):
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_should_start_instantly_if_no_initial_delay(self, with_web3):
         # given
         start_time = int(time.time())
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3) as lifecycle:
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 pass
 
         # then
         end_time = int(time.time())
         assert end_time - start_time <= 2
 
-    def test_should_obey_initial_delay(self):
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_should_obey_initial_delay(self, with_web3):
         # given
         start_time = int(time.time())
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3) as lifecycle:
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 lifecycle.initial_delay(5)
 
         # then
         end_time = int(time.time())
         assert end_time - start_time >= 4
 
-    def test_should_call_startup_callback(self):
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_should_call_startup_callback(self, with_web3):
         # given
         startup_mock = MagicMock()
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3) as lifecycle:
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 lifecycle.on_startup(startup_mock)
 
         # then
         startup_mock.assert_called()
 
-    def test_should_fail_to_register_two_startup_callbacks(self):
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_should_fail_to_register_two_startup_callbacks(self, with_web3):
         # expect
         with pytest.raises(BaseException):
-            with Web3Lifecycle(self.web3) as lifecycle:
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 lifecycle.on_startup(lambda: 1)
                 lifecycle.on_startup(lambda: 2)
 
-    def test_should_call_shutdown_callback(self):
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_should_call_shutdown_callback(self, with_web3):
         # given
         ordering = []
         startup_mock = MagicMock(side_effect=lambda: ordering.append('STARTUP'))
@@ -95,28 +104,36 @@ class TestLifecycle:
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3) as lifecycle:
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 lifecycle.on_startup(startup_mock)
                 lifecycle.on_shutdown(shutdown_mock)
 
         # then
         assert ordering == ['STARTUP', 'SHUTDOWN']
 
-    def test_should_fail_to_register_two_shutdown_callbacks(self):
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_should_fail_to_register_two_shutdown_callbacks(self, with_web3):
         # expect
         with pytest.raises(BaseException):
-            with Web3Lifecycle(self.web3) as lifecycle:
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 lifecycle.on_shutdown(lambda: 1)
                 lifecycle.on_shutdown(lambda: 2)
 
     def test_should_fail_to_register_two_block_callbacks(self):
         # expect
         with pytest.raises(BaseException):
-            with Web3Lifecycle(self.web3) as lifecycle:
+            with Lifecycle(self.web3) as lifecycle:
                 lifecycle.on_block(lambda: 1)
                 lifecycle.on_block(lambda: 2)
 
-    def test_every(self):
+    def test_should_fail_to_register_block_callback_if_no_web3(self):
+        # expect
+        with pytest.raises(BaseException):
+            with Lifecycle() as lifecycle:
+                lifecycle.on_block(lambda: 1)
+
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_every(self, with_web3):
         self.counter = 0
 
         def callback():
@@ -129,14 +146,15 @@ class TestLifecycle:
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3) as lifecycle:
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 lifecycle.every(1, mock)
 
         # then
         assert mock.call_count >= 2
         assert lifecycle.terminated_internally
 
-    def test_every_does_not_start_operating_until_startup_callback_is_finished(self):
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_every_does_not_start_operating_until_startup_callback_is_finished(self, with_web3):
         # given
         self.every_triggered = False
 
@@ -150,14 +168,15 @@ class TestLifecycle:
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3) as lifecycle:
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 lifecycle.on_startup(startup_callback)
                 lifecycle.every(1, every_callback)
 
         # then
         assert self.every_triggered
 
-    def test_every_should_not_fire_when_keeper_is_already_terminating(self):
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_every_should_not_fire_when_keeper_is_already_terminating(self, with_web3):
         # given
         self.every_counter = 0
 
@@ -170,14 +189,15 @@ class TestLifecycle:
 
         # when
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3) as lifecycle:
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 lifecycle.every(1, every_callback)
                 lifecycle.on_shutdown(shutdown_callback)
 
         # then
         assert self.every_counter <= 2
 
-    def test_should_not_call_shutdown_until_every_timer_has_finished(self):
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_should_not_call_shutdown_until_every_timer_has_finished(self, with_web3):
         # given
         self.every1_finished = False
         self.every2_finished = False
@@ -198,7 +218,7 @@ class TestLifecycle:
 
         # expect
         with pytest.raises(SystemExit):
-            with Web3Lifecycle(self.web3) as lifecycle:
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 lifecycle.every(1, every_callback_1)
                 lifecycle.every(1, every_callback_2)
                 lifecycle.on_shutdown(shutdown_callback)  # assertions are in `shutdown_callback`
