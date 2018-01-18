@@ -57,7 +57,6 @@ The current version provides APIs around:
 * `DSValue` (<https://github.com/dapphub/ds-value>),
 * `DSVault` (<https://github.com/dapphub/ds-vault>),
 * `EtherDelta` (<https://github.com/etherdelta/etherdelta.github.io>),
-* `Bibox` (<https://github.com/Biboxcom/api_reference/wiki/home_en>),
 * `0x` (<https://etherscan.io/address/0x12459c951127e0c374ff9105dda097662a027093#code>, <https://github.com/0xProject/standard-relayer-api>).
 
 You can find the full documentation of the APIs here: <http://maker-keeper-docs.surge.sh>.
