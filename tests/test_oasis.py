@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+from typing import List
 from unittest.mock import Mock
 
 import pytest
@@ -24,7 +24,7 @@ from web3 import Web3
 
 from pymaker import Address, Wad
 from pymaker.approval import directly
-from pymaker.oasis import SimpleMarket, ExpiringMarket, MatchingMarket
+from pymaker.oasis import SimpleMarket, ExpiringMarket, MatchingMarket, Order
 from pymaker.token import DSToken
 from tests.helpers import wait_until_mock_called, is_hashable
 
@@ -40,6 +40,8 @@ class GeneralMarketTest:
         self.token1.mint(Wad.from_number(10000)).transact()
         self.token2 = DSToken.deploy(self.web3, 'BBB')
         self.token2.mint(Wad.from_number(10000)).transact()
+        self.token3 = DSToken.deploy(self.web3, 'CCC')
+        self.token3.mint(Wad.from_number(10000)).transact()
         self.otc = None
 
     def test_approve_and_make_and_getters(self):
@@ -65,6 +67,60 @@ class GeneralMarketTest:
 
         # and
         assert self.otc.get_orders() == [self.otc.get_order(1)]
+
+    def test_get_orders_by_pair(self):
+        # given
+        self.otc.approve([self.token1, self.token2, self.token3], directly())
+
+        # when
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
+
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(4)).transact()
+
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(3)).transact()
+
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token3.address, buy_amount=Wad.from_number(2)).transact()
+
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token3.address, buy_amount=Wad.from_number(4)).transact()
+
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token3.address, buy_amount=Wad.from_number(3)).transact()
+
+        self.otc.make(pay_token=self.token2.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token3.address, buy_amount=Wad.from_number(2)).transact()
+
+        self.otc.make(pay_token=self.token2.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token3.address, buy_amount=Wad.from_number(4)).transact()
+
+        self.otc.make(pay_token=self.token2.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token3.address, buy_amount=Wad.from_number(3)).transact()
+
+        self.otc.make(pay_token=self.token2.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token1.address, buy_amount=Wad.from_number(5)).transact()
+
+        self.otc.make(pay_token=self.token2.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token1.address, buy_amount=Wad.from_number(6)).transact()
+
+        # then
+        def order_ids(orders: List[Order]) -> List[int]:
+            return list(map(lambda order: order.order_id, orders))
+
+        assert len(self.otc.get_orders()) == 11
+        assert order_ids(self.otc.get_orders(self.token1.address, self.token2.address)) == [1, 2, 3]
+        assert order_ids(self.otc.get_orders(self.token1.address, self.token3.address)) == [4, 5, 6]
+        assert order_ids(self.otc.get_orders(self.token2.address, self.token3.address)) == [7, 8, 9]
+        assert order_ids(self.otc.get_orders(self.token2.address, self.token1.address)) == [10, 11]
+
+        # when
+        self.otc.kill(8).transact()
+
+        # then
+        assert order_ids(self.otc.get_orders(self.token2.address, self.token3.address)) == [7, 9]
 
     def test_get_orders_by_maker(self):
         # given
@@ -435,6 +491,8 @@ class TestMatchingMarket(GeneralMarketTest):
         GeneralMarketTest.setup_method(self)
         self.otc = MatchingMarket.deploy(self.web3, 2500000000)
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
+        self.otc.add_token_pair_whitelist(self.token1.address, self.token3.address).transact()
+        self.otc.add_token_pair_whitelist(self.token2.address, self.token3.address).transact()
 
     def test_fail_when_no_contract_under_that_address(self):
         # expect

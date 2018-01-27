@@ -362,14 +362,29 @@ class SimpleMarket(Contract):
                          pay_amount=Wad(array[0]), buy_token=Address(array[3]), buy_amount=Wad(array[2]),
                          timestamp=array[5])
 
-    def get_orders(self) -> List[Order]:
+    def get_orders(self, pay_token: Address = None, buy_token: Address = None) -> List[Order]:
         """Get all active orders.
+
+        If both `pay_token` and `buy_token` are specified, orders will be filtered by these.
+        Either none or both of these parameters have to be specified.
+
+        Args:
+            `pay_token`: Address of the `pay_token` to filter the orders by.
+            `buy_token`: Address of the `buy_token` to filter the orders by.
 
         Returns:
             A list of `Order` objects representing all active orders on Oasis.
         """
+        assert((isinstance(pay_token, Address) and isinstance(buy_token, Address))
+               or (pay_token is None and buy_token is None))
+
         orders = [self.get_order(order_id + 1) for order_id in range(self.get_last_order_id())]
-        return [order for order in orders if order is not None]
+        orders = [order for order in orders if order is not None]
+
+        if pay_token is not None and buy_token is not None:
+            orders = list(filter(lambda order: order.pay_token == pay_token and order.buy_token == buy_token, orders))
+
+        return orders
 
     def get_orders_by_maker(self, maker: Address) -> List[Order]:
         """Get all active orders created by `maker`.
@@ -619,6 +634,43 @@ class MatchingMarket(ExpiringMarket):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'addTokenPairWhitelist', [base_token.address, quote_token.address])
+
+    def get_orders(self, pay_token: Address = None, buy_token: Address = None) -> List[Order]:
+        """Get all active orders.
+
+        If both `pay_token` and `buy_token` are specified, orders will be filtered by these.
+        In case of the _MatchingMarket_ implementation, order enumeration will be much efficient
+        if these two parameters are supplied, as then orders can be fetched using `getBestOffer`
+        and a series of `getWorseOffer` calls. This approach will result in much lower number of calls
+        comparing to the naive 0..get_last_order_id approach, especially if the number of inactive orders
+        is very high.
+
+        Either none or both of these parameters have to be specified.
+
+        Args:
+            `pay_token`: Address of the `pay_token` to filter the orders by.
+            `buy_token`: Address of the `buy_token` to filter the orders by.
+
+        Returns:
+            A list of `Order` objects representing all active orders on Oasis.
+        """
+        assert((isinstance(pay_token, Address) and isinstance(buy_token, Address))
+               or (pay_token is None and buy_token is None))
+
+        if pay_token is not None and buy_token is not None:
+            orders = []
+
+            order_id = self._contract.call().getBestOffer(pay_token.address, buy_token.address)
+            while order_id != 0:
+                order = self.get_order(order_id)
+                if order is not None:
+                    orders.append(order)
+
+                order_id = self._contract.call().getWorseOffer(order_id)
+
+            return sorted(orders, key=lambda order: order.order_id)
+        else:
+            return super(ExpiringMarket, self).get_orders(pay_token, buy_token)
 
     def make(self, pay_token: Address, pay_amount: Wad, buy_token: Address, buy_amount: Wad, pos: int = None) -> Transact:
         """Create a new order.
