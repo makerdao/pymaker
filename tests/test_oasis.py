@@ -229,6 +229,22 @@ class GeneralMarketTest:
         assert past_take[0].timestamp != 0
         assert past_take[0].raw['blockNumber'] > 0
 
+    def test_past_take_with_filter(self):
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
+
+        # and
+        self.otc.approve([self.token2], directly())
+        self.otc.take(1, Wad.from_number(0.5)).transact()
+
+        # then
+        assert len(self.otc.past_take(PAST_BLOCKS, {'maker': self.our_address.address})) == 1
+        assert len(self.otc.past_take(PAST_BLOCKS, {'taker': self.our_address.address})) == 1
+        assert len(self.otc.past_take(PAST_BLOCKS, {'maker': '0x0101010101020202020203030303030404040404'})) == 0
+        assert len(self.otc.past_take(PAST_BLOCKS, {'taker': '0x0101010101020202020203030303030404040404'})) == 0
+
     def test_past_kill(self):
         # when
         self.otc.approve([self.token1], directly())

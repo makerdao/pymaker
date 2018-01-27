@@ -131,14 +131,18 @@ class Contract:
     def _on_event(self, contract, event, cls, handler):
         register_filter_thread(contract.on(event, None, self._event_callback(cls, handler, False)))
 
-    def _past_events(self, contract, event, cls, number_of_past_blocks) -> list:
+    def _past_events(self, contract, event, cls, number_of_past_blocks, event_filter) -> list:
+        assert(isinstance(number_of_past_blocks, int))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
         events = []
 
         def handler(obj):
             events.append(obj)
 
         block_number = contract.web3.eth.blockNumber
-        filter_params = {'fromBlock': max(block_number-number_of_past_blocks, 0), 'toBlock': block_number}
+        filter_params = {'filter': event_filter if event_filter is not None else {},
+                         'fromBlock': max(block_number-number_of_past_blocks, 0),
+                         'toBlock': block_number}
         thread = contract.pastEvents(event, filter_params, self._event_callback(cls, handler, True))
         register_filter_thread(thread)
         thread.join()

@@ -253,65 +253,73 @@ class SimpleMarket(Contract):
 
         self._on_event(self._contract, 'LogKill', LogKill, handler)
 
-    def past_make(self, number_of_past_blocks: int) -> List[LogMake]:
+    def past_make(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogMake]:
         """Synchronously retrieve past LogMake events.
 
         `LogMake` events are emitted by the Oasis contract every time someone places an order.
 
         Args:
             number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+            event_filter: Filter which will be applied to returned events.
 
         Returns:
             List of past `LogMake` events represented as :py:class:`pymaker.oasis.LogMake` class.
         """
         assert(isinstance(number_of_past_blocks, int))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        return self._past_events(self._contract, 'LogMake', LogMake, number_of_past_blocks)
+        return self._past_events(self._contract, 'LogMake', LogMake, number_of_past_blocks, event_filter)
 
-    def past_bump(self, number_of_past_blocks: int) -> List[LogBump]:
+    def past_bump(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogBump]:
         """Synchronously retrieve past LogBump events.
 
         `LogBump` events are emitted by the Oasis contract every time someone calls the `bump()` function.
 
         Args:
             number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+            event_filter: Filter which will be applied to returned events.
 
         Returns:
             List of past `LogBump` events represented as :py:class:`pymaker.oasis.LogBump` class.
         """
         assert(isinstance(number_of_past_blocks, int))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        return self._past_events(self._contract, 'LogBump', LogBump, number_of_past_blocks)
+        return self._past_events(self._contract, 'LogBump', LogBump, number_of_past_blocks, event_filter)
 
-    def past_take(self, number_of_past_blocks: int) -> List[LogTake]:
+    def past_take(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogTake]:
         """Synchronously retrieve past LogTake events.
 
         `LogTake` events are emitted by the Oasis contract every time someone takes an order.
 
         Args:
             number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+            event_filter: Filter which will be applied to returned events.
 
         Returns:
             List of past `LogTake` events represented as :py:class:`pymaker.oasis.LogTake` class.
         """
         assert(isinstance(number_of_past_blocks, int))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        return self._past_events(self._contract, 'LogTake', LogTake, number_of_past_blocks)
+        return self._past_events(self._contract, 'LogTake', LogTake, number_of_past_blocks, event_filter)
 
-    def past_kill(self, number_of_past_blocks: int) -> List[LogKill]:
+    def past_kill(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogKill]:
         """Synchronously retrieve past LogKill events.
 
         `LogKill` events are emitted by the Oasis contract every time someone cancels an order.
 
         Args:
             number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+            event_filter: Filter which will be applied to returned events.
 
         Returns:
             List of past `LogKill` events represented as :py:class:`pymaker.oasis.LogKill` class.
         """
         assert(isinstance(number_of_past_blocks, int))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        return self._past_events(self._contract, 'LogKill', LogKill, number_of_past_blocks)
+        return self._past_events(self._contract, 'LogKill', LogKill, number_of_past_blocks, event_filter)
 
     def get_last_order_id(self) -> int:
         """Get the id of the last order created on the market.
