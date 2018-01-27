@@ -128,8 +128,11 @@ class Contract:
 
         return web3.eth.contract(abi=abi)(address=address.address)
 
-    def _on_event(self, contract, event, cls, handler):
-        register_filter_thread(contract.on(event, None, self._event_callback(cls, handler, False)))
+    def _on_event(self, contract, event, cls, handler, event_filter):
+        assert(isinstance(event_filter, dict) or (event_filter is None))
+
+        filter_params = {'filter': event_filter if event_filter is not None else {}}
+        register_filter_thread(contract.on(event, filter_params, self._event_callback(cls, handler, False)))
 
     def _past_events(self, contract, event, cls, number_of_past_blocks, event_filter) -> list:
         assert(isinstance(number_of_past_blocks, int))

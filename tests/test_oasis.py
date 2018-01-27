@@ -18,6 +18,7 @@
 from unittest.mock import Mock
 
 import pytest
+import time
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
@@ -337,6 +338,30 @@ class GeneralMarketTest:
         assert on_take.give_amount == Wad.from_number(1)
         assert on_take.timestamp != 0
         assert on_take.raw['blockNumber'] > 0
+
+    @pytest.mark.timeout(10)
+    def test_on_take_wih_filter(self):
+        # given
+        on_take_filter1_mock = Mock()
+        on_take_filter2_mock = Mock()
+        self.otc.on_take(on_take_filter1_mock, {'maker': self.our_address.address})
+        self.otc.on_take(on_take_filter2_mock, {'maker': '0x0101010101020202020201010101010303030303'})
+
+        # when
+        self.otc.approve([self.token1], directly())
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
+
+        # and
+        self.otc.approve([self.token2], directly())
+        self.otc.take(1, Wad.from_number(0.5)).transact()
+
+        # then
+        assert len(wait_until_mock_called(on_take_filter1_mock)) == 1
+
+        # and
+        time.sleep(2)
+        assert not on_take_filter2_mock.called
 
     @pytest.mark.timeout(10)
     def test_on_kill(self):

@@ -201,7 +201,7 @@ class SimpleMarket(Contract):
         for token in tokens:
             approval_function(token, self.address, 'OasisDEX')
 
-    def on_make(self, handler):
+    def on_make(self, handler, event_filter: dict = None):
         """Subscribe to LogMake events.
 
         `LogMake` events are emitted by the Oasis contract every time someone places an order.
@@ -209,12 +209,14 @@ class SimpleMarket(Contract):
         Args:
             handler: Function which will be called for each subsequent `LogMake` event.
                 This handler will receive a :py:class:`pymaker.oasis.LogMake` class instance.
+            event_filter: Filter which will be applied to event subscription.
         """
         assert(callable(handler))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        self._on_event(self._contract, 'LogMake', LogMake, handler)
+        self._on_event(self._contract, 'LogMake', LogMake, handler, event_filter)
 
-    def on_bump(self, handler):
+    def on_bump(self, handler, event_filter: dict = None):
         """Subscribe to LogBump events.
 
         `LogBump` events are emitted by the Oasis contract every time someone calls the `bump()` function.
@@ -222,12 +224,14 @@ class SimpleMarket(Contract):
         Args:
             handler: Function which will be called for each subsequent `LogBump` event.
                 This handler will receive a :py:class:`pymaker.oasis.LogBump` class instance.
+            event_filter: Filter which will be applied to event subscription.
         """
         assert(callable(handler))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        self._on_event(self._contract, 'LogBump', LogBump, handler)
+        self._on_event(self._contract, 'LogBump', LogBump, handler, event_filter)
 
-    def on_take(self, handler):
+    def on_take(self, handler, event_filter: dict = None):
         """Subscribe to LogTake events.
 
         `LogTake` events are emitted by the Oasis contract every time someone takes an order.
@@ -235,12 +239,14 @@ class SimpleMarket(Contract):
         Args:
             handler: Function which will be called for each subsequent `LogTake` event.
                 This handler will receive a :py:class:`pymaker.oasis.LogTake` class instance.
+            event_filter: Filter which will be applied to event subscription.
         """
         assert(callable(handler))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        self._on_event(self._contract, 'LogTake', LogTake, handler)
+        self._on_event(self._contract, 'LogTake', LogTake, handler, event_filter)
 
-    def on_kill(self, handler):
+    def on_kill(self, handler, event_filter: dict = None):
         """Subscribe to LogKill events.
 
         `LogKill` events are emitted by the Oasis contract every time someone cancels an order.
@@ -248,10 +254,12 @@ class SimpleMarket(Contract):
         Args:
             handler: Function which will be called for each subsequent `LogKill` event.
                 This handler will receive a :py:class:`pymaker.oasis.LogKill` class instance.
+            event_filter: Filter which will be applied to event subscription.
         """
         assert(callable(handler))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        self._on_event(self._contract, 'LogKill', LogKill, handler)
+        self._on_event(self._contract, 'LogKill', LogKill, handler, event_filter)
 
     def past_make(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogMake]:
         """Synchronously retrieve past LogMake events.

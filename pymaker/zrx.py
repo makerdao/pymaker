@@ -295,7 +295,7 @@ class ZrxExchange(Contract):
         for token in tokens + [ERC20Token(web3=self.web3, address=self.zrx_token())]:
             approval_function(token, self.token_transfer_proxy(), '0x Exchange contract')
 
-    def on_fill(self, handler):
+    def on_fill(self, handler, event_filter: dict = None):
         """Subscribe to LogFill events.
 
         `LogFill` events are emitted by the 0x contract every time someone fills an order.
@@ -303,12 +303,14 @@ class ZrxExchange(Contract):
         Args:
             handler: Function which will be called for each subsequent `LogFill` event.
                 This handler will receive a :py:class:`pymaker.`zrx.LogFill` class instance.
+            event_filter: Filter which will be applied to event subscription.
         """
         assert(callable(handler))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        self._on_event(self._contract, 'LogFill', LogFill, handler)
+        self._on_event(self._contract, 'LogFill', LogFill, handler, event_filter)
 
-    def on_cancel(self, handler):
+    def on_cancel(self, handler, event_filter: dict = None):
         """Subscribe to LogCancel events.
 
         `LogCancel` events are emitted by the 0x contract every time someone cancels an order.
@@ -316,10 +318,12 @@ class ZrxExchange(Contract):
         Args:
             handler: Function which will be called for each subsequent `LogCancel` event.
                 This handler will receive a :py:class:`pymaker.`zrx.LogCancel` class instance.
+            event_filter: Filter which will be applied to event subscription.
         """
         assert(callable(handler))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        self._on_event(self._contract, 'LogCancel', LogCancel, handler)
+        self._on_event(self._contract, 'LogCancel', LogCancel, handler, event_filter)
 
     def past_fill(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogFill]:
         """Synchronously retrieve past LogFill events.
