@@ -59,14 +59,14 @@ def eth_balance(web3: Web3, address) -> Wad:
 
 
 @coerce_return_to_text
-def eth_sign(web3: Web3, data_hash: bytes):
+def eth_sign(web3: Web3, message: bytes):
     assert(isinstance(web3, Web3))
-    assert(isinstance(data_hash, bytes))
+    assert(isinstance(message, bytes))
 
     # as `EthereumTesterProvider` does not support `eth_sign`, we implement it ourselves
     if str(web3.providers[0]) == 'EthereumTesterProvider':
         key = k0
-        msg = hexstring_to_bytes(Eth._recoveryMessageHash(data=data_hash))
+        msg = hexstring_to_bytes(Eth._recoveryMessageHash(data=message))
 
         pk = PrivateKey(key, raw=True)
         signature = pk.ecdsa_recoverable_serialize(
@@ -79,7 +79,7 @@ def eth_sign(web3: Web3, data_hash: bytes):
         return '0x' + signature_hex
 
     return web3.manager.request_blocking(
-        "eth_sign", [web3.eth.defaultAccount, encode_hex(data_hash)],
+        "eth_sign", [web3.eth.defaultAccount, encode_hex(message)],
     )
 
 
