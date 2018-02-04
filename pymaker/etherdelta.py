@@ -24,11 +24,11 @@ from pprint import pformat
 from subprocess import Popen, PIPE
 from typing import List
 
-from eth_abi.encoding import get_single_encoder
 from web3 import Web3
 
 from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
+from pymaker.tightly_packed import encode_address, encode_uint256
 from pymaker.token import ERC20Token
 from pymaker.util import bytes_to_hexstring, hexstring_to_bytes, eth_sign, to_vrs
 
@@ -424,12 +424,6 @@ class EtherDelta(Contract):
         assert(isinstance(expires, int) and (expires > 0))
         assert(pay_amount > Wad(0))
         assert(buy_amount > Wad(0))
-
-        def encode_address(address: Address) -> bytes:
-            return get_single_encoder("address", None, None)(address.address)[12:]
-
-        def encode_uint256(value: int) -> bytes:
-            return get_single_encoder("uint", 256, None)(value)
 
         nonce = self.random_nonce()
         order_hash = hashlib.sha256(encode_address(self.address) +
