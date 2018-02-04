@@ -30,7 +30,7 @@ from web3 import Web3
 from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
 from pymaker.token import ERC20Token
-from pymaker.util import bytes_to_hexstring, hexstring_to_bytes, eth_sign
+from pymaker.util import bytes_to_hexstring, hexstring_to_bytes, eth_sign, to_vrs
 
 
 class Order:
@@ -439,11 +439,9 @@ class EtherDelta(Contract):
                                     encode_uint256(pay_amount.value) +
                                     encode_uint256(expires) +
                                     encode_uint256(nonce)).digest()
-        # TODO duplicate code below
-        signed_hash = eth_sign(self.web3, order_hash)[2:]
-        r = bytes.fromhex(signed_hash[0:64])
-        s = bytes.fromhex(signed_hash[64:128])
-        v = ord(bytes.fromhex(signed_hash[128:130]))
+
+        signature = eth_sign(self.web3, order_hash)
+        v, r, s = to_vrs(signature)
 
         return Order(self, Address(self.web3.eth.defaultAccount), pay_token, pay_amount, buy_token, buy_amount,
                      expires, nonce, v, r, s)

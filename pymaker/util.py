@@ -17,6 +17,7 @@
 
 import asyncio
 import threading
+from typing import Tuple
 
 from eth_utils import coerce_return_to_text, encode_hex
 from ethereum import utils
@@ -81,6 +82,18 @@ def eth_sign(web3: Web3, message: bytes):
     return web3.manager.request_blocking(
         "eth_sign", [web3.eth.defaultAccount, encode_hex(message)],
     )
+
+
+def to_vrs(signature: str) -> Tuple[int, bytes, bytes]:
+    assert(isinstance(signature, str))
+    assert(signature.startswith("0x"))
+
+    signature_hex = signature[2:]
+    r = bytes.fromhex(signature_hex[0:64])
+    s = bytes.fromhex(signature_hex[64:128])
+    v = ord(bytes.fromhex(signature_hex[128:130]))
+
+    return v, r, s
 
 
 def int_to_bytes32(value: int) -> bytes:
