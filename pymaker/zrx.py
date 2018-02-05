@@ -27,8 +27,9 @@ from web3 import Web3
 
 from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
+from pymaker.sign import eth_sign, to_vrs
 from pymaker.token import ERC20Token
-from pymaker.util import bytes_to_hexstring, hexstring_to_bytes, eth_sign, to_vrs
+from pymaker.util import bytes_to_hexstring, hexstring_to_bytes
 
 
 class Order:
@@ -449,7 +450,7 @@ class ZrxExchange(Contract):
         """
         assert(isinstance(order, Order))
 
-        signature = eth_sign(self.web3, hexstring_to_bytes(self.get_order_hash(order)))
+        signature = eth_sign(hexstring_to_bytes(self.get_order_hash(order)), self.web3)
         v, r, s = to_vrs(signature)
 
         signed_order = copy.copy(order)

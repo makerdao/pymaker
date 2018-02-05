@@ -19,6 +19,7 @@ import asyncio
 import threading
 from typing import Tuple
 
+import eth_keyfile
 from eth_utils import coerce_return_to_text, encode_hex
 from ethereum import utils
 from ethereum.tester import k0
@@ -57,43 +58,6 @@ def synchronize(futures) -> list:
 
 def eth_balance(web3: Web3, address) -> Wad:
     return Wad(web3.eth.getBalance(address.address))
-
-
-@coerce_return_to_text
-def eth_sign(web3: Web3, message: bytes):
-    assert(isinstance(web3, Web3))
-    assert(isinstance(message, bytes))
-
-    # as `EthereumTesterProvider` does not support `eth_sign`, we implement it ourselves
-    if str(web3.providers[0]) == 'EthereumTesterProvider':
-        key = k0
-        msg = hexstring_to_bytes(Eth._recoveryMessageHash(data=message))
-
-        pk = PrivateKey(key, raw=True)
-        signature = pk.ecdsa_recoverable_serialize(
-            pk.ecdsa_sign_recoverable(msg, raw=True)
-        )
-
-        signature = signature[0] + utils.bytearray_to_bytestr([signature[1]])
-        signature_hex = signature.hex()[0:128] + int_to_bytes(ord(bytes.fromhex(signature.hex()[128:130]))+27).hex()
-
-        return '0x' + signature_hex
-
-    return web3.manager.request_blocking(
-        "eth_sign", [web3.eth.defaultAccount, encode_hex(message)],
-    )
-
-
-def to_vrs(signature: str) -> Tuple[int, bytes, bytes]:
-    assert(isinstance(signature, str))
-    assert(signature.startswith("0x"))
-
-    signature_hex = signature[2:]
-    r = bytes.fromhex(signature_hex[0:64])
-    s = bytes.fromhex(signature_hex[64:128])
-    v = ord(bytes.fromhex(signature_hex[128:130]))
-
-    return v, r, s
 
 
 def int_to_bytes32(value: int) -> bytes:
