@@ -68,6 +68,18 @@ class GeneralMarketTest:
         # and
         assert self.otc.get_orders() == [self.otc.get_order(1)]
 
+    def test_make_returns_new_order_ids(self):
+        # given
+        self.otc.approve([self.token1], directly())
+
+        # expect
+        for number in range(1, 10):
+            receipt = self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                                    buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
+
+            assert receipt.result == number
+            assert self.otc.get_last_order_id() == number
+
     def test_get_orders_by_pair(self):
         # given
         self.otc.approve([self.token1, self.token2, self.token3], directly())

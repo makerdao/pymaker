@@ -19,6 +19,7 @@ from pprint import pformat
 from typing import Optional, List
 
 from web3 import Web3
+from web3.utils.events import get_event_data
 
 from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
@@ -414,6 +415,8 @@ class SimpleMarket(Contract):
         The `pay_amount` of `pay_token` token will be taken from you on order creation and deposited
         in the market contract. Allowance needs to be set first - refer to the `approve()` method.
 
+        When complete, `receipt.result` will contain order_id of the new order.
+
         Args:
             pay_token: Address of the ERC20 token you want to put on sale.
             pay_amount: Amount of the `pay_token` token you want to put on sale.
@@ -431,7 +434,8 @@ class SimpleMarket(Contract):
         assert(buy_amount > Wad(0))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'make', [pay_token.address, buy_token.address, pay_amount.value, buy_amount.value])
+                        'make', [pay_token.address, buy_token.address, pay_amount.value, buy_amount.value], None,
+                        self._make_order_id_result_function)
 
     def bump(self, order_id: int) -> Transact:
         """Bumps an order.
@@ -485,6 +489,18 @@ class SimpleMarket(Contract):
         assert(isinstance(order_id, int))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'kill', [int_to_bytes32(order_id)])
+
+    @staticmethod
+    def _make_order_id_result_function(receipt):
+        receipt_logs = receipt['logs']
+        if receipt_logs is not None:
+            for receipt_log in receipt_logs:
+                if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0x773ff502687307abfa024ac9f62f9752a0d210dac2ffd9a29e38e12e2ea82c82':
+                    log_make_abi = [abi for abi in SimpleMarket.abi if abi.get('name') == 'LogMake'][0]
+                    event_data = get_event_data(log_make_abi, receipt_log)
+                    return bytes_to_int(event_data['args']['id'])
+
+        return None
 
     def __repr__(self):
         return f"SimpleMarket('{self.address}')"
@@ -671,6 +687,8 @@ class MatchingMarket(ExpiringMarket):
         may not even be placed at all as the attempt to calculate the position by the contract will likely fail
         due to high gas usage.
 
+        When complete, `receipt.result` will contain order_id of the new order.
+
         Args:
             pay_token: Address of the ERC20 token you want to put on sale.
             pay_amount: Amount of the `pay_token` token you want to put on sale.
@@ -699,7 +717,8 @@ class MatchingMarket(ExpiringMarket):
             assert(pos >= 0)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'offer', [pay_amount.value, pay_token.address, buy_amount.value, buy_token.address, pos])
+                        'offer', [pay_amount.value, pay_token.address, buy_amount.value, buy_token.address, pos], None,
+                        self._make_order_id_result_function)
 
     def position(self, pay_token: Address, pay_amount: Wad, buy_token: Address, buy_amount: Wad) -> int:
         """Calculate the position (`pos`) new order should be inserted at to minimize gas costs.
