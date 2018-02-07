@@ -170,8 +170,6 @@ class SimpleMarket(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
-        self._none_orders = set()
-        self._alien_orders = {}
 
     @staticmethod
     def deploy(web3: Web3):
@@ -349,13 +347,8 @@ class SimpleMarket(Contract):
         """
         assert(isinstance(order_id, int))
 
-        # if an order is None, it won't become not-None again for the same OTC instance
-        if order_id in self._none_orders:
-            return None
-
         array = self._contract.call().offers(order_id)
         if array[5] == 0:
-            self._none_orders.add(order_id)
             return None
         else:
             return Order(market=self, order_id=order_id, maker=Address(array[4]), pay_token=Address(array[1]),
@@ -397,17 +390,8 @@ class SimpleMarket(Contract):
         """
         assert(isinstance(maker, Address))
 
-        # `self._alien_orders[maker]` is a set containing ids of orders which are *not* *owned* by
-        # a particular maker. We initialize it with an empty set if this maker hasn't been queried yet.
-        if maker not in self._alien_orders:
-            self._alien_orders[maker] = set()
-
         result = []
         for order_id in range(self.get_last_order_id()):
-            # If we already know this order cannot be owned by this particular maker, we skip it.
-            if order_id in self._alien_orders[maker]:
-                continue
-
             # Query the order.
             order = self.get_order(order_id + 1)
             if order is None:
@@ -417,7 +401,6 @@ class SimpleMarket(Contract):
             # we add it to `_alien_orders[maker]` so the next time `get_orders_by_maker()` is called
             # with the same parameter we will be able to rule out these orders straight away.
             if order.maker != maker:
-                self._alien_orders[maker].add(order_id)
                 continue
 
             result.append(order)
@@ -747,9 +730,12 @@ class MatchingMarket(ExpiringMarket):
         assert(isinstance(buy_token, Address))
         assert(isinstance(buy_amount, Wad))
 
-        orders = filter(lambda o: o.pay_token == pay_token and
-                                  o.buy_token == buy_token and
-                                  o.pay_amount / o.buy_amount >= pay_amount / buy_amount, self.get_orders())
+        self.logger.debug("Enumerating orders for position calculation...")
+
+        orders = filter(lambda order: order.pay_amount / order.buy_amount >= pay_amount / buy_amount,
+                        self.get_orders(pay_token, buy_token))
+
+        self.logger.debug("Enumerating orders for position calculation finished")
 
         sorted_orders = sorted(orders, key=lambda o: o.pay_amount / o.buy_amount)
         return sorted_orders[0].order_id if len(sorted_orders) > 0 else 0
