@@ -173,7 +173,7 @@ class Lifecycle:
             return
 
         try:
-            self.web3.eth.sign(self.web3.eth.defaultAccount, "test")
+            self.web3.eth.sign(self.web3.eth.defaultAccount, "pymaker testing if account is unlocked")
         except:
             self.logger.fatal(f"Account {self.web3.eth.defaultAccount} is not unlocked")
             self.logger.fatal(f"Unlocking the account is necessary for the keeper to operate")
