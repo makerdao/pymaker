@@ -552,7 +552,7 @@ class ZrxRelayerApi:
         url = f"{self.api_server}/v0/orders?" \
               f"exchangeContractAddress={self.exchange.address.address}&" \
               f"maker={maker.address}&" \
-              f"per_page=100"
+              f"per_page=10000"
 
         response = requests.get(url, timeout=self.timeout)
         if not response.ok:
