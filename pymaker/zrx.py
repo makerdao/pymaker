@@ -554,8 +554,11 @@ class ZrxRelayerApi:
               f"maker={maker.address}&" \
               f"per_page=100"
 
-        response = requests.get(url, timeout=self.timeout).json()
-        return list(map(lambda item: Order.from_json(self.exchange, item), response))
+        response = requests.get(url, timeout=self.timeout)
+        if not response.ok:
+            raise Exception(f"Failed to fetch 0x orders from the relayer: {response.text} ({response.status_code})")
+
+        return list(map(lambda item: Order.from_json(self.exchange, item), response.json()))
 
     def calculate_fees(self, order: Order) -> Order:
         """Takes and order and returns the same order with proper relayer fees.
