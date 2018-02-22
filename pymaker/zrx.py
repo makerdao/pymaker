@@ -608,7 +608,7 @@ class ZrxRelayerApi:
         assert(isinstance(order, Order))
 
         response = requests.post(f"{self.api_server}/v0/order", json=order.to_json(), timeout=self.timeout)
-        if response.status_code == 201:
+        if response.status_code in [200, 201]:
             self.logger.info(f"Placed 0x order: {order}")
             return True
         else:
