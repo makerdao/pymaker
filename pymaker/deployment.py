@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
+import threading
 from typing import Optional
 
 import pkg_resources
@@ -55,6 +56,23 @@ def deploy_contract(web3: Web3, contract_name: str, args: Optional[list]=None) -
     return Address(receipt['contractAddress'])
 
 
+class ThreadSafeEthereumTesterProvider(EthereumTesterProvider):
+    """Thread-safe variant of `EthereumTesterProvider`.
+
+    Standard `EthereumTesterProvider` is not thread-safe. Any attempt to use it from several threads
+    simultaneously results in a series of weird and unexpected block size limit exceeded exceptions.
+
+    This class tries to solve this issue by imposing a lock on all `make_request` calls.
+    """
+    def __init__(self, *args, **kwargs):
+        super(ThreadSafeEthereumTesterProvider, self).__init__(*args, **kwargs)
+        self.lock = threading.Lock()
+
+    def make_request(self, method, params):
+        with self.lock:
+            return super(ThreadSafeEthereumTesterProvider, self).make_request(method, params)
+
+
 class Deployment:
     """Represents a test deployment of the entire Maker smart contract ecosystem.
 
@@ -63,7 +81,7 @@ class Deployment:
     unit tests for individual keepers.
     """
     def __init__(self):
-        web3 = Web3(EthereumTesterProvider())
+        web3 = Web3(ThreadSafeEthereumTesterProvider())
         web3.eth.defaultAccount = web3.eth.accounts[0]
         our_address = Address(web3.eth.defaultAccount)
         sai = DSToken.deploy(web3, 'DAI')
