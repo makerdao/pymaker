@@ -147,7 +147,6 @@ class Contract:
                          'fromBlock': max(block_number-number_of_past_blocks, 0),
                          'toBlock': block_number}
         thread = contract.pastEvents(event, filter_params, self._event_callback(cls, handler, True))
-        register_filter_thread(thread)
         thread.join()
         return events
 
