@@ -79,6 +79,10 @@ class Order:
         return self.buy_amount / self.pay_amount
 
     @property
+    def remaining_buy_amount(self) -> Wad:
+        return self.buy_amount - self._exchange.get_unavailable_buy_amount(self)
+
+    @property
     def remaining_sell_amount(self) -> Wad:
         return self.pay_amount - (self._exchange.get_unavailable_buy_amount(self)
                                   * self.pay_amount / self.buy_amount)
