@@ -132,7 +132,6 @@ class TestEtherDelta:
 
         # when
         self.etherdelta.withdraw_token(self.token1.address, Wad.from_number(9.3)).transact()
-        print(self.etherdelta.balance_of_token(self.token1.address, self.our_address))
 
         # then
         assert self.etherdelta.amount_available(order) == Wad.from_number(1.4)
