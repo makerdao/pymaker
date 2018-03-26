@@ -114,6 +114,8 @@ class TestEtherDelta:
         # and
         assert self.etherdelta.amount_available(order) == Wad.from_number(4)
         assert self.etherdelta.amount_filled(order) == Wad.from_number(0)
+        assert order.remaining_sell_amount == Wad.from_number(2)
+        assert order.remaining_buy_amount == Wad.from_number(4)
 
         # and
         assert self.etherdelta.can_trade(order, Wad.from_number(1.5))
@@ -125,6 +127,8 @@ class TestEtherDelta:
         # then
         assert self.etherdelta.amount_available(order) == Wad.from_number(2.5)
         assert self.etherdelta.amount_filled(order) == Wad.from_number(1.5)
+        assert order.remaining_sell_amount == Wad.from_number(1.25)
+        assert order.remaining_buy_amount == Wad.from_number(2.5)
 
         # when
         self.etherdelta.withdraw_token(self.token1.address, Wad.from_number(9.3)).transact()
