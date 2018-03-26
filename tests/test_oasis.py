@@ -203,6 +203,24 @@ class GeneralMarketTest:
         assert self.otc.get_orders() == [self.otc.get_order(1)]
         assert self.otc.get_last_order_id() == 1
 
+    def test_remaining_sell_and_buy_amounts(self):
+        # given
+        self.otc.approve([self.token1], directly())
+        self.otc.make(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
+                      buy_token=self.token2.address, buy_amount=Wad.from_number(2)).transact()
+
+        # and
+        assert self.otc.get_order(1).remaining_sell_amount == Wad.from_number(1)
+        assert self.otc.get_order(1).remaining_buy_amount == Wad.from_number(2)
+
+        # when
+        self.otc.approve([self.token2], directly())
+        self.otc.take(1, Wad.from_number(0.25)).transact()
+
+        # then
+        assert self.otc.get_order(1).remaining_sell_amount == Wad.from_number(0.75)
+        assert self.otc.get_order(1).remaining_buy_amount == Wad.from_number(1.5)
+
     def test_take_complete(self):
         # given
         self.otc.approve([self.token1], directly())
