@@ -166,6 +166,28 @@ class TestZrx:
         # then
         assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad.from_number(3.5)
 
+    def test_remaining_buy_amount_and_remaining_sell_amount(self):
+        # given
+        self.exchange.approve([self.token1, self.token2], directly())
+
+        # when
+        order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
+                                           buy_token=self.token2.address, buy_amount=Wad.from_number(4),
+                                           expiration=1763920792)
+        # and
+        signed_order = self.exchange.sign_order(order)
+
+        # then
+        assert signed_order.remaining_sell_amount == Wad.from_number(10)
+        assert signed_order.remaining_buy_amount == Wad.from_number(4)
+
+        # when
+        self.exchange.fill_order(signed_order, Wad.from_number(3.5)).transact()
+
+        # then
+        assert signed_order.remaining_sell_amount == Wad.from_number(1.25)
+        assert signed_order.remaining_buy_amount == Wad.from_number(0.5)
+
     def test_past_fill(self):
         # given
         self.exchange.approve([self.token1, self.token2], directly())
