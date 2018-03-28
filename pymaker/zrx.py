@@ -599,7 +599,7 @@ class ZrxRelayerApi:
             order_with_fees.fee_recipient = Address(data['feeRecipient'])
             return order_with_fees
         else:
-            raise Exception(f"Failed to fetch fees for order: {http_response_summary(response)}")
+            raise Exception(f"Failed to fetch fees for 0x order: {http_response_summary(response)}")
 
     def submit_order(self, order: Order) -> bool:
         """Submits the order to the relayer.
