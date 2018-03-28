@@ -46,7 +46,8 @@ def chain(web3: Web3) -> str:
 
 
 def http_response_summary(response) -> str:
-    return f"{response.status_code} {response.reason}"
+    text = response.text.replace('\r', '').replace('\n', '')[:512]
+    return f"{response.status_code} {response.reason} ({text})"
 
 
 def synchronize(futures) -> list:
