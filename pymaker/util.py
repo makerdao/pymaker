@@ -45,6 +45,11 @@ def chain(web3: Web3) -> str:
         return "unknown"
 
 
+def http_response_summary(response) -> str:
+    text = response.text.replace('\r', '').replace('\n', '')[:512]
+    return f"{response.status_code} {response.reason} ({text})"
+
+
 def synchronize(futures) -> list:
     if len(futures) > 0:
         loop = asyncio.new_event_loop()

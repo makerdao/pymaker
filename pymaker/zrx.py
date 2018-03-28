@@ -29,7 +29,7 @@ from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
 from pymaker.sign import eth_sign, to_vrs
 from pymaker.token import ERC20Token
-from pymaker.util import bytes_to_hexstring, hexstring_to_bytes
+from pymaker.util import bytes_to_hexstring, hexstring_to_bytes, http_response_summary
 
 
 class Order:
@@ -563,7 +563,7 @@ class ZrxRelayerApi:
 
         response = requests.get(url, timeout=self.timeout)
         if not response.ok:
-            raise Exception(f"Failed to fetch 0x orders from the relayer: {response.text} ({response.status_code})")
+            raise Exception(f"Failed to fetch 0x orders from the relayer: {http_response_summary(response)}")
 
         return list(map(lambda item: Order.from_json(self.exchange, item), response.json()))
 
@@ -599,7 +599,7 @@ class ZrxRelayerApi:
             order_with_fees.fee_recipient = Address(data['feeRecipient'])
             return order_with_fees
         else:
-            raise Exception(f"Failed to fetch fees for order: {response.text} ({response.status_code})")
+            raise Exception(f"Failed to fetch fees for order: {http_response_summary(response)}")
 
     def submit_order(self, order: Order) -> bool:
         """Submits the order to the relayer.
@@ -619,7 +619,7 @@ class ZrxRelayerApi:
             self.logger.info(f"Placed 0x order: {order}")
             return True
         else:
-            self.logger.warning(f"Failed to place 0x order: {response.text} ({response.status_code})")
+            self.logger.warning(f"Failed to place 0x order: {http_response_summary(response)}")
             return False
 
     def __repr__(self):
