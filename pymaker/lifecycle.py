@@ -21,6 +21,7 @@ import signal
 import threading
 import time
 
+import pytz
 from web3 import Web3
 
 from pymaker import register_filter_thread, any_filter_thread_present, stop_all_filter_threads, all_filter_threads_alive
@@ -256,7 +257,7 @@ class Lifecycle:
 
     def _start_watching_blocks(self):
         def new_block_callback(block_hash):
-            self._last_block_time = datetime.datetime.now()
+            self._last_block_time = datetime.datetime.now(tz=pytz.UTC)
             block = self.web3.eth.getBlock(block_hash)
             block_number = block['number']
             if not self.web3.eth.syncing:
@@ -362,7 +363,7 @@ class Lifecycle:
             #
             # TODO the same thing could possibly happen if we watch any event other than
             # TODO a new block. if that happens, we have no reliable way of detecting it now.
-            if self._last_block_time and (datetime.datetime.now() - self._last_block_time).total_seconds() > 300:
+            if self._last_block_time and (datetime.datetime.now(tz=pytz.UTC) - self._last_block_time).total_seconds() > 300:
                 if not self.web3.eth.syncing:
                     self.logger.fatal("No new blocks received for 300 seconds, the keeper will terminate")
                     self.fatal_termination = True
