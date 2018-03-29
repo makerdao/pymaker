@@ -467,7 +467,7 @@ class Transact:
             # - the gas price requested has changed since the last transaction has been sent
             gas_price_value = gas_price.get_gas_price(seconds_elapsed)
             if len(tx_hashes) == 0 or ((gas_price_value is not None) and (gas_price_last is not None) and
-                                           (gas_price_value > gas_price_last)):
+                                           (gas_price_value > gas_price_last * 1.1)):
                 gas_price_last = gas_price_value
 
                 try:
