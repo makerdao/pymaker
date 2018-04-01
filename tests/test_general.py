@@ -202,6 +202,7 @@ class TestReceipt:
         assert receipt.transaction_hash == '0x8b6851e40d017b2004a54eae3e9e47614398b54bbbaae150eaa889ec36470ec8'
         assert receipt.gas_used == 57192
         assert len(receipt.transfers) == 1
+        assert len(receipt.logs) == 3
         assert receipt.transfers[0] == Transfer(token_address=Address('0x53eccc9246c1e537d79199d0c7231e425a40f896'),
                                                 from_address=Address('0x375d52588c3f39ee7710290237a95c691d8432e7'),
                                                 to_address=Address('0x0046f01ad360270605e0e5d693484ec3bfe43ba8'),
