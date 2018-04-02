@@ -16,12 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pprint import pformat
-from typing import Optional, List
+from typing import Optional, List, Iterable, Iterator
 
 from web3 import Web3
 from web3.utils.events import get_event_data
 
-from pymaker import Contract, Address, Transact
+from pymaker import Contract, Address, Transact, Receipt
 from pymaker.numeric import Wad
 from pymaker.token import ERC20Token
 from pymaker.util import int_to_bytes32, bytes_to_int
@@ -100,6 +100,18 @@ class LogMake:
         self.buy_amount = Wad(log['args']['buy_amt'])
         self.timestamp = log['args']['timestamp']
         self.raw = log
+
+    @classmethod
+    def from_receipt(cls, receipt: Receipt):
+        assert(isinstance(receipt, Receipt))
+
+        if receipt.logs is not None:
+            for log in receipt.logs:
+                if len(log['topics']) > 0 and log['topics'][0] == '0x773ff502687307abfa024ac9f62f9752a0d210dac2ffd9a29e38e12e2ea82c82':
+                    log_make_abi = [abi for abi in SimpleMarket.abi if abi.get('name') == 'LogMake'][0]
+                    event_data = get_event_data(log_make_abi, log)
+
+                    yield LogMake(event_data)
 
     def __repr__(self):
         return pformat(vars(self))
@@ -496,15 +508,7 @@ class SimpleMarket(Contract):
 
     @staticmethod
     def _make_order_id_result_function(receipt):
-        receipt_logs = receipt['logs']
-        if receipt_logs is not None:
-            for receipt_log in receipt_logs:
-                if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0x773ff502687307abfa024ac9f62f9752a0d210dac2ffd9a29e38e12e2ea82c82':
-                    log_make_abi = [abi for abi in SimpleMarket.abi if abi.get('name') == 'LogMake'][0]
-                    event_data = get_event_data(log_make_abi, receipt_log)
-                    return bytes_to_int(event_data['args']['id'])
-
-        return None
+        return next(map(lambda log_make: log_make.order_id, LogMake.from_receipt(receipt)), None)
 
     def __repr__(self):
         return f"SimpleMarket('{self.address}')"

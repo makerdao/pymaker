@@ -229,12 +229,12 @@ class Receipt:
             was successful. We consider transaction successful if the contract
             method has been executed without throwing.
     """
-    def __init__(self, receipt, result):
+    def __init__(self, receipt):
         self.raw_receipt = receipt
         self.transaction_hash = receipt['transactionHash']
         self.gas_used = receipt['gasUsed']
         self.transfers = []
-        self.result = result
+        self.result = None
 
         receipt_logs = receipt['logs']
         if (receipt_logs is not None) and (len(receipt_logs) > 0):
@@ -291,10 +291,13 @@ class Transact:
         self.result_function = result_function
 
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
-        receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
-        if receipt is not None and receipt['blockNumber'] is not None:
-            result = self.result_function(receipt) if self.result_function is not None else None
-            return Receipt(receipt, result)
+        raw_receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
+        if raw_receipt is not None and raw_receipt['blockNumber'] is not None:
+            receipt = Receipt(raw_receipt)
+            receipt.result = self.result_function(receipt) if self.result_function is not None else None
+
+            return receipt
+
         else:
             return None
 

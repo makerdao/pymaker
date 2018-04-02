@@ -196,7 +196,7 @@ class TestReceipt:
 
     def test_parsing_receipt(self, receipt_success):
         # given
-        receipt = Receipt(receipt_success, None)
+        receipt = Receipt(receipt_success)
 
         # expect
         assert receipt.transaction_hash == '0x8b6851e40d017b2004a54eae3e9e47614398b54bbbaae150eaa889ec36470ec8'
@@ -210,8 +210,8 @@ class TestReceipt:
 
     def test_should_recognize_successful_and_failed_transactions(self, receipt_success, receipt_failed):
         # expect
-        assert Receipt(receipt_success, None).successful is True
-        assert Receipt(receipt_failed, None).successful is False
+        assert Receipt(receipt_success).successful is True
+        assert Receipt(receipt_failed).successful is False
 
 
 class TestTransfer:
