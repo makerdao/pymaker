@@ -423,11 +423,7 @@ class Transact:
         # it means there is no point in sending the transaction, thus we fail instantly and
         # do not increment the nonce. If the estimation is successful, we pass the calculated
         # gas value (plus some `gas_buffer`) to the subsequent `transact` calls so it does not
-        # try to estimate it again. If it would try to estimate it again it could turn out
-        # this transaction will fail (another block might have been mined in the meantime for
-        # example), which would mean we incremented the nonce but never used it.
-        #
-        # This is why gas estimation has to happen first and before the nonce gets incremented.
+        # try to estimate it again.
         try:
             gas_estimate = self.estimated_gas(Address(from_account))
         except:
