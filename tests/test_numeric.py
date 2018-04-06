@@ -113,6 +113,11 @@ class TestWad:
         with pytest.raises(ArithmeticError):
             Wad(4) / 2
 
+    def test_should_support_abs(self):
+        assert abs(Wad(1000)) == Wad(1000)
+        assert abs(Wad(0)) == Wad(0)
+        assert abs(Wad(-1000)) == Wad(1000)
+
     def test_should_compare_wads_with_each_other(self):
         assert Wad(1000) == Wad(1000)
         assert Wad(1000) != Wad(999)
@@ -315,6 +320,11 @@ class TestRay:
     def test_should_fail_to_divide_by_ints(self):
         with pytest.raises(ArithmeticError):
             Ray(4) / 2
+
+    def test_should_support_abs(self):
+        assert abs(Ray(1000)) == Ray(1000)
+        assert abs(Ray(0)) == Ray(0)
+        assert abs(Ray(-1000)) == Ray(1000)
 
     def test_should_compare_rays_with_each_other(self):
         assert Ray(1000) == Ray(1000)
