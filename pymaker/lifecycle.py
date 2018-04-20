@@ -269,7 +269,7 @@ class Lifecycle:
                     def on_finish():
                         self.logger.debug(f"Finished processing block #{block_number} ({block_hash})")
 
-                    if not self.terminated_internally and not self.terminated_externally:
+                    if not self.terminated_internally and not self.terminated_externally and not self.fatal_termination:
                         if not self._on_block_callback.trigger(on_start, on_finish):
                             self.logger.debug(f"Ignoring block #{block_number} ({block_hash}),"
                                               f" as previous callback is still running")
@@ -305,7 +305,7 @@ class Lifecycle:
 
         def func():
             try:
-                if not self.terminated_internally and not self.terminated_externally:
+                if not self.terminated_internally and not self.terminated_externally and not self.fatal_termination:
                     def on_start():
                         self.logger.debug(f"Processing the timer")
 
