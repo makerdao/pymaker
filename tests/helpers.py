@@ -17,6 +17,8 @@
 
 from unittest.mock import Mock
 
+from web3 import Web3
+
 
 def is_hashable(v):
     """Determine whether `v` can be hashed."""
@@ -31,3 +33,10 @@ def wait_until_mock_called(mock: Mock):
     while not mock.called:
         pass
     return mock.call_args[0]
+
+
+def time_travel_by(web3: Web3, seconds: int):
+    assert(isinstance(web3, Web3))
+    assert(isinstance(seconds, int))
+
+    web3.providers[0].rpc_methods.testing_timeTravel(web3.eth.getBlock('latest').timestamp + seconds)

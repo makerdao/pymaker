@@ -22,6 +22,7 @@ from pymaker.deployment import Deployment
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray
 from pymaker.sai import Tub, Tap, Top, Vox
+from tests.helpers import time_travel_by
 
 
 class TestTub:
@@ -145,7 +146,7 @@ class TestTub:
         old_rho = deployment.tub.rho()
 
         # when
-        deployment.time_travel_by(1000)
+        time_travel_by(deployment.web3, 1000)
         deployment.tub.drip().transact()
 
         # then
@@ -389,7 +390,7 @@ class TestTap:
         deployment.tub.draw(1, Wad.from_number(1000)).transact()
 
         # when
-        deployment.time_travel_by(3600)
+        time_travel_by(deployment.web3, 3600)
         deployment.tub.drip().transact()
 
         # then
