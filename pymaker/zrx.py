@@ -70,6 +70,11 @@ class Order:
         self.ec_signature_s = ec_signature_s
         self.ec_signature_v = ec_signature_v
 
+    # this is not a proper 0x order_id, it's just so `OrderBookManager` can uniquely identify orders
+    @property
+    def order_id(self):
+        return hash(self)
+
     @property
     def sell_to_buy_price(self) -> Wad:
         return self.pay_amount / self.buy_amount
