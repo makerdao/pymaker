@@ -19,6 +19,7 @@ import pytest
 from web3 import Web3, EthereumTesterProvider
 
 from pymaker import Address, eth_transfer
+from pymaker.gas import FixedGasPrice
 from pymaker.numeric import Wad
 from pymaker.token import DSToken
 from pymaker.util import synchronize, eth_balance
@@ -79,6 +80,26 @@ class TestTransact:
         with pytest.raises(Exception):
             synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas=129995,
                                                                                            gas_buffer=3000000)])
+
+    def test_custom_gas_price(self):
+        # given
+        gas_price = FixedGasPrice(25000000100)
+
+        # when
+        self.token.transfer(self.second_address, Wad(500)).transact(gas_price=gas_price)
+
+        # then
+        assert self.web3.eth.getBlock('latest', full_transactions=True).transactions[0].gasPrice == gas_price.gas_price
+
+    def test_custom_gas_price_async(self):
+        # given
+        gas_price = FixedGasPrice(25000000200)
+
+        # when
+        synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas_price=gas_price)])
+
+        # then
+        assert self.web3.eth.getBlock('latest', full_transactions=True).transactions[0].gasPrice == gas_price.gas_price
 
     def test_custom_from_address(self):
         # given
