@@ -32,7 +32,9 @@ def directly(**kwargs):
     """
 
     def approval_function(token: ERC20Token, spender_address: Address, spender_name: str):
-        if token.allowance_of(Address(token.web3.eth.defaultAccount), spender_address) < Wad(2 ** 128 - 1):
+        address_to_check = kwargs['from_address'] if 'from_address' in kwargs else Address(token.web3.eth.defaultAccount)
+
+        if token.allowance_of(address_to_check, spender_address) < Wad(2 ** 128 - 1):
             logger = logging.getLogger()
             logger.info(f"Approving {spender_name} ({spender_address}) to access our {token.address} directly")
             if not token.approve(spender_address).transact(**kwargs):

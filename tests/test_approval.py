@@ -39,11 +39,12 @@ class FailingTransact:
 
 
 def setup_module():
-    global web3, our_address, second_address
+    global web3, our_address, second_address, third_address
     web3 = Web3(EthereumTesterProvider())
     web3.eth.defaultAccount = web3.eth.accounts[0]
     our_address = Address(web3.eth.defaultAccount)
     second_address = Address(web3.eth.accounts[1])
+    third_address = Address(web3.eth.accounts[2])
 
 
 def setup_function():
@@ -60,6 +61,21 @@ def test_direct_approval():
 
     # then
     assert token.allowance_of(our_address, second_address) == Wad(2**256-1)
+
+
+def test_direct_approval_should_obey_from_address():
+    # given
+    global web3, our_address, second_address, third_address, token
+    # and
+    # [there is already approval from the `defaultAccount`]
+    # [so that we make sure we check for the existing approval properly]
+    directly()(token, second_address, "some-name")
+
+    # when
+    directly(from_address=third_address)(token, second_address, "some-name")
+
+    # then
+    assert token.allowance_of(third_address, second_address) == Wad(2**256-1)
 
 
 def test_direct_approval_should_obey_gas_price():
