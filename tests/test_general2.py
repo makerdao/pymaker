@@ -15,7 +15,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import pytest
+from mock import MagicMock
 from web3 import Web3, EthereumTesterProvider
 
 from pymaker import Address, eth_transfer
@@ -34,6 +36,16 @@ class TestTransact:
         self.third_address = Address(self.web3.eth.accounts[2])
         self.token = DSToken.deploy(self.web3, 'ABC')
         self.token.mint(Wad(1000000)).transact()
+
+    def test_can_only_execute_once(self):
+        # given
+        transact = self.token.transfer(self.second_address, Wad(500))
+        # and
+        transact.transact()
+
+        # expect
+        with pytest.raises(Exception):
+            transact.transact()
 
     def test_default_gas(self):
         # when

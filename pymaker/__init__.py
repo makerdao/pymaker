@@ -290,6 +290,7 @@ class Transact:
         self.parameters = parameters
         self.extra = extra
         self.result_function = result_function
+        self.executed = False
 
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
         raw_receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
@@ -416,6 +417,11 @@ class Transact:
             A future value of either a :py:class:`pymaker.Receipt` object if the transaction
             invocation was successful, or `None` if it failed.
         """
+
+        # Check for multiple execution
+        if self.executed:
+            raise Exception("Each `Transact` can only be executed once")
+        self.executed = True
 
         # Get the from account.
         from_account = kwargs['from_address'].address if ('from_address' in kwargs) else self.web3.eth.defaultAccount
