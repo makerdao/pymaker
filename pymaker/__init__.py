@@ -255,6 +255,7 @@ class Receipt:
     def logs(self):
         return self.raw_receipt['logs']
 
+
 class Transact:
     """Represents an Ethereum transaction before it gets executed."""
 
