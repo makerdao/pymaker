@@ -233,3 +233,33 @@ class TestTransactReplace:
         # and
         assert self.token.balance_of(self.second_address) == Wad(0)
         assert self.token.balance_of(self.third_address) == Wad(700)
+
+    @pytest.mark.timeout(10)
+    def test_transaction_replace_of_failed_transaction(self):
+        # given
+        original_send_transaction = self.web3.eth.sendTransaction
+
+        # when
+        transact_1 = self.token.transfer(self.second_address, Wad(2000000))  # more than we minted
+        receipt_1 = transact_1.transact()
+        # then
+        assert transact_1.status == TransactStatus.FINISHED
+        assert receipt_1 is None
+
+        # when
+        def second_send_transaction(transaction):
+            # TestRPC doesn't support `sendTransaction` calls with the `nonce` parameter
+            # (unlike proper Ethereum nodes which handle it very well)
+            transaction_without_nonce = {key: transaction[key] for key in transaction if key != 'nonce'}
+            return original_send_transaction(transaction_without_nonce)
+
+        self.web3.eth.sendTransaction = MagicMock(side_effect=second_send_transaction)
+        # when
+        transact_2 = self.token.transfer(self.second_address, Wad(500))  # more than we minted
+        receipt_2 = transact_2.transact(replace=transact_1)
+        # then
+        assert transact_2.status == TransactStatus.FINISHED
+        assert receipt_2 is not None
+        assert receipt_2.successful
+        # and
+        assert self.token.balance_of(self.second_address) == Wad(500)

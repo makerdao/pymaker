@@ -465,17 +465,13 @@ class Transact:
         assert(isinstance(gas_price, GasPrice))
 
         # Get the transaction this one is supposed to replace.
+        # If there is one, try to borrow the nonce from it as long as that transaction isn't finished.
         replaced_tx = kwargs['replace'] if ('replace' in kwargs) else None
-        # If it doesn't have a nonce assigned now, wait until it happens.
-        #TODO currently replacing a transaction which failed will be stuck forever here
         if replaced_tx is not None:
-            while replaced_tx.nonce is None:
+            while replaced_tx.nonce is None and replaced_tx.status != TransactStatus.FINISHED:
                 await asyncio.sleep(0.25)
 
-        # Initialize nonce. If it's a brand new transaction, we start with `None` and we will read it with:
-        #    `self.nonce = self.web3.eth.getTransaction(tx_hash)['nonce']`
-        # below. If we are replacing an existing transaction in progress, we reuse its nonce.
-        self.nonce = replaced_tx.nonce if (replaced_tx is not None) else None
+            self.nonce = replaced_tx.nonce
 
         # Initialize variables which will be used in the main loop.
         tx_hashes = []
