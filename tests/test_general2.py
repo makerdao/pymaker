@@ -206,7 +206,15 @@ class TestTransactReplace:
         assert self.token.balance_of(self.second_address) == Wad(0)
 
         # when
-        self.web3.eth.sendTransaction = MagicMock(side_effect=lambda transaction: original_send_transaction({key: transaction[key] for key in transaction if key != 'nonce'}))
+        def second_send_transaction(transaction):
+            assert transaction['nonce'] == nonce
+
+            # TestRPC doesn't support `sendTransaction` calls with the `nonce` parameter
+            # (unlike proper Ethereum nodes which handle it very well)
+            transaction_without_nonce = {key: transaction[key] for key in transaction if key != 'nonce'}
+            return original_send_transaction(transaction_without_nonce)
+
+        self.web3.eth.sendTransaction = MagicMock(side_effect=second_send_transaction)
         self.web3.eth.getTransaction = original_get_transaction
         # and
         transact_2 = self.token.transfer(self.third_address, Wad(700))
