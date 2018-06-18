@@ -20,7 +20,8 @@ import json
 import logging
 import sys
 import time
-from functools import total_ordering
+from enum import Enum, auto
+from functools import total_ordering, wraps
 from typing import Optional
 
 import eth_utils
@@ -59,6 +60,24 @@ def stop_all_filter_threads():
             filter_thread.stop_watching(timeout=60)
         except:
             pass
+
+
+def _track_status(f):
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        # Check for multiple execution
+        if args[0].status != TransactStatus.NEW:
+            raise Exception("Each `Transact` can only be executed once")
+
+        # Set current status to in progress
+        args[0].status = TransactStatus.IN_PROGRESS
+
+        try:
+            return f(*args, **kwds)
+        finally:
+            args[0].status = TransactStatus.FINISHED
+
+    return wrapper
 
 
 @total_ordering
@@ -256,6 +275,12 @@ class Receipt:
         return self.raw_receipt['logs']
 
 
+class TransactStatus(Enum):
+     NEW = auto()
+     IN_PROGRESS = auto()
+     FINISHED = auto()
+
+
 class Transact:
     """Represents an Ethereum transaction before it gets executed."""
 
@@ -290,7 +315,7 @@ class Transact:
         self.parameters = parameters
         self.extra = extra
         self.result_function = result_function
-        self.executed = False
+        self.status = TransactStatus.NEW
         self.nonce = None
 
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
@@ -398,6 +423,7 @@ class Transact:
         """
         return synchronize([self.transact_async(**kwargs)])[0]
 
+    @_track_status
     async def transact_async(self, **kwargs) -> Optional[Receipt]:
         """Executes the Ethereum transaction asynchronously.
 
@@ -419,11 +445,6 @@ class Transact:
             invocation was successful, or `None` if it failed.
         """
 
-        # Check for multiple execution
-        if self.executed:
-            raise Exception("Each `Transact` can only be executed once")
-        self.executed = True
-
         # Get the from account.
         from_account = kwargs['from_address'].address if ('from_address' in kwargs) else self.web3.eth.defaultAccount
 
@@ -443,8 +464,20 @@ class Transact:
         gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
         assert(isinstance(gas_price, GasPrice))
 
+        # Get the transaction this one is supposed to replace.
+        replaced_tx = kwargs['replace'] if ('replace' in kwargs) else None
+        # If it doesn't have a nonce assigned now, wait until it happens.
+        #TODO currently replacing a transaction which failed will be stuck forever here
+        if replaced_tx is not None:
+            while replaced_tx.nonce is None:
+                await asyncio.sleep(0.25)
+
+        # Initialize nonce. If it's a brand new transaction, we start with `None` and we will read it with:
+        #    `self.nonce = self.web3.eth.getTransaction(tx_hash)['nonce']`
+        # below. If we are replacing an existing transaction in progress, we reuse its nonce.
+        self.nonce = replaced_tx.nonce if (replaced_tx is not None) else None
+
         # Initialize variables which will be used in the main loop.
-        self.nonce = None
         tx_hashes = []
         initial_time = time.time()
         gas_price_last = 0
@@ -485,7 +518,8 @@ class Transact:
                     tx_hashes.append(tx_hash)
 
                     # If this is the first transaction sent, get its nonce so we can override the transaction with
-                    # another one using higher gas price if :py:class:`pymaker.gas.GasPrice` tells us to do so
+                    # another one using higher gas price if :py:class:`pymaker.gas.GasPrice` tells us to do so,
+                    # or replace it with a completely another transaction
                     if self.nonce is None:
                         self.nonce = self.web3.eth.getTransaction(tx_hash)['nonce']
 
