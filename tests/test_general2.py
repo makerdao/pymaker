@@ -187,13 +187,15 @@ class TestTransactReplace:
         self.token.mint(Wad(1000000)).transact()
 
     @pytest.mark.asyncio
-    @pytest.mark.skip("Transaction replacing work in progress")
     async def test_transaction_replace(self):
         # given
         original_send_transaction = self.web3.eth.sendTransaction
+        original_get_transaction = self.web3.eth.getTransaction
+        nonce = self.web3.eth.getTransactionCount(self.our_address.address)
 
         # when
-        self.web3.eth.sendTransaction = MagicMock()
+        self.web3.eth.sendTransaction = MagicMock(return_value='0xaaaaaaaaaabbbbbbbbbbccccccccccdddddddddd')
+        self.web3.eth.getTransaction = MagicMock(return_value={'nonce': nonce})
         # and
         transact_1 = self.token.transfer(self.second_address, Wad(500))
         future_receipt_1 = asyncio.ensure_future(transact_1.transact_async())
@@ -204,15 +206,19 @@ class TestTransactReplace:
         assert self.token.balance_of(self.second_address) == Wad(0)
 
         # when
-        self.web3.eth.sendTransaction = original_send_transaction
+        self.web3.eth.sendTransaction = MagicMock(side_effect=lambda transaction: original_send_transaction({key: transaction[key] for key in transaction if key != 'nonce'}))
+        self.web3.eth.getTransaction = original_get_transaction
         # and
         transact_2 = self.token.transfer(self.third_address, Wad(700))
         future_receipt_2 = asyncio.ensure_future(transact_2.transact_async(replace=transact_1))
         # and
         await asyncio.sleep(2)
         # then
+        assert transact_1.status == TransactStatus.FINISHED
         assert future_receipt_1.done()
         assert future_receipt_1.result() is None
+        # and
+        assert transact_2.status == TransactStatus.FINISHED
         assert future_receipt_2.done()
         assert future_receipt_2.result() is not None
         assert future_receipt_2.result().successful is True
