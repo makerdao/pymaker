@@ -47,9 +47,29 @@ class TestTransact:
         with pytest.raises(Exception):
             transact.transact()
 
+    def test_can_only_execute_once_even_if_tx_failed(self):
+        # given
+        transact = self.token.transfer(self.second_address, Wad(2000000))  # more than we minted
+        # and
+        transact.transact()
+
+        # expect
+        with pytest.raises(Exception):
+            transact.transact()
+
     def test_should_update_status_when_finished(self):
         # given
         transact = self.token.transfer(self.second_address, Wad(500))
+        assert transact.status == TransactStatus.NEW
+
+        # when
+        transact.transact()
+        # then
+        assert transact.status == TransactStatus.FINISHED
+
+    def test_should_update_status_to_finished_even_if_tx_failed(self):
+        # given
+        transact = self.token.transfer(self.second_address, Wad(2000000))  # more than we minted
         assert transact.status == TransactStatus.NEW
 
         # when
