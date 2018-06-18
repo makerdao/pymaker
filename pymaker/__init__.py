@@ -291,6 +291,7 @@ class Transact:
         self.extra = extra
         self.result_function = result_function
         self.executed = False
+        self.nonce = None
 
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
         raw_receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
@@ -443,7 +444,7 @@ class Transact:
         assert(isinstance(gas_price, GasPrice))
 
         # Initialize variables which will be used in the main loop.
-        nonce = None
+        self.nonce = None
         tx_hashes = []
         initial_time = time.time()
         gas_price_last = 0
@@ -451,7 +452,7 @@ class Transact:
         while True:
             seconds_elapsed = int(time.time() - initial_time)
 
-            if nonce is not None and self.web3.eth.getTransactionCount(from_account) > nonce:
+            if self.nonce is not None and self.web3.eth.getTransactionCount(from_account) > self.nonce:
                 # Check if any transaction sent so far has been mined (has a receipt).
                 # If it has, we return either the receipt (if if was successful) or `None`.
                 for tx_hash in tx_hashes:
@@ -480,19 +481,19 @@ class Transact:
                 gas_price_last = gas_price_value
 
                 try:
-                    tx_hash = self._func(from_account, gas, gas_price_value, nonce)
+                    tx_hash = self._func(from_account, gas, gas_price_value, self.nonce)
                     tx_hashes.append(tx_hash)
 
                     # If this is the first transaction sent, get its nonce so we can override the transaction with
                     # another one using higher gas price if :py:class:`pymaker.gas.GasPrice` tells us to do so
-                    if nonce is None:
-                        nonce = self.web3.eth.getTransaction(tx_hash)['nonce']
+                    if self.nonce is None:
+                        self.nonce = self.web3.eth.getTransaction(tx_hash)['nonce']
 
-                    self.logger.info(f"Sent transaction {self.name()} with nonce={nonce}, gas={gas},"
+                    self.logger.info(f"Sent transaction {self.name()} with nonce={self.nonce}, gas={gas},"
                                      f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
                                      f" (tx_hash={tx_hash})")
                 except:
-                    self.logger.warning(f"Failed to send transaction {self.name()} with nonce={nonce}, gas={gas},"
+                    self.logger.warning(f"Failed to send transaction {self.name()} with nonce={self.nonce}, gas={gas},"
                                         f" gas_price={gas_price_value if gas_price_value is not None else 'default'}")
 
                     if len(tx_hashes) == 0:
