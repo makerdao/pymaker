@@ -64,7 +64,7 @@ def stop_all_filter_threads():
 
 def _track_status(f):
     @wraps(f)
-    def wrapper(*args, **kwds):
+    async def wrapper(*args, **kwds):
         # Check for multiple execution
         if args[0].status != TransactStatus.NEW:
             raise Exception("Each `Transact` can only be executed once")
@@ -73,7 +73,7 @@ def _track_status(f):
         args[0].status = TransactStatus.IN_PROGRESS
 
         try:
-            return f(*args, **kwds)
+            return await f(*args, **kwds)
         finally:
             args[0].status = TransactStatus.FINISHED
 
