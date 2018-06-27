@@ -18,6 +18,7 @@ utilities aiming to interact with these contracts.
 Based on this API, a set of reference Maker keepers is being developed. They all used to reside
 in this repository, but now each of them has an individual one: [bite-keeper](https://github.com/makerdao/bite-keeper),
 [arbitrage-keeper](https://github.com/makerdao/arbitrage-keeper),
+[auction-keeper](https://github.com/makerdao/auction-keeper),
 [cdp-keeper](https://github.com/makerdao/cdp-keeper),
 [market-maker-keeper](https://github.com/makerdao/market-maker-keeper).
 
