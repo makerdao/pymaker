@@ -22,6 +22,11 @@ in this repository, but now each of them has an individual one: [bite-keeper](ht
 [cdp-keeper](https://github.com/makerdao/cdp-keeper),
 [market-maker-keeper](https://github.com/makerdao/market-maker-keeper).
 
+You only need to install this project directly if you want to build your own keepers,
+or if you want to play with this API library itself. If you just want to install
+one of reference keepers, go to one of the repositories linked above and start from there.
+Each of these keepers references some version of `pymaker` via a Git submodule.
+
 ## Installation
 
 This project uses *Python 3.6.2*.
