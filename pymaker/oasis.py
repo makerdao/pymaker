@@ -144,6 +144,17 @@ class LogTake:
         self.timestamp = log['args']['timestamp']
         self.raw = log
 
+    @classmethod
+    def from_event(cls, event: dict):
+        assert(isinstance(event, dict))
+
+        topics = event.get('topics')
+        if topics and topics[0] == '0x3383e3357c77fd2e3a4b30deea81179bc70a795d053d14d5b7f2f01d0fd4596f':
+            log_take_abi = [abi for abi in SimpleMarket.abi if abi.get('name') == 'LogTake'][0]
+            event_data = get_event_data(log_take_abi, event)
+
+            return LogTake(event_data)
+
     def __repr__(self):
         return pformat(vars(self))
 
