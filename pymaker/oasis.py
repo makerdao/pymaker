@@ -424,7 +424,6 @@ class SimpleMarket(Contract):
 
         return result
 
-    #TODO make it return the id of the newly created order
     def make(self, pay_token: Address, pay_amount: Wad, buy_token: Address, buy_amount: Wad) -> Transact:
         """Create a new order.
 
