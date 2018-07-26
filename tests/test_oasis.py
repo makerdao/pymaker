@@ -22,7 +22,7 @@ import time
 from web3 import EthereumTesterProvider
 from web3 import Web3
 
-from pymaker import Address, Wad
+from pymaker import Address, Wad, Contract
 from pymaker.approval import directly
 from pymaker.oasis import SimpleMarket, ExpiringMarket, MatchingMarket, Order
 from pymaker.token import DSToken
@@ -585,6 +585,28 @@ class TestMatchingMarket(GeneralMarketTest):
 
     def test_should_have_printable_representation(self):
         assert repr(self.otc) == f"MatchingMarket('{self.otc.address}')"
+
+
+@pytest.mark.skip(reason="MakerOtcSupportMethods doesn't work with testrpc")
+class TestMatchingMarketWithSupportContract(TestMatchingMarket):
+    def setup_method(self):
+        GeneralMarketTest.setup_method(self)
+
+        support_abi = Contract._load_abi(__name__, '../pymaker/abi/MakerOtcSupportMethods.abi')
+        support_bin = Contract._load_bin(__name__, '../pymaker/abi/MakerOtcSupportMethods.bin')
+        support_address = Contract._deploy(self.web3, support_abi, support_bin, [])
+
+        self.otc = MatchingMarket.deploy(self.web3, 2500000000, support_address)
+        self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
+        self.otc.add_token_pair_whitelist(self.token1.address, self.token3.address).transact()
+        self.otc.add_token_pair_whitelist(self.token2.address, self.token3.address).transact()
+
+    def test_fail_when_no_support_contract_under_that_address(self):
+        # expect
+        with pytest.raises(Exception):
+            MatchingMarket(web3=self.web3,
+                           address=self.otc.address,
+                           support_address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
 
 class TestMatchingMarketPosition:

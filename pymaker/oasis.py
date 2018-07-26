@@ -562,24 +562,37 @@ class MatchingMarket(ExpiringMarket):
     Attributes:
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `MatchingMarket` contract.
+        support_address: Ethereum address of the `MakerOtcSupportMethods` contract (optional).
     """
 
     abi = Contract._load_abi(__name__, 'abi/MatchingMarket.abi')
     bin = Contract._load_bin(__name__, 'abi/MatchingMarket.bin')
 
+    abi_support = Contract._load_abi(__name__, 'abi/MakerOtcSupportMethods.abi')
+
+    def __init__(self, web3: Web3, address: Address, support_address: Optional[Address] = None):
+        assert(isinstance(support_address, Address) or (support_address is None))
+
+        super(MatchingMarket, self).__init__(web3=web3, address=address)
+
+        self.support_address = support_address
+        self._support_contract = self._get_contract(web3, self.abi_support, self.support_address) \
+            if self.support_address else None
+
     @staticmethod
-    def deploy(web3: Web3, close_time: int):
+    def deploy(web3: Web3, close_time: int, support_address: Optional[Address] = None):
         """Deploy a new instance of the `MatchingMarket` contract.
 
         Args:
             web3: An instance of `Web` from `web3.py`.
             close_time: Unix timestamp of when the market will close.
+            support_address: Ethereum address of the `MakerOtcSupportMethods` contract (optional).
 
         Returns:
             A `MatchingMarket` class instance.
         """
         return MatchingMarket(web3=web3, address=Contract._deploy(web3, MatchingMarket.abi, MatchingMarket.bin,
-                                                                  [close_time]))
+                                                                  [close_time]), support_address=support_address)
 
     def is_buy_enabled(self) -> bool:
         """Checks if direct buy is enabled.
@@ -666,13 +679,39 @@ class MatchingMarket(ExpiringMarket):
         if pay_token is not None and buy_token is not None:
             orders = []
 
-            order_id = self._contract.call().getBestOffer(pay_token.address, buy_token.address)
-            while order_id != 0:
-                order = self.get_order(order_id)
-                if order is not None:
-                    orders.append(order)
+            if self._support_contract:
+                result = self._support_contract.call().getOffers(self.address.address, pay_token.address, buy_token.address)
 
-                order_id = self._contract.call().getWorseOffer(order_id)
+                while True:
+                    count = 0
+                    for i in range(0, 100):
+                        if result[3][i] != '0x0000000000000000000000000000000000000000':
+                            count += 1
+
+                            orders.append(Order(market=self,
+                                                order_id=result[0][i],
+                                                maker=Address(result[3][i]),
+                                                pay_token=pay_token,
+                                                pay_amount=Wad(result[1][i]),
+                                                buy_token=buy_token,
+                                                buy_amount=Wad(result[2][i]),
+                                                timestamp=result[4][i]))
+
+                    if count == 100:
+                        next_order_id = self._contract.call().getWorseOffer(orders[-1].order_id)
+                        result = self._support_contract.call().getOffers(self.address.address, next_order_id)
+
+                    else:
+                        break
+
+            else:
+                order_id = self._contract.call().getBestOffer(pay_token.address, buy_token.address)
+                while order_id != 0:
+                    order = self.get_order(order_id)
+                    if order is not None:
+                        orders.append(order)
+
+                    order_id = self._contract.call().getWorseOffer(order_id)
 
             return sorted(orders, key=lambda order: order.order_id)
         else:
