@@ -155,6 +155,10 @@ class LogTake:
 
             return LogTake(event_data)
 
+    def __eq__(self, other):
+        assert(isinstance(other, LogTake))
+        return self.__dict__ == other.__dict__
+
     def __repr__(self):
         return pformat(vars(self))
 
