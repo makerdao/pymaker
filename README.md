@@ -33,6 +33,7 @@ This project uses *Python 3.6.2*.
 
 In order to clone the project and install required third-party packages please execute:
 ```
+sudo apt-get install build-essential automake libtool pkg-config libffi-dev python-dev python-pip libsecp256k1-dev
 git clone https://github.com/makerdao/pymaker.git
 cd pymaker
 pip3 install -r requirements.txt
