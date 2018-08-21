@@ -45,6 +45,8 @@ In order for the `secp256k` Python dependency to compile properly, following pac
 sudo apt-get install build-essential automake libtool pkg-config libffi-dev python-dev python-pip libsecp256k1-dev
 ```
 
+(for Ubuntu 18.04 Server)
+
 ### Known macOS issues
 
 In order for the Python requirements to install correctly on _macOS_, please install
