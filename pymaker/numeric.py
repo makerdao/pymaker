@@ -19,6 +19,9 @@ from functools import total_ordering, reduce
 from decimal import *
 
 
+_context = Context(prec=1000, rounding=ROUND_DOWN)
+
+
 @total_ordering
 class Wad:
     """Represents a number with 18 decimal places.
@@ -45,7 +48,7 @@ class Wad:
         if isinstance(value, Wad):
             self.value = value.value
         elif isinstance(value, Ray):
-            self.value = int((Decimal(value.value) / (Decimal(10)**Decimal(9))).quantize(1, rounding=ROUND_DOWN))
+            self.value = int((Decimal(value.value) // (Decimal(10)**Decimal(9))).quantize(1, context=_context))
         elif isinstance(value, int):
             # assert(value >= 0)
             self.value = value
@@ -57,7 +60,7 @@ class Wad:
         # assert(number >= 0)
         pwr = Decimal(10) ** 18
         dec = Decimal(str(number)) * pwr
-        return Wad(int(dec.quantize(1)))
+        return Wad(int(dec.quantize(1, context=_context)))
 
     def __repr__(self):
         return "Wad(" + str(self.value) + ")"
@@ -82,18 +85,18 @@ class Wad:
     def __mul__(self, other):
         if isinstance(other, Wad):
             result = Decimal(self.value) * Decimal(other.value) / (Decimal(10) ** Decimal(18))
-            return Wad(int(result.quantize(1, rounding=ROUND_DOWN)))
+            return Wad(int(result.quantize(1, context=_context)))
         elif isinstance(other, Ray):
             result = Decimal(self.value) * Decimal(other.value) / (Decimal(10) ** Decimal(27))
-            return Wad(int(result.quantize(1, rounding=ROUND_DOWN)))
+            return Wad(int(result.quantize(1, context=_context)))
         elif isinstance(other, int):
-            return Wad(int((Decimal(self.value) * Decimal(other)).quantize(1)))
+            return Wad(int((Decimal(self.value) * Decimal(other)).quantize(1, context=_context)))
         else:
             raise ArithmeticError
 
     def __truediv__(self, other):
         if isinstance(other, Wad):
-            return Wad(int((Decimal(self.value) * (Decimal(10) ** Decimal(18)) / Decimal(other.value)).quantize(1, rounding=ROUND_DOWN)))
+            return Wad(int((Decimal(self.value) * (Decimal(10) ** Decimal(18)) / Decimal(other.value)).quantize(1, context=_context)))
         else:
             raise ArithmeticError
 
@@ -161,7 +164,7 @@ class Ray:
         if isinstance(value, Ray):
             self.value = value.value
         elif isinstance(value, Wad):
-            self.value = int((Decimal(value.value) * (Decimal(10)**Decimal(9))).quantize(1))
+            self.value = int((Decimal(value.value) * (Decimal(10)**Decimal(9))).quantize(1, context=_context))
         elif isinstance(value, int):
             # assert(value >= 0)
             self.value = value
@@ -173,7 +176,7 @@ class Ray:
         # assert(number >= 0)
         pwr = Decimal(10) ** 27
         dec = Decimal(str(number)) * pwr
-        return Ray(int(dec.quantize(1)))
+        return Ray(int(dec.quantize(1, context=_context)))
 
     def __repr__(self):
         return "Ray(" + str(self.value) + ")"
@@ -197,18 +200,18 @@ class Ray:
     def __mul__(self, other):
         if isinstance(other, Ray):
             result = Decimal(self.value) * Decimal(other.value) / (Decimal(10) ** Decimal(27))
-            return Ray(int(result.quantize(1, rounding=ROUND_DOWN)))
+            return Ray(int(result.quantize(1, context=_context)))
         elif isinstance(other, Wad):
             result = Decimal(self.value) * Decimal(other.value) / (Decimal(10) ** Decimal(18))
-            return Ray(int(result.quantize(1, rounding=ROUND_DOWN)))
+            return Ray(int(result.quantize(1, context=_context)))
         elif isinstance(other, int):
-            return Ray(int((Decimal(self.value) * Decimal(other)).quantize(1)))
+            return Ray(int((Decimal(self.value) * Decimal(other)).quantize(1, context=_context)))
         else:
             raise ArithmeticError
 
     def __truediv__(self, other):
         if isinstance(other, Ray):
-            return Ray(int((Decimal(self.value) * (Decimal(10) ** Decimal(27)) / Decimal(other.value)).quantize(1, rounding=ROUND_DOWN)))
+            return Ray(int((Decimal(self.value) * (Decimal(10) ** Decimal(27)) / Decimal(other.value)).quantize(1, context=_context)))
         else:
             raise ArithmeticError
 
