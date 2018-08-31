@@ -177,6 +177,17 @@ class TestDSToken:
         # then
         assert self.dstoken.balance_of(self.our_address) == Wad(100000)
 
+    def test_mint_generates_transfer(self):
+        # when
+        receipt = self.dstoken.mint(Wad(100000)).transact()
+
+        # then
+        assert len(receipt.transfers) == 1
+        assert receipt.transfers[0].token_address == self.dstoken.address
+        assert receipt.transfers[0].from_address == Address('0x0000000000000000000000000000000000000000')
+        assert receipt.transfers[0].to_address == self.our_address
+        assert receipt.transfers[0].value == Wad(100000)
+
     def test_burn(self):
         # given
         self.dstoken.mint(Wad(100000)).transact()
@@ -186,6 +197,20 @@ class TestDSToken:
 
         # then
         assert self.dstoken.balance_of(self.our_address) == Wad(60000)
+
+    def test_burn_generates_transfer(self):
+        # given
+        self.dstoken.mint(Wad(100000)).transact()
+
+        # when
+        receipt = self.dstoken.burn(Wad(40000)).transact()
+
+        # then
+        assert len(receipt.transfers) == 1
+        assert receipt.transfers[0].token_address == self.dstoken.address
+        assert receipt.transfers[0].from_address == self.our_address
+        assert receipt.transfers[0].to_address == Address('0x0000000000000000000000000000000000000000')
+        assert receipt.transfers[0].value == Wad(40000)
 
     def test_should_have_printable_representation(self):
         assert repr(self.dstoken) == f"DSToken('{self.dstoken.address}')"

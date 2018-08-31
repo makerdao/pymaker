@@ -259,14 +259,40 @@ class Receipt:
         if (receipt_logs is not None) and (len(receipt_logs) > 0):
             self.successful = True
             for receipt_log in receipt_logs:
-                if len(receipt_log['topics']) > 0 and receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
-                    from pymaker.token import ERC20Token
-                    transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
-                    event_data = get_event_data(transfer_abi, receipt_log)
-                    self.transfers.append(Transfer(token_address=Address(event_data['address']),
-                                                   from_address=Address(event_data['args']['from']),
-                                                   to_address=Address(event_data['args']['to']),
-                                                   value=Wad(event_data['args']['value'])))
+                if len(receipt_log['topics']) > 0:
+                    # $ seth keccak $(seth --from-ascii "Transfer(address,address,uint256)")
+                    # 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+                    if receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
+                        from pymaker.token import ERC20Token
+                        transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
+                        event_data = get_event_data(transfer_abi, receipt_log)
+                        self.transfers.append(Transfer(token_address=Address(event_data['address']),
+                                                       from_address=Address(event_data['args']['from']),
+                                                       to_address=Address(event_data['args']['to']),
+                                                       value=Wad(event_data['args']['value'])))
+
+                    # $ seth keccak $(seth --from-ascii "Mint(address,uint256)")
+                    # 0x0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885
+                    if receipt_log['topics'][0] == '0x0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885':
+                        from pymaker.token import DSToken
+                        transfer_abi = [abi for abi in DSToken.abi if abi.get('name') == 'Mint'][0]
+                        event_data = get_event_data(transfer_abi, receipt_log)
+                        self.transfers.append(Transfer(token_address=Address(event_data['address']),
+                                                       from_address=Address('0x0000000000000000000000000000000000000000'),
+                                                       to_address=Address(event_data['args']['guy']),
+                                                       value=Wad(event_data['args']['wad'])))
+
+                    # $ seth keccak $(seth --from-ascii "Burn(address,uint256)")
+                    # 0xcc16f5dbb4873280815c1ee09dbd06736cffcc184412cf7a71a0fdb75d397ca5
+                    if receipt_log['topics'][0] == '0xcc16f5dbb4873280815c1ee09dbd06736cffcc184412cf7a71a0fdb75d397ca5':
+                        from pymaker.token import DSToken
+                        transfer_abi = [abi for abi in DSToken.abi if abi.get('name') == 'Burn'][0]
+                        event_data = get_event_data(transfer_abi, receipt_log)
+                        self.transfers.append(Transfer(token_address=Address(event_data['address']),
+                                                       from_address=Address(event_data['args']['guy']),
+                                                       to_address=Address('0x0000000000000000000000000000000000000000'),
+                                                       value=Wad(event_data['args']['wad'])))
+
         else:
             self.successful = False
 
