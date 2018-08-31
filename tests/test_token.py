@@ -100,6 +100,17 @@ class TestERC20Token:
         assert self.token.balance_of(self.our_address) == Wad(1000000)
         assert self.token.balance_of(self.second_address) == Wad(0)
 
+    def test_transfer_generates_transfer(self):
+        # when
+        receipt = self.token.transfer(self.second_address, Wad(500)).transact()
+
+        # then
+        assert len(receipt.transfers) == 1
+        assert receipt.transfers[0].token_address == self.token.address
+        assert receipt.transfers[0].from_address == self.our_address
+        assert receipt.transfers[0].to_address == self.second_address
+        assert receipt.transfers[0].value == Wad(500)
+
     def test_transfer_from(self):
         # given
         self.token.approve(self.second_address).transact()
