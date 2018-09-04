@@ -24,6 +24,7 @@ from typing import List, Optional
 
 import requests
 from web3 import Web3
+from web3.utils.events import get_event_data
 
 from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
@@ -221,6 +222,21 @@ class LogFill:
         self.tokens = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['tokens']]).tobytes())
         self.order_hash = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['orderHash']]).tobytes())
         self.raw = log
+
+    @classmethod
+    def from_event(cls, event: dict):
+        assert(isinstance(event, dict))
+
+        topics = event.get('topics')
+        if topics and topics[0] == '0x0d0b9391970d9a25552f37d436d2aae2925e2bfe1b2a923754bada030c498cb3':
+            log_fill_abi = [abi for abi in ZrxExchange.abi if abi.get('name') == 'LogFill'][0]
+            event_data = get_event_data(log_fill_abi, event)
+
+            return LogFill(event_data)
+
+    def __eq__(self, other):
+        assert(isinstance(other, LogFill))
+        return self.__dict__ == other.__dict__
 
     def __repr__(self):
         return pformat(vars(self))
