@@ -545,6 +545,34 @@ class ZrxRelayerApi:
         self.exchange = exchange
         self.api_server = api_server
 
+    def get_orders(self, pay_token: Address, buy_token: Address, per_page: int = 100) -> List[Order]:
+        """Returns active orders filtered by token pair (one side).
+
+        In order to get them, issues a `/v0/orders` call to the Standard Relayer API.
+
+        Args:
+            per_page: Maximum number of orders to be downloaded per page. 0x Standard Relayer API
+                limitation is 100, but some relayers can handle more so that's why this parameter
+                is exposed.
+
+        Returns:
+            Orders, as a list of instances of the :py:class:`pymaker.zrx.Order` class.
+        """
+        assert(isinstance(pay_token, Address))
+        assert(isinstance(buy_token, Address))
+
+        url = f"{self.api_server}/v0/orders?" \
+              f"exchangeContractAddress={self.exchange.address.address}&" \
+              f"makerTokenAddress={pay_token.address}&" \
+              f"takerTokenAddress={buy_token.address}&" \
+              f"per_page={per_page}"
+
+        response = requests.get(url, timeout=self.timeout)
+        if not response.ok:
+            raise Exception(f"Failed to fetch 0x orders from the relayer: {http_response_summary(response)}")
+
+        return list(map(lambda item: Order.from_json(self.exchange, item), response.json()))
+
     def get_orders_by_maker(self, maker: Address, per_page: int = 100) -> List[Order]:
         """Returns all active orders created by `maker`.
 
