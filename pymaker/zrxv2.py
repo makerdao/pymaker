@@ -33,18 +33,59 @@ from pymaker.token import ERC20Token
 from pymaker.util import bytes_to_hexstring, hexstring_to_bytes, http_response_summary
 
 
+class Asset:
+    @staticmethod
+    def deserialize(asset: str):
+        if ERC20Asset.ID.upper() == asset[0:10].upper():
+            return ERC20Asset(token_address=Address("0x" + asset[-40:]))
+
+        else:
+            return UnknownAsset(asset=asset)
+
+    def serialize(self) -> str:
+        raise Exception("serialize() not implemented")
+
+    def __repr__(self):
+        return pformat(vars(self))
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+
+class ERC20Asset(Asset):
+    ID = "0xf47261b0"
+
+    def __init__(self, token_address: Address):
+        assert(isinstance(token_address, Address))
+
+        self.token_address = token_address
+
+    def serialize(self) -> str:
+        return self.ID + self.token_address.address[2:]
+
+
+class UnknownAsset(Asset):
+    def __init__(self, asset: str):
+        assert(isinstance(asset, str))
+
+        self.asset = asset
+
+    def serialize(self) -> str:
+        return self.asset
+
+
 class Order:
-    def __init__(self, exchange, maker: Address, taker: Address, maker_fee: Wad, taker_fee: Wad, pay_asset: str,
-                 pay_amount: Wad, buy_asset: str, buy_amount: Wad, salt: int, fee_recipient: Address,
+    def __init__(self, exchange, maker: Address, taker: Address, maker_fee: Wad, taker_fee: Wad, pay_asset: Asset,
+                 pay_amount: Wad, buy_asset: Asset, buy_amount: Wad, salt: int, fee_recipient: Address,
                  expiration: int, exchange_contract_address: Address, signature: Optional[str]):
 
         assert(isinstance(maker, Address))
         assert(isinstance(taker, Address))
         assert(isinstance(maker_fee, Wad))
         assert(isinstance(taker_fee, Wad))
-        assert(isinstance(pay_asset, str))
+        assert(isinstance(pay_asset, Asset))
         assert(isinstance(pay_amount, Wad))
-        assert(isinstance(buy_asset, str))
+        assert(isinstance(buy_asset, Asset))
         assert(isinstance(buy_amount, Wad))
         assert(isinstance(salt, int))
         assert(isinstance(fee_recipient, Address))
@@ -100,9 +141,9 @@ class Order:
                      taker=Address(data['taker']),
                      maker_fee=Wad(int(data['makerFee'])),
                      taker_fee=Wad(int(data['takerFee'])),
-                     pay_asset=str(data['makerAssetData']),
+                     pay_asset=Asset.deserialize(str(data['makerAssetData'])),
                      pay_amount=Wad(int(data['makerTokenAmount'])),
-                     buy_asset=str(data['takerAssetData']),
+                     buy_asset=Asset.deserialize(str(data['takerAssetData'])),
                      buy_amount=Wad(int(data['takerTokenAmount'])),
                      salt=int(data['salt']),
                      fee_recipient=Address(data['feeRecipient']),
@@ -115,8 +156,8 @@ class Order:
             "exchangeContractAddress": self.exchange_contract_address.address,
             "maker": self.maker.address,
             "taker": self.taker.address,
-            "makerAssetData": self.pay_asset,
-            "takerAssetData": self.buy_asset,
+            "makerAssetData": self.pay_asset.serialize(),
+            "takerAssetData": self.buy_asset.serialize(),
             "makerTokenAmount": str(self.pay_amount.value),
             "takerTokenAmount": str(self.buy_amount.value),
             "expirationUnixTimestampSec": str(self.expiration),
@@ -128,8 +169,8 @@ class Order:
             "exchangeContractAddress": self.exchange_contract_address.address,
             "maker": self.maker.address,
             "taker": self.taker.address,
-            "makerAssetData": self.pay_asset,
-            "takerAssetData": self.buy_asset,
+            "makerAssetData": self.pay_asset.serialize(),
+            "takerAssetData": self.buy_asset.serialize(),
             "feeRecipient": self.fee_recipient.address,
             "makerTokenAmount": str(self.pay_amount.value),
             "takerTokenAmount": str(self.buy_amount.value),
@@ -146,7 +187,7 @@ class Order:
                self.taker == other.taker and \
                self.maker_fee == other.maker_fee and \
                self.taker_fee == other.taker_fee and \
-               self.pay_asset.upper() == other.pay_asset and \
+               self.pay_asset == other.pay_asset and \
                self.pay_amount == other.pay_amount and \
                self.buy_asset == other.buy_asset and \
                self.buy_amount == other.buy_amount and \
@@ -203,19 +244,14 @@ class LogFill:
         self.maker = Address(log['args']['makerAddress'])
         self.taker = Address(log['args']['takerAddress'])
         self.fee_recipient = Address(log['args']['feeRecipientAddress'])
-        self.pay_asset = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['makerAssetData']]).tobytes())
-        self.buy_asset = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['takerAssetData']]).tobytes())
+        self.pay_asset = Asset.deserialize(bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['makerAssetData']]).tobytes()))
+        self.buy_asset = Asset.deserialize(bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['takerAssetData']]).tobytes()))
         self.filled_pay_amount = Wad(int(log['args']['makerAssetFilledAmount']))
         self.filled_buy_amount = Wad(int(log['args']['takerAssetFilledAmount']))
         self.paid_maker_fee = Wad(int(log['args']['makerFeePaid']))
         self.paid_taker_fee = Wad(int(log['args']['takerFeePaid']))
         self.order_hash = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['orderHash']]).tobytes())
         self.raw = log
-
-    #TODO ???
-    def pay_token(self) -> Optional[Address]:
-        #TODO ???
-        return None
 
     @classmethod
     def from_event(cls, event: dict):
@@ -251,8 +287,6 @@ class ZrxExchangeV2(Contract):
     bin = Contract._load_bin(__name__, 'abi/ExchangeV2.bin')
 
     _ZERO_ADDRESS = Address("0x0000000000000000000000000000000000000000")
-
-    ERC20_PROXY_ID = "0xf47261b0"
 
     @staticmethod
     def deploy(web3: Web3, zrx_asset: str):
@@ -321,7 +355,7 @@ class ZrxExchangeV2(Contract):
         assert(callable(approval_function))
 
         for token in tokens:  # TODO  + [ERC20Token(web3=self.web3, address=self.zrx_token())]
-            approval_function(token, self.asset_transfer_proxy(self.ERC20_PROXY_ID), '0x ERC20Proxy contract')
+            approval_function(token, self.asset_transfer_proxy(ERC20Asset.ID), '0x ERC20Proxy contract')
 
     def on_fill(self, handler, event_filter: dict = None):
         """Subscribe to LogFill events.
@@ -388,9 +422,9 @@ class ZrxExchangeV2(Contract):
         return self._past_events(self._contract, 'LogCancel', LogCancel, number_of_past_blocks, event_filter)
 
     def create_order(self,
-                     pay_token: Address,
+                     pay_asset: Asset,
                      pay_amount: Wad,
-                     buy_token: Address,
+                     buy_asset: Asset,
                      buy_amount: Wad,
                      expiration: int) -> Order:
         """Creates a new order.
@@ -400,18 +434,18 @@ class ZrxExchangeV2(Contract):
         populated using the `calculate_fees()` method of the `ZrxRelayerApi` class.
 
         Args:
-            pay_token: Address of the ERC20 token you want to put on sale.
-            pay_amount: Amount of the `pay_token` token you want to put on sale.
-            buy_token: Address of the ERC20 token you want to be paid with.
-            buy_amount: Amount of the `buy_token` you want to receive.
+            pay_asset: The asset you want to put on sale.
+            pay_amount: Amount of the `pay_asset` token you want to put on sale.
+            buy_asset: The asset you want to be paid with.
+            buy_amount: Amount of the `buy_asset` you want to receive.
             expiration: Unix timestamp (in seconds) when the order will expire.
 
         Returns:
             New order as an instance of the :py:class:`pymaker.zrx.Order` class.
         """
-        assert(isinstance(pay_token, Address))
+        assert(isinstance(pay_asset, Asset))
         assert(isinstance(pay_amount, Wad))
-        assert(isinstance(buy_token, Address))
+        assert(isinstance(buy_asset, Asset))
         assert(isinstance(buy_amount, Wad))
         assert(isinstance(expiration, int))
 
@@ -420,17 +454,15 @@ class ZrxExchangeV2(Contract):
                      taker=self._ZERO_ADDRESS,
                      maker_fee=Wad(0),
                      taker_fee=Wad(0),
-                     pay_token=pay_token,
+                     pay_asset=pay_asset,
                      pay_amount=pay_amount,
-                     buy_token=buy_token,
+                     buy_asset=buy_asset,
                      buy_amount=buy_amount,
                      salt=self.random_salt(),
                      fee_recipient=self._ZERO_ADDRESS,
                      expiration=expiration,
                      exchange_contract_address=self.address,
-                     ec_signature_r=None,
-                     ec_signature_s=None,
-                     ec_signature_v=None)
+                     signature=None)
 
     def get_order_hash(self, order: Order) -> str:
         """Calculates hash of an order.

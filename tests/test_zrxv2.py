@@ -28,7 +28,7 @@ from pymaker.deployment import deploy_contract
 from pymaker.numeric import Wad
 from pymaker.token import DSToken, ERC20Token
 from pymaker.util import bytes_to_hexstring
-from pymaker.zrxv2 import ZrxExchangeV2, Order, ZrxRelayerApi
+from pymaker.zrxv2 import ZrxExchangeV2, Order, ZrxRelayerApi, ERC20Asset
 from tests.helpers import is_hashable, wait_until_mock_called
 
 PAST_BLOCKS = 100
@@ -65,8 +65,7 @@ class TestZrxV2:
         assert self.exchange.address is not None
         assert self.exchange.zrx_asset() == "0xf47261b0000000000000000000000000e41d2489571d322189246dafa5ebde1f4699f498"
         assert self.exchange.zrx_token() == Address("0xe41d2489571d322189246dafa5ebde1f4699f498")
-        assert self.exchange.asset_transfer_proxy(ZrxExchangeV2.ERC20_PROXY_ID) == self.asset_proxy
-        # assert self.exchange.token_transfer_proxy() == self.token_transfer_proxy_address
+        assert self.exchange.asset_transfer_proxy(ERC20Asset.ID) == self.asset_proxy
 
     def test_approval(self):
         # given
@@ -81,30 +80,30 @@ class TestZrxV2:
         #TODO commented out until we figure out how to handle the 0x token
         # assert self.zrx_token.allowance_of(self.our_address, self.asset_proxy) > Wad(0)
 
-    # def test_create_order(self):
-    #     # when
-    #     order = self.exchange.create_order(pay_token=Address("0x0202020202020202020202020202020202020202"),
-    #                                        pay_amount=Wad.from_number(100),
-    #                                        buy_token=Address("0x0101010101010101010101010101010101010101"),
-    #                                        buy_amount=Wad.from_number(2.5), expiration=1763920792)
-    #
-    #     # then
-    #     assert order.maker == Address(self.web3.eth.defaultAccount)
-    #     assert order.taker == Address("0x0000000000000000000000000000000000000000")
-    #     assert order.pay_token == Address("0x0202020202020202020202020202020202020202")
-    #     assert order.pay_amount == Wad.from_number(100)
-    #     assert order.buy_token == Address("0x0101010101010101010101010101010101010101")
-    #     assert order.buy_amount == Wad.from_number(2.5)
-    #     assert order.salt >= 0
-    #     assert order.expiration == 1763920792
-    #     assert order.exchange_contract_address == self.exchange.address
-    #
-    #     # and
-    #     # [fees should be zero by default]
-    #     assert order.maker_fee == Wad.from_number(0)
-    #     assert order.taker_fee == Wad.from_number(0)
-    #     assert order.fee_recipient == Address("0x0000000000000000000000000000000000000000")
-    #
+    def test_create_order(self):
+        # when
+        order = self.exchange.create_order(pay_asset=ERC20Asset(Address("0x0202020202020202020202020202020202020202")),
+                                           pay_amount=Wad.from_number(100),
+                                           buy_asset=ERC20Asset(Address("0x0101010101010101010101010101010101010101")),
+                                           buy_amount=Wad.from_number(2.5), expiration=1763920792)
+
+        # then
+        assert order.maker == Address(self.web3.eth.defaultAccount)
+        assert order.taker == Address("0x0000000000000000000000000000000000000000")
+        assert order.pay_asset == ERC20Asset(Address("0x0202020202020202020202020202020202020202"))
+        assert order.pay_amount == Wad.from_number(100)
+        assert order.buy_asset == ERC20Asset(Address("0x0101010101010101010101010101010101010101"))
+        assert order.buy_amount == Wad.from_number(2.5)
+        assert order.salt >= 0
+        assert order.expiration == 1763920792
+        assert order.exchange_contract_address == self.exchange.address
+
+        # and
+        # [fees should be zero by default]
+        assert order.maker_fee == Wad.from_number(0)
+        assert order.taker_fee == Wad.from_number(0)
+        assert order.fee_recipient == Address("0x0000000000000000000000000000000000000000")
+
     # def test_get_order_hash(self):
     #     # given
     #     order = self.exchange.create_order(pay_token=Address("0x0202020202020202020202020202020202020202"),
