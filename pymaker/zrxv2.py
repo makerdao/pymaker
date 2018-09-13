@@ -197,29 +197,33 @@ class LogCancel:
         return pformat(vars(self))
 
 
-#TODO get back to it
 class LogFill:
     def __init__(self, log):
-        self.maker = Address(log['args']['maker'])
-        self.taker = Address(log['args']['taker'])
-        self.fee_recipient = Address(log['args']['feeRecipient'])
-        self.pay_token = Address(log['args']['makerToken'])
-        self.buy_token = Address(log['args']['takerToken'])
-        self.filled_pay_amount = Wad(int(log['args']['filledMakerTokenAmount']))
-        self.filled_buy_amount = Wad(int(log['args']['filledTakerTokenAmount']))
-        self.paid_maker_fee = Wad(int(log['args']['paidMakerFee']))
-        self.paid_taker_fee = Wad(int(log['args']['paidTakerFee']))
-        self.tokens = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['tokens']]).tobytes())
+        self.sender = Address(log['args']['senderAddress'])
+        self.maker = Address(log['args']['makerAddress'])
+        self.taker = Address(log['args']['takerAddress'])
+        self.fee_recipient = Address(log['args']['feeRecipientAddress'])
+        self.pay_asset = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['makerAssetData']]).tobytes())
+        self.buy_asset = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['takerAssetData']]).tobytes())
+        self.filled_pay_amount = Wad(int(log['args']['makerAssetFilledAmount']))
+        self.filled_buy_amount = Wad(int(log['args']['takerAssetFilledAmount']))
+        self.paid_maker_fee = Wad(int(log['args']['makerFeePaid']))
+        self.paid_taker_fee = Wad(int(log['args']['takerFeePaid']))
         self.order_hash = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['orderHash']]).tobytes())
         self.raw = log
+
+    #TODO ???
+    def pay_token(self) -> Optional[Address]:
+        #TODO ???
+        return None
 
     @classmethod
     def from_event(cls, event: dict):
         assert(isinstance(event, dict))
 
         topics = event.get('topics')
-        if topics and topics[0] == '0x0d0b9391970d9a25552f37d436d2aae2925e2bfe1b2a923754bada030c498cb3':
-            log_fill_abi = [abi for abi in ZrxExchangeV2.abi if abi.get('name') == 'LogFill'][0]
+        if topics and topics[0] == '0x0bcc4c97732e47d9946f229edb95f5b6323f601300e4690de719993f3c371129':
+            log_fill_abi = [abi for abi in ZrxExchangeV2.abi if abi.get('name') == 'Fill'][0]
             event_data = get_event_data(log_fill_abi, event)
 
             return LogFill(event_data)
@@ -261,7 +265,7 @@ class ZrxExchangeV2(Contract):
             A `ZrxExchange` class instance.
         """
         return ZrxExchangeV2(web3=web3,
-                           address=Contract._deploy(web3, ZrxExchangeV2.abi, ZrxExchangeV2.bin, [])) #TODO zrx_asset
+                           address=Contract._deploy(web3, ZrxExchangeV2.abi, ZrxExchangeV2.bin, []))
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -287,13 +291,15 @@ class ZrxExchangeV2(Contract):
         """
         return Address("0x" + self.zrx_asset()[-40:])
 
-    def token_transfer_proxy(self) -> Address:
+    def asset_transfer_proxy(self, proxy_id: str) -> Address:
         """Get the address of the `TokenTransferProxy` contract associated with this `Exchange` contract.
 
         Returns:
             The address of the `TokenTransferProxy` token.
         """
-        return Address(self._contract.call().TOKEN_TRANSFER_PROXY_CONTRACT())
+        assert(isinstance(proxy_id, str))
+
+        return Address(self._contract.call().getAssetProxy(hexstring_to_bytes(proxy_id)))
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         """Approve the 0x Exchange TokenTransferProxy contract to fully access balances of specified tokens.
@@ -329,7 +335,7 @@ class ZrxExchangeV2(Contract):
         assert(callable(handler))
         assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        self._on_event(self._contract, 'LogFill', LogFill, handler, event_filter)
+        self._on_event(self._contract, 'Fill', LogFill, handler, event_filter)
 
     def on_cancel(self, handler, event_filter: dict = None):
         """Subscribe to LogCancel events.
@@ -361,7 +367,7 @@ class ZrxExchangeV2(Contract):
         assert(isinstance(number_of_past_blocks, int))
         assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        return self._past_events(self._contract, 'LogFill', LogFill, number_of_past_blocks, event_filter)
+        return self._past_events(self._contract, 'Fill', LogFill, number_of_past_blocks, event_filter)
 
     def past_cancel(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogCancel]:
         """Synchronously retrieve past LogCancel events.

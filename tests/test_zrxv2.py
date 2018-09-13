@@ -27,6 +27,7 @@ from pymaker.approval import directly
 from pymaker.deployment import deploy_contract
 from pymaker.numeric import Wad
 from pymaker.token import DSToken, ERC20Token
+from pymaker.util import bytes_to_hexstring
 from pymaker.zrxv2 import ZrxExchangeV2, Order, ZrxRelayerApi
 from tests.helpers import is_hashable, wait_until_mock_called
 
@@ -38,10 +39,30 @@ class TestZrxV2:
         self.web3 = Web3(EthereumTesterProvider())
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
-        self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))
-        # self.token_transfer_proxy_address = deploy_contract(self.web3, 'TokenTransferProxy')
-        self.exchange = ZrxExchangeV2.deploy(self.web3, "0xf47261b0" + self.zrx_token.address.address)
-        # self.web3.eth.contract(abi=json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/TokenTransferProxy.abi')))(address=self.token_transfer_proxy_address.address).transact().addAuthorizedAddress(self.exchange.address.address)
+        # self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))
+
+        self.exchange = ZrxExchangeV2.deploy(self.web3, None)  #"0xf47261b0" + self.zrx_token.address.address - unused yet
+        self.erc20_asset_proxy_address = deploy_contract(self.web3, 'ExchangeV2-ERC20Proxy')
+
+        print("---")
+        # print(self.web3.eth.getCode(self.exchange.address.address))
+        print("---")
+
+        asset_proxy_contract = self.web3.eth.contract(abi=json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/ExchangeV2-ERC20Proxy.abi')))(address=self.erc20_asset_proxy_address.address)
+
+        asset_proxy_contract.transact().addAuthorizedAddress(self.exchange.address.address)
+
+        # print(self.erc20_asset_proxy_address.address)
+        # print(bytes_to_hexstring((asset_proxy_contract.call().getProxyId())))
+        # print(self.erc20_asset_proxy_address)
+        # print(self.exchange.asset_transfer_proxy("0xf47261b0"))
+
+        # print(self.exchange._contract.call().owner())
+        # print(self.our_address.address)
+        # print(Address(self.exchange._contract.call().owner()) == self.our_address)
+
+        # self.exchange._contract.transact().registerAssetProxy(self.erc20_asset_proxy_address.address)
+
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1.mint(Wad.from_number(100)).transact()
         self.token2 = DSToken.deploy(self.web3, 'BBB')
