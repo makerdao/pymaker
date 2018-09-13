@@ -104,20 +104,20 @@ class TestZrxV2:
         assert order.taker_fee == Wad.from_number(0)
         assert order.fee_recipient == Address("0x0000000000000000000000000000000000000000")
 
-    # def test_get_order_hash(self):
-    #     # given
-    #     order = self.exchange.create_order(pay_token=Address("0x0202020202020202020202020202020202020202"),
-    #                                        pay_amount=Wad.from_number(100),
-    #                                        buy_token=Address("0x0101010101010101010101010101010101010101"),
-    #                                        buy_amount=Wad.from_number(2.5), expiration=1763920792)
-    #
-    #     # when
-    #     order_hash = self.exchange.get_order_hash(order)
-    #
-    #     # then
-    #     assert order_hash.startswith('0x')
-    #     assert len(order_hash) == 66
-    #
+    def test_get_order_hash(self):
+        # given
+        order = self.exchange.create_order(pay_asset=ERC20Asset(Address("0x0202020202020202020202020202020202020202")),
+                                           pay_amount=Wad.from_number(100),
+                                           buy_asset=ERC20Asset(Address("0x0101010101010101010101010101010101010101")),
+                                           buy_amount=Wad.from_number(2.5), expiration=1763920792)
+
+        # when
+        order_hash = self.exchange.get_order_hash(order)
+
+        # then
+        assert order_hash.startswith('0x')
+        assert len(order_hash) == 66
+
     # def test_sign_order(self):
     #     # given
     #     order = self.exchange.create_order(pay_token=Address("0x0202020202020202020202020202020202020202"),

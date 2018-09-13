@@ -478,7 +478,7 @@ class ZrxExchangeV2(Contract):
         # the hash depends on the exchange contract address as well
         assert(order.exchange_contract_address == self.address)
 
-        result = self._contract.call().getOrderHash(self._order_addresses(order), self._order_values(order))
+        result = self._contract.call().getOrderInfo(order)
         return bytes_to_hexstring(array.array('B', [ord(x) for x in result]).tobytes())
 
     def get_unavailable_buy_amount(self, order: Order) -> Wad:
