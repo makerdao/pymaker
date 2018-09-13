@@ -82,8 +82,14 @@ def bytes_to_int(value) -> int:
 
 
 def bytes_to_hexstring(value) -> str:
-    assert(isinstance(value, bytes) or isinstance(value, bytearray))
-    return "0x" + "".join(map(lambda b: format(b, "02x"), value))
+    if isinstance(value, bytes) or isinstance(value, bytearray):
+        return "0x" + "".join(map(lambda b: format(b, "02x"), value))
+    elif isinstance(value, str):
+        b = bytearray()
+        b.extend(map(ord, value))
+        return "0x" + "".join(map(lambda b: format(b, "02x"), b))
+    else:
+        raise AssertionError
 
 
 def hexstring_to_bytes(value: str) -> bytes:
