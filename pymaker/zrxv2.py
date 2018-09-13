@@ -252,6 +252,8 @@ class ZrxExchangeV2(Contract):
 
     _ZERO_ADDRESS = Address("0x0000000000000000000000000000000000000000")
 
+    ERC20_PROXY_ID = "0xf47261b0"
+
     @staticmethod
     def deploy(web3: Web3, zrx_asset: str):
         """Deploy a new instance of the 0x `Exchange` contract.
@@ -259,7 +261,6 @@ class ZrxExchangeV2(Contract):
         Args:
             web3: An instance of `Web` from `web3.py`.
             zrx_token: The address of the ZRX token this exchange will use.
-            token_transfer_proxy: The address of the token transfer proxy this exchange will use.
 
         Returns:
             A `ZrxExchange` class instance.
@@ -292,19 +293,19 @@ class ZrxExchangeV2(Contract):
         return Address("0x" + self.zrx_asset()[-40:])
 
     def asset_transfer_proxy(self, proxy_id: str) -> Address:
-        """Get the address of the `TokenTransferProxy` contract associated with this `Exchange` contract.
+        """Get the address of the `ERC20Proxy` contract associated with this `Exchange` contract.
 
         Returns:
-            The address of the `TokenTransferProxy` token.
+            The address of the `ERC20Proxy` token.
         """
         assert(isinstance(proxy_id, str))
 
         return Address(self._contract.call().getAssetProxy(hexstring_to_bytes(proxy_id)))
 
     def approve(self, tokens: List[ERC20Token], approval_function):
-        """Approve the 0x Exchange TokenTransferProxy contract to fully access balances of specified tokens.
+        """Approve the 0x ERC20Proxy contract to fully access balances of specified tokens.
 
-        In case of 0x, it's the TokenTransferProxy contract that actually gets the approvals,
+        In case of 0x V2, it's the ERC20Proxy contract that actually gets the approvals,
         not the 0x Exchange contract itself. In addition to the tokens specified as the `tokens`
         parameter, the ZRX token always gets approved as well as without it the 0x Exchange
         contract wouldn't be able to charge maker and taker fees.
@@ -319,8 +320,8 @@ class ZrxExchangeV2(Contract):
         assert(isinstance(tokens, list))
         assert(callable(approval_function))
 
-        for token in tokens + [ERC20Token(web3=self.web3, address=self.zrx_token())]:
-            approval_function(token, self.token_transfer_proxy(), '0x Exchange contract')
+        for token in tokens:  # TODO  + [ERC20Token(web3=self.web3, address=self.zrx_token())]
+            approval_function(token, self.asset_transfer_proxy(self.ERC20_PROXY_ID), '0x ERC20Proxy contract')
 
     def on_fill(self, handler, event_filter: dict = None):
         """Subscribe to LogFill events.
