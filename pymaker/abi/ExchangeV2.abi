@@ -1271,7 +1271,6 @@
 							},
 							{
 								"name": "salt",
-								"name": "salt",
 								"type": "uint256"
 							},
 							{
