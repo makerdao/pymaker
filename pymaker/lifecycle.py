@@ -169,7 +169,7 @@ class Lifecycle:
 
     def _check_account_unlocked(self):
         try:
-            self.web3.eth.sign(self.web3.eth.defaultAccount, "pymaker testing if account is unlocked")
+            self.web3.eth.sign(self.web3.eth.defaultAccount, bytes("pymaker testing if account is unlocked", "utf-8"))
         except:
             self.logger.fatal(f"Account {self.web3.eth.defaultAccount} is not unlocked")
             self.logger.fatal(f"Unlocking the account is necessary for the keeper to operate")

@@ -23,6 +23,7 @@ from pprint import pformat
 from typing import List, Optional
 
 import requests
+from hexbytes import HexBytes
 from web3 import Web3
 from web3.utils.events import get_event_data
 
@@ -200,8 +201,8 @@ class LogCancel:
         self.buy_token = Address(log['args']['takerToken'])
         self.cancelled_pay_amount = Wad(int(log['args']['cancelledMakerTokenAmount']))
         self.cancelled_buy_amount = Wad(int(log['args']['cancelledTakerTokenAmount']))
-        self.tokens = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['tokens']]).tobytes())
-        self.order_hash = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['orderHash']]).tobytes())
+        self.tokens = bytes_to_hexstring(log['args']['tokens'])
+        self.order_hash = bytes_to_hexstring(log['args']['orderHash'])
         self.raw = log
 
     def __repr__(self):
@@ -219,8 +220,8 @@ class LogFill:
         self.filled_buy_amount = Wad(int(log['args']['filledTakerTokenAmount']))
         self.paid_maker_fee = Wad(int(log['args']['paidMakerFee']))
         self.paid_taker_fee = Wad(int(log['args']['paidTakerFee']))
-        self.tokens = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['tokens']]).tobytes())
-        self.order_hash = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['orderHash']]).tobytes())
+        self.tokens = bytes_to_hexstring(log['args']['tokens'])
+        self.order_hash = bytes_to_hexstring(log['args']['orderHash'])
         self.raw = log
 
     @classmethod
@@ -228,7 +229,7 @@ class LogFill:
         assert(isinstance(event, dict))
 
         topics = event.get('topics')
-        if topics and topics[0] == '0x0d0b9391970d9a25552f37d436d2aae2925e2bfe1b2a923754bada030c498cb3':
+        if topics and topics[0] == HexBytes('0x0d0b9391970d9a25552f37d436d2aae2925e2bfe1b2a923754bada030c498cb3'):
             log_fill_abi = [abi for abi in ZrxExchange.abi if abi.get('name') == 'LogFill'][0]
             event_data = get_event_data(log_fill_abi, event)
 
@@ -320,36 +321,6 @@ class ZrxExchange(Contract):
 
         for token in tokens + [ERC20Token(web3=self.web3, address=self.zrx_token())]:
             approval_function(token, self.token_transfer_proxy(), '0x Exchange contract')
-
-    def on_fill(self, handler, event_filter: dict = None):
-        """Subscribe to LogFill events.
-
-        `LogFill` events are emitted by the 0x contract every time someone fills an order.
-
-        Args:
-            handler: Function which will be called for each subsequent `LogFill` event.
-                This handler will receive a :py:class:`pymaker.`zrx.LogFill` class instance.
-            event_filter: Filter which will be applied to event subscription.
-        """
-        assert(callable(handler))
-        assert(isinstance(event_filter, dict) or (event_filter is None))
-
-        self._on_event(self._contract, 'LogFill', LogFill, handler, event_filter)
-
-    def on_cancel(self, handler, event_filter: dict = None):
-        """Subscribe to LogCancel events.
-
-        `LogCancel` events are emitted by the 0x contract every time someone cancels an order.
-
-        Args:
-            handler: Function which will be called for each subsequent `LogCancel` event.
-                This handler will receive a :py:class:`pymaker.`zrx.LogCancel` class instance.
-            event_filter: Filter which will be applied to event subscription.
-        """
-        assert(callable(handler))
-        assert(isinstance(event_filter, dict) or (event_filter is None))
-
-        self._on_event(self._contract, 'LogCancel', LogCancel, handler, event_filter)
 
     def past_fill(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogFill]:
         """Synchronously retrieve past LogFill events.
@@ -445,7 +416,7 @@ class ZrxExchange(Contract):
         assert(order.exchange_contract_address == self.address)
 
         result = self._contract.call().getOrderHash(self._order_addresses(order), self._order_values(order))
-        return bytes_to_hexstring(array.array('B', [ord(x) for x in result]).tobytes())
+        return bytes_to_hexstring(result)
 
     def get_unavailable_buy_amount(self, order: Order) -> Wad:
         """Return the order amount which was either taken or cancelled.
@@ -578,9 +549,9 @@ class ZrxRelayerApi:
         assert(isinstance(buy_token, Address))
 
         url = f"{self.api_server}/v0/orders?" \
-              f"exchangeContractAddress={self.exchange.address.address}&" \
-              f"makerTokenAddress={pay_token.address}&" \
-              f"takerTokenAddress={buy_token.address}&" \
+              f"exchangeContractAddress={str(self.exchange.address.address).lower()}&" \
+              f"makerTokenAddress={str(pay_token.address).lower()}&" \
+              f"takerTokenAddress={str(buy_token.address).lower()}&" \
               f"per_page={per_page}"
 
         response = requests.get(url, timeout=self.timeout)
@@ -606,8 +577,8 @@ class ZrxRelayerApi:
         assert(isinstance(maker, Address))
 
         url = f"{self.api_server}/v0/orders?" \
-              f"exchangeContractAddress={self.exchange.address.address}&" \
-              f"maker={maker.address}&" \
+              f"exchangeContractAddress={str(self.exchange.address.address).lower()}&" \
+              f"maker={str(maker.address).lower()}&" \
               f"per_page={per_page}"
 
         response = requests.get(url, timeout=self.timeout)

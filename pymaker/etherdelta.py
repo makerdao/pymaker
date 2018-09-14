@@ -276,21 +276,6 @@ class EtherDelta(Contract):
         """
         return Wad(self._contract.call().feeRebate())
 
-    def on_trade(self, handler, event_filter: dict = None):
-        """Subscribe to LogTrade events.
-
-        `LogTrade` events are emitted by the EtherDelta contract every time someone takes an order.
-
-        Args:
-            handler: Function which will be called for each subsequent `LogTrade` event.
-                This handler will receive a :py:class:`pymaker.etherdelta.LogTrade` class instance.
-            event_filter: Filter which will be applied to event subscription.
-        """
-        assert(callable(handler))
-        assert(isinstance(event_filter, dict) or (event_filter is None))
-
-        self._on_event(self._contract, 'Trade', LogTrade, handler, event_filter)
-
     def past_trade(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogTrade]:
         """Synchronously retrieve past LogTrade events.
 

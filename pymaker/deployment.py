@@ -49,8 +49,11 @@ def deploy_contract(web3: Web3, contract_name: str, args: Optional[list]=None) -
     assert(isinstance(args, list) or (args is None))
 
     abi = json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/{contract_name}.abi'))
-    bytecode = pkg_resources.resource_string('pymaker.deployment', f'abi/{contract_name}.bin')
-    tx_hash = web3.eth.contract(abi=abi, bytecode=bytecode).deploy(args=args)
+    bytecode = str(pkg_resources.resource_string('pymaker.deployment', f'abi/{contract_name}.bin'), 'utf-8')
+    if args is not None:
+        tx_hash = web3.eth.contract(abi=abi, bytecode=bytecode).constructor(*args).transact()
+    else:
+        tx_hash = web3.eth.contract(abi=abi, bytecode=bytecode).constructor().transact()
     receipt = web3.eth.getTransactionReceipt(tx_hash)
     return Address(receipt['contractAddress'])
 

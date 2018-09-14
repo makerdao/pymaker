@@ -18,6 +18,7 @@
 from pprint import pformat
 from typing import Optional, List, Iterable, Iterator
 
+from hexbytes import HexBytes
 from web3 import Web3
 from web3.utils.events import get_event_data
 
@@ -107,7 +108,7 @@ class LogMake:
 
         if receipt.logs is not None:
             for log in receipt.logs:
-                if len(log['topics']) > 0 and log['topics'][0] == '0x773ff502687307abfa024ac9f62f9752a0d210dac2ffd9a29e38e12e2ea82c82':
+                if len(log['topics']) > 0 and log['topics'][0] == HexBytes('0x773ff502687307abfa024ac9f62f9752a0d210dac2ffd9a29e38e12e2ea82c82'):
                     log_make_abi = [abi for abi in SimpleMarket.abi if abi.get('name') == 'LogMake'][0]
                     event_data = get_event_data(log_make_abi, log)
 
@@ -149,7 +150,7 @@ class LogTake:
         assert(isinstance(event, dict))
 
         topics = event.get('topics')
-        if topics and topics[0] == '0x3383e3357c77fd2e3a4b30deea81179bc70a795d053d14d5b7f2f01d0fd4596f':
+        if topics and topics[0] == HexBytes('0x3383e3357c77fd2e3a4b30deea81179bc70a795d053d14d5b7f2f01d0fd4596f'):
             log_take_abi = [abi for abi in SimpleMarket.abi if abi.get('name') == 'LogTake'][0]
             event_data = get_event_data(log_take_abi, event)
 
@@ -230,66 +231,6 @@ class SimpleMarket(Contract):
 
         for token in tokens:
             approval_function(token, self.address, 'OasisDEX')
-
-    def on_make(self, handler, event_filter: dict = None):
-        """Subscribe to LogMake events.
-
-        `LogMake` events are emitted by the Oasis contract every time someone places an order.
-
-        Args:
-            handler: Function which will be called for each subsequent `LogMake` event.
-                This handler will receive a :py:class:`pymaker.oasis.LogMake` class instance.
-            event_filter: Filter which will be applied to event subscription.
-        """
-        assert(callable(handler))
-        assert(isinstance(event_filter, dict) or (event_filter is None))
-
-        self._on_event(self._contract, 'LogMake', LogMake, handler, event_filter)
-
-    def on_bump(self, handler, event_filter: dict = None):
-        """Subscribe to LogBump events.
-
-        `LogBump` events are emitted by the Oasis contract every time someone calls the `bump()` function.
-
-        Args:
-            handler: Function which will be called for each subsequent `LogBump` event.
-                This handler will receive a :py:class:`pymaker.oasis.LogBump` class instance.
-            event_filter: Filter which will be applied to event subscription.
-        """
-        assert(callable(handler))
-        assert(isinstance(event_filter, dict) or (event_filter is None))
-
-        self._on_event(self._contract, 'LogBump', LogBump, handler, event_filter)
-
-    def on_take(self, handler, event_filter: dict = None):
-        """Subscribe to LogTake events.
-
-        `LogTake` events are emitted by the Oasis contract every time someone takes an order.
-
-        Args:
-            handler: Function which will be called for each subsequent `LogTake` event.
-                This handler will receive a :py:class:`pymaker.oasis.LogTake` class instance.
-            event_filter: Filter which will be applied to event subscription.
-        """
-        assert(callable(handler))
-        assert(isinstance(event_filter, dict) or (event_filter is None))
-
-        self._on_event(self._contract, 'LogTake', LogTake, handler, event_filter)
-
-    def on_kill(self, handler, event_filter: dict = None):
-        """Subscribe to LogKill events.
-
-        `LogKill` events are emitted by the Oasis contract every time someone cancels an order.
-
-        Args:
-            handler: Function which will be called for each subsequent `LogKill` event.
-                This handler will receive a :py:class:`pymaker.oasis.LogKill` class instance.
-            event_filter: Filter which will be applied to event subscription.
-        """
-        assert(callable(handler))
-        assert(isinstance(event_filter, dict) or (event_filter is None))
-
-        self._on_event(self._contract, 'LogKill', LogKill, handler, event_filter)
 
     def past_make(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogMake]:
         """Synchronously retrieve past LogMake events.

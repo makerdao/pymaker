@@ -173,35 +173,6 @@ class TestEtherDelta:
         assert past_trade[0].give_amount == Wad.from_number(1.5)
         assert past_trade[0].raw['blockNumber'] > 0
 
-    @pytest.mark.timeout(10)
-    def test_on_take(self):
-        # given
-        on_trade_mock = Mock()
-        self.etherdelta.on_trade(on_trade_mock)
-
-        # and
-        self.etherdelta.approve([self.token1, self.token2], directly())
-        self.etherdelta.deposit_token(self.token1.address, Wad.from_number(10)).transact()
-        self.etherdelta.deposit_token(self.token2.address, Wad.from_number(10)).transact()
-
-        # when
-        order = self.etherdelta.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(2),
-                                             buy_token=self.token2.address, buy_amount=Wad.from_number(4),
-                                             expires=100000000)
-
-        # and
-        self.etherdelta.trade(order, Wad.from_number(1.5)).transact()
-
-        # then
-        on_trade = wait_until_mock_called(on_trade_mock)[0]
-        assert on_trade.maker == self.our_address
-        assert on_trade.taker == self.our_address
-        assert on_trade.pay_token == self.token1.address
-        assert on_trade.buy_token == self.token2.address
-        assert on_trade.take_amount == Wad.from_number(0.75)
-        assert on_trade.give_amount == Wad.from_number(1.5)
-        assert on_trade.raw['blockNumber'] > 0
-
     def test_order_comparison(self):
         # given
         order1 = self.etherdelta.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(2),

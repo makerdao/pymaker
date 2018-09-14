@@ -64,12 +64,15 @@ class DSGuard(Contract):
         assert(isinstance(dst, Address) or isinstance(dst, bytes))
         assert(isinstance(sig, bytes) and len(sig) in (4, 32))
 
-        if isinstance(src, Address):
+        if isinstance(src, Address) and isinstance(dst, Address):
+            method = 'permit(address,address,bytes32)'
             src = src.address
-        if isinstance(dst, Address):
             dst = dst.address
 
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'permit', [src, dst, sig])
+        else:
+            method = 'permit(bytes32,bytes32,bytes32)'
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, method, [src, dst, sig])
 
     def __repr__(self):
         return f"DSGuard('{self.address}')"

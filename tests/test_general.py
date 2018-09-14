@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+from hexbytes import HexBytes
 
 from pymaker import Address, Calldata, Receipt, Transfer
 from pymaker.numeric import Wad
@@ -146,9 +147,9 @@ class TestReceipt:
                           'blockNumber': 3890533,
                           'data': '0x0000000000000000000000000000000000000000000000000de0b6b3a7640000',
                           'logIndex': 0,
-                          'topics': ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
-                                     '0x000000000000000000000000375d52588c3f39ee7710290237a95c691d8432e7',
-                                     '0x0000000000000000000000000046f01ad360270605e0e5d693484ec3bfe43ba8'],
+                          'topics': [HexBytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                                     HexBytes('0x000000000000000000000000375d52588c3f39ee7710290237a95c691d8432e7'),
+                                     HexBytes('0x0000000000000000000000000046f01ad360270605e0e5d693484ec3bfe43ba8')],
                           'transactionHash': '0x8b6851e40d017b2004a54eae3e9e47614398b54bbbaae150eaa889ec36470ec8',
                           'transactionIndex': 0,
                           'transactionLogIndex': '0x0',
@@ -158,7 +159,7 @@ class TestReceipt:
                           'blockNumber': 3890533,
                           'data': '0x00000000000000000000000000000000000000000000000000000000000000a2',
                           'logIndex': 1,
-                          'topics': ['0xa2c251311b1a7a475913900a2a73dc9789a21b04bc737e050bbc506dd4eb3488'],
+                          'topics': [HexBytes('0xa2c251311b1a7a475913900a2a73dc9789a21b04bc737e050bbc506dd4eb3488')],
                           'transactionHash': '0x8b6851e40d017b2004a54eae3e9e47614398b54bbbaae150eaa889ec36470ec8',
                           'transactionIndex': 0,
                           'transactionLogIndex': '0x1',
@@ -168,10 +169,10 @@ class TestReceipt:
                           'blockNumber': 3890533,
                           'data': '0x00000000000000000000000053eccc9246c1e537d79199d0c7231e425a40f896000000000000000000000000228bf3d5be3ee4b80718b89b68069b023c32131e0000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000000000000000000000000000f6d7ac92d746b00000000000000000000000000000000000000000000000000000000000059c17c9c',
                           'logIndex': 2,
-                          'topics': ['0x9577941d28fff863bfbee4694a6a4a56fb09e169619189d2eaa750b5b4819995',
-                                     '0x00000000000000000000000000000000000000000000000000000000000000a2',
-                                     '0x7188d03e276d4dead4b0c037a93892d986e043a3af3305d7488a731ccaff4b76',
-                                     '0x0000000000000000000000000046f01ad360270605e0e5d693484ec3bfe43ba8'],
+                          'topics': [HexBytes('0x9577941d28fff863bfbee4694a6a4a56fb09e169619189d2eaa750b5b4819995'),
+                                     HexBytes('0x00000000000000000000000000000000000000000000000000000000000000a2'),
+                                     HexBytes('0x7188d03e276d4dead4b0c037a93892d986e043a3af3305d7488a731ccaff4b76'),
+                                     HexBytes('0x0000000000000000000000000046f01ad360270605e0e5d693484ec3bfe43ba8')],
                           'transactionHash': '0x8b6851e40d017b2004a54eae3e9e47614398b54bbbaae150eaa889ec36470ec8',
                           'transactionIndex': 0,
                           'transactionLogIndex': '0x2',

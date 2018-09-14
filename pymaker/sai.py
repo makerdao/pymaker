@@ -291,7 +291,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_axe, Ray)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['axe', new_axe.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', [bytes('axe', 'utf-8'), new_axe.value])
 
     def mold_cap(self, new_cap: Wad) -> Transact:
         """Update the debt ceiling.
@@ -303,7 +303,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_cap, Wad)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['cap', new_cap.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', [bytes('cap', 'utf-8'), new_cap.value])
 
     def mold_mat(self, new_mat: Ray) -> Transact:
         """Update the liquidation ratio.
@@ -315,7 +315,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_mat, Ray)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['mat', new_mat.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', [bytes('mat', 'utf-8'), new_mat.value])
 
     def mold_tax(self, new_tax: Ray) -> Transact:
         """Update the stability fee.
@@ -327,7 +327,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_tax, Ray)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['tax', new_tax.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', [bytes('tax', 'utf-8'), new_tax.value])
 
     def mold_gap(self, new_gap: Wad) -> Transact:
         """Update the current spread (`gap`) for `join` and `exit`.
@@ -339,7 +339,7 @@ class Tub(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_gap, Wad)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['gap', new_gap.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', [bytes('gap', 'utf-8'), new_gap.value])
 
     def drip(self) -> Transact:
         """Recalculate the internal debt price (`chi`).
@@ -765,7 +765,7 @@ class Tap(Contract):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert isinstance(new_gap, Wad)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', ['gap', new_gap.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mold', [bytes('gap', 'utf-8'), new_gap.value])
 
     def s2s(self) -> Ray:
         """Get the current SKR per SAI rate (for `boom` and `bust`).
