@@ -151,7 +151,7 @@ class Lifecycle:
     def _wait_for_init(self):
         # In unit-tests waiting for the node to sync does not work correctly.
         # So we skip it.
-        if str(self.web3.providers[0]) == 'EthereumTesterProvider' or 'TestRPC' in self.web3.version.node:
+        if 'TestRPC' in self.web3.version.node:
             return
 
         # wait for the client to have at least one peer
@@ -168,11 +168,6 @@ class Lifecycle:
                 time.sleep(0.25)
 
     def _check_account_unlocked(self):
-        # In unit-tests checking if the account is unlocked does not work correctly.
-        # It is because the `eth_sign` call is not implemented. So we skip it.
-        if str(self.web3.providers[0]) == 'EthereumTesterProvider':
-            return
-
         try:
             self.web3.eth.sign(self.web3.eth.defaultAccount, "pymaker testing if account is unlocked")
         except:
