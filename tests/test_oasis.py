@@ -590,7 +590,6 @@ class TestMatchingMarket(GeneralMarketTest):
         assert repr(self.otc) == f"MatchingMarket('{self.otc.address}')"
 
 
-@pytest.mark.skip(reason="MakerOtcSupportMethods doesn't work with testrpc")
 class TestMatchingMarketWithSupportContract(TestMatchingMarket):
     def setup_method(self):
         GeneralMarketTest.setup_method(self)
@@ -604,6 +603,7 @@ class TestMatchingMarketWithSupportContract(TestMatchingMarket):
         self.otc.add_token_pair_whitelist(self.token1.address, self.token3.address).transact()
         self.otc.add_token_pair_whitelist(self.token2.address, self.token3.address).transact()
 
+    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_support_contract_under_that_address(self):
         # expect
         with pytest.raises(Exception):
