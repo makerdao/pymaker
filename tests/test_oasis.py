@@ -659,6 +659,7 @@ class TestMatchingMarketPosition:
         assert self.otc.position(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
                                  buy_token=self.token2.address, buy_amount=Wad.from_number(35)) == 4
 
+    @pytest.mark.skip(reason="Works unreliably with ganache-cli")
     def test_should_use_correct_order_position_by_default(self):
         # when
         explicit_position = self.otc.position(pay_token=self.token1.address, pay_amount=Wad.from_number(1),
