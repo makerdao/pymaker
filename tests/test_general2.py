@@ -18,7 +18,7 @@
 import asyncio
 import pytest
 from mock import MagicMock
-from web3 import Web3, EthereumTesterProvider
+from web3 import Web3, HTTPProvider
 
 from pymaker import Address, eth_transfer, TransactStatus
 from pymaker.gas import FixedGasPrice
@@ -29,7 +29,7 @@ from pymaker.util import synchronize, eth_balance
 
 class TestTransact:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.second_address = Address(self.web3.eth.accounts[1])
@@ -155,30 +155,30 @@ class TestTransact:
 
     def test_eth_transfer(self):
         # given
-        assert eth_balance(self.web3, self.second_address) == Wad.from_number(1000000)
+        initial_balance = eth_balance(self.web3, self.second_address)
 
         # when
         eth_transfer(self.web3, self.second_address, Wad.from_number(1.5)).transact()
 
         # then
-        assert eth_balance(self.web3, self.second_address) == Wad.from_number(1000000) + Wad.from_number(1.5)
+        assert eth_balance(self.web3, self.second_address) == initial_balance + Wad.from_number(1.5)
 
     def test_eth_transfer_from_other_account(self):
         # given
-        assert eth_balance(self.web3, self.second_address) == Wad.from_number(1000000)
-        assert eth_balance(self.web3, self.third_address) == Wad.from_number(1000000)
+        initial_balance_second_address = eth_balance(self.web3, self.second_address)
+        initial_balance_third_address = eth_balance(self.web3, self.third_address)
 
         # when
         eth_transfer(self.web3, self.third_address, Wad.from_number(1.5)).transact(from_address=self.second_address)
 
         # then
-        assert eth_balance(self.web3, self.second_address) < Wad.from_number(1000000)
-        assert eth_balance(self.web3, self.third_address) == Wad.from_number(1000000) + Wad.from_number(1.5)
+        assert eth_balance(self.web3, self.second_address) < initial_balance_second_address
+        assert eth_balance(self.web3, self.third_address) == initial_balance_third_address + Wad.from_number(1.5)
 
 
 class TestTransactReplace:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.second_address = Address(self.web3.eth.accounts[1])

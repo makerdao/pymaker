@@ -15,18 +15,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from eth_abi.encoding import get_single_encoder
+from eth_abi.encoding import encode_uint_256, BytesEncoder, AddressEncoder
 
 from pymaker import Address
 
 
 def encode_address(address: Address) -> bytes:
-    return get_single_encoder("address", None, None)(address.address)[12:]
+    return AddressEncoder().encode(address.address)[12:]
 
 
 def encode_uint256(value: int) -> bytes:
-    return get_single_encoder("uint", 256, None)(value)
+    return encode_uint_256.encode(value)
 
 
 def encode_bytes(value: bytes) -> bytes:
-    return get_single_encoder("bytes", len(value), None)(value)
+    return BytesEncoder().encode(value)

@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import array
-
 from web3 import Web3
 
 from pymaker import Contract, Address, Transact
@@ -77,8 +75,7 @@ class DSValue(Contract):
         Returns:
             A 32-byte array with the current value of this instance.
         """
-        read_value = self._contract.call().read()
-        return array.array('B', [ord(x) for x in read_value]).tobytes()
+        return self._contract.call().read()
 
     def read_as_hex(self) -> str:
         """Reads the current value from this instance and converts it to a hex string.

@@ -26,6 +26,7 @@ from typing import Optional
 
 import eth_utils
 import pkg_resources
+from hexbytes import HexBytes
 from web3 import Web3
 from web3.utils.events import get_event_data
 
@@ -97,7 +98,7 @@ class Address:
         if isinstance(address, Address):
             self.address = address.address
         else:
-            self.address = eth_utils.to_normalized_address(address)
+            self.address = eth_utils.to_checksum_address(address)
 
     def as_bytes(self) -> bytes:
         """Return the address as a 20-byte bytes array."""
@@ -125,10 +126,10 @@ class Contract:
     logger = logging.getLogger()
 
     @staticmethod
-    def _deploy(web3: Web3, abi: list, bytecode: bytes, args: list) -> Address:
+    def _deploy(web3: Web3, abi: list, bytecode: str, args: list) -> Address:
         assert(isinstance(web3, Web3))
         assert(isinstance(abi, list))
-        assert(isinstance(bytecode, bytes))
+        assert(isinstance(bytecode, str))
         assert(isinstance(args, list))
 
         tx_hash = web3.eth.contract(abi=abi, bytecode=bytecode).deploy(args=args)
@@ -147,46 +148,36 @@ class Contract:
 
         return web3.eth.contract(abi=abi)(address=address.address)
 
-    def _on_event(self, contract, event, cls, handler, event_filter):
-        assert(isinstance(event_filter, dict) or (event_filter is None))
-
-        filter_params = {'filter': event_filter if event_filter is not None else {}}
-        register_filter_thread(contract.on(event, filter_params, self._event_callback(cls, handler, False)))
-
     def _past_events(self, contract, event, cls, number_of_past_blocks, event_filter) -> list:
         assert(isinstance(number_of_past_blocks, int))
         assert(isinstance(event_filter, dict) or (event_filter is None))
-        events = []
 
-        def handler(obj):
-            events.append(obj)
+        def _event_callback(cls, past):
+            def callback(log):
+                if past:
+                    self.logger.debug(f"Past event {log['event']} discovered, block_number={log['blockNumber']},"
+                                      f" tx_hash={log['transactionHash']}")
+                else:
+                    self.logger.debug(f"Event {log['event']} discovered, block_number={log['blockNumber']},"
+                                      f" tx_hash={log['transactionHash']}")
+                return cls(log)
+
+            return callback
 
         block_number = contract.web3.eth.blockNumber
-        filter_params = {'filter': event_filter if event_filter is not None else {},
-                         'fromBlock': max(block_number-number_of_past_blocks, 0),
-                         'toBlock': block_number}
-        thread = contract.pastEvents(event, filter_params, self._event_callback(cls, handler, True))
-        thread.join()
-        return events
+        result = contract.events[event].createFilter(fromBlock=max(block_number-number_of_past_blocks, 0),
+                                                     toBlock=block_number,
+                                                     argument_filters=event_filter).get_all_entries()
 
-    def _event_callback(self, cls, handler, past):
-        def callback(log):
-            if past:
-                self.logger.debug(f"Past event {log['event']} discovered, block_number={log['blockNumber']},"
-                                  f" tx_hash={log['transactionHash']}")
-            else:
-                self.logger.debug(f"Event {log['event']} discovered, block_number={log['blockNumber']},"
-                                  f" tx_hash={log['transactionHash']}")
-            handler(cls(log))
-        return callback
+        return list(map(_event_callback(cls, True), result))
 
     @staticmethod
     def _load_abi(package, resource) -> list:
         return json.loads(pkg_resources.resource_string(package, resource))
 
     @staticmethod
-    def _load_bin(package, resource) -> bytes:
-        return pkg_resources.resource_string(package, resource)
+    def _load_bin(package, resource) -> str:
+        return str(pkg_resources.resource_string(package, resource), "utf-8")
 
 
 class Calldata:
@@ -262,7 +253,7 @@ class Receipt:
                 if len(receipt_log['topics']) > 0:
                     # $ seth keccak $(seth --from-ascii "Transfer(address,address,uint256)")
                     # 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
-                    if receipt_log['topics'][0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef':
+                    if receipt_log['topics'][0] == HexBytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'):
                         from pymaker.token import ERC20Token
                         transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
                         event_data = get_event_data(transfer_abi, receipt_log)
@@ -273,7 +264,7 @@ class Receipt:
 
                     # $ seth keccak $(seth --from-ascii "Mint(address,uint256)")
                     # 0x0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885
-                    if receipt_log['topics'][0] == '0x0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885':
+                    if receipt_log['topics'][0] == HexBytes('0x0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885'):
                         from pymaker.token import DSToken
                         transfer_abi = [abi for abi in DSToken.abi if abi.get('name') == 'Mint'][0]
                         event_data = get_event_data(transfer_abi, receipt_log)
@@ -284,7 +275,7 @@ class Receipt:
 
                     # $ seth keccak $(seth --from-ascii "Burn(address,uint256)")
                     # 0xcc16f5dbb4873280815c1ee09dbd06736cffcc184412cf7a71a0fdb75d397ca5
-                    if receipt_log['topics'][0] == '0xcc16f5dbb4873280815c1ee09dbd06736cffcc184412cf7a71a0fdb75d397ca5':
+                    if receipt_log['topics'][0] == HexBytes('0xcc16f5dbb4873280815c1ee09dbd06736cffcc184412cf7a71a0fdb75d397ca5'):
                         from pymaker.token import DSToken
                         transfer_abi = [abi for abi in DSToken.abi if abi.get('name') == 'Burn'][0]
                         event_data = get_event_data(transfer_abi, receipt_log)
@@ -382,7 +373,12 @@ class Transact:
                               **self._as_dict(self.extra)}
 
         if self.contract is not None:
-            return self.contract.transact(transaction_params).__getattr__(self.function_name)(*self.parameters)
+            if '(' in self.function_name:
+                return self.contract.get_function_by_signature(self.function_name)(*self.parameters).transact(transaction_params)
+
+            else:
+                return self.contract.transact(transaction_params).__getattr__(self.function_name)(*self.parameters)
+
         else:
             return self.web3.eth.sendTransaction({**transaction_params, **{'to': self.address.address}})
 
@@ -413,13 +409,13 @@ class Transact:
         assert(isinstance(from_address, Address))
 
         if self.contract is not None:
-            estimate = self.contract.estimateGas({**self._as_dict(self.extra), **{'from': from_address.address}})\
-                .__getattr__(self.function_name)(*self.parameters)
+            if '(' in self.function_name:
+                estimate = self.contract.get_function_by_signature(self.function_name)(*self.parameters).estimateGas({**self._as_dict(self.extra), **{'from': from_address.address}})
 
-            # testrpc does estimate too little gas at times, it did happen with TxManager definitely
-            # so we always add 1mio tp the estimate as in testrpc gas block limit doesn't matter
-            if str(self.web3.providers[0]) == 'EthereumTesterProvider':
-                estimate = estimate + 1000000
+            else:
+                estimate = self.contract.estimateGas({**self._as_dict(self.extra), **{'from': from_address.address}})\
+                    .__getattr__(self.function_name)(*self.parameters)
+
         else:
             estimate = 21000
 
