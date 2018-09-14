@@ -19,7 +19,7 @@ import time
 
 import pytest
 from mock import MagicMock
-from web3 import EthereumTesterProvider, Web3
+from web3 import EthereumTesterProvider, Web3, HTTPProvider
 
 import pymaker
 from pymaker import Address
@@ -28,7 +28,7 @@ from pymaker.lifecycle import Lifecycle
 
 class TestLifecycle:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
 

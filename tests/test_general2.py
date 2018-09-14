@@ -18,7 +18,7 @@
 import asyncio
 import pytest
 from mock import MagicMock
-from web3 import Web3, EthereumTesterProvider
+from web3 import Web3, EthereumTesterProvider, HTTPProvider
 
 from pymaker import Address, eth_transfer, TransactStatus
 from pymaker.gas import FixedGasPrice
@@ -29,7 +29,7 @@ from pymaker.util import synchronize, eth_balance
 
 class TestTransact:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.second_address = Address(self.web3.eth.accounts[1])
@@ -178,7 +178,7 @@ class TestTransact:
 
 class TestTransactReplace:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.second_address = Address(self.web3.eth.accounts[1])

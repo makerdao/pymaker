@@ -20,7 +20,7 @@ import json
 import pkg_resources
 import pytest
 from mock import Mock
-from web3 import EthereumTesterProvider, Web3
+from web3 import EthereumTesterProvider, Web3, HTTPProvider
 
 from pymaker import Address
 from pymaker.approval import directly
@@ -35,7 +35,7 @@ PAST_BLOCKS = 100
 
 class TestZrx:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))
@@ -540,7 +540,7 @@ class TestOrder:
 
 class TestZrxRelayerApi:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))

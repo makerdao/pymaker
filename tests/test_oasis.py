@@ -19,7 +19,7 @@ from unittest.mock import Mock
 
 import pytest
 import time
-from web3 import EthereumTesterProvider
+from web3 import EthereumTesterProvider, HTTPProvider
 from web3 import Web3
 
 from pymaker import Address, Wad, Contract
@@ -33,7 +33,7 @@ PAST_BLOCKS = 100
 
 class GeneralMarketTest:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.token1 = DSToken.deploy(self.web3, 'AAA')
@@ -611,7 +611,7 @@ class TestMatchingMarketWithSupportContract(TestMatchingMarket):
 
 class TestMatchingMarketPosition:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.token1 = DSToken.deploy(self.web3, 'AAA')

@@ -17,7 +17,7 @@
 
 import py
 from pytest import fixture
-from web3 import Web3, EthereumTesterProvider
+from web3 import Web3, EthereumTesterProvider, HTTPProvider
 
 from pymaker.sign import eth_sign, eth_sign_with_keyfile
 
@@ -34,7 +34,7 @@ def test_signing(datadir):
         from sha3 import sha3_256 as keccak_256
 
     # given
-    web3 = Web3(EthereumTesterProvider())
+    web3 = Web3(HTTPProvider("http://localhost:8555"))
     web3.eth.defaultAccount = web3.eth.accounts[0]
 
     # and

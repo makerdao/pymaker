@@ -19,7 +19,7 @@ import pytest
 from pymaker import Address
 from pymaker.numeric import Wad
 from pymaker.util import synchronize
-from web3 import EthereumTesterProvider
+from web3 import EthereumTesterProvider, HTTPProvider
 from web3 import Web3
 
 from pymaker.token import DSToken, DSEthToken, ERC20Token
@@ -27,7 +27,7 @@ from pymaker.token import DSToken, DSEthToken, ERC20Token
 
 class TestERC20Token:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.second_address = Address(self.web3.eth.accounts[1])
@@ -150,7 +150,7 @@ class TestERC20Token:
 
 class TestDSToken:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.dstoken = DSToken.deploy(self.web3, 'ABC')
@@ -218,7 +218,7 @@ class TestDSToken:
 
 class TestDSEthToken:
     def setup_method(self):
-        self.web3 = Web3(EthereumTesterProvider())
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.dsethtoken = DSEthToken.deploy(self.web3)
