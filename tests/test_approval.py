@@ -19,7 +19,7 @@ import asyncio
 from unittest.mock import MagicMock
 
 import pytest
-from web3 import EthereumTesterProvider, HTTPProvider
+from web3 import HTTPProvider
 from web3 import Web3
 
 from pymaker import Address

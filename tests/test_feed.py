@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-from web3 import Web3, EthereumTesterProvider, HTTPProvider
+from web3 import Web3, HTTPProvider
 
 from pymaker import Address
 from pymaker.feed import DSValue

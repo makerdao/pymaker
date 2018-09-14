@@ -19,7 +19,7 @@ from unittest.mock import Mock
 
 import pytest
 import time
-from web3 import EthereumTesterProvider, HTTPProvider
+from web3 import HTTPProvider
 from web3 import Web3
 
 from pymaker import Address, Wad, Contract

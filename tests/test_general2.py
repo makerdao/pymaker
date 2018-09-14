@@ -18,7 +18,7 @@
 import asyncio
 import pytest
 from mock import MagicMock
-from web3 import Web3, EthereumTesterProvider, HTTPProvider
+from web3 import Web3, HTTPProvider
 
 from pymaker import Address, eth_transfer, TransactStatus
 from pymaker.gas import FixedGasPrice

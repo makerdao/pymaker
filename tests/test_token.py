@@ -19,7 +19,7 @@ import pytest
 from pymaker import Address
 from pymaker.numeric import Wad
 from pymaker.util import synchronize
-from web3 import EthereumTesterProvider, HTTPProvider
+from web3 import HTTPProvider
 from web3 import Web3
 
 from pymaker.token import DSToken, DSEthToken, ERC20Token

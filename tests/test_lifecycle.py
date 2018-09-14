@@ -19,7 +19,7 @@ import time
 
 import pytest
 from mock import MagicMock
-from web3 import EthereumTesterProvider, Web3, HTTPProvider
+from web3 import Web3, HTTPProvider
 
 import pymaker
 from pymaker import Address

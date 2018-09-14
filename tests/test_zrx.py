@@ -20,7 +20,7 @@ import json
 import pkg_resources
 import pytest
 from mock import Mock
-from web3 import EthereumTesterProvider, Web3, HTTPProvider
+from web3 import Web3, HTTPProvider
 
 from pymaker import Address
 from pymaker.approval import directly

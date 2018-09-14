@@ -17,7 +17,7 @@
 
 import py
 from pytest import fixture
-from web3 import Web3, EthereumTesterProvider, HTTPProvider
+from web3 import Web3, HTTPProvider
 
 from pymaker.sign import eth_sign, eth_sign_with_keyfile
 
