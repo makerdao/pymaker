@@ -480,6 +480,7 @@ class TestSimpleMarket(GeneralMarketTest):
         GeneralMarketTest.setup_method(self)
         self.otc = SimpleMarket.deploy(self.web3)
 
+    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self):
         # expect
         with pytest.raises(Exception):
@@ -494,6 +495,7 @@ class TestExpiringMarket(GeneralMarketTest):
         GeneralMarketTest.setup_method(self)
         self.otc = ExpiringMarket.deploy(self.web3, 2500000000)
 
+    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self):
         # expect
         with pytest.raises(Exception):
@@ -524,6 +526,7 @@ class TestMatchingMarket(GeneralMarketTest):
         self.otc.add_token_pair_whitelist(self.token1.address, self.token3.address).transact()
         self.otc.add_token_pair_whitelist(self.token2.address, self.token3.address).transact()
 
+    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self):
         # expect
         with pytest.raises(Exception):

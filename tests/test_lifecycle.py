@@ -26,6 +26,7 @@ from pymaker import Address
 from pymaker.lifecycle import Lifecycle
 
 
+@pytest.mark.timeout(60)
 class TestLifecycle:
     def setup_method(self):
         self.web3 = Web3(HTTPProvider("http://localhost:8555"))

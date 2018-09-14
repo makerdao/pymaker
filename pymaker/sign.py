@@ -28,29 +28,22 @@ from web3.eth import Eth
 from pymaker.util import hexstring_to_bytes
 
 
-@coerce_return_to_text
 def eth_sign(message: bytes, web3: Web3):
     assert(isinstance(message, bytes))
     assert(isinstance(web3, Web3))
 
-    # as `EthereumTesterProvider` does not support `eth_sign`, we implement it ourselves
-    if str(web3.providers[0]) == 'EthereumTesterProvider':
-        key = k0
-        msg = hexstring_to_bytes(Eth._recoveryMessageHash(data=message))
-
-        pk = PrivateKey(key, raw=True)
-        signature = pk.ecdsa_recoverable_serialize(
-            pk.ecdsa_sign_recoverable(msg, raw=True)
-        )
-
-        signature = signature[0] + utils.bytearray_to_bytestr([signature[1]])
-        signature_hex = signature.hex()[0:128] + int_to_bytes(ord(bytes.fromhex(signature.hex()[128:130]))+27).hex()
-
-        return '0x' + signature_hex
-
-    return web3.manager.request_blocking(
+    signature = web3.manager.request_blocking(
         "eth_sign", [web3.eth.defaultAccount, encode_hex(message)],
     )
+
+    # for `EthereumJS TestRPC/v2.2.1/ethereum-js`
+    if signature.endswith("00"):
+        signature = signature[:-2] + "1b"
+
+    if signature.endswith("01"):
+        signature = signature[:-2] + "1c"
+
+    return signature
 
 
 @coerce_return_to_text
