@@ -155,25 +155,25 @@ class TestTransact:
 
     def test_eth_transfer(self):
         # given
-        assert eth_balance(self.web3, self.second_address) == Wad.from_number(1000000)
+        initial_balance = eth_balance(self.web3, self.second_address)
 
         # when
         eth_transfer(self.web3, self.second_address, Wad.from_number(1.5)).transact()
 
         # then
-        assert eth_balance(self.web3, self.second_address) == Wad.from_number(1000000) + Wad.from_number(1.5)
+        assert eth_balance(self.web3, self.second_address) == initial_balance + Wad.from_number(1.5)
 
     def test_eth_transfer_from_other_account(self):
         # given
-        assert eth_balance(self.web3, self.second_address) == Wad.from_number(1000000)
-        assert eth_balance(self.web3, self.third_address) == Wad.from_number(1000000)
+        initial_balance_second_address = eth_balance(self.web3, self.second_address)
+        initial_balance_third_address = eth_balance(self.web3, self.third_address)
 
         # when
         eth_transfer(self.web3, self.third_address, Wad.from_number(1.5)).transact(from_address=self.second_address)
 
         # then
-        assert eth_balance(self.web3, self.second_address) < Wad.from_number(1000000)
-        assert eth_balance(self.web3, self.third_address) == Wad.from_number(1000000) + Wad.from_number(1.5)
+        assert eth_balance(self.web3, self.second_address) < initial_balance_second_address
+        assert eth_balance(self.web3, self.third_address) == initial_balance_third_address + Wad.from_number(1.5)
 
 
 class TestTransactReplace:
