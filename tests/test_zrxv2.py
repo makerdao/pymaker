@@ -36,7 +36,7 @@ PAST_BLOCKS = 100
 
 class TestZrxV2:
     def setup_method(self):
-        self.web3 = Web3(HTTPProvider('http://localhost:8545'))
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))
