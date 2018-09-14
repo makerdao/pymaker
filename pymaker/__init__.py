@@ -416,10 +416,6 @@ class Transact:
             estimate = self.contract.estimateGas({**self._as_dict(self.extra), **{'from': from_address.address}})\
                 .__getattr__(self.function_name)(*self.parameters)
 
-            # testrpc does estimate too little gas at times, it did happen with TxManager definitely
-            # so we always add 1mio tp the estimate as in testrpc gas block limit doesn't matter
-            if str(self.web3.providers[0]) == 'EthereumTesterProvider':
-                estimate = estimate + 1000000
         else:
             estimate = 21000
 

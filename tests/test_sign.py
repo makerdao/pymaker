@@ -17,7 +17,7 @@
 
 import py
 from pytest import fixture
-from web3 import Web3, EthereumTesterProvider
+from web3 import Web3, HTTPProvider
 
 from pymaker.sign import eth_sign, eth_sign_with_keyfile
 
@@ -27,17 +27,32 @@ def datadir(request):
     return py.path.local(request.module.__file__).join("..").join("data")
 
 
-def test_signing(datadir):
+def test_signing():
     try:
         from sha3 import keccak_256
     except ImportError:
         from sha3 import sha3_256 as keccak_256
 
     # given
-    web3 = Web3(EthereumTesterProvider())
+    web3 = Web3(HTTPProvider("http://localhost:8555"))
     web3.eth.defaultAccount = web3.eth.accounts[0]
 
     # and
+    text = "abc"
+    msg = bytes(text, 'utf-8')
+    msg_raw = keccak_256(b'\x19Ethereum Signed Message:\n' + str(len(text)).encode('utf-8') + text.encode("utf-8")).digest()
+
+    # expect
+    assert eth_sign(msg_raw, web3).startswith("0x")
+
+
+def test_signing_with_keyfile(datadir):
+    try:
+        from sha3 import keccak_256
+    except ImportError:
+        from sha3 import sha3_256 as keccak_256
+
+    # given
     text = "abc"
     msg = bytes(text, 'utf-8')
     msg_raw = keccak_256(b'\x19Ethereum Signed Message:\n' + str(len(text)).encode('utf-8') + text.encode("utf-8")).digest()
@@ -50,6 +65,5 @@ def test_signing(datadir):
     expected_signature = "0x1ca03a12406951a3545b3154e3a544c9b9af677351395facd56a42c3f0b0aae1056b9a2f52ffe81ccd2829fac6446e2c73ca9fe7102fd6341a6408208520ad121b"
 
     # expect
-    assert eth_sign(msg, web3) == expected_signature
     assert eth_sign_with_keyfile(msg, False, keyfile, password) == expected_signature
     assert eth_sign_with_keyfile(msg_raw, True, keyfile, password) == expected_signature

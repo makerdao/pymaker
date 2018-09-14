@@ -19,7 +19,7 @@ import asyncio
 from unittest.mock import MagicMock
 
 import pytest
-from web3 import EthereumTesterProvider
+from web3 import HTTPProvider
 from web3 import Web3
 
 from pymaker import Address
@@ -40,7 +40,7 @@ class FailingTransact:
 
 def setup_module():
     global web3, our_address, second_address, third_address
-    web3 = Web3(EthereumTesterProvider())
+    web3 = Web3(HTTPProvider("http://localhost:8555"))
     web3.eth.defaultAccount = web3.eth.accounts[0]
     our_address = Address(web3.eth.defaultAccount)
     second_address = Address(web3.eth.accounts[1])
