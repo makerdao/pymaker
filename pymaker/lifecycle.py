@@ -151,7 +151,7 @@ class Lifecycle:
     def _wait_for_init(self):
         # In unit-tests waiting for the node to sync does not work correctly.
         # So we skip it.
-        if str(self.web3.providers[0]) == 'EthereumTesterProvider':
+        if str(self.web3.providers[0]) == 'EthereumTesterProvider' or 'TestRPC' in self.web3.version.node:
             return
 
         # wait for the client to have at least one peer
