@@ -154,33 +154,33 @@ class TestZrxV2:
         # then
         assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad.from_number(4)
 
-    # def test_fill_order(self):
-    #     # given
-    #     self.exchange.approve([self.token1, self.token2], directly())
-    #
-    #     # when
-    #     order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
-    #                                        buy_token=self.token2.address, buy_amount=Wad.from_number(4),
-    #                                        expiration=1763920792)
-    #     # and
-    #     signed_order = self.exchange.sign_order(order)
-    #
-    #     # then
-    #     assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad(0)
-    #
-    #     # when
-    #     self.exchange.fill_order(signed_order, Wad.from_number(3.5)).transact()
-    #
-    #     # then
-    #     assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad.from_number(3.5)
-    #
+    def test_fill_order(self):
+        # given
+        self.exchange.approve([self.token1, self.token2], directly())
+
+        # when
+        order = self.exchange.create_order(pay_asset=ERC20Asset(self.token1.address), pay_amount=Wad.from_number(10),
+                                           buy_asset=ERC20Asset(self.token2.address), buy_amount=Wad.from_number(4),
+                                           expiration=1763920792)
+        # and
+        signed_order = self.exchange.sign_order(order)
+
+        # then
+        assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad(0)
+
+        # when
+        self.exchange.fill_order(signed_order, Wad.from_number(3.5)).transact()
+
+        # then
+        assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad.from_number(3.5)
+
     # def test_remaining_buy_amount_and_remaining_sell_amount(self):
     #     # given
     #     self.exchange.approve([self.token1, self.token2], directly())
     #
     #     # when
-    #     order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
-    #                                        buy_token=self.token2.address, buy_amount=Wad.from_number(4),
+    #     order = self.exchange.create_order(pay_asset=ERC20Asset(self.token1.address), pay_amount=Wad.from_number(10),
+    #                                        buy_asset=ERC20Asset(self.token2.address), buy_amount=Wad.from_number(4),
     #                                        expiration=1763920792)
     #     # and
     #     signed_order = self.exchange.sign_order(order)
@@ -201,8 +201,8 @@ class TestZrxV2:
     #     self.exchange.approve([self.token1, self.token2], directly())
     #
     #     # when
-    #     order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
-    #                                        buy_token=self.token2.address, buy_amount=Wad.from_number(4),
+    #     order = self.exchange.create_order(pay_asset=ERC20Asset(self.token1.address), pay_amount=Wad.from_number(10),
+    #                                        buy_asset=ERC20Asset(self.token2.address), buy_amount=Wad.from_number(4),
     #                                        expiration=1763920792)
     #     # and
     #     self.exchange.fill_order(self.exchange.sign_order(order), Wad.from_number(3)).transact()
@@ -228,8 +228,8 @@ class TestZrxV2:
     #     self.exchange.approve([self.token1, self.token2], directly())
     #
     #     # when
-    #     order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
-    #                                        buy_token=self.token2.address, buy_amount=Wad.from_number(4),
+    #     order = self.exchange.create_order(pay_asset=ERC20Asset(self.token1.address), pay_amount=Wad.from_number(10),
+    #                                        buy_asset=ERC20Asset(self.token2.address), buy_amount=Wad.from_number(4),
     #                                        expiration=1763920792)
     #     # and
     #     self.exchange.cancel_order(self.exchange.sign_order(order)).transact()
@@ -246,67 +246,6 @@ class TestZrxV2:
     #     assert past_cancel[0].tokens.startswith('0x')
     #     assert past_cancel[0].order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
     #     assert past_cancel[0].raw['blockNumber'] > 0
-    #
-    # @pytest.mark.timeout(10)
-    # def test_on_fill(self):
-    #     # given
-    #     on_fill_mock = Mock()
-    #     self.exchange.on_fill(on_fill_mock)
-    #
-    #     # when
-    #     self.exchange.approve([self.token1, self.token2], directly())
-    #
-    #     # when
-    #     order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
-    #                                        buy_token=self.token2.address, buy_amount=Wad.from_number(4),
-    #                                        expiration=1763920792)
-    #
-    #     # and
-    #     self.exchange.fill_order(self.exchange.sign_order(order), Wad.from_number(3)).transact()
-    #
-    #     # then
-    #     on_fill = wait_until_mock_called(on_fill_mock)[0]
-    #     assert on_fill.maker == self.our_address
-    #     assert on_fill.taker == self.our_address
-    #     assert on_fill.fee_recipient == Address("0x0000000000000000000000000000000000000000")
-    #     assert on_fill.pay_token == self.token1.address
-    #     assert on_fill.buy_token == self.token2.address
-    #     assert on_fill.filled_pay_amount == Wad.from_number(7.5)
-    #     assert on_fill.filled_buy_amount == Wad.from_number(3)
-    #     assert on_fill.paid_maker_fee == Wad.from_number(0)
-    #     assert on_fill.paid_taker_fee == Wad.from_number(0)
-    #     assert on_fill.tokens.startswith('0x')
-    #     assert on_fill.order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
-    #     assert on_fill.raw['blockNumber'] > 0
-    #
-    # @pytest.mark.timeout(10)
-    # def test_on_cancel(self):
-    #     # given
-    #     on_cancel_mock = Mock()
-    #     self.exchange.on_cancel(on_cancel_mock)
-    #
-    #     # when
-    #     self.exchange.approve([self.token1, self.token2], directly())
-    #
-    #     # when
-    #     order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
-    #                                        buy_token=self.token2.address, buy_amount=Wad.from_number(4),
-    #                                        expiration=1763920792)
-    #
-    #     # and
-    #     self.exchange.cancel_order(self.exchange.sign_order(order)).transact()
-    #
-    #     # then
-    #     on_cancel = wait_until_mock_called(on_cancel_mock)[0]
-    #     assert on_cancel.maker == self.our_address
-    #     assert on_cancel.fee_recipient == Address("0x0000000000000000000000000000000000000000")
-    #     assert on_cancel.pay_token == self.token1.address
-    #     assert on_cancel.cancelled_pay_amount == Wad.from_number(10)
-    #     assert on_cancel.buy_token == self.token2.address
-    #     assert on_cancel.cancelled_buy_amount == Wad.from_number(4)
-    #     assert on_cancel.tokens.startswith('0x')
-    #     assert on_cancel.order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
-    #     assert on_cancel.raw['blockNumber'] > 0
     #
     # def test_should_have_printable_representation(self):
     #     assert repr(self.exchange) == f"ZrxExchange('{self.exchange.address}')"

@@ -448,7 +448,7 @@ class ZrxExchangeV2(Contract):
         assert(isinstance(order, Order))
 
         method_signature = self.web3.sha3(text=f"getOrderInfo({self.ORDER_INFO_TYPE})")[0:4]
-        method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", self._order_tuple(order))
+        method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", [self._order_tuple(order)])
 
         request = bytes_to_hexstring(method_signature + method_parameters)
         response = self.web3.eth.call({'to': self.address.address, 'data': request})
@@ -534,11 +534,15 @@ class ZrxExchangeV2(Contract):
         assert(isinstance(order, Order))
         assert(isinstance(fill_buy_amount, Wad))
 
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'fillOrder',
-                        [self._order_addresses(order), self._order_values(order), fill_buy_amount.value,
-                         True, order.ec_signature_v,
-                         hexstring_to_bytes(order.ec_signature_r),
-                         hexstring_to_bytes(order.ec_signature_s)])
+        method_signature = self.web3.sha3(text=f"fillOrder({self.ORDER_INFO_TYPE},uint256,bytes)")[0:4]
+        method_parameters = encode_single(f"({self.ORDER_INFO_TYPE},uint256,bytes)", [self._order_tuple(order),
+                                                                                      fill_buy_amount.value,
+                                                                                      hexstring_to_bytes(order.signature)])
+
+        request = bytes_to_hexstring(method_signature + method_parameters)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, None,
+                        [request])
 
     def cancel_order(self, order: Order) -> Transact:
         """Cancels an order.
@@ -552,7 +556,7 @@ class ZrxExchangeV2(Contract):
         assert(isinstance(order, Order))
 
         method_signature = self.web3.sha3(text=f"cancelOrder({self.ORDER_INFO_TYPE})")[0:4]
-        method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", self._order_tuple(order))
+        method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", [self._order_tuple(order)])
 
         request = bytes_to_hexstring(method_signature + method_parameters)
 
@@ -561,18 +565,18 @@ class ZrxExchangeV2(Contract):
 
     @staticmethod
     def _order_tuple(order):
-        return [(order.maker.address,
-                 order.taker.address,
-                 order.fee_recipient.address,
-                 order.sender.address,
-                 order.pay_amount.value,
-                 order.buy_amount.value,
-                 order.maker_fee.value,
-                 order.taker_fee.value,
-                 order.expiration,
-                 order.salt,
-                 hexstring_to_bytes(order.pay_asset.serialize()),
-                 hexstring_to_bytes(order.buy_asset.serialize()))]
+        return (order.maker.address,
+                order.taker.address,
+                order.fee_recipient.address,
+                order.sender.address,
+                order.pay_amount.value,
+                order.buy_amount.value,
+                order.maker_fee.value,
+                order.taker_fee.value,
+                order.expiration,
+                order.salt,
+                hexstring_to_bytes(order.pay_asset.serialize()),
+                hexstring_to_bytes(order.buy_asset.serialize()))
 
     #TODO to be removed
     @staticmethod
