@@ -32,7 +32,7 @@ from web3.utils.events import get_event_data
 
 from pymaker.gas import DefaultGasPrice, GasPrice
 from pymaker.numeric import Wad
-from pymaker.util import synchronize
+from pymaker.util import synchronize, bytes_to_hexstring
 
 filter_threads = []
 
@@ -156,10 +156,10 @@ class Contract:
             def callback(log):
                 if past:
                     self.logger.debug(f"Past event {log['event']} discovered, block_number={log['blockNumber']},"
-                                      f" tx_hash={log['transactionHash']}")
+                                      f" tx_hash={bytes_to_hexstring(log['transactionHash'])}")
                 else:
                     self.logger.debug(f"Event {log['event']} discovered, block_number={log['blockNumber']},"
-                                      f" tx_hash={log['transactionHash']}")
+                                      f" tx_hash={bytes_to_hexstring(log['transactionHash'])}")
                 return cls(log)
 
             return callback
@@ -510,11 +510,11 @@ class Transact:
                     receipt = self._get_receipt(tx_hash)
                     if receipt:
                         if receipt.successful:
-                            self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
+                            self.logger.info(f"Transaction {self.name()} was successful (tx_hash={bytes_to_hexstring(tx_hash)})")
                             return receipt
                         else:
                             self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
-                                                f" log entry, assuming it has failed (tx_hash={tx_hash})")
+                                                f" log entry, assuming it has failed (tx_hash={bytes_to_hexstring(tx_hash)})")
                             return None
 
                 # If we can not find a mined receipt but at the same time we know last used nonce
@@ -543,7 +543,7 @@ class Transact:
 
                     self.logger.info(f"Sent transaction {self.name()} with nonce={self.nonce}, gas={gas},"
                                      f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
-                                     f" (tx_hash={tx_hash})")
+                                     f" (tx_hash={bytes_to_hexstring(tx_hash)})")
                 except:
                     self.logger.warning(f"Failed to send transaction {self.name()} with nonce={self.nonce}, gas={gas},"
                                         f" gas_price={gas_price_value if gas_price_value is not None else 'default'}")
