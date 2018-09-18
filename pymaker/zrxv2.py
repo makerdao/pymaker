@@ -575,25 +575,6 @@ class ZrxExchangeV2(Contract):
                 hexstring_to_bytes(order.pay_asset.serialize()),
                 hexstring_to_bytes(order.buy_asset.serialize()))
 
-    #TODO to be removed
-    @staticmethod
-    def _order_values(order):
-        return [order.pay_amount.value,
-                order.buy_amount.value,
-                order.maker_fee.value,
-                order.taker_fee.value,
-                order.expiration,
-                order.salt]
-
-    #TODO to be removed
-    @staticmethod
-    def _order_addresses(order):
-        return [order.maker.address,
-                order.taker.address,
-                order.pay_token.address,
-                order.buy_token.address,
-                order.fee_recipient.address]
-
     @staticmethod
     def random_salt() -> int:
         return random.randint(1, 2**256 - 1)
