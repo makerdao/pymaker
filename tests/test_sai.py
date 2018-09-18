@@ -26,7 +26,6 @@ from tests.helpers import time_travel_by
 
 
 class TestTub:
-    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self, deployment: Deployment):
         # expect
         with pytest.raises(Exception):
@@ -332,7 +331,6 @@ class TestTub:
 
 
 class TestTap:
-    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self, deployment: Deployment):
         # expect
         with pytest.raises(Exception):
@@ -500,7 +498,6 @@ class TestTap:
 
 
 class TestTop:
-    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self, deployment: Deployment):
         # expect
         with pytest.raises(Exception):
@@ -535,7 +532,6 @@ class TestTop:
 
 
 class TestVox:
-    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self, deployment: Deployment):
         # expect
         with pytest.raises(Exception):
