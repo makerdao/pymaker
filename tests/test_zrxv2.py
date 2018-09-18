@@ -419,11 +419,11 @@ class TestOrder:
 
         # then
         assert json_order == json.loads("""{
-            "exchangeAddress": "0x12459C951127e0c374FF9105DdA097662A027093",
-            "makerAddress": "0x9e56625509c2F60aF937F23B7b532600390e8C8B",
+            "exchangeAddress": "0x12459c951127e0c374ff9105dda097662a027093",
+            "makerAddress": "0x9e56625509c2f60af937f23b7b532600390e8c8b",
             "takerAddress": "0x0000000000000000000000000000000000000000",
-            "makerAssetData": "0xf47261b0323B5d4C32345ced77393B3530b1EeD0f346429D",
-            "takerAssetData": "0xf47261b0eF7FfF64389B814A946f3E92105513705CA6B990",
+            "makerAssetData": "0xf47261b0000000000000000000000000323b5d4c32345ced77393b3530b1eed0f346429d",
+            "takerAssetData": "0xf47261b0000000000000000000000000ef7fff64389b814a946f3e92105513705ca6b990",
             "makerAssetAmount": "10000000000000000",
             "takerAssetAmount": "20000000000000000",
             "expirationTimeSeconds": "42"
@@ -452,12 +452,12 @@ class TestOrder:
 
         # then
         assert json_order == json.loads("""{
-            "exchangeAddress": "0x12459C951127e0c374FF9105DdA097662A027093",
+            "exchangeAddress": "0x12459c951127e0c374ff9105dda097662a027093",
             "senderAddress": "0x0000000000000000000000000000000000000000",
-            "makerAddress": "0x9e56625509c2F60aF937F23B7b532600390e8C8B",
+            "makerAddress": "0x9e56625509c2f60af937f23b7b532600390e8c8b",
             "takerAddress": "0x0000000000000000000000000000000000000000",
-            "makerAssetData": "0xf47261b0323B5d4C32345ced77393B3530b1EeD0f346429D",
-            "takerAssetData": "0xf47261b0eF7FfF64389B814A946f3E92105513705CA6B990",
+            "makerAssetData": "0xf47261b0000000000000000000000000323b5d4c32345ced77393b3530b1eed0f346429d",
+            "takerAssetData": "0xf47261b0000000000000000000000000ef7fff64389b814a946f3e92105513705ca6b990",
             "makerAssetAmount": "10000000000000000",
             "takerAssetAmount": "20000000000000000",
             "feeRecipientAddress": "0x6666666666666666666666666666666666666666",
