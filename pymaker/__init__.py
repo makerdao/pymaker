@@ -373,7 +373,11 @@ class Transact:
                               **self._as_dict(self.extra)}
 
         if self.contract is not None:
-            if '(' in self.function_name:
+            if self.function_name is None:
+                return self.web3.eth.sendTransaction({**transaction_params, **{'to': self.address.address,
+                                                                               'data': self.parameters[0]}})
+
+            elif '(' in self.function_name:
                 return self.contract.get_function_by_signature(self.function_name)(*self.parameters).transact(transaction_params)
 
             else:
@@ -409,7 +413,12 @@ class Transact:
         assert(isinstance(from_address, Address))
 
         if self.contract is not None:
-            if '(' in self.function_name:
+            if self.function_name is None:
+                return self.web3.eth.estimateGas({**self._as_dict(self.extra), **{'from': from_address.address,
+                                                                                  'to': self.address.address,
+                                                                                  'data': self.parameters[0]}})
+
+            elif '(' in self.function_name:
                 estimate = self.contract.get_function_by_signature(self.function_name)(*self.parameters).estimateGas({**self._as_dict(self.extra), **{'from': from_address.address}})
 
             else:

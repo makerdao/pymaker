@@ -119,43 +119,41 @@ class TestZrxV2:
         assert order_hash.startswith('0x')
         assert len(order_hash) == 66
 
-    # def test_sign_order(self):
-    #     # given
-    #     order = self.exchange.create_order(pay_token=Address("0x0202020202020202020202020202020202020202"),
-    #                                        pay_amount=Wad.from_number(100),
-    #                                        buy_token=Address("0x0101010101010101010101010101010101010101"),
-    #                                        buy_amount=Wad.from_number(2.5), expiration=1763920792)
-    #
-    #     # when
-    #     signed_order = self.exchange.sign_order(order)
-    #
-    #     # then
-    #     assert signed_order.ec_signature_r.startswith('0x')
-    #     assert len(signed_order.ec_signature_r) == 66
-    #     assert signed_order.ec_signature_s.startswith('0x')
-    #     assert len(signed_order.ec_signature_s) == 66
-    #     assert signed_order.ec_signature_v in [27, 28]
-    #
-    # def test_cancel_order(self):
-    #     # given
-    #     self.exchange.approve([self.token1, self.token2], directly())
-    #
-    #     # when
-    #     order = self.exchange.create_order(pay_token=self.token1.address, pay_amount=Wad.from_number(10),
-    #                                        buy_token=self.token2.address, buy_amount=Wad.from_number(4),
-    #                                        expiration=1763920792)
-    #     # and
-    #     signed_order = self.exchange.sign_order(order)
-    #
-    #     # then
-    #     assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad(0)
-    #
-    #     # when
-    #     self.exchange.cancel_order(signed_order).transact()
-    #
-    #     # then
-    #     assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad.from_number(4)
-    #
+    def test_sign_order(self):
+        # given
+        order = self.exchange.create_order(pay_asset=ERC20Asset(Address("0x0202020202020202020202020202020202020202")),
+                                           pay_amount=Wad.from_number(100),
+                                           buy_asset=ERC20Asset(Address("0x0101010101010101010101010101010101010101")),
+                                           buy_amount=Wad.from_number(2.5), expiration=1763920792)
+
+        # when
+        signed_order = self.exchange.sign_order(order)
+
+        # then
+        assert signed_order.signature.startswith('0x')
+        assert signed_order.signature.endswith('03')
+        assert len(signed_order.signature) == 134
+
+    def test_cancel_order(self):
+        # given
+        self.exchange.approve([self.token1, self.token2], directly())
+
+        # when
+        order = self.exchange.create_order(pay_asset=ERC20Asset(self.token1.address), pay_amount=Wad.from_number(10),
+                                           buy_asset=ERC20Asset(self.token2.address), buy_amount=Wad.from_number(4),
+                                           expiration=1763920792)
+        # and
+        signed_order = self.exchange.sign_order(order)
+
+        # then
+        assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad(0)
+
+        # when
+        self.exchange.cancel_order(signed_order).transact()
+
+        # then
+        assert self.exchange.get_unavailable_buy_amount(signed_order) == Wad.from_number(4)
+
     # def test_fill_order(self):
     #     # given
     #     self.exchange.approve([self.token1, self.token2], directly())

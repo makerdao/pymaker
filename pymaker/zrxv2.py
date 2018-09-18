@@ -127,12 +127,10 @@ class Order:
 
     @property
     def remaining_buy_amount(self) -> Wad:
-        #TODO probably get_unavailable_buy_amount doesn't exist anymore
         return self.buy_amount - self._exchange.get_unavailable_buy_amount(self)
 
     @property
     def remaining_sell_amount(self) -> Wad:
-        #TODO probably get_unavailable_buy_amount doesn't exist anymore
         return self.pay_amount - (self._exchange.get_unavailable_buy_amount(self)
                                   * self.pay_amount / self.buy_amount)
 
@@ -446,6 +444,18 @@ class ZrxExchangeV2(Contract):
                      exchange_contract_address=self.address,
                      signature=None)
 
+    def _get_order_info(self, order):
+        assert(isinstance(order, Order))
+
+        method_signature = self.web3.sha3(text=f"getOrderInfo({self.ORDER_INFO_TYPE})")[0:4]
+        method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", self._order_tuple(order))
+
+        request = bytes_to_hexstring(method_signature + method_parameters)
+        response = self.web3.eth.call({'to': self.address.address, 'data': request})
+        response_decoded = decode_single("((uint8,bytes32,uint256))", response)
+
+        return response_decoded
+
     def get_order_hash(self, order: Order) -> str:
         """Calculates hash of an order.
 
@@ -460,14 +470,7 @@ class ZrxExchangeV2(Contract):
         # the hash depends on the exchange contract address as well
         assert(order.exchange_contract_address == self.address)
 
-        method_signature = self.web3.sha3(text=f"getOrderInfo({self.ORDER_INFO_TYPE})")[0:4]
-        method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", self._order_tuple(order))
-
-        request = bytes_to_hexstring(method_signature + method_parameters)
-        response = self.web3.eth.call({'to': self.address.address, 'data': request})
-        response_decoded = decode_single("((uint8,bytes32,uint256))", response)
-
-        return bytes_to_hexstring(response_decoded[0][1])
+        return bytes_to_hexstring(self._get_order_info(order)[0][1])
 
     def get_unavailable_buy_amount(self, order: Order) -> Wad:
         """Return the order amount which was either taken or cancelled.
@@ -481,7 +484,18 @@ class ZrxExchangeV2(Contract):
         """
         assert(isinstance(order, Order))
 
-        return Wad(self._contract.call().getUnavailableTakerTokenAmount(hexstring_to_bytes(self.get_order_hash(order))))
+        order_info = self._get_order_info(order)[0]
+
+        if order_info[0] in [0,         # INVALID,                     // Default value
+                             1,         # INVALID_MAKER_ASSET_AMOUNT,  // Order does not have a valid maker asset amount
+                             2,         # INVALID_TAKER_ASSET_AMOUNT,  // Order does not have a valid taker asset amount
+                             4,         # EXPIRED,                     // Order has already expired
+                             5,         # FULLY_FILLED,                // Order is fully filled
+                             6]:        # CANCELLED                    // Order has been cancelled
+            return order.buy_amount
+
+        else:
+            return Wad(order_info[2])
 
     def sign_order(self, order: Order) -> Order:
         """Signs an order so it can be submitted to the relayer.
@@ -492,8 +506,7 @@ class ZrxExchangeV2(Contract):
             order: Order you want to sign.
 
         Returns:
-            Signed order. Copy of the order passed as a parameter with the `ec_signature_r`, `ec_signature_s`
-            and `ec_signature_v` fields filled with signature values.
+            Signed order. Copy of the order passed as a parameter with the `signature` field filled with signature.
         """
         assert(isinstance(order, Order))
 
@@ -501,9 +514,11 @@ class ZrxExchangeV2(Contract):
         v, r, s = to_vrs(signature)
 
         signed_order = copy.copy(order)
-        signed_order.ec_signature_r = bytes_to_hexstring(r)
-        signed_order.ec_signature_s = bytes_to_hexstring(s)
-        signed_order.ec_signature_v = v
+        signed_order.signature = bytes_to_hexstring(bytes([v])) + \
+                                 bytes_to_hexstring(r)[2:] + \
+                                 bytes_to_hexstring(s)[2:] + \
+                                 "03"  # EthSign
+
         return signed_order
 
     def fill_order(self, order: Order, fill_buy_amount: Wad) -> Transact:
@@ -536,8 +551,13 @@ class ZrxExchangeV2(Contract):
         """
         assert(isinstance(order, Order))
 
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'cancelOrder',
-                        [self._order_addresses(order), self._order_values(order), order.buy_amount.value])
+        method_signature = self.web3.sha3(text=f"cancelOrder({self.ORDER_INFO_TYPE})")[0:4]
+        method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", self._order_tuple(order))
+
+        request = bytes_to_hexstring(method_signature + method_parameters)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, None,
+                        [request])
 
     @staticmethod
     def _order_tuple(order):
