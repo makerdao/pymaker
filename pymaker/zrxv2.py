@@ -62,7 +62,7 @@ class ERC20Asset(Asset):
         self.token_address = token_address
 
     def serialize(self) -> str:
-        return self.ID + self.token_address.address[2:]
+        return self.ID + self.token_address.address[2:].zfill(64).lower()
 
     def __hash__(self):
         return hash(self.token_address)
@@ -167,9 +167,9 @@ class Order:
 
     def to_json_without_fees(self) -> dict:
         return {
-            "exchangeAddress": self.exchange_contract_address.address,
-            "makerAddress": self.maker.address,
-            "takerAddress": self.taker.address,
+            "exchangeAddress": self.exchange_contract_address.address.lower(),
+            "makerAddress": self.maker.address.lower(),
+            "takerAddress": self.taker.address.lower(),
             "makerAssetData": self.pay_asset.serialize(),
             "takerAssetData": self.buy_asset.serialize(),
             "makerAssetAmount": str(self.pay_amount.value),
@@ -179,15 +179,15 @@ class Order:
 
     def to_json(self) -> dict:
         return {
-            "exchangeAddress": self.exchange_contract_address.address,
-            "senderAddress": self.sender.address,
-            "makerAddress": self.maker.address,
-            "takerAddress": self.taker.address,
+            "exchangeAddress": self.exchange_contract_address.address.lower(),
+            "senderAddress": self.sender.address.lower(),
+            "makerAddress": self.maker.address.lower(),
+            "takerAddress": self.taker.address.lower(),
             "makerAssetData": self.pay_asset.serialize(),
             "takerAssetData": self.buy_asset.serialize(),
             "makerAssetAmount": str(self.pay_amount.value),
             "takerAssetAmount": str(self.buy_amount.value),
-            "feeRecipientAddress": self.fee_recipient.address,
+            "feeRecipientAddress": self.fee_recipient.address.lower(),
             "makerFee": str(self.maker_fee.value),
             "takerFee": str(self.taker_fee.value),
             "expirationTimeSeconds": str(self.expiration),
@@ -524,7 +524,6 @@ class ZrxExchangeV2(Contract):
                                  bytes_to_hexstring(r)[2:] + \
                                  bytes_to_hexstring(s)[2:] + \
                                  "03"  # EthSign
-
         return signed_order
 
     def fill_order(self, order: Order, fill_buy_amount: Wad) -> Transact:
@@ -592,13 +591,13 @@ class ZrxExchangeV2(Contract):
         return f"ZrxExchangeV2('{self.address}')"
 
 
-class ZrxRelayerApi:
-    """A client for the Standard 0x Relayer API V0.
+class ZrxRelayerApiV2:
+    """A client for the Standard 0x Relayer API V2.
 
-    <https://github.com/0xProject/standard-relayer-api>
+    <https://github.com/0xProject/standard-relayer-api/blob/master/http/v2.md>
 
     Attributes:
-        exchange: The 0x Exchange contract.
+        exchange: The 0x Exchange V2 contract.
         api_server: Base URL of the Standard Relayer API server.
     """
     logger = logging.getLogger()
@@ -611,6 +610,7 @@ class ZrxRelayerApi:
         self.exchange = exchange
         self.api_server = api_server
 
+    #TODO-check
     def get_orders(self, pay_token: Address, buy_token: Address, per_page: int = 100) -> List[Order]:
         """Returns active orders filtered by token pair (one side).
 
@@ -639,6 +639,7 @@ class ZrxRelayerApi:
 
         return list(map(lambda item: Order.from_json(self.exchange, item), response.json()))
 
+    #TODO-check
     def get_orders_by_maker(self, maker: Address, per_page: int = 100) -> List[Order]:
         """Returns all active orders created by `maker`.
 
@@ -666,44 +667,47 @@ class ZrxRelayerApi:
 
         return list(map(lambda item: Order.from_json(self.exchange, item), response.json()))
 
-    def calculate_fees(self, order: Order) -> Order:
-        """Takes and order and returns the same order with proper relayer fees.
+    def configure_order(self, order: Order) -> Order:
+        """Takes a partial order and  receive information required to complete the order:
 
-        Issues a call to the `/v0/fees` endpoint of the Standard Relayer API, as a result of it
-        new order is returned being the copy of the original one with the `maker_fee`, `taker_fee`
-        and `fee_recipient` fields filled in according to the relayer.
+           senderAddress, feeRecipientAddress, makerFee, takerFee
 
-        Relayers will very likely reject orders submitted if proper fees are not set first.
-        The standard approach is to call `calculate_fees()` first and then call `submit_order()`
-        passing the order received from `calculate_fees()` as parameter.
+        Issues a call to the `/v2/order_config` endpoint of the Standard Relayer API V2, as a result
+        of it new order is returned being the copy of the original one with the `senderAddress`,
+        `maker_fee`, `taker_fee` and `fee_recipient` fields filled in according to the relayer.
+
+        Relayers will very likely reject orders submitted if proper fields are not set first.
+        The standard approach is to call `configure_order()` first and then call `submit_order()`
+        passing the order received from `configure_order()` as parameter.
 
         Args:
-            order: Order which should have fees calculated. The values of `maker_fee`, `taker_fee`
-                and `fee_recipient` are irrelevant and may as well be zeros as they will be overwritten
-                by this method anyway.
+            order: Order which should be configured. The values of `senderAddress`, `maker_fee`, `taker_fee`
+                and `fee_recipient` could be overwritten by this method.
 
         Returns:
-            Copy of the order received as a parameter with the `maker_fee`, `taker_fee` and `fee_recipient`
-            fields updated according to the relayer.
+            Copy of the order received as a parameter with the `senderAddress`, `maker_fee`, `taker_fee`
+            and `fee_recipient` fields updated according to the relayer.
         """
         assert(isinstance(order, Order))
 
-        response = requests.post(f"{self.api_server}/v0/fees", json=order.to_json_without_fees(), timeout=self.timeout)
+        response = requests.get(f"{self.api_server}/v1/order_config", params=order.to_json_without_fees(), timeout=self.timeout)
         if response.status_code == 200:
             data = response.json()
+            #{"senderAddress":"0xc8924d8cd9a758a4150afe7cc7030effaff1aecc","feeRecipientAddress":"0xc8924d8cd9a758a4150afe7cc7030effaff1aecc","makerFee":"0","takerFee":"0"}
 
-            order_with_fees = copy.copy(order)
-            order_with_fees.maker_fee = Wad(int(data['makerFee']))
-            order_with_fees.taker_fee = Wad(int(data['takerFee']))
-            order_with_fees.fee_recipient = Address(data['feeRecipient'])
-            return order_with_fees
+            configured_order = copy.copy(order)
+            configured_order.sender = Address(data['senderAddress'])
+            configured_order.maker_fee = Wad(int(data['makerFee']))
+            configured_order.taker_fee = Wad(int(data['takerFee']))
+            configured_order.fee_recipient = Address(data['feeRecipientAddress'])
+            return configured_order
         else:
-            raise Exception(f"Failed to fetch fees for 0x order: {http_response_summary(response)}")
+            raise Exception(f"Failed to configure order with 0x SRAv2: {http_response_summary(response)}")
 
     def submit_order(self, order: Order) -> bool:
         """Submits the order to the relayer.
 
-        Posts the order to the `/v0/order` endpoint of the Standard Relayer API
+        Posts the order to the `/v2/order` endpoint of the Standard Relayer API
 
         Args:
             order: Order to be submitted.
@@ -713,7 +717,8 @@ class ZrxRelayerApi:
         """
         assert(isinstance(order, Order))
 
-        response = requests.post(f"{self.api_server}/v0/order", json=order.to_json(), timeout=self.timeout)
+        response = requests.post(f"{self.api_server}/v1/orders", json=order.to_json(), timeout=self.timeout)
+        print(response.request.body)
         if response.status_code in [200, 201]:
             self.logger.info(f"Placed 0x order: {order}")
             return True
@@ -722,4 +727,4 @@ class ZrxRelayerApi:
             return False
 
     def __repr__(self):
-        return f"ZrxRelayerApi()"
+        return f"ZrxRelayerApiV2()"

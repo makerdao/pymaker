@@ -15,27 +15,45 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
+import sys
+import time
 
-import pkg_resources
-import pytest
-from mock import Mock
 from web3 import EthereumTesterProvider, Web3, HTTPProvider
 
 from pymaker import Address
 from pymaker.approval import directly
-from pymaker.deployment import deploy_contract
 from pymaker.numeric import Wad
 from pymaker.token import DSToken, ERC20Token
 from pymaker.util import bytes_to_hexstring
-from pymaker.zrxv2 import ZrxExchangeV2, Order, ZrxRelayerApi
+from pymaker.zrxv2 import ZrxExchangeV2, Order, ZrxRelayerApiV2, ERC20Asset
 from tests.helpers import is_hashable, wait_until_mock_called
 
-PAST_BLOCKS = 100
+#EXCHANGE_ADDR = '0x4f833a24e1f95d70f028921e27040ca56e09ab0b'  # Mainnet
+EXCHANGE_ADDR = sys.argv[1]
+SRAV2_URL = 'https://kovan-staging.ercdex.com/api'
+
+KOVAN_DAI = Address('0xc4375b7de8af5a38a93548eb8453a498222c4ff2')
+KOVAN_WETH = Address('0xd0a1e359811322d97991e03f863a0c30c2cf029c')
 
 
 web3 = Web3(HTTPProvider('http://localhost:8545'))
-exchange = ZrxExchangeV2(web3=web3, address=Address('0x4f833a24e1f95d70f028921e27040ca56e09ab0b'))
+web3.eth.defaultAccount = web3.eth.accounts[0]
 
+exchange = ZrxExchangeV2(web3=web3, address=Address(EXCHANGE_ADDR))
+#exchange.approve([ERC20Token(web3=web3, address=KOVAN_DAI),
+#                  ERC20Token(web3=web3, address=KOVAN_WETH)], directly())
 
-print(exchange.past_fill(18000))
+order = exchange.create_order(pay_asset=ERC20Asset(KOVAN_WETH),
+                              pay_amount=Wad.from_number(0.1),
+                              buy_asset=ERC20Asset(KOVAN_DAI),
+                              buy_amount=Wad.from_number(25),
+                              expiration=int(time.time())+60*35)
+
+api = ZrxRelayerApiV2(exchange=exchange, api_server=SRAV2_URL)
+order = api.configure_order(order)
+order = exchange.sign_order(order)
+print(order)
+
+api.submit_order(order)
+
+#print(exchange.past_fill(500))
