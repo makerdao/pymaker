@@ -52,12 +52,6 @@ class Asset:
     def __repr__(self):
         return pformat(vars(self))
 
-    def __hash__(self):
-        return hash(self.__dict__)
-
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
-
 
 class ERC20Asset(Asset):
     ID = "0xf47261b0"
@@ -70,6 +64,12 @@ class ERC20Asset(Asset):
     def serialize(self) -> str:
         return self.ID + self.token_address.address[2:]
 
+    def __hash__(self):
+        return hash(self.token_address)
+
+    def __eq__(self, other):
+        return isinstance(other, ERC20Asset) and self.token_address == other.token_address
+
 
 class UnknownAsset(Asset):
     def __init__(self, asset: str):
@@ -79,6 +79,12 @@ class UnknownAsset(Asset):
 
     def serialize(self) -> str:
         return self.asset
+
+    def __hash__(self):
+        return hash(self.asset)
+
+    def __eq__(self, other):
+        return isinstance(other, UnknownAsset) and self.asset == other.asset
 
 
 class Order:
