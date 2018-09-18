@@ -610,11 +610,10 @@ class ZrxRelayerApiV2:
         self.exchange = exchange
         self.api_server = api_server
 
-    #TODO-check
     def get_orders(self, pay_token: Address, buy_token: Address, per_page: int = 100) -> List[Order]:
         """Returns active orders filtered by token pair (one side).
 
-        In order to get them, issues a `/v0/orders` call to the Standard Relayer API.
+        In order to get them, issues a `/v2/orders` call to the Standard Relayer API.
 
         Args:
             per_page: Maximum number of orders to be downloaded per page. 0x Standard Relayer API
@@ -627,23 +626,26 @@ class ZrxRelayerApiV2:
         assert(isinstance(pay_token, Address))
         assert(isinstance(buy_token, Address))
 
-        url = f"{self.api_server}/v0/orders?" \
-              f"exchangeContractAddress={self.exchange.address.address}&" \
-              f"makerTokenAddress={pay_token.address}&" \
-              f"takerTokenAddress={buy_token.address}&" \
-              f"per_page={per_page}"
+        params = { "exchangeAddress": self.exchange.address.address.lower(),
+                   "makerAssetData": ERC20Asset(pay_token).serialize(),
+                   "takerAssetData": ERC20Asset(buy_token).serialize(),
+                   "per_page": per_page,
+                 }
 
-        response = requests.get(url, timeout=self.timeout)
+        response = requests.get(f"{self.api_server}/v2/orders", params=params, timeout=self.timeout)
         if not response.ok:
             raise Exception(f"Failed to fetch 0x orders from the relayer: {http_response_summary(response)}")
 
-        return list(map(lambda item: Order.from_json(self.exchange, item), response.json()))
+        data = response.json()
+        if 'records' in data:
+            return list(map(lambda item: Order.from_json(self.exchange, item['order']), data['records']))
+        else:
+            return []
 
-    #TODO-check
     def get_orders_by_maker(self, maker: Address, per_page: int = 100) -> List[Order]:
         """Returns all active orders created by `maker`.
 
-        In order to get them, issues a `/v0/orders` call to the Standard Relayer API.
+        In order to get them, issues a `/v2/orders` call to the Standard Relayer API.
 
         Args:
             maker: Address of the `maker` to filter the orders by.
@@ -656,16 +658,20 @@ class ZrxRelayerApiV2:
         """
         assert(isinstance(maker, Address))
 
-        url = f"{self.api_server}/v0/orders?" \
-              f"exchangeContractAddress={self.exchange.address.address}&" \
-              f"maker={maker.address}&" \
-              f"per_page={per_page}"
+        params = { "exchangeAddress": self.exchange.address.address.lower(),
+                   "makerAddress": str(maker).lower(),
+                   "per_page": per_page,
+                 }
 
-        response = requests.get(url, timeout=self.timeout)
+        response = requests.get(f"{self.api_server}/v2/orders", params=params, timeout=self.timeout)
         if not response.ok:
             raise Exception(f"Failed to fetch 0x orders from the relayer: {http_response_summary(response)}")
 
-        return list(map(lambda item: Order.from_json(self.exchange, item), response.json()))
+        data = response.json()
+        if 'records' in data:
+            return list(map(lambda item: Order.from_json(self.exchange, item['order']), data['records']))
+        else:
+            return []
 
     def configure_order(self, order: Order) -> Order:
         """Takes a partial order and  receive information required to complete the order:
@@ -690,7 +696,7 @@ class ZrxRelayerApiV2:
         """
         assert(isinstance(order, Order))
 
-        response = requests.get(f"{self.api_server}/v1/order_config", params=order.to_json_without_fees(), timeout=self.timeout)
+        response = requests.get(f"{self.api_server}/v2/order_config", params=order.to_json_without_fees(), timeout=self.timeout)
         if response.status_code == 200:
             data = response.json()
             #{"senderAddress":"0xc8924d8cd9a758a4150afe7cc7030effaff1aecc","feeRecipientAddress":"0xc8924d8cd9a758a4150afe7cc7030effaff1aecc","makerFee":"0","takerFee":"0"}
@@ -717,8 +723,7 @@ class ZrxRelayerApiV2:
         """
         assert(isinstance(order, Order))
 
-        response = requests.post(f"{self.api_server}/v1/orders", json=order.to_json(), timeout=self.timeout)
-        print(response.request.body)
+        response = requests.post(f"{self.api_server}/v2/order", json=order.to_json(), timeout=self.timeout)
         if response.status_code in [200, 201]:
             self.logger.info(f"Placed 0x order: {order}")
             return True

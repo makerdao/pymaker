@@ -52,8 +52,10 @@ order = exchange.create_order(pay_asset=ERC20Asset(KOVAN_WETH),
 api = ZrxRelayerApiV2(exchange=exchange, api_server=SRAV2_URL)
 order = api.configure_order(order)
 order = exchange.sign_order(order)
-print(order)
+#print(order)
 
-api.submit_order(order)
+#print(api.submit_order(order))
+#print(api.get_orders(KOVAN_WETH, KOVAN_DAI))
+print(api.get_orders_by_maker(Address(web3.eth.defaultAccount)))
 
 #print(exchange.past_fill(500))
