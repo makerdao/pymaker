@@ -33,7 +33,6 @@ class TestDSGuard:
     def can_call(self, src: str, dst: str, sig: str) -> bool:
         return self.ds_guard._contract.call().canCall(src, dst, hexstring_to_bytes(sig))
 
-    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self):
         # expect
         with pytest.raises(Exception):

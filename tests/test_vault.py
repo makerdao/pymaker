@@ -29,7 +29,6 @@ class TestDSVault:
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.dsvault = DSVault.deploy(self.web3)
 
-    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self):
         # expect
         with pytest.raises(Exception):

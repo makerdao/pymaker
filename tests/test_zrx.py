@@ -47,7 +47,6 @@ class TestZrx:
         self.token2 = DSToken.deploy(self.web3, 'BBB')
         self.token2.mint(Wad.from_number(100)).transact()
 
-    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self):
         # expect
         with pytest.raises(Exception):
