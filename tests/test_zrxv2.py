@@ -19,6 +19,7 @@ import json
 
 import pkg_resources
 import pytest
+from eth_abi import encode_single
 from mock import Mock
 from web3 import EthereumTesterProvider, Web3, HTTPProvider
 

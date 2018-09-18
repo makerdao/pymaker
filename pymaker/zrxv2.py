@@ -23,6 +23,8 @@ from pprint import pformat
 from typing import List, Optional
 
 import requests
+from eth_abi import encode_single, encode_abi, decode_single
+from hexbytes import HexBytes
 from web3 import Web3
 from web3.utils.events import get_event_data
 
@@ -75,10 +77,11 @@ class UnknownAsset(Asset):
 
 
 class Order:
-    def __init__(self, exchange, maker: Address, taker: Address, maker_fee: Wad, taker_fee: Wad, pay_asset: Asset,
-                 pay_amount: Wad, buy_asset: Asset, buy_amount: Wad, salt: int, fee_recipient: Address,
+    def __init__(self, exchange, sender: Address, maker: Address, taker: Address, maker_fee: Wad, taker_fee: Wad,
+                 pay_asset: Asset, pay_amount: Wad, buy_asset: Asset, buy_amount: Wad, salt: int, fee_recipient: Address,
                  expiration: int, exchange_contract_address: Address, signature: Optional[str]):
 
+        assert(isinstance(sender, Address))
         assert(isinstance(maker, Address))
         assert(isinstance(taker, Address))
         assert(isinstance(maker_fee, Wad))
@@ -94,6 +97,7 @@ class Order:
         assert(isinstance(signature, str) or (signature is None))
 
         self._exchange = exchange
+        self.sender = sender
         self.maker = maker
         self.taker = taker
         self.maker_fee = maker_fee
@@ -137,6 +141,7 @@ class Order:
         assert(isinstance(data, dict))
 
         return Order(exchange=exchange,
+                     sender=Address(data['sender']),
                      maker=Address(data['maker']),
                      taker=Address(data['taker']),
                      maker_fee=Wad(int(data['makerFee'])),
@@ -154,6 +159,7 @@ class Order:
     def to_json_without_fees(self) -> dict:
         return {
             "exchangeContractAddress": self.exchange_contract_address.address,
+            #TODO shall `sender` be here?
             "maker": self.maker.address,
             "taker": self.taker.address,
             "makerAssetData": self.pay_asset.serialize(),
@@ -167,6 +173,7 @@ class Order:
     def to_json(self) -> dict:
         return {
             "exchangeContractAddress": self.exchange_contract_address.address,
+            #TODO shall `sender` be here?
             "maker": self.maker.address,
             "taker": self.taker.address,
             "makerAssetData": self.pay_asset.serialize(),
@@ -183,7 +190,8 @@ class Order:
 
     def __eq__(self, other):
         assert(isinstance(other, Order))
-        return self.maker == other.maker and \
+        return self.sender == other.sender and \
+               self.maker == other.maker and \
                self.taker == other.taker and \
                self.maker_fee == other.maker_fee and \
                self.taker_fee == other.taker_fee and \
@@ -198,7 +206,8 @@ class Order:
                self.signature == other.signature
 
     def __hash__(self):
-        return hash((self.maker,
+        return hash((self.sender,
+                     self.maker,
                      self.taker,
                      self.maker_fee,
                      self.taker_fee,
@@ -258,7 +267,7 @@ class LogFill:
         assert(isinstance(event, dict))
 
         topics = event.get('topics')
-        if topics and topics[0] == '0x0bcc4c97732e47d9946f229edb95f5b6323f601300e4690de719993f3c371129':
+        if topics and topics[0] == HexBytes('0x0bcc4c97732e47d9946f229edb95f5b6323f601300e4690de719993f3c371129'):
             log_fill_abi = [abi for abi in ZrxExchangeV2.abi if abi.get('name') == 'Fill'][0]
             event_data = get_event_data(log_fill_abi, event)
 
@@ -287,6 +296,8 @@ class ZrxExchangeV2(Contract):
     bin = Contract._load_bin(__name__, 'abi/ExchangeV2.bin')
 
     _ZERO_ADDRESS = Address("0x0000000000000000000000000000000000000000")
+
+    ORDER_INFO_TYPE = '(address,address,address,address,uint256,uint256,uint256,uint256,uint256,uint256,bytes,bytes)'
 
     @staticmethod
     def deploy(web3: Web3, zrx_asset: str):
@@ -357,36 +368,6 @@ class ZrxExchangeV2(Contract):
         for token in tokens:  # TODO  + [ERC20Token(web3=self.web3, address=self.zrx_token())]
             approval_function(token, self.asset_transfer_proxy(ERC20Asset.ID), '0x ERC20Proxy contract')
 
-    def on_fill(self, handler, event_filter: dict = None):
-        """Subscribe to LogFill events.
-
-        `LogFill` events are emitted by the 0x contract every time someone fills an order.
-
-        Args:
-            handler: Function which will be called for each subsequent `LogFill` event.
-                This handler will receive a :py:class:`pymaker.`zrx.LogFill` class instance.
-            event_filter: Filter which will be applied to event subscription.
-        """
-        assert(callable(handler))
-        assert(isinstance(event_filter, dict) or (event_filter is None))
-
-        self._on_event(self._contract, 'Fill', LogFill, handler, event_filter)
-
-    def on_cancel(self, handler, event_filter: dict = None):
-        """Subscribe to LogCancel events.
-
-        `LogCancel` events are emitted by the 0x contract every time someone cancels an order.
-
-        Args:
-            handler: Function which will be called for each subsequent `LogCancel` event.
-                This handler will receive a :py:class:`pymaker.`zrx.LogCancel` class instance.
-            event_filter: Filter which will be applied to event subscription.
-        """
-        assert(callable(handler))
-        assert(isinstance(event_filter, dict) or (event_filter is None))
-
-        self._on_event(self._contract, 'LogCancel', LogCancel, handler, event_filter)
-
     def past_fill(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogFill]:
         """Synchronously retrieve past LogFill events.
 
@@ -450,6 +431,7 @@ class ZrxExchangeV2(Contract):
         assert(isinstance(expiration, int))
 
         return Order(exchange=self,
+                     sender=self._ZERO_ADDRESS,
                      maker=Address(self.web3.eth.defaultAccount),
                      taker=self._ZERO_ADDRESS,
                      maker_fee=Wad(0),
@@ -478,8 +460,14 @@ class ZrxExchangeV2(Contract):
         # the hash depends on the exchange contract address as well
         assert(order.exchange_contract_address == self.address)
 
-        result = self._contract.call().getOrderInfo(order)
-        return bytes_to_hexstring(array.array('B', [ord(x) for x in result]).tobytes())
+        method_signature = self.web3.sha3(text=f"getOrderInfo({self.ORDER_INFO_TYPE})")[0:4]
+        method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", self._order_tuple(order))
+
+        request = bytes_to_hexstring(method_signature + method_parameters)
+        response = self.web3.eth.call({'to': self.address.address, 'data': request})
+        response_decoded = decode_single("((uint8,bytes32,uint256))", response)
+
+        return bytes_to_hexstring(response_decoded[0][1])
 
     def get_unavailable_buy_amount(self, order: Order) -> Wad:
         """Return the order amount which was either taken or cancelled.
@@ -552,6 +540,22 @@ class ZrxExchangeV2(Contract):
                         [self._order_addresses(order), self._order_values(order), order.buy_amount.value])
 
     @staticmethod
+    def _order_tuple(order):
+        return [(order.maker.address,
+                 order.taker.address,
+                 order.fee_recipient.address,
+                 order.sender.address,
+                 order.pay_amount.value,
+                 order.buy_amount.value,
+                 order.maker_fee.value,
+                 order.taker_fee.value,
+                 order.expiration,
+                 order.salt,
+                 hexstring_to_bytes(order.pay_asset.serialize()),
+                 hexstring_to_bytes(order.buy_asset.serialize()))]
+
+    #TODO to be removed
+    @staticmethod
     def _order_values(order):
         return [order.pay_amount.value,
                 order.buy_amount.value,
@@ -560,6 +564,7 @@ class ZrxExchangeV2(Contract):
                 order.expiration,
                 order.salt]
 
+    #TODO to be removed
     @staticmethod
     def _order_addresses(order):
         return [order.maker.address,
