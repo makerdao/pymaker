@@ -29,7 +29,7 @@ from pymaker.deployment import deploy_contract
 from pymaker.numeric import Wad
 from pymaker.token import DSToken, ERC20Token
 from pymaker.util import bytes_to_hexstring
-from pymaker.zrxv2 import ZrxExchangeV2, Order, ZrxRelayerApi, ERC20Asset
+from pymaker.zrxv2 import ZrxExchangeV2, Order, ZrxRelayerApiV2, ERC20Asset
 from tests.helpers import is_hashable, wait_until_mock_called
 
 PAST_BLOCKS = 100
