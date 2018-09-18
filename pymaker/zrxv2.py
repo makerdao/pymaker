@@ -251,13 +251,13 @@ class LogFill:
         self.maker = Address(log['args']['makerAddress'])
         self.taker = Address(log['args']['takerAddress'])
         self.fee_recipient = Address(log['args']['feeRecipientAddress'])
-        self.pay_asset = Asset.deserialize(bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['makerAssetData']]).tobytes()))
-        self.buy_asset = Asset.deserialize(bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['takerAssetData']]).tobytes()))
+        self.pay_asset = Asset.deserialize(bytes_to_hexstring(log['args']['makerAssetData']))
+        self.buy_asset = Asset.deserialize(bytes_to_hexstring(log['args']['takerAssetData']))
         self.filled_pay_amount = Wad(int(log['args']['makerAssetFilledAmount']))
         self.filled_buy_amount = Wad(int(log['args']['takerAssetFilledAmount']))
         self.paid_maker_fee = Wad(int(log['args']['makerFeePaid']))
         self.paid_taker_fee = Wad(int(log['args']['takerFeePaid']))
-        self.order_hash = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['orderHash']]).tobytes())
+        self.order_hash = bytes_to_hexstring(log['args']['orderHash'])
         self.raw = log
 
     @classmethod

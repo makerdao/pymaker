@@ -196,33 +196,33 @@ class TestZrxV2:
         assert signed_order.remaining_sell_amount == Wad.from_number(1.25)
         assert signed_order.remaining_buy_amount == Wad.from_number(0.5)
 
-    # def test_past_fill(self):
-    #     # given
-    #     self.exchange.approve([self.token1, self.token2], directly())
-    #
-    #     # when
-    #     order = self.exchange.create_order(pay_asset=ERC20Asset(self.token1.address), pay_amount=Wad.from_number(10),
-    #                                        buy_asset=ERC20Asset(self.token2.address), buy_amount=Wad.from_number(4),
-    #                                        expiration=1763920792)
-    #     # and
-    #     self.exchange.fill_order(self.exchange.sign_order(order), Wad.from_number(3)).transact()
-    #
-    #     # then
-    #     past_fill = self.exchange.past_fill(PAST_BLOCKS)
-    #     assert len(past_fill) == 1
-    #     assert past_fill[0].maker == self.our_address
-    #     assert past_fill[0].taker == self.our_address
-    #     assert past_fill[0].fee_recipient == Address("0x0000000000000000000000000000000000000000")
-    #     assert past_fill[0].pay_token == self.token1.address
-    #     assert past_fill[0].buy_token == self.token2.address
-    #     assert past_fill[0].filled_pay_amount == Wad.from_number(7.5)
-    #     assert past_fill[0].filled_buy_amount == Wad.from_number(3)
-    #     assert past_fill[0].paid_maker_fee == Wad.from_number(0)
-    #     assert past_fill[0].paid_taker_fee == Wad.from_number(0)
-    #     assert past_fill[0].tokens.startswith('0x')
-    #     assert past_fill[0].order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
-    #     assert past_fill[0].raw['blockNumber'] > 0
-    #
+    def test_past_fill(self):
+        # given
+        self.exchange.approve([self.token1, self.token2], directly())
+
+        # when
+        order = self.exchange.create_order(pay_asset=ERC20Asset(self.token1.address), pay_amount=Wad.from_number(10),
+                                           buy_asset=ERC20Asset(self.token2.address), buy_amount=Wad.from_number(4),
+                                           expiration=1763920792)
+        # and
+        self.exchange.fill_order(self.exchange.sign_order(order), Wad.from_number(3)).transact()
+
+        # then
+        past_fill = self.exchange.past_fill(PAST_BLOCKS)
+        assert len(past_fill) == 1
+        assert past_fill[0].sender == self.our_address
+        assert past_fill[0].maker == self.our_address
+        assert past_fill[0].taker == self.our_address
+        assert past_fill[0].fee_recipient == Address("0x0000000000000000000000000000000000000000")
+        assert past_fill[0].pay_asset == ERC20Asset(self.token1.address)
+        assert past_fill[0].buy_asset == ERC20Asset(self.token2.address)
+        assert past_fill[0].filled_pay_amount == Wad.from_number(7.5)
+        assert past_fill[0].filled_buy_amount == Wad.from_number(3)
+        assert past_fill[0].paid_maker_fee == Wad.from_number(0)
+        assert past_fill[0].paid_taker_fee == Wad.from_number(0)
+        assert past_fill[0].order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
+        assert past_fill[0].raw['blockNumber'] > 0
+
     # def test_past_cancel(self):
     #     # given
     #     self.exchange.approve([self.token1, self.token2], directly())
