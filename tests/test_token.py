@@ -35,7 +35,6 @@ class TestERC20Token:
         self.token = DSToken.deploy(self.web3, 'ABC')
         self.token.mint(Wad(1000000)).transact()
 
-    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_token_with_that_address(self):
         with pytest.raises(Exception):
             ERC20Token(web3=self.web3, address=Address('0x0123456789012345678901234567890123456789'))
@@ -156,7 +155,6 @@ class TestDSToken:
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.dstoken = DSToken.deploy(self.web3, 'ABC')
 
-    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self):
         # expect
         with pytest.raises(Exception):
@@ -225,7 +223,6 @@ class TestDSEthToken:
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.dsethtoken = DSEthToken.deploy(self.web3)
 
-    @pytest.mark.skip("Doesn't work with ganache-cli")
     def test_fail_when_no_contract_under_that_address(self):
         # expect
         with pytest.raises(Exception):
