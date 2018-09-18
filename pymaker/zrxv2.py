@@ -38,6 +38,8 @@ from pymaker.util import bytes_to_hexstring, hexstring_to_bytes, http_response_s
 class Asset:
     @staticmethod
     def deserialize(asset: str):
+        assert(isinstance(asset, str))
+
         if ERC20Asset.ID.upper() == asset[0:10].upper():
             return ERC20Asset(token_address=Address("0x" + asset[-40:]))
 
