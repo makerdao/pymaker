@@ -223,32 +223,30 @@ class TestZrxV2:
         assert past_fill[0].order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
         assert past_fill[0].raw['blockNumber'] > 0
 
-    # def test_past_cancel(self):
-    #     # given
-    #     self.exchange.approve([self.token1, self.token2], directly())
-    #
-    #     # when
-    #     order = self.exchange.create_order(pay_asset=ERC20Asset(self.token1.address), pay_amount=Wad.from_number(10),
-    #                                        buy_asset=ERC20Asset(self.token2.address), buy_amount=Wad.from_number(4),
-    #                                        expiration=1763920792)
-    #     # and
-    #     self.exchange.cancel_order(self.exchange.sign_order(order)).transact()
-    #
-    #     # then
-    #     past_cancel = self.exchange.past_cancel(PAST_BLOCKS)
-    #     assert len(past_cancel) == 1
-    #     assert past_cancel[0].maker == self.our_address
-    #     assert past_cancel[0].fee_recipient == Address("0x0000000000000000000000000000000000000000")
-    #     assert past_cancel[0].pay_token == self.token1.address
-    #     assert past_cancel[0].cancelled_pay_amount == Wad.from_number(10)
-    #     assert past_cancel[0].buy_token == self.token2.address
-    #     assert past_cancel[0].cancelled_buy_amount == Wad.from_number(4)
-    #     assert past_cancel[0].tokens.startswith('0x')
-    #     assert past_cancel[0].order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
-    #     assert past_cancel[0].raw['blockNumber'] > 0
-    #
-    # def test_should_have_printable_representation(self):
-    #     assert repr(self.exchange) == f"ZrxExchange('{self.exchange.address}')"
+    def test_past_cancel(self):
+        # given
+        self.exchange.approve([self.token1, self.token2], directly())
+
+        # when
+        order = self.exchange.create_order(pay_asset=ERC20Asset(self.token1.address), pay_amount=Wad.from_number(10),
+                                           buy_asset=ERC20Asset(self.token2.address), buy_amount=Wad.from_number(4),
+                                           expiration=1763920792)
+        # and
+        self.exchange.cancel_order(self.exchange.sign_order(order)).transact()
+
+        # then
+        past_cancel = self.exchange.past_cancel(PAST_BLOCKS)
+        assert len(past_cancel) == 1
+        assert past_cancel[0].maker == self.our_address
+        assert past_cancel[0].fee_recipient == Address("0x0000000000000000000000000000000000000000")
+        assert past_cancel[0].sender == self.our_address
+        assert past_cancel[0].pay_asset == ERC20Asset(self.token1.address)
+        assert past_cancel[0].buy_asset == ERC20Asset(self.token2.address)
+        assert past_cancel[0].order_hash == self.exchange.get_order_hash(self.exchange.sign_order(order))
+        assert past_cancel[0].raw['blockNumber'] > 0
+
+    def test_should_have_printable_representation(self):
+        assert repr(self.exchange) == f"ZrxExchangeV2('{self.exchange.address}')"
 
 
 # class TestOrder:

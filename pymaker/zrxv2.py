@@ -228,17 +228,14 @@ class Order:
         return pformat(vars(self))
 
 
-#TODO get back to it
 class LogCancel:
     def __init__(self, log):
-        self.maker = Address(log['args']['maker'])
-        self.fee_recipient = Address(log['args']['feeRecipient'])
-        self.pay_token = Address(log['args']['makerToken'])
-        self.buy_token = Address(log['args']['takerToken'])
-        self.cancelled_pay_amount = Wad(int(log['args']['cancelledMakerTokenAmount']))
-        self.cancelled_buy_amount = Wad(int(log['args']['cancelledTakerTokenAmount']))
-        self.tokens = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['tokens']]).tobytes())
-        self.order_hash = bytes_to_hexstring(array.array('B', [ord(x) for x in log['args']['orderHash']]).tobytes())
+        self.maker = Address(log['args']['makerAddress'])
+        self.fee_recipient = Address(log['args']['feeRecipientAddress'])
+        self.sender = Address(log['args']['senderAddress'])
+        self.pay_asset = Asset.deserialize(bytes_to_hexstring(log['args']['makerAssetData']))
+        self.buy_asset = Asset.deserialize(bytes_to_hexstring(log['args']['takerAssetData']))
+        self.order_hash = bytes_to_hexstring(log['args']['orderHash'])
         self.raw = log
 
     def __repr__(self):
@@ -398,7 +395,7 @@ class ZrxExchangeV2(Contract):
         assert(isinstance(number_of_past_blocks, int))
         assert(isinstance(event_filter, dict) or (event_filter is None))
 
-        return self._past_events(self._contract, 'LogCancel', LogCancel, number_of_past_blocks, event_filter)
+        return self._past_events(self._contract, 'Cancel', LogCancel, number_of_past_blocks, event_filter)
 
     def create_order(self,
                      pay_asset: Asset,
@@ -602,7 +599,7 @@ class ZrxExchangeV2(Contract):
         return random.randint(1, 2**256 - 1)
 
     def __repr__(self):
-        return f"ZrxExchange('{self.address}')"
+        return f"ZrxExchangeV2('{self.address}')"
 
 
 class ZrxRelayerApi:
