@@ -50,6 +50,9 @@ class Asset:
     def __repr__(self):
         return pformat(vars(self))
 
+    def __hash__(self):
+        return hash(self.__dict__)
+
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
@@ -139,51 +142,49 @@ class Order:
         assert(isinstance(data, dict))
 
         return Order(exchange=exchange,
-                     sender=Address(data['sender']),
-                     maker=Address(data['maker']),
-                     taker=Address(data['taker']),
+                     sender=Address(data['senderAddress']),
+                     maker=Address(data['makerAddress']),
+                     taker=Address(data['takerAddress']),
                      maker_fee=Wad(int(data['makerFee'])),
                      taker_fee=Wad(int(data['takerFee'])),
                      pay_asset=Asset.deserialize(str(data['makerAssetData'])),
-                     pay_amount=Wad(int(data['makerTokenAmount'])),
+                     pay_amount=Wad(int(data['makerAssetAmount'])),
                      buy_asset=Asset.deserialize(str(data['takerAssetData'])),
-                     buy_amount=Wad(int(data['takerTokenAmount'])),
+                     buy_amount=Wad(int(data['takerAssetAmount'])),
                      salt=int(data['salt']),
-                     fee_recipient=Address(data['feeRecipient']),
-                     expiration=int(data['expirationUnixTimestampSec']),
-                     exchange_contract_address=Address(data['exchangeContractAddress']),
+                     fee_recipient=Address(data['feeRecipientAddress']),
+                     expiration=int(data['expirationTimeSeconds']),
+                     exchange_contract_address=Address(data['exchangeAddress']),
                      signature=data['signature'] if 'signature' in data else None)
 
     def to_json_without_fees(self) -> dict:
         return {
-            "exchangeContractAddress": self.exchange_contract_address.address,
-            #TODO shall `sender` be here?
-            "maker": self.maker.address,
-            "taker": self.taker.address,
+            "exchangeAddress": self.exchange_contract_address.address,
+            "makerAddress": self.maker.address,
+            "takerAddress": self.taker.address,
             "makerAssetData": self.pay_asset.serialize(),
             "takerAssetData": self.buy_asset.serialize(),
-            "makerTokenAmount": str(self.pay_amount.value),
-            "takerTokenAmount": str(self.buy_amount.value),
-            "expirationUnixTimestampSec": str(self.expiration),
-            "salt": str(self.salt)
+            "makerAssetAmount": str(self.pay_amount.value),
+            "takerAssetAmount": str(self.buy_amount.value),
+            "expirationTimeSeconds": str(self.expiration)
         }
 
     def to_json(self) -> dict:
         return {
-            "exchangeContractAddress": self.exchange_contract_address.address,
-            #TODO shall `sender` be here?
-            "maker": self.maker.address,
-            "taker": self.taker.address,
+            "exchangeAddress": self.exchange_contract_address.address,
+            "senderAddress": self.sender.address,
+            "makerAddress": self.maker.address,
+            "takerAddress": self.taker.address,
             "makerAssetData": self.pay_asset.serialize(),
             "takerAssetData": self.buy_asset.serialize(),
-            "feeRecipient": self.fee_recipient.address,
-            "makerTokenAmount": str(self.pay_amount.value),
-            "takerTokenAmount": str(self.buy_amount.value),
+            "makerAssetAmount": str(self.pay_amount.value),
+            "takerAssetAmount": str(self.buy_amount.value),
+            "feeRecipientAddress": self.fee_recipient.address,
             "makerFee": str(self.maker_fee.value),
             "takerFee": str(self.taker_fee.value),
-            "expirationUnixTimestampSec": str(self.expiration),
+            "expirationTimeSeconds": str(self.expiration),
             "salt": str(self.salt),
-            "Signature": self.signature
+            "signature": self.signature
         }
 
     def __eq__(self, other):

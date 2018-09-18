@@ -249,240 +249,226 @@ class TestZrxV2:
         assert repr(self.exchange) == f"ZrxExchangeV2('{self.exchange.address}')"
 
 
-# class TestOrder:
-#     def test_should_be_comparable(self):
-#         # given
-#         order1 = Order(exchange=None,
-#                        maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
-#                        taker=Address("0x0000000000000000000000000000000000000000"),
-#                        maker_fee=Wad.from_number(123),
-#                        taker_fee=Wad.from_number(456),
-#                        pay_token=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
-#                        pay_amount=Wad(10000000000000000),
-#                        buy_token=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
-#                        buy_amount=Wad(20000000000000000),
-#                        salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
-#                        fee_recipient=Address('0x6666666666666666666666666666666666666666'),
-#                        expiration=42,
-#                        exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
-#                        ec_signature_r="0xf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc3",
-#                        ec_signature_s="0x15baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab964",
-#                        ec_signature_v=28)
-#
-#         order2 = Order(exchange=None,
-#                        maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
-#                        taker=Address("0x0000000000000000000000000000000000000000"),
-#                        maker_fee=Wad.from_number(123),
-#                        taker_fee=Wad.from_number(456),
-#                        pay_token=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
-#                        pay_amount=Wad(10000000000000000),
-#                        buy_token=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
-#                        buy_amount=Wad(20000000000000000),
-#                        salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
-#                        fee_recipient=Address('0x6666666666666666666666666666666666666666'),
-#                        expiration=42,
-#                        exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
-#                        ec_signature_r="0xf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc3",
-#                        ec_signature_s="0x15baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab964",
-#                        ec_signature_v=28)
-#
-#         # expect
-#         assert order1 == order2
-#
-#         # when
-#         order2.maker_fee = Wad.from_number(124)
-#
-#         # then
-#         assert order1 != order2
-#
-#         # when
-#         order1.maker_fee = Wad.from_number(124)
-#
-#         # then
-#         assert order1 == order2
-#
-#     def test_should_be_hashable(self):
-#         # given
-#         order = Order(exchange=None,
-#                       maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
-#                       taker=Address("0x0000000000000000000000000000000000000000"),
-#                       maker_fee=Wad.from_number(123),
-#                       taker_fee=Wad.from_number(456),
-#                       pay_token=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
-#                       pay_amount=Wad(10000000000000000),
-#                       buy_token=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
-#                       buy_amount=Wad(20000000000000000),
-#                       salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
-#                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
-#                       expiration=42,
-#                       exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
-#                       ec_signature_r="0xf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc3",
-#                       ec_signature_s="0x15baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab964",
-#                       ec_signature_v=28)
-#
-#         # expect
-#         assert is_hashable(order)
-#
-#     def test_parse_signed_json_order(self):
-#         # given
-#         json_order = json.loads("""{
-#             "orderHash": "0x02266a4887256fdf16b47ca13e3f2cca76f93724842f3f7ddf55d92fb6601b6f",
-#             "exchangeContractAddress": "0x12459c951127e0c374ff9105dda097662a027093",
-#             "maker": "0x0046cac6668bef45b517a1b816a762f4f8add2a9",
-#             "taker": "0x0000000000000000000000000000000000000000",
-#             "makerTokenAddress": "0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4",
-#             "takerTokenAddress": "0x2956356cd2a2bf3202f771f50d3d14a367b48070",
-#             "feeRecipient": "0xa258b39954cef5cb142fd567a46cddb31a670124",
-#             "makerTokenAmount": "11000000000000000000",
-#             "takerTokenAmount": "30800000000000000",
-#             "makerFee": "0",
-#             "takerFee": "0",
-#             "expirationUnixTimestampSec": "1511988904",
-#             "salt": "50626048444772008084444062440502087868712695090943879708059561407114509847312",
-#             "ecSignature": {
-#                 "r": "0xf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc3",
-#                 "s": "0x15baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab964",
-#                 "v": 28
-#             }
-#         }""")
-#
-#         # when
-#         order = Order.from_json(None, json_order)
-#
-#         # then
-#         assert order.exchange_contract_address == Address("0x12459c951127e0c374ff9105dda097662a027093")
-#         assert order.maker == Address("0x0046cac6668bef45b517a1b816a762f4f8add2a9")
-#         assert order.taker == Address("0x0000000000000000000000000000000000000000")
-#         assert order.pay_token == Address("0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4")
-#         assert order.buy_token == Address("0x2956356cd2a2bf3202f771f50d3d14a367b48070")
-#         assert order.fee_recipient == Address("0xa258b39954cef5cb142fd567a46cddb31a670124")
-#         assert order.pay_amount == Wad.from_number(11)
-#         assert order.buy_amount == Wad.from_number(0.0308)
-#         assert order.maker_fee == Wad.from_number(0)
-#         assert order.taker_fee == Wad.from_number(0)
-#         assert order.expiration == 1511988904
-#         assert order.salt == 50626048444772008084444062440502087868712695090943879708059561407114509847312
-#         assert order.ec_signature_r == "0xf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc3"
-#         assert order.ec_signature_s == "0x15baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab964"
-#         assert order.ec_signature_v == 28
-#
-#     def test_parse_unsigned_json_order(self):
-#         # given
-#         json_order = json.loads("""{
-#             "orderHash": "0x02266a4887256fdf16b47ca13e3f2cca76f93724842f3f7ddf55d92fb6601b6f",
-#             "exchangeContractAddress": "0x12459c951127e0c374ff9105dda097662a027093",
-#             "maker": "0x0046cac6668bef45b517a1b816a762f4f8add2a9",
-#             "taker": "0x0000000000000000000000000000000000000000",
-#             "makerTokenAddress": "0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4",
-#             "takerTokenAddress": "0x2956356cd2a2bf3202f771f50d3d14a367b48070",
-#             "feeRecipient": "0xa258b39954cef5cb142fd567a46cddb31a670124",
-#             "makerTokenAmount": "11000000000000000000",
-#             "takerTokenAmount": "30800000000000000",
-#             "makerFee": "0",
-#             "takerFee": "0",
-#             "expirationUnixTimestampSec": "1511988904",
-#             "salt": "50626048444772008084444062440502087868712695090943879708059561407114509847312"
-#         }""")
-#
-#         # when
-#         order = Order.from_json(None, json_order)
-#
-#         # then
-#         assert order.exchange_contract_address == Address("0x12459c951127e0c374ff9105dda097662a027093")
-#         assert order.maker == Address("0x0046cac6668bef45b517a1b816a762f4f8add2a9")
-#         assert order.taker == Address("0x0000000000000000000000000000000000000000")
-#         assert order.pay_token == Address("0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4")
-#         assert order.buy_token == Address("0x2956356cd2a2bf3202f771f50d3d14a367b48070")
-#         assert order.fee_recipient == Address("0xa258b39954cef5cb142fd567a46cddb31a670124")
-#         assert order.pay_amount == Wad.from_number(11)
-#         assert order.buy_amount == Wad.from_number(0.0308)
-#         assert order.maker_fee == Wad.from_number(0)
-#         assert order.taker_fee == Wad.from_number(0)
-#         assert order.expiration == 1511988904
-#         assert order.salt == 50626048444772008084444062440502087868712695090943879708059561407114509847312
-#         assert order.ec_signature_r is None
-#         assert order.ec_signature_s is None
-#         assert order.ec_signature_v is None
-#
-#     def test_serialize_order_to_json_without_fees(self):
-#         # given
-#         order = Order(exchange=None,
-#                       maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
-#                       taker=Address("0x0000000000000000000000000000000000000000"),
-#                       maker_fee=Wad.from_number(123),
-#                       taker_fee=Wad.from_number(456),
-#                       pay_token=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
-#                       pay_amount=Wad(10000000000000000),
-#                       buy_token=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
-#                       buy_amount=Wad(20000000000000000),
-#                       salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
-#                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
-#                       expiration=42,
-#                       exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
-#                       ec_signature_r="0xde21c90d3db3abdc8bdc5fafb1f5432a1dede4d621508e7d96fb2ebc15d7eb2f",
-#                       ec_signature_s="0x74f3cb421f75727b78ae98157ddce6a77b46c8714f5848d70f6da083527e1719",
-#                       ec_signature_v=28)
-#
-#         # when
-#         json_order = order.to_json_without_fees()
-#
-#         # then
-#         assert json_order == json.loads("""{
-#             "exchangeContractAddress": "0x12459c951127e0c374ff9105dda097662a027093",
-#             "maker": "0x9e56625509c2f60af937f23b7b532600390e8c8b",
-#             "taker": "0x0000000000000000000000000000000000000000",
-#             "makerTokenAddress": "0x323b5d4c32345ced77393b3530b1eed0f346429d",
-#             "takerTokenAddress": "0xef7fff64389b814a946f3e92105513705ca6b990",
-#             "makerTokenAmount": "10000000000000000",
-#             "takerTokenAmount": "20000000000000000",
-#             "expirationUnixTimestampSec": "42",
-#             "salt": "67006738228878699843088602623665307406148487219438534730168799356281242528500"
-#         }""")
-#
-#     def test_serialize_order_to_json(self):
-#         # given
-#         order = Order(exchange=None,
-#                       maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
-#                       taker=Address("0x0000000000000000000000000000000000000000"),
-#                       maker_fee=Wad.from_number(123),
-#                       taker_fee=Wad.from_number(456),
-#                       pay_token=Address("0x323b5d4c32345ced77393b3530b1eed0f346429d"),
-#                       pay_amount=Wad(10000000000000000),
-#                       buy_token=Address("0xef7fff64389b814a946f3e92105513705ca6b990"),
-#                       buy_amount=Wad(20000000000000000),
-#                       salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
-#                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
-#                       expiration=42,
-#                       exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
-#                       ec_signature_r="0xde21c90d3db3abdc8bdc5fafb1f5432a1dede4d621508e7d96fb2ebc15d7eb2f",
-#                       ec_signature_s="0x74f3cb421f75727b78ae98157ddce6a77b46c8714f5848d70f6da083527e1719",
-#                       ec_signature_v=28)
-#
-#         # when
-#         json_order = order.to_json()
-#
-#         # then
-#         assert json_order == json.loads("""{
-#             "exchangeContractAddress": "0x12459c951127e0c374ff9105dda097662a027093",
-#             "maker": "0x9e56625509c2f60af937f23b7b532600390e8c8b",
-#             "taker": "0x0000000000000000000000000000000000000000",
-#             "makerTokenAddress": "0x323b5d4c32345ced77393b3530b1eed0f346429d",
-#             "takerTokenAddress": "0xef7fff64389b814a946f3e92105513705ca6b990",
-#             "feeRecipient": "0x6666666666666666666666666666666666666666",
-#             "makerTokenAmount": "10000000000000000",
-#             "takerTokenAmount": "20000000000000000",
-#             "makerFee": "123000000000000000000",
-#             "takerFee": "456000000000000000000",
-#             "expirationUnixTimestampSec": "42",
-#             "salt": "67006738228878699843088602623665307406148487219438534730168799356281242528500",
-#             "ecSignature": {
-#                 "r": "0xde21c90d3db3abdc8bdc5fafb1f5432a1dede4d621508e7d96fb2ebc15d7eb2f",
-#                 "s": "0x74f3cb421f75727b78ae98157ddce6a77b46c8714f5848d70f6da083527e1719",
-#                 "v": 28
-#             }
-#         }""")
-#
-#
+class TestOrder:
+    def test_should_be_comparable(self):
+        # given
+        order1 = Order(exchange=None,
+                       sender=Address("0x0000000000000000000000000000000000000000"),
+                       maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+                       taker=Address("0x0000000000000000000000000000000000000000"),
+                       maker_fee=Wad.from_number(123),
+                       taker_fee=Wad.from_number(456),
+                       pay_asset=ERC20Asset(Address("0x323b5d4c32345ced77393b3530b1eed0f346429d")),
+                       pay_amount=Wad(10000000000000000),
+                       buy_asset=ERC20Asset(Address("0xef7fff64389b814a946f3e92105513705ca6b990")),
+                       buy_amount=Wad(20000000000000000),
+                       salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
+                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
+                       expiration=42,
+                       exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
+                       signature="0x1bf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc315baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab96403")
+
+        order2 = Order(exchange=None,
+                       sender=Address("0x0000000000000000000000000000000000000000"),
+                       maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+                       taker=Address("0x0000000000000000000000000000000000000000"),
+                       maker_fee=Wad.from_number(123),
+                       taker_fee=Wad.from_number(456),
+                       pay_asset=ERC20Asset(Address("0x323b5d4c32345ced77393b3530b1eed0f346429d")),
+                       pay_amount=Wad(10000000000000000),
+                       buy_asset=ERC20Asset(Address("0xef7fff64389b814a946f3e92105513705ca6b990")),
+                       buy_amount=Wad(20000000000000000),
+                       salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
+                       fee_recipient=Address('0x6666666666666666666666666666666666666666'),
+                       expiration=42,
+                       exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
+                       signature="0x1bf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc315baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab96403")
+
+        # expect
+        assert order1 == order2
+
+        # when
+        order2.maker_fee = Wad.from_number(124)
+
+        # then
+        assert order1 != order2
+
+        # when
+        order1.maker_fee = Wad.from_number(124)
+
+        # then
+        assert order1 == order2
+
+    def test_should_be_hashable(self):
+        # given
+        order = Order(exchange=None,
+                      sender=Address("0x0000000000000000000000000000000000000000"),
+                      maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+                      taker=Address("0x0000000000000000000000000000000000000000"),
+                      maker_fee=Wad.from_number(123),
+                      taker_fee=Wad.from_number(456),
+                      pay_asset=ERC20Asset(Address("0x323b5d4c32345ced77393b3530b1eed0f346429d")),
+                      pay_amount=Wad(10000000000000000),
+                      buy_asset=ERC20Asset(Address("0xef7fff64389b814a946f3e92105513705ca6b990")),
+                      buy_amount=Wad(20000000000000000),
+                      salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
+                      fee_recipient=Address('0x6666666666666666666666666666666666666666'),
+                      expiration=42,
+                      exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
+                      signature="0x1bf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc315baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab96403")
+
+        # expect
+        assert is_hashable(order)
+
+    def test_parse_signed_json_order(self):
+        # given
+        json_order = json.loads("""{
+            "orderHash": "0x02266a4887256fdf16b47ca13e3f2cca76f93724842f3f7ddf55d92fb6601b6f",
+            "exchangeAddress": "0x12459C951127e0c374FF9105DdA097662A027093",
+            "senderAddress": "0x0000000000000000000000000000000000000000",
+            "makerAddress": "0x0046cac6668bef45b517a1b816a762f4f8add2a9",
+            "takerAddress": "0x0000000000000000000000000000000000000000",
+            "makerAssetData": "0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4",
+            "takerAssetData": "0x2956356cd2a2bf3202f771f50d3d14a367b48070",
+            "feeRecipientAddress": "0xa258b39954cef5cb142fd567a46cddb31a670124",
+            "makerAssetAmount": "11000000000000000000",
+            "takerAssetAmount": "30800000000000000",
+            "makerFee": "0",
+            "takerFee": "0",
+            "expirationTimeSeconds": "1511988904",
+            "salt": "50626048444772008084444062440502087868712695090943879708059561407114509847312",
+            "signature": "0x1bf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc315baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab96403"
+        }""")
+
+        # when
+        order = Order.from_json(None, json_order)
+
+        # then
+        assert order.exchange_contract_address == Address("0x12459c951127e0c374ff9105dda097662a027093")
+        assert order.sender == Address("0x0000000000000000000000000000000000000000")
+        assert order.maker == Address("0x0046cac6668bef45b517a1b816a762f4f8add2a9")
+        assert order.taker == Address("0x0000000000000000000000000000000000000000")
+        assert order.pay_asset == ERC20Asset(Address("0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4"))
+        assert order.buy_asset == ERC20Asset(Address("0x2956356cd2a2bf3202f771f50d3d14a367b48070"))
+        assert order.fee_recipient == Address("0xa258b39954cef5cb142fd567a46cddb31a670124")
+        assert order.pay_amount == Wad.from_number(11)
+        assert order.buy_amount == Wad.from_number(0.0308)
+        assert order.maker_fee == Wad.from_number(0)
+        assert order.taker_fee == Wad.from_number(0)
+        assert order.expiration == 1511988904
+        assert order.salt == 50626048444772008084444062440502087868712695090943879708059561407114509847312
+        assert order.signature == "0x1bf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc315baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab96403"
+
+    def test_parse_unsigned_json_order(self):
+        # given
+        json_order = json.loads("""{
+            "orderHash": "0x02266a4887256fdf16b47ca13e3f2cca76f93724842f3f7ddf55d92fb6601b6f",
+            "exchangeAddress": "0x12459C951127e0c374FF9105DdA097662A027093",
+            "senderAddress": "0x0000000000000000000000000000000000000000",
+            "makerAddress": "0x0046cac6668bef45b517a1b816a762f4f8add2a9",
+            "takerAddress": "0x0000000000000000000000000000000000000000",
+            "makerAssetData": "0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4",
+            "takerAssetData": "0x2956356cd2a2bf3202f771f50d3d14a367b48070",
+            "feeRecipientAddress": "0xa258b39954cef5cb142fd567a46cddb31a670124",
+            "makerAssetAmount": "11000000000000000000",
+            "takerAssetAmount": "30800000000000000",
+            "makerFee": "0",
+            "takerFee": "0",
+            "expirationTimeSeconds": "1511988904",
+            "salt": "50626048444772008084444062440502087868712695090943879708059561407114509847312"
+        }""")
+
+        # when
+        order = Order.from_json(None, json_order)
+
+        # then
+        assert order.exchange_contract_address == Address("0x12459c951127e0c374ff9105dda097662a027093")
+        assert order.maker == Address("0x0046cac6668bef45b517a1b816a762f4f8add2a9")
+        assert order.taker == Address("0x0000000000000000000000000000000000000000")
+        assert order.pay_asset == ERC20Asset(Address("0x59adcf176ed2f6788a41b8ea4c4904518e62b6a4"))
+        assert order.buy_asset == ERC20Asset(Address("0x2956356cd2a2bf3202f771f50d3d14a367b48070"))
+        assert order.fee_recipient == Address("0xa258b39954cef5cb142fd567a46cddb31a670124")
+        assert order.pay_amount == Wad.from_number(11)
+        assert order.buy_amount == Wad.from_number(0.0308)
+        assert order.maker_fee == Wad.from_number(0)
+        assert order.taker_fee == Wad.from_number(0)
+        assert order.expiration == 1511988904
+        assert order.salt == 50626048444772008084444062440502087868712695090943879708059561407114509847312
+        assert order.signature is None
+
+    def test_serialize_order_to_json_without_fees(self):
+        # given
+        order = Order(exchange=None,
+                      sender=Address("0x0000000000000000000000000000000000000000"),
+                      maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+                      taker=Address("0x0000000000000000000000000000000000000000"),
+                      maker_fee=Wad.from_number(123),
+                      taker_fee=Wad.from_number(456),
+                      pay_asset=ERC20Asset(Address("0x323b5d4c32345ced77393b3530b1eed0f346429d")),
+                      pay_amount=Wad(10000000000000000),
+                      buy_asset=ERC20Asset(Address("0xef7fff64389b814a946f3e92105513705ca6b990")),
+                      buy_amount=Wad(20000000000000000),
+                      salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
+                      fee_recipient=Address('0x6666666666666666666666666666666666666666'),
+                      expiration=42,
+                      exchange_contract_address=Address("0x12459C951127e0c374FF9105DdA097662A027093"),
+                      signature="0x1bf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc315baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab96403")
+
+        # when
+        json_order = order.to_json_without_fees()
+
+        # then
+        assert json_order == json.loads("""{
+            "exchangeAddress": "0x12459C951127e0c374FF9105DdA097662A027093",
+            "makerAddress": "0x9e56625509c2F60aF937F23B7b532600390e8C8B",
+            "takerAddress": "0x0000000000000000000000000000000000000000",
+            "makerAssetData": "0xf47261b0323B5d4C32345ced77393B3530b1EeD0f346429D",
+            "takerAssetData": "0xf47261b0eF7FfF64389B814A946f3E92105513705CA6B990",
+            "makerAssetAmount": "10000000000000000",
+            "takerAssetAmount": "20000000000000000",
+            "expirationTimeSeconds": "42"
+        }""")
+
+    def test_serialize_order_to_json(self):
+        # given
+        order = Order(exchange=None,
+                      sender=Address("0x0000000000000000000000000000000000000000"),
+                      maker=Address("0x9e56625509c2f60af937f23b7b532600390e8c8b"),
+                      taker=Address("0x0000000000000000000000000000000000000000"),
+                      maker_fee=Wad.from_number(123),
+                      taker_fee=Wad.from_number(456),
+                      pay_asset=ERC20Asset(Address("0x323b5d4c32345ced77393b3530b1eed0f346429d")),
+                      pay_amount=Wad(10000000000000000),
+                      buy_asset=ERC20Asset(Address("0xef7fff64389b814a946f3e92105513705ca6b990")),
+                      buy_amount=Wad(20000000000000000),
+                      salt=67006738228878699843088602623665307406148487219438534730168799356281242528500,
+                      fee_recipient=Address('0x6666666666666666666666666666666666666666'),
+                      expiration=42,
+                      exchange_contract_address=Address("0x12459c951127e0c374ff9105dda097662a027093"),
+                      signature="0x1bf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc315baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab96403")
+
+        # when
+        json_order = order.to_json()
+
+        # then
+        assert json_order == json.loads("""{
+            "exchangeAddress": "0x12459C951127e0c374FF9105DdA097662A027093",
+            "senderAddress": "0x0000000000000000000000000000000000000000",
+            "makerAddress": "0x9e56625509c2F60aF937F23B7b532600390e8C8B",
+            "takerAddress": "0x0000000000000000000000000000000000000000",
+            "makerAssetData": "0xf47261b0323B5d4C32345ced77393B3530b1EeD0f346429D",
+            "takerAssetData": "0xf47261b0eF7FfF64389B814A946f3E92105513705CA6B990",
+            "makerAssetAmount": "10000000000000000",
+            "takerAssetAmount": "20000000000000000",
+            "feeRecipientAddress": "0x6666666666666666666666666666666666666666",
+            "makerFee": "123000000000000000000",
+            "takerFee": "456000000000000000000",
+            "expirationTimeSeconds": "42",
+            "salt": "67006738228878699843088602623665307406148487219438534730168799356281242528500",
+            "signature": "0x1bf9f6a3b67b52d40c16387df2cd6283bbdbfc174577743645dd6f4bd828c7dbc315baf69f6c3cc8ac0f62c89264d73accf1ae165cce5d6e2a0b6325c6e4bab96403"
+        }""")
+
+
 # class TestZrxRelayerApi:
 #     def setup_method(self):
 #         self.web3 = Web3(EthereumTesterProvider())
