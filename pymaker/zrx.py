@@ -117,11 +117,11 @@ class Order:
 
     def to_json_without_fees(self) -> dict:
         return {
-            "exchangeContractAddress": self.exchange_contract_address.address,
-            "maker": self.maker.address,
-            "taker": self.taker.address,
-            "makerTokenAddress": self.pay_token.address,
-            "takerTokenAddress": self.buy_token.address,
+            "exchangeContractAddress": self.exchange_contract_address.address.lower(),
+            "maker": self.maker.address.lower(),
+            "taker": self.taker.address.lower(),
+            "makerTokenAddress": self.pay_token.address.lower(),
+            "takerTokenAddress": self.buy_token.address.lower(),
             "makerTokenAmount": str(self.pay_amount.value),
             "takerTokenAmount": str(self.buy_amount.value),
             "expirationUnixTimestampSec": str(self.expiration),
@@ -130,12 +130,12 @@ class Order:
 
     def to_json(self) -> dict:
         return {
-            "exchangeContractAddress": self.exchange_contract_address.address,
-            "maker": self.maker.address,
-            "taker": self.taker.address,
-            "makerTokenAddress": self.pay_token.address,
-            "takerTokenAddress": self.buy_token.address,
-            "feeRecipient": self.fee_recipient.address,
+            "exchangeContractAddress": self.exchange_contract_address.address.lower(),
+            "maker": self.maker.address.lower(),
+            "taker": self.taker.address.lower(),
+            "makerTokenAddress": self.pay_token.address.lower(),
+            "takerTokenAddress": self.buy_token.address.lower(),
+            "feeRecipient": self.fee_recipient.address.lower(),
             "makerTokenAmount": str(self.pay_amount.value),
             "takerTokenAmount": str(self.buy_amount.value),
             "makerFee": str(self.maker_fee.value),

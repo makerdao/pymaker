@@ -422,11 +422,11 @@ class TestOrder:
 
         # then
         assert json_order == json.loads("""{
-            "exchangeContractAddress": "0x12459C951127e0c374FF9105DdA097662A027093",
-            "maker": "0x9e56625509c2F60aF937F23B7b532600390e8C8B",
+            "exchangeContractAddress": "0x12459c951127e0c374ff9105dda097662a027093",
+            "maker": "0x9e56625509c2f60af937f23b7b532600390e8c8b",
             "taker": "0x0000000000000000000000000000000000000000",
-            "makerTokenAddress": "0x323B5d4C32345ced77393B3530b1EeD0f346429D",
-            "takerTokenAddress": "0xeF7FfF64389B814A946f3E92105513705CA6B990",
+            "makerTokenAddress": "0x323b5d4c32345ced77393b3530b1eed0f346429d",
+            "takerTokenAddress": "0xef7fff64389b814a946f3e92105513705ca6b990",
             "makerTokenAmount": "10000000000000000",
             "takerTokenAmount": "20000000000000000",
             "expirationUnixTimestampSec": "42",
@@ -457,11 +457,11 @@ class TestOrder:
 
         # then
         assert json_order == json.loads("""{
-            "exchangeContractAddress": "0x12459C951127e0c374FF9105DdA097662A027093",
-            "maker": "0x9e56625509c2F60aF937F23B7b532600390e8C8B",
+            "exchangeContractAddress": "0x12459c951127e0c374ff9105dda097662a027093",
+            "maker": "0x9e56625509c2f60af937f23b7b532600390e8c8b",
             "taker": "0x0000000000000000000000000000000000000000",
-            "makerTokenAddress": "0x323B5d4C32345ced77393B3530b1EeD0f346429D",
-            "takerTokenAddress": "0xeF7FfF64389B814A946f3E92105513705CA6B990",
+            "makerTokenAddress": "0x323b5d4c32345ced77393b3530b1eed0f346429d",
+            "takerTokenAddress": "0xef7fff64389b814a946f3e92105513705ca6b990",
             "feeRecipient": "0x6666666666666666666666666666666666666666",
             "makerTokenAmount": "10000000000000000",
             "takerTokenAmount": "20000000000000000",
