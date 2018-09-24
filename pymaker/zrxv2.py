@@ -19,6 +19,7 @@ import array
 import copy
 import logging
 import random
+import time
 from pprint import pformat
 from typing import List, Optional
 
@@ -585,7 +586,7 @@ class ZrxExchangeV2(Contract):
 
     @staticmethod
     def random_salt() -> int:
-        return random.randint(1, 2**256 - 1)
+        return int(time.time() * 1000)
 
     def __repr__(self):
         return f"ZrxExchangeV2('{self.address}')"
