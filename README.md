@@ -75,8 +75,6 @@ The current version provides APIs around:
 * `EtherDelta` (<https://github.com/etherdelta/etherdelta.github.io>),
 * `0x` (<https://etherscan.io/address/0x12459c951127e0c374ff9105dda097662a027093#code>, <https://github.com/0xProject/standard-relayer-api>).
 
-You can find the full documentation of the APIs here: <http://maker-keeper-docs.surge.sh>.
-
 ## Code samples
 
 Below you can find some code snippets demonstrating how the API can be used both for developing
