@@ -1,6 +1,6 @@
 # This file is part of Maker Keeper Framework.
 #
-# Copyright (C) 2017-2018 reverendus
+# Copyright (C) 2018 reverendus, bargst
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -14,19 +14,18 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+from pymaker.numeric import Ray
 from web3 import Web3
 
 from pymaker import Contract, Address, Transact, Wad
 from pymaker.token import ERC20Token
-from pymaker.util import int_to_bytes32
 
 
 class Flipper(Contract):
     """A client for the `Flipper` contract, TODO.
 
     You can find the source code of the `Flipper` contract here:
-    <TODO>.
+    <https://github.com/makerdao/dss/blob/master/src/flip.sol>.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
@@ -37,13 +36,13 @@ class Flipper(Contract):
     bin = Contract._load_bin(__name__, 'abi/Flipper.bin')
 
     class Bid:
-        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int, lad: Address, gal: Address, tab: Wad):
+        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int, urn: Address, gal: Address, tab: Wad):
             assert(isinstance(bid, Wad))
             assert(isinstance(lot, Wad))
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
             assert(isinstance(end, int))
-            assert(isinstance(lad, Address))
+            assert(isinstance(urn, Address))
             assert(isinstance(gal, Address))
             assert(isinstance(tab, Wad))
 
@@ -52,17 +51,16 @@ class Flipper(Contract):
             self.guy = guy
             self.tic = tic
             self.end = end
-            self.lad = lad
+            self.lad = urn
             self.gal = gal
             self.tab = tab
 
     @staticmethod
-    def deploy(web3: Web3, vat: Address, ilk: int):
-        assert(isinstance(vat, Address))
-        assert(isinstance(ilk, int))
+    def deploy(web3: Web3, dai: Address, gem: Address):
+        assert(isinstance(dai, Address))
+        assert(isinstance(gem, Address))
 
-        return Flipper(web3=web3, address=Contract._deploy(web3, Flipper.abi, Flipper.bin, [vat.address,
-                                                                                            int_to_bytes32(ilk)]))
+        return Flipper(web3=web3, address=Contract._deploy(web3, Flipper.abi, Flipper.bin, [dai.address, gem.address]))
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -80,13 +78,13 @@ class Flipper(Contract):
         """
         return self._contract.call().era()
 
-    def beg(self) -> Wad:
+    def beg(self) -> Ray:
         """Returns the percentage minimum bid increase.
 
         Returns:
             The percentage minimum bid increase.
         """
-        return Wad(self._contract.call().beg())
+        return Ray(self._contract.call().beg())
 
     def ttl(self) -> int:
         """Returns the bid lifetime.
@@ -130,18 +128,19 @@ class Flipper(Contract):
                            guy=Address(array[2]),
                            tic=int(array[3]),
                            end=int(array[4]),
-                           lad=Address(array[5]),
+                           urn=Address(Web3.toHex(array[5])[-40:]),
                            gal=Address(array[6]),
                            tab=Wad(array[7]))
 
-    def kick(self, lad: Address, gal: Address, tab: Wad, lot: Wad, bid: Wad) -> Transact:
-        assert(isinstance(lad, Address))
+    def kick(self, urn: Address, gal: Address, tab: Wad, lot: Wad, bid: Wad) -> Transact:
+        assert(isinstance(urn, Address))
         assert(isinstance(gal, Address))
         assert(isinstance(tab, Wad))
         assert(isinstance(lot, Wad))
         assert(isinstance(bid, Wad))
 
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kick', [lad.address,
+        bytes32_urn = Web3.toBytes(hexstr='0x'+urn.address[2:].zfill(64))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kick', [bytes32_urn,
                                                                                           gal.address,
                                                                                           tab.value,
                                                                                           lot.value,
@@ -174,7 +173,7 @@ class Flapper(Contract):
     """A client for the `Flapper` contract, TODO.
 
     You can find the source code of the `Flapper` contract here:
-    <TODO>.
+    <https://github.com/makerdao/dss/blob/master/src/flap.sol>.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
@@ -185,25 +184,27 @@ class Flapper(Contract):
     bin = Contract._load_bin(__name__, 'abi/Flapper.bin')
 
     class Bid:
-        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int):
+        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int, gal: Address):
             assert(isinstance(bid, Wad))
             assert(isinstance(lot, Wad))
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
             assert(isinstance(end, int))
+            assert(isinstance(gal, Address))
 
             self.bid = bid
             self.lot = lot
             self.guy = guy
             self.tic = tic
             self.end = end
+            self.gal = gal
 
     @staticmethod
-    def deploy(web3: Web3, pie: Address, gem: Address):
-        assert(isinstance(pie, Address))
+    def deploy(web3: Web3, dai: Address, gem: Address):
+        assert(isinstance(dai, Address))
         assert(isinstance(gem, Address))
 
-        return Flapper(web3=web3, address=Contract._deploy(web3, Flapper.abi, Flapper.bin, [pie.address, gem.address]))
+        return Flapper(web3=web3, address=Contract._deploy(web3, Flapper.abi, Flapper.bin, [dai.address, gem.address]))
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -234,13 +235,13 @@ class Flapper(Contract):
         """
         return self._contract.call().era()
 
-    def pie(self) -> Address:
-        """Returns the `pie` token.
+    def dai(self) -> Address:
+        """Returns the `dai` token.
 
         Returns:
-            The address of the `pie` token.
+            The address of the `dai` token.
         """
-        return Address(self._contract.call().pie())
+        return Address(self._contract.call().dai())
 
     def gem(self) -> Address:
         """Returns the `gem` token.
@@ -250,13 +251,13 @@ class Flapper(Contract):
         """
         return Address(self._contract.call().gem())
 
-    def beg(self) -> Wad:
+    def beg(self) -> Ray:
         """Returns the percentage minimum bid increase.
 
         Returns:
             The percentage minimum bid increase.
         """
-        return Wad(self._contract.call().beg())
+        return Ray(self._contract.call().beg())
 
     def ttl(self) -> int:
         """Returns the bid lifetime.
@@ -299,7 +300,8 @@ class Flapper(Contract):
                            lot=Wad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),
-                           end=int(array[4]))
+                           end=int(array[4]),
+                           gal=Address(array[5]))
 
     def kick(self, gal: Address, lot: Wad, bid: Wad) -> Transact:
         assert(isinstance(gal, Address))
@@ -330,7 +332,7 @@ class Flopper(Contract):
     """A client for the `Flopper` contract, TODO.
 
     You can find the source code of the `Flopper` contract here:
-    <TODO>.
+    <https://github.com/makerdao/dss/blob/master/src/flop.sol>.
 
     Attributes:
         web3: An instance of `Web` from `web3.py`.
@@ -341,25 +343,27 @@ class Flopper(Contract):
     bin = Contract._load_bin(__name__, 'abi/Flopper.bin')
 
     class Bid:
-        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int):
+        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int, vow: Address):
             assert(isinstance(bid, Wad))
             assert(isinstance(lot, Wad))
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
             assert(isinstance(end, int))
+            assert(isinstance(vow, Address))
 
             self.bid = bid
             self.lot = lot
             self.guy = guy
             self.tic = tic
             self.end = end
+            self.vow = vow
 
     @staticmethod
-    def deploy(web3: Web3, pie: Address, gem: Address):
-        assert(isinstance(pie, Address))
+    def deploy(web3: Web3, dai: Address, gem: Address):
+        assert(isinstance(dai, Address))
         assert(isinstance(gem, Address))
 
-        return Flopper(web3=web3, address=Contract._deploy(web3, Flopper.abi, Flopper.bin, [pie.address, gem.address]))
+        return Flopper(web3=web3, address=Contract._deploy(web3, Flopper.abi, Flopper.bin, [dai.address, gem.address]))
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -380,7 +384,7 @@ class Flopper(Contract):
         """
         assert(callable(approval_function))
 
-        approval_function(ERC20Token(web3=self.web3, address=self.pie()), self.address, 'Flopper')
+        approval_function(ERC20Token(web3=self.web3, address=self.dai()), self.address, 'Flopper')
 
     def era(self) -> int:
         """Returns the current timestamp.
@@ -390,13 +394,13 @@ class Flopper(Contract):
         """
         return self._contract.call().era()
 
-    def pie(self) -> Address:
-        """Returns the `pie` token.
+    def dai(self) -> Address:
+        """Returns the `dai` token.
 
         Returns:
-            The address of the `pie` token.
+            The address of the `dai` token.
         """
-        return Address(self._contract.call().pie())
+        return Address(self._contract.call().dai())
 
     def gem(self) -> Address:
         """Returns the `gem` token.
@@ -406,13 +410,13 @@ class Flopper(Contract):
         """
         return Address(self._contract.call().gem())
 
-    def beg(self) -> Wad:
+    def beg(self) -> Ray:
         """Returns the percentage minimum bid increase.
 
         Returns:
             The percentage minimum bid increase.
         """
-        return Wad(self._contract.call().beg())
+        return Ray(self._contract.call().beg())
 
     def ttl(self) -> int:
         """Returns the bid lifetime.
@@ -455,7 +459,8 @@ class Flopper(Contract):
                            lot=Wad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),
-                           end=int(array[4]))
+                           end=int(array[4]),
+                           vow=Address(array[5]))
 
     def kick(self, gal: Address, lot: Wad, bid: Wad) -> Transact:
         assert(isinstance(gal, Address))
