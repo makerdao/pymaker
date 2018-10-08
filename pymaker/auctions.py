@@ -70,6 +70,19 @@ class Flipper(Contract):
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
 
+    def approve(self, approval_function):
+        """Approve the `Flipper` to access our `dai` so we can participate in auctions.
+
+        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+        in `pymaker.approval`. #TODO hope_directly()
+
+        Args:
+            approval_function: Approval function (i.e. approval mode).
+        """
+        assert(callable(approval_function))
+
+        approval_function(ERC20Token(web3=self.web3, address=self.dai()), self.address, 'Flipper')
+
     def era(self) -> int:
         """Returns the current timestamp.
 
@@ -77,6 +90,22 @@ class Flipper(Contract):
             The current timestamp.
         """
         return self._contract.call().era()
+
+    def dai(self) -> Address:
+        """Returns the `dai` token.
+
+        Returns:
+            The address of the `dai` token.
+        """
+        return Address(self._contract.call().dai())
+
+    def gem(self) -> Address:
+        """Returns the `gem` token.
+
+        Returns:
+            The address of the `gem` token.
+        """
+        return Address(self._contract.call().gem())
 
     def beg(self) -> Ray:
         """Returns the percentage minimum bid increase.
