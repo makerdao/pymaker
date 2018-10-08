@@ -37,7 +37,7 @@ class TestFlipper:
         self.dai = DSToken.deploy(self.web3, 'DAI')
 
         # we need a GemLike version of DSToken with push(bytes32, uint function)
-        self.gem_addr = Contract._deploy(self.web3, Contract._load_abi(__name__, 'abi/DSToken.abi'), Contract._load_bin(__name__, 'abi/DSToken.bin'), [b'ABC'])
+        self.gem_addr = Contract._deploy(self.web3, Contract._load_abi(__name__, 'abi/GemMock.abi'), Contract._load_bin(__name__, 'abi/GemMock.bin'), [b'ABC'])
         self.gem = DSToken(web3=self.web3, address=self.gem_addr)
 
         self.flipper = Flipper.deploy(self.web3, self.dai.address, self.gem.address)
