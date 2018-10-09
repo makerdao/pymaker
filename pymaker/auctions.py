@@ -402,6 +402,11 @@ class Flopper(Contract):
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
 
+    def rely(self, guy: Address) -> Transact:
+        assert isinstance(guy, Address)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'rely', [guy.address])
+
     def approve(self, approval_function):
         """Approve the `Flapper` to access our `gem` so we can participate in auctions.
 

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-// Fusion between a GemJoin and a GemMove
+// Fusion between a DaiJoin and a DaiMove
 
 contract GemLike {
     function transferFrom(address,address,uint) public returns (bool);
@@ -14,37 +14,32 @@ contract VatLike {
     function flux(bytes32,bytes32,bytes32,int) public;
 }
 
-contract GemMock {
+contract DaiMock {
     VatLike public vat;
-    bytes32 public ilk;
-    GemLike public gem;
-    constructor(address vat_, bytes32 ilk_, address gem_) public {
+    GemLike public dai;
+    constructor(address vat_, address dai_) public {
         vat = VatLike(vat_);
-        ilk = ilk_;
-        gem = GemLike(gem_);
+        dai = GemLike(dai_);
     }
     uint constant ONE = 10 ** 27;
-    mapping(address => mapping (address => bool)) public can;
     function mul(uint x, uint y) internal pure returns (int z) {
         z = int(x * y);
         require(int(z) >= 0);
         require(y == 0 || uint(z) / y == x);
     }
-    function join(bytes32 urn, uint wad) public {
-        require(gem.transferFrom(msg.sender, this, wad));
-        vat.slip(ilk, urn, mul(ONE, wad));
-    }
-    function exit(address guy, uint wad) public {
-        require(gem.transferFrom(this, guy, wad));
-        vat.slip(ilk, bytes32(msg.sender), -mul(ONE, wad));
-    }
+    mapping(address => mapping (address => bool)) public can;
     function hope(address guy) public { can[msg.sender][guy] = true; }
     function nope(address guy) public { can[msg.sender][guy] = false; }
     function move(address src, address dst, uint wad) public {
         require(src == msg.sender || can[src][msg.sender]);
-        vat.flux(ilk, bytes32(src), bytes32(dst), mul(ONE, wad));
+        vat.move(bytes32(src), bytes32(dst), mul(ONE, wad));
     }
-    function push(bytes32 urn, uint wad) public {
-        vat.flux(ilk, bytes32(msg.sender), urn, mul(ONE,wad));
+    function join(bytes32 urn, uint wad) public {
+        vat.move(bytes32(address(this)), urn, mul(ONE, wad));
+        dai.burn(msg.sender, wad);
+    }
+    function exit(address guy, uint wad) public {
+        vat.move(bytes32(msg.sender), bytes32(address(this)), mul(ONE, wad));
+        dai.mint(guy, wad);
     }
 }
