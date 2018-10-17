@@ -40,3 +40,13 @@ def time_travel_by(web3: Web3, seconds: int):
     assert(isinstance(seconds, int))
 
     web3.manager.request_blocking("evm_increaseTime", [seconds])
+
+def snapshot(web3: Web3):
+    assert(isinstance(web3, Web3))
+
+    return web3.manager.request_blocking("evm_snapshot", [])
+
+def reset(web3: Web3, snap_id):
+    assert(isinstance(web3, Web3))
+
+    return web3.manager.request_blocking("evm_revert", [snap_id])

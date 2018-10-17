@@ -276,11 +276,18 @@ class Lifecycle:
             else:
                 self.logger.info(f"Ignoring block #{block_number} ({block_hash}), as the node is syncing")
 
+        def new_block_watch():
+            event_filter = self.web3.eth.filter('latest')
+            while True:
+                for event in event_filter.get_new_entries():
+                    new_block_callback(event)
+                time.sleep(1)
+
         if self.block_function:
             self._on_block_callback = AsyncCallback(self.block_function)
 
-            block_filter = self.web3.eth.filter('latest')
-            block_filter.watch(new_block_callback)
+            block_filter = threading.Thread(target=new_block_watch, daemon=True)
+            block_filter.start()
             register_filter_thread(block_filter)
 
             self.logger.info("Watching for new blocks")
