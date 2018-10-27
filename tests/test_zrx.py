@@ -475,28 +475,3 @@ class TestOrder:
                 "v": 28
             }
         }""")
-
-
-class TestZrxRelayerApi:
-    def setup_method(self):
-        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
-        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
-        self.our_address = Address(self.web3.eth.defaultAccount)
-        self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))
-        self.token_transfer_proxy_address = deploy_contract(self.web3, 'TokenTransferProxy')
-        self.exchange = ZrxExchange.deploy(self.web3, self.zrx_token.address, self.token_transfer_proxy_address)
-        self.web3.eth.contract(abi=json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/TokenTransferProxy.abi')))(address=self.token_transfer_proxy_address.address).transact().addAuthorizedAddress(self.exchange.address.address)
-
-    def test_get_orders(self):
-        self.exchange.address = Address('0x12459C951127e0c374FF9105DdA097662A027093')
-        sai_address = Address('0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359')
-        gem_address = Address('0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
-
-        # when
-        zrx_relayer_api = ZrxRelayerApi(self.exchange, "https://api.ercdex.com/api/standard/1")
-        orders1 = zrx_relayer_api.get_orders(sai_address, gem_address)
-        orders2 = zrx_relayer_api.get_orders(gem_address, sai_address)
-
-        # then
-        assert len(orders1) >= 0
-        assert len(orders2) >= 0
