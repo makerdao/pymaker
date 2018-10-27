@@ -719,7 +719,8 @@ class MatchingMarket(ExpiringMarket):
             assert(pos >= 0)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'offer', [pay_amount.value, pay_token.address, buy_amount.value, buy_token.address, pos], None,
+                        'offer(uint256,address,uint256,address,uint256)',
+                        [pay_amount.value, pay_token.address, buy_amount.value, buy_token.address, pos], None,
                         self._make_order_id_result_function)
 
     def position(self, pay_token: Address, pay_amount: Wad, buy_token: Address, buy_amount: Wad) -> int:

@@ -377,14 +377,20 @@ class Transact:
                 return self.web3.eth.sendTransaction({**transaction_params, **{'to': self.address.address,
                                                                                'data': self.parameters[0]}})
 
-            elif '(' in self.function_name:
-                return self.contract.get_function_by_signature(self.function_name)(*self.parameters).transact(transaction_params)
-
             else:
-                return self.contract.transact(transaction_params).__getattr__(self.function_name)(*self.parameters)
+                return self._contract_function().transact(transaction_params)
 
         else:
             return self.web3.eth.sendTransaction({**transaction_params, **{'to': self.address.address}})
+
+    def _contract_function(self):
+        if '(' in self.function_name:
+            function_factory = self.contract.get_function_by_signature(self.function_name)
+
+        else:
+            function_factory = self.contract.get_function_by_name(self.function_name)
+
+        return function_factory(*self.parameters)
 
     def name(self) -> str:
         """Returns the nicely formatted name of this pending Ethereum transaction.
@@ -418,12 +424,9 @@ class Transact:
                                                                                   'to': self.address.address,
                                                                                   'data': self.parameters[0]}})
 
-            elif '(' in self.function_name:
-                estimate = self.contract.get_function_by_signature(self.function_name)(*self.parameters).estimateGas({**self._as_dict(self.extra), **{'from': from_address.address}})
-
             else:
-                estimate = self.contract.estimateGas({**self._as_dict(self.extra), **{'from': from_address.address}})\
-                    .__getattr__(self.function_name)(*self.parameters)
+                estimate = self._contract_function() \
+                        .estimateGas({**self._as_dict(self.extra), **{'from': from_address.address}})
 
         else:
             estimate = 21000
@@ -573,8 +576,7 @@ class Transact:
         Returns:
             :py:class:`pymaker.Invocation` object for this pending Ethereum transaction.
         """
-        return Invocation(self.address,
-                          Calldata(self.web3.eth.contract(abi=self.abi).encodeABI(self.function_name, self.parameters)))
+        return Invocation(self.address, Calldata(self._contract_function()._encode_transaction_data()))
 
 
 class Transfer:

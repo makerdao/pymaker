@@ -420,12 +420,12 @@ class Spotter(Contract):
     def file_pip(self, pip: Address) -> Transact:
         assert isinstance(pip, Address)
 
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'file', [pip.address])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'file(address)', [pip.address])
 
     def file_mat(self, mat: Ray) -> Transact:
         assert isinstance(mat, Ray)
 
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'file', [mat.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'file(uint256)', [mat.value])
 
     def mat(self) -> Ray:
         return Ray(self._contract.call().mat())
@@ -469,31 +469,31 @@ class Vow(Contract):
         assert isinstance(vat, Vat)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [Web3.toBytes(text="vat"), vat.address.address])
+                        'file(bytes32,address)', [Web3.toBytes(text="vat"), vat.address.address])
 
     def file_flap(self, flap: Flapper) -> Transact:
         assert isinstance(flap, Flapper)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [Web3.toBytes(text="flap"), flap.address.address])
+                        'file(bytes32,address)', [Web3.toBytes(text="flap"), flap.address.address])
 
     def file_flop(self, flop: Flopper) -> Transact:
         assert isinstance(flop, Flopper)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [Web3.toBytes(text="flop"), flop.address.address])
+                        'file(bytes32,address)', [Web3.toBytes(text="flop"), flop.address.address])
 
     def file_bump(self, amount: Wad) -> Transact:
         assert isinstance(amount, Wad)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [Web3.toBytes(text="bump"), amount.value])
+                        'file(bytes32,uint256)', [Web3.toBytes(text="bump"), amount.value])
 
     def file_sump(self, amount: Wad) -> Transact:
         assert isinstance(amount, Wad)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [Web3.toBytes(text="sump"), amount.value])
+                        'file(bytes32,uint256)', [Web3.toBytes(text="sump"), amount.value])
 
     def flapper(self) -> Address:
         return Address(self._contract.call().cow())
@@ -589,7 +589,7 @@ class Drip(Contract):
         assert isinstance(vow, Vow)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [Web3.toBytes(text="vow"), vow.address.address])
+                        'file(bytes32,bytes32)', [Web3.toBytes(text="vow"), vow.address.address])
 
     def __repr__(self):
         return f"Drip('{self.address}')"
@@ -628,20 +628,20 @@ class Pit(Contract):
         assert isinstance(drip, Drip)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [Web3.toBytes(text="drip"), drip.address.address])
+                        'file(bytes32,address)', [Web3.toBytes(text="drip"), drip.address.address])
 
     def file_global_line(self, ceiling: Wad) -> Transact:
         assert isinstance(ceiling, Wad)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [Web3.toBytes(text="Line"), ceiling.value])
+                        'file(bytes32,uint256)', [Web3.toBytes(text="Line"), ceiling.value])
 
     def file_line(self, ilk: Ilk, ceiling: Wad) -> Transact:
         assert isinstance(ilk, Ilk)
         assert isinstance(ceiling, Wad)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [ilk.toBytes(), Web3.toBytes(text="line"), ceiling.value])
+                        'file(bytes32,bytes32,uint256)', [ilk.toBytes(), Web3.toBytes(text="line"), ceiling.value])
 
     def frob(self, ilk: Ilk, dink: Wad, dart: Wad):
         assert isinstance(ilk, Ilk)
@@ -743,34 +743,34 @@ class Cat(Contract):
         assert isinstance(vow, Vow)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [Web3.toBytes(text="vow"), vow.address.address])
+                        'file(bytes32,address)', [Web3.toBytes(text="vow"), vow.address.address])
 
     def file_pit(self, pit: Pit) -> Transact:
         assert isinstance(pit, Pit)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [Web3.toBytes(text="pit"), pit.address.address])
+                        'file(bytes32,address)', [Web3.toBytes(text="pit"), pit.address.address])
 
     def file_flip(self, ilk: Ilk, flipper: Flipper) -> Transact:
         assert isinstance(ilk, Ilk)
         assert isinstance(flipper, Flipper)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [ilk.toBytes(), Web3.toBytes(text="flip"), flipper.address.address])
+                        'file(bytes32,bytes32,address)', [ilk.toBytes(), Web3.toBytes(text="flip"), flipper.address.address])
 
     def file_lump(self, ilk: Ilk, lump: Wad) -> Transact:
         assert isinstance(ilk, Ilk)
         assert isinstance(lump, Wad)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [ilk.toBytes(), Web3.toBytes(text="lump"), lump.value])
+                        'file(bytes32,bytes32,uint256)', [ilk.toBytes(), Web3.toBytes(text="lump"), lump.value])
 
     def file_chop(self, ilk: Ilk, chop: Ray) -> Transact:
         assert isinstance(ilk, Ilk)
         assert isinstance(chop, Ray)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file', [ilk.toBytes(), Web3.toBytes(text="chop"), chop.value])
+                        'file(bytes32,bytes32,uint256)', [ilk.toBytes(), Web3.toBytes(text="chop"), chop.value])
 
     def lump(self, ilk: Ilk) -> Wad:
         assert isinstance(ilk, Ilk)

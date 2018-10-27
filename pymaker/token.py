@@ -133,7 +133,7 @@ class ERC20Token(Contract):
         assert(isinstance(limit, Wad))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'approve', [payee.address, limit.value])
+                        'approve(address,uint256)', [payee.address, limit.value])
 
     def __eq__(self, other):
         return self.address == other.address
@@ -200,7 +200,7 @@ class DSToken(ERC20Token):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(amount, Wad))
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mint', [amount.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mint(uint256)', [amount.value])
 
     def burn(self, amount: Wad) -> Transact:
         """Decrease the total supply of the token.
