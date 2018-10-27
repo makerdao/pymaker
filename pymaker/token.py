@@ -212,7 +212,7 @@ class DSToken(ERC20Token):
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
         assert(isinstance(amount, Wad))
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'burn', [amount.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'burn(uint256)', [amount.value])
 
     def __repr__(self):
         return f"DSToken('{self.address}')"
