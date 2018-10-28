@@ -17,9 +17,12 @@
 
 from typing import Tuple
 
+from eth_account.messages import defunct_hash_message
 from eth_utils import encode_hex
 from web3 import Web3
 
+from pymaker import Address
+from pymaker.keys import _registered_accounts
 from pymaker.util import bytes_to_hexstring
 
 
@@ -27,18 +30,27 @@ def eth_sign(message: bytes, web3: Web3):
     assert(isinstance(message, bytes))
     assert(isinstance(web3, Web3))
 
-    signature = bytes_to_hexstring(web3.manager.request_blocking(
-        "eth_sign", [web3.eth.defaultAccount, encode_hex(message)],
-    ))
+    local_account = _registered_accounts.get((web3, Address(web3.eth.defaultAccount)))
 
-    # for `EthereumJS TestRPC/v2.2.1/ethereum-js`
-    if signature.endswith("00"):
-        signature = signature[:-2] + "1b"
+    if local_account:
+        message_hash = defunct_hash_message(primitive=message)
+        signature = web3.eth.account.signHash(message_hash, private_key=local_account.privateKey).signature.hex()
 
-    if signature.endswith("01"):
-        signature = signature[:-2] + "1c"
+        return signature
 
-    return signature
+    else:
+        signature = bytes_to_hexstring(web3.manager.request_blocking(
+            "eth_sign", [web3.eth.defaultAccount, encode_hex(message)],
+        ))
+
+        # for `EthereumJS TestRPC/v2.2.1/ethereum-js`
+        if signature.endswith("00"):
+            signature = signature[:-2] + "1b"
+
+        if signature.endswith("01"):
+            signature = signature[:-2] + "1c"
+
+        return signature
 
 
 def to_vrs(signature: str) -> Tuple[int, bytes, bytes]:

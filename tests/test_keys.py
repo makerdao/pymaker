@@ -18,50 +18,32 @@
 import pkg_resources
 from web3 import Web3, HTTPProvider
 
-from pymaker import Address
+from pymaker import Address, Wad, eth_transfer
 from pymaker.keys import register_key
-from pymaker.sign import eth_sign
+from pymaker.token import DSToken
 
 
-def test_signing():
+def test_local_accounts():
     # given
+    # [that address is not recognized by ganache, this way we can be sure it's the local account being used for signing]
     web3 = Web3(HTTPProvider("http://localhost:8555"))
-    web3.eth.defaultAccount = web3.eth.accounts[0]
+    web3.eth.defaultAccount = Address('0x13314e21cd6d343ceb857073f3f6d9368919d1ef').address
 
     # and
-    text = "abc"
-    msg = bytes(text, 'utf-8')
-
-    # expect
-    assert eth_sign(msg, web3).startswith("0x")
-
-
-def test_signing_with_key_and_rpc_should_return_same_result():
-    # given
-    web3 = Web3(HTTPProvider("http://localhost:8555"))
-    web3.eth.defaultAccount = web3.eth.accounts[0]
-
-    assert Address(web3.eth.defaultAccount) == Address('0x9596c16d7bf9323265c2f2e22f43e6c80eb3d943')
-
-    # and
-    text = "abc"
-    msg = bytes(text, 'utf-8')
-
-    rpc_signature = eth_sign(msg, web3)
-
-    # when
-    keyfile_path = pkg_resources.resource_filename(__name__, "accounts/0_0x9596c16d7bf9323265c2f2e22f43e6c80eb3d943.json")
+    keyfile_path = pkg_resources.resource_filename(__name__, "accounts/4_0x13314e21cd6d343ceb857073f3f6d9368919d1ef.json")
     passfile_path = pkg_resources.resource_filename(__name__, "accounts/pass")
-
     register_key(web3, keyfile_path, passfile_path)
 
     # and
-    # [we do this in order to make sure that the message was signed using the local key]
-    # [with `request_blocking` set to `None` any http requests will basically fail]
-    web3.manager.request_blocking = None
+    # [as ganache does not know this address, we need to send some ETH to it first]
+    eth_transfer(web3, Address(web3.eth.defaultAccount), Wad.from_number(100)) \
+        .transact(from_address=Address(web3.eth.accounts[0]))
 
-    # and
-    local_signature = eth_sign(msg, web3)
+    # when
+    # [we deploy some test contract and mint some tokens]
+    token = DSToken.deploy(web3, 'XYZ')
+    token.mint(Wad.from_number(150000)).transact()
 
     # then
-    assert rpc_signature == local_signature
+    # [these operations were successful]
+    assert token.balance_of(Address(web3.eth.defaultAccount)) == Wad.from_number(150000)

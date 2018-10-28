@@ -132,7 +132,7 @@ class Contract:
         assert(isinstance(bytecode, str))
         assert(isinstance(args, list))
 
-        tx_hash = web3.eth.contract(abi=abi, bytecode=bytecode).deploy(args=args)
+        tx_hash = web3.eth.contract(abi=abi, bytecode=bytecode).deploy(transaction={'from': eth_utils.to_checksum_address(web3.eth.defaultAccount)}, args=args)
         receipt = web3.eth.getTransactionReceipt(tx_hash)
         return Address(receipt['contractAddress'])
 
