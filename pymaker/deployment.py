@@ -35,7 +35,7 @@ from pymaker.token import DSToken
 from pymaker.vault import DSVault
 
 
-def deploy_contract(web3: Web3, contract_name: str, args: Optional[list]=None) -> Address:
+def deploy_contract(web3: Web3, contract_name: str, args: Optional[list] = None) -> Address:
     """Deploys a new contract.
 
     Args:
@@ -146,15 +146,18 @@ class DssDeployment:
     Static method `from_json()` should be used to instantiate all the objet of
     a deployment from a json description of all the system addresses.
     """
+
     class Config:
-        def __init__(self, vat: Vat, vow: Vow, drip: Drip, pit: Pit, cat: Cat, flop: Flopper,
-                           dai: DSToken, dai_adapter: DaiAdapter, dai_move: DaiVat, mkr: DSToken,
-                           collaterals: Optional[List[Collateral]] = None):
+        def __init__(self, mom: DSGuard, vat: Vat, vow: Vow, drip: Drip, pit: Pit, cat: Cat, flap: Flapper,
+                     flop: Flopper, dai: DSToken, dai_adapter: DaiAdapter, dai_move: DaiVat, mkr: DSToken,
+                     collaterals: Optional[List[Collateral]] = None):
+            self.mom = mom
             self.vat = vat
             self.vow = vow
             self.drip = drip
             self.pit = pit
             self.cat = cat
+            self.flap = flap
             self.flop = flop
             self.dai = dai
             self.dai_adapter = dai_adapter
@@ -165,11 +168,13 @@ class DssDeployment:
         @staticmethod
         def from_json(web3: Web3, conf: str):
             conf = json.loads(conf)
+            mom = DSGuard(web3, Address(conf['MCD_MOM']))
             vat = Vat(web3, Address(conf['MCD_VAT']))
             vow = Vow(web3, Address(conf['MCD_VOW']))
             drip = Drip(web3, Address(conf['MCD_DRIP']))
             pit = Pit(web3, Address(conf['MCD_PIT']))
             cat = Cat(web3, Address(conf['MCD_CAT']))
+            flap = Flapper(web3, Address(conf['MCD_FLAP']))
             flop = Flopper(web3, Address(conf['MCD_FLOP']))
             dai = DSToken(web3, Address(conf['MCD_DAI']))
             dai_adapter = DaiAdapter(web3, Address(conf['MCD_JOIN_DAI']))
@@ -185,15 +190,18 @@ class DssDeployment:
                 collateral.pip = DSValue(web3, Address(conf[f'PIP_{name}']))
                 collateral.spotter = Spotter(web3, Address(conf[f'MCD_SPOT_{name}']))
                 collaterals.append(collateral)
-            return DssDeployment.Config(vat, vow, drip, pit, cat, flop, dai, dai_adapter, dai_move, mkr, collaterals)
+            return DssDeployment.Config(mom, vat, vow, drip, pit, cat, flap, flop, dai, dai_adapter, dai_move, mkr,
+                                        collaterals)
 
         def to_dict(self) -> dict:
             conf_dict = {
+                'MCD_MOM': self.mom.address.address,
                 'MCD_VAT': self.vat.address.address,
                 'MCD_VOW': self.vow.address.address,
                 'MCD_DRIP': self.drip.address.address,
                 'MCD_PIT': self.pit.address.address,
                 'MCD_CAT': self.cat.address.address,
+                'MCD_FLAP': self.flap.address.address,
                 'MCD_FLOP': self.flop.address.address,
                 'MCD_DAI': self.dai.address.address,
                 'MCD_JOIN_DAI': self.dai_adapter.address.address,
@@ -223,11 +231,13 @@ class DssDeployment:
 
         self.web3 = web3
         self.config = config
+        self.mom = config.mom
         self.vat = config.vat
         self.vow = config.vow
         self.drip = config.drip
         self.pit = config.pit
         self.cat = config.cat
+        self.flap = config.flap
         self.flop = config.flop
         self.dai = config.dai
         self.dai_adapter = config.dai_adapter
@@ -254,6 +264,11 @@ class DssDeployment:
         dai_move = DaiVat.deploy(web3=web3, vat=vat.address)
         assert vat.rely(dai_adapter.address).transact()
         assert vat.rely(dai_move.address).transact()
+
+        # TODO: use a DSProxy
+        mom = DSGuard.deploy(web3)
+        assert mom.permit(DSGuard.ANY, DSGuard.ANY, DSGuard.ANY).transact()
+        assert dai.set_authority(mom.address).transact()
 
         mkr = DSToken.deploy(web3=web3, symbol='MKR')
 
@@ -285,7 +300,7 @@ class DssDeployment:
         assert vow.rely(cat.address).transact()
         assert flop.rely(vow.address).transact()
 
-        config = DssDeployment.Config(vat, vow, drip, pit, cat, flop, dai, dai_adapter, dai_move, mkr)
+        config = DssDeployment.Config(mom, vat, vow, drip, pit, cat, flap, flop, dai, dai_adapter, dai_move, mkr)
         deployment = DssDeployment(web3, config)
 
         collateral = Collateral.deploy(web3=web3, name='WETH', vat=vat)
