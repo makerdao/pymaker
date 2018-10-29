@@ -25,7 +25,7 @@ from web3.utils.events import get_event_data
 from pymaker import Address, Contract, Transact
 from pymaker.auctions import Flapper, Flipper, Flopper
 from pymaker.token import DSToken
-from pymaker.numeric import Wad, Ray
+from pymaker.numeric import Wad, Ray, Rad
 
 
 class Ilk:
@@ -135,7 +135,7 @@ class LogBite:
         self.ink = Wad(log['args']['ink'])
         self.art = Wad(log['args']['art'])
         self.tab = Wad(log['args']['tab'])
-        self.flip = Wad(log['args']['flip'])
+        self.flip = int(log['args']['flip'])
         self.iart = Wad(log['args']['iArt'])
         self.raw = log
 
@@ -145,8 +145,8 @@ class LogBite:
 
         topics = event.get('topics')
         if topics and topics[0] == HexBytes('0x99b5620489b6ef926d4518936cfec15d305452712b88bd59da2d9c10fb0953e8'):
-            log_fill_abi = [abi for abi in Cat.abi if abi.get('name') == 'Bite'][0]
-            event_data = get_event_data(log_fill_abi, event)
+            log_bite_abi = [abi for abi in Cat.abi if abi.get('name') == 'Bite'][0]
+            event_data = get_event_data(log_bite_abi, event)
 
             return LogBite(event_data)
         else:
@@ -377,11 +377,16 @@ class Vat(Contract):
 
         return Ilk(name, Ray(take), Ray(rate), Wad(ink), Wad(art))
 
-    def gem(self, ilk: Ilk, urn: Address) -> Ray:  # TODO: should return a Rad
+    def gem(self, ilk: Ilk, urn: Address) -> Rad:
         assert isinstance(ilk, Ilk)
         assert isinstance(urn, Address)
 
-        return Ray(self._contract.call().gem(ilk.toBytes(), Urn(urn).toBytes()))
+        return Rad(self._contract.call().gem(ilk.toBytes(), Urn(urn).toBytes()))
+
+    def dai(self, urn: Address) -> Rad:
+        assert isinstance(urn, Address)
+
+        return Rad(self._contract.call().dai(Urn(urn).toBytes()))
 
     def urn(self, ilk: Ilk, address: Address) -> Urn:
         assert isinstance(ilk, Ilk)
@@ -835,6 +840,12 @@ class Cat(Contract):
         (flip, chop, lump) = self._contract.call().ilks(ilk.toBytes())
         return Address(flip)
 
+    def pit(self) -> Address:
+        return Address(self._contract.call().pit())
+
+    def vat(self) -> Address:
+        return Address(self._contract.call().vat())
+
     def past_bite(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogBite]:
         """Synchronously retrieve past LogBite events.
 
@@ -843,7 +854,6 @@ class Cat(Contract):
         Args:
             number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
             event_filter: Filter which will be applied to returned events.
-            to_block: Origin for the search in past, default to 'latest' block.
 
         Returns:
             List of past `LogBite` events represented as :py:class:`pymake.dss.LogBite` class.
