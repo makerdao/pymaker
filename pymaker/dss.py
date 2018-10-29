@@ -163,6 +163,40 @@ class LogBite:
         return pformat(vars(self))
 
 
+class LogFrob:
+    def __init__(self, log):
+        self.ilk = Ilk.fromBytes(log['args']['ilk'])
+        self.urn = Urn.fromBytes(log['args']['urn'])
+        self.ink = Wad(log['args']['ink'])
+        self.dart = Wad(log['args']['dart'])
+        self.dink = Wad(log['args']['dink'])
+        self.iart = Wad(log['args']['iArt'])
+        self.raw = log
+
+    @classmethod
+    def from_event(cls, event: dict):
+        assert(isinstance(event, dict))
+
+        topics = event.get('topics')
+        if topics and topics[0] == HexBytes('0xb2afa28318bcc689926b52835d844de174ef8de97e982a85c0199d584920791b'):
+            log_frob_abi = [abi for abi in Pib.abi if abi.get('name') == 'Bite'][0]
+            event_data = get_event_data(log_frob_abi, event)
+
+            return LogBite(event_data)
+        else:
+            logging.warning(f'[from_event] Invalid topic in {event}')
+
+    def era(self, web3: Web3):
+        return web3.eth.getBlock(self.raw['blockNumber'])['timestamp']
+
+    def __eq__(self, other):
+        assert(isinstance(other, LogFrob))
+        return self.__dict__ == other.__dict__
+
+    def __repr__(self):
+        return pformat(vars(self))
+
+
 class DaiAdapter(Contract):
     """A client for the `DaiJoin` contract.
 
@@ -665,6 +699,23 @@ class Pit(Contract):
 
     def global_line(self) -> Wad:
         return Wad(self._contract.call().Line())
+
+    def past_frob(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogFrob]:
+        """Synchronously retrieve past LogFrob events.
+
+        `LogFrob` events are emitted every time someone frob a CDP.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+            event_filter: Filter which will be applied to returned events.
+
+        Returns:
+            List of past `LogBite` events represented as :py:class:`pymake.dss.LogBite` class.
+        """
+        assert isinstance(number_of_past_blocks, int)
+        assert isinstance(event_filter, dict) or (event_filter is None)
+
+        return self._past_events(self._contract, 'Frob', LogFrob, number_of_past_blocks, event_filter)
 
     def __repr__(self):
         return f"Pit('{self.address}')"

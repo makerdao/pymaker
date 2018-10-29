@@ -136,6 +136,20 @@ class TestPit:
         # then
         assert d.vat.urn(collateral.ilk, our_address).art == our_urn.art + Wad(10)
 
+    def test_past_frob(self, our_address, d: DssDeployment):
+        # given
+        c = d.collaterals[0]
+
+        # when
+        assert d.pit.frob(c.ilk, Wad(0), Wad(0)).transact()
+
+        # then
+        last_frob_event = d.pit.past_frob(1, event_filter={'ilk': c.ilk.toBytes()})[-1]
+        assert last_frob_event.ilk == c.ilk
+        assert last_frob_event.dink == Wad(0)
+        assert last_frob_event.dart == Wad(0)
+        assert last_frob_event.urn.address == our_address
+
 
 class TestCat:
     def test_empty_flips(self,  d: DssDeployment):
