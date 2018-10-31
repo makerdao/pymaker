@@ -47,3 +47,41 @@ def test_local_accounts():
     # then
     # [these operations were successful]
     assert token.balance_of(Address(web3.eth.defaultAccount)) == Wad.from_number(150000)
+
+
+def test_multiple_local_accounts():
+    # given
+    local_account_1 = Address('0x13314e21cd6d343ceb857073f3f6d9368919d1ef')
+    local_account_2 = Address('0x176087fea5c41fc370fabbd850521bc4451690ca')
+
+    # and
+    # [that address is not recognized by ganache, this way we can be sure it's the local account being used for signing]
+    web3 = Web3(HTTPProvider("http://localhost:8555"))
+    web3.eth.defaultAccount = local_account_1.address
+
+    # and
+    keyfile_path = pkg_resources.resource_filename(__name__, "accounts/4_0x13314e21cd6d343ceb857073f3f6d9368919d1ef.json")
+    passfile_path = pkg_resources.resource_filename(__name__, "accounts/pass")
+    register_key(web3, keyfile_path, passfile_path)
+
+    # and
+    keyfile_path = pkg_resources.resource_filename(__name__, "accounts/5_0x176087fea5c41fc370fabbd850521bc4451690ca.json")
+    passfile_path = pkg_resources.resource_filename(__name__, "accounts/pass")
+    register_key(web3, keyfile_path, passfile_path)
+
+    # and
+    # [as ganache does not know these addresses, we need to send some ETH to it first]
+    eth_transfer(web3, local_account_1, Wad.from_number(100)).transact(from_address=Address(web3.eth.accounts[0]))
+    eth_transfer(web3, local_account_2, Wad.from_number(100)).transact(from_address=Address(web3.eth.accounts[0]))
+
+    # when
+    # [we execute some test scenario involving two addresses]
+    token = DSToken.deploy(web3, 'XYZ')
+    token.mint(Wad.from_number(150000)).transact()
+    token.transfer(local_account_2, Wad.from_number(60000)).transact()
+    token.transfer(local_account_1, Wad.from_number(10000)).transact(from_address=local_account_2)
+
+    # then
+    # [these operations were successful]
+    assert token.balance_of(local_account_1) == Wad.from_number(100000)
+    assert token.balance_of(local_account_2) == Wad.from_number(50000)
