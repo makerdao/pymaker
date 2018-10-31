@@ -172,8 +172,8 @@ class Lifecycle:
         try:
             eth_sign(bytes("pymaker testing if account is unlocked", "utf-8"), self.web3)
         except:
-            self.logger.exception(f"Account {self.web3.eth.defaultAccount} is not unlocked")
-            self.logger.fatal(f"Unlocking the account is necessary for the keeper to operate")
+            self.logger.exception(f"Account {self.web3.eth.defaultAccount} is not unlocked and no private key supplied for it")
+            self.logger.fatal(f"Unlocking the account or providing the private key is necessary for the keeper to operate")
             exit(-1)
 
     def wait_for_sync(self, wait_for_sync: bool):
