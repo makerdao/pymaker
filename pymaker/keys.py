@@ -14,6 +14,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import getpass
+from typing import Optional
 
 from eth_account import Account
 from web3 import Web3
@@ -24,18 +26,21 @@ from pymaker import Address
 _registered_accounts = {}
 
 
-def register_key(web3: Web3, keyfile_path: str, passfile_path: str):
+def register_key(web3: Web3, keyfile_path: str, passfile_path: Optional[str] = None):
     assert(isinstance(web3, Web3))
     assert(isinstance(keyfile_path, str))
-    assert(isinstance(passfile_path, str))
+    assert(isinstance(passfile_path, str) or (passfile_path is None))
 
     with open(keyfile_path) as keyfile:
-        with open(passfile_path) as passfile:
-            read_key = keyfile.read()
-            read_pass = passfile.read()
+        read_key = keyfile.read()
+        if passfile_path:
+            with open(passfile_path) as passfile:
+                read_pass = passfile.read()
+        else:
+            read_pass = getpass.getpass()
 
-            private_key = Account.decrypt(read_key, read_pass)
-            account = Account.privateKeyToAccount(private_key)
+        private_key = Account.decrypt(read_key, read_pass)
+        account = Account.privateKeyToAccount(private_key)
 
-            web3.middleware_stack.add(construct_sign_and_send_raw_middleware(account))
-            _registered_accounts[(web3, Address(account.address))] = account
+        web3.middleware_stack.add(construct_sign_and_send_raw_middleware(account))
+        _registered_accounts[(web3, Address(account.address))] = account
