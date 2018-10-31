@@ -24,7 +24,7 @@ from pymaker import Address
 from pymaker.auctions import Flipper
 from pymaker.deployment import DssDeployment
 from pymaker.dss import Cat, Ilk, Urn
-from pymaker.numeric import Ray, Wad
+from pymaker.numeric import Ray, Wad, Rad
 
 
 @pytest.fixture(scope="session")
@@ -97,7 +97,7 @@ class TestVat:
         assert collateral.adapter.join(Urn(our_address), Wad(10)).transact()
 
         # then
-        assert d.vat.gem(collateral.ilk, our_address) == Ray(10 * 10**27)  # TODO: use Rad
+        assert d.vat.gem(collateral.ilk, our_address) == Rad(Wad(10))
 
 
 class TestPit:
@@ -152,13 +152,13 @@ class TestPit:
 
 
 class TestCat:
-    def test_empty_flips(self,  d: DssDeployment):
+    def test_empty_flips(self, d: DssDeployment):
         nflip = d.cat.nflip()
-        assert d.cat.flips(nflip+1) == Cat.Flip(nflip+1,
-                                                Urn(Address('0x0000000000000000000000000000000000000000')),
-                                                Wad(0))
+        assert d.cat.flips(nflip + 1) == Cat.Flip(nflip + 1,
+                                                  Urn(Address('0x0000000000000000000000000000000000000000')),
+                                                  Wad(0))
 
-    def test_bite(self, our_address, d: DssDeployment,):
+    def test_bite(self, our_address, d: DssDeployment):
         # given
         collateral = d.collaterals[0]
         assert collateral.adapter.join(Urn(our_address), Wad.from_number(2)).transact()
@@ -175,10 +175,10 @@ class TestCat:
         # then
         assert d.cat.bite(collateral.ilk, Urn(our_address)).transact()
 
-    def test_past_bite(self,  d: DssDeployment, bite_event):
+    def test_past_bite(self, d: DssDeployment, bite_event):
         assert d.cat.past_bite(1) == [bite_event]
 
-    def test_flip(self, web3,  d: DssDeployment, bite_event):
+    def test_flip(self, web3, d: DssDeployment, bite_event):
         # given
         nflip = d.cat.nflip()
         flipper = Flipper(web3=web3, address=d.cat.flipper(bite_event.ilk))
@@ -215,12 +215,12 @@ class TestVow:
         assert isinstance(d.vow.hump(), Wad)
 
     def test_empty_flog(self, web3, d: DssDeployment):
-        time_travel_by(web3, d.vow.wait()+10)
+        time_travel_by(web3, d.vow.wait() + 10)
         assert d.vow.flog(0).transact()
 
     def test_flog(self, web3, d: DssDeployment, bite_event):
         # given
-        time_travel_by(web3, d.vow.wait()+10)
+        time_travel_by(web3, d.vow.wait() + 10)
         era = web3.eth.getBlock(bite_event.raw['blockNumber'])['timestamp']
         assert d.vow.sin_of(era) != Wad(0)
 
