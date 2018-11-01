@@ -106,7 +106,7 @@ def register_key_file(web3: Web3, key_file: str, pass_file: Optional[str] = None
         read_key = key_file_open.read()
         if pass_file:
             with open(pass_file) as pass_file_open:
-                read_pass = pass_file_open.read()
+                read_pass = pass_file_open.read().replace("\n", "")
         else:
             read_pass = getpass.getpass()
 
