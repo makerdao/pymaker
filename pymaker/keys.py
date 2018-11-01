@@ -74,6 +74,14 @@ def _construct_local_sign_middleware(is_parity):
     return local_sign_middleware
 
 
+def register_keys(web3: Web3, keys: Optional[list]):
+    def not_none(x):
+        return x if x is not None else []
+
+    for key in not_none(keys):
+        register_key(web3, key)
+
+
 def register_key(web3: Web3, key: str):
     assert(isinstance(web3, Web3))
 
