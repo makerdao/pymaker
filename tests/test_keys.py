@@ -19,7 +19,7 @@ import pkg_resources
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address, Wad, eth_transfer
-from pymaker.keys import register_key
+from pymaker.keys import register_key_file, register_key
 from pymaker.token import DSToken
 
 
@@ -32,7 +32,33 @@ def test_local_accounts():
     # and
     keyfile_path = pkg_resources.resource_filename(__name__, "accounts/4_0x13314e21cd6d343ceb857073f3f6d9368919d1ef.json")
     passfile_path = pkg_resources.resource_filename(__name__, "accounts/pass")
-    register_key(web3, keyfile_path, passfile_path)
+    register_key_file(web3, keyfile_path, passfile_path)
+
+    # and
+    # [as ganache does not know this address, we need to send some ETH to it first]
+    eth_transfer(web3, Address(web3.eth.defaultAccount), Wad.from_number(100)) \
+        .transact(from_address=Address(web3.eth.accounts[0]))
+
+    # when
+    # [we deploy some test contract and mint some tokens]
+    token = DSToken.deploy(web3, 'XYZ')
+    token.mint(Wad.from_number(150000)).transact()
+
+    # then
+    # [these operations were successful]
+    assert token.balance_of(Address(web3.eth.defaultAccount)) == Wad.from_number(150000)
+
+
+def test_local_accounts_register_key():
+    # given
+    # [that address is not recognized by ganache, this way we can be sure it's the local account being used for signing]
+    web3 = Web3(HTTPProvider("http://localhost:8555"))
+    web3.eth.defaultAccount = Address('0x13314e21cd6d343ceb857073f3f6d9368919d1ef').address
+
+    # and
+    keyfile_path = pkg_resources.resource_filename(__name__, "accounts/4_0x13314e21cd6d343ceb857073f3f6d9368919d1ef.json")
+    passfile_path = pkg_resources.resource_filename(__name__, "accounts/pass")
+    register_key(web3, f"key_file={keyfile_path},pass_file={passfile_path}")
 
     # and
     # [as ganache does not know this address, we need to send some ETH to it first]
@@ -62,12 +88,12 @@ def test_multiple_local_accounts():
     # and
     keyfile_path = pkg_resources.resource_filename(__name__, "accounts/4_0x13314e21cd6d343ceb857073f3f6d9368919d1ef.json")
     passfile_path = pkg_resources.resource_filename(__name__, "accounts/pass")
-    register_key(web3, keyfile_path, passfile_path)
+    register_key_file(web3, keyfile_path, passfile_path)
 
     # and
     keyfile_path = pkg_resources.resource_filename(__name__, "accounts/5_0x176087fea5c41fc370fabbd850521bc4451690ca.json")
     passfile_path = pkg_resources.resource_filename(__name__, "accounts/pass")
-    register_key(web3, keyfile_path, passfile_path)
+    register_key_file(web3, keyfile_path, passfile_path)
 
     # and
     # [as ganache does not know these addresses, we need to send some ETH to it first]

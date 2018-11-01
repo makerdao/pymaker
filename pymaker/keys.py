@@ -14,33 +14,95 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import getpass
 from typing import Optional
 
 from eth_account import Account
 from web3 import Web3
-from web3.middleware import construct_sign_and_send_raw_middleware
+from web3.utils.toolz import assoc, compose, curry
+from web3.utils.transactions import fill_transaction_defaults
 
 from pymaker import Address
 
 _registered_accounts = {}
 
 
-def register_key(web3: Web3, keyfile_path: str, passfile_path: Optional[str] = None):
-    assert(isinstance(web3, Web3))
-    assert(isinstance(keyfile_path, str))
-    assert(isinstance(passfile_path, str) or (passfile_path is None))
+@curry
+def _parity_aware_fill_nonce(is_parity, web3, transaction):
+    if 'from' in transaction and 'nonce' not in transaction:
+        if is_parity:
+            next_nonce = web3.manager.request_blocking("parity_nextNonce", [transaction['from']])
 
-    with open(keyfile_path) as keyfile:
-        read_key = keyfile.read()
-        if passfile_path:
-            with open(passfile_path) as passfile:
-                read_pass = passfile.read()
+        else:
+            next_nonce = web3.eth.getTransactionCount(transaction['from'], block_identifier='pending')
+
+        return assoc(transaction, 'nonce', next_nonce)
+
+    else:
+        return transaction
+
+
+def _construct_local_sign_middleware(is_parity):
+
+    def local_sign_middleware(make_request, w3):
+
+        fill_tx = compose(
+            fill_transaction_defaults(w3),
+            _parity_aware_fill_nonce(is_parity)(w3))
+
+        def middleware(method, params):
+            if method == "eth_sendTransaction":
+                transaction = fill_tx(params[0])
+
+                if 'from' not in transaction:
+                    return make_request(method, params)
+
+                elif (w3, Address(transaction.get('from'))) not in _registered_accounts:
+                    return make_request(method, params)
+
+                account = _registered_accounts[(w3, Address(transaction.get('from')))]
+                raw_tx = account.signTransaction(transaction).rawTransaction
+
+                return make_request("eth_sendRawTransaction", [raw_tx])
+
+            else:
+                return make_request(method, params)
+
+        return middleware
+
+    return local_sign_middleware
+
+
+def register_key(web3: Web3, key: str):
+    assert(isinstance(web3, Web3))
+
+    parsed = {}
+    for p in key.split(","):
+        var, val = p.split("=")
+        parsed[var] = val
+
+    register_key_file(web3, parsed.get('key_file'), parsed.get('pass_file', None))
+
+
+def register_key_file(web3: Web3, key_file: str, pass_file: Optional[str] = None):
+    assert(isinstance(web3, Web3))
+    assert(isinstance(key_file, str))
+    assert(isinstance(pass_file, str) or (pass_file is None))
+
+    if "sign_and_send" not in web3.middleware_stack._queue:
+        is_parity = "parity" in web3.version.node.lower()
+        web3.middleware_stack.add(_construct_local_sign_middleware(is_parity), name="sign_and_send")
+
+    with open(key_file) as key_file_open:
+        read_key = key_file_open.read()
+        if pass_file:
+            with open(pass_file) as pass_file_open:
+                read_pass = pass_file_open.read()
         else:
             read_pass = getpass.getpass()
 
         private_key = Account.decrypt(read_key, read_pass)
         account = Account.privateKeyToAccount(private_key)
 
-        web3.middleware_stack.add(construct_sign_and_send_raw_middleware(account))
         _registered_accounts[(web3, Address(account.address))] = account

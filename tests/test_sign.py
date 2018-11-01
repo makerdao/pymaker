@@ -19,7 +19,7 @@ import pkg_resources
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address
-from pymaker.keys import register_key
+from pymaker.keys import register_key_file
 from pymaker.sign import eth_sign
 
 
@@ -53,7 +53,7 @@ def test_signing_with_key_and_rpc_should_return_same_result():
     keyfile_path = pkg_resources.resource_filename(__name__, "accounts/0_0x9596c16d7bf9323265c2f2e22f43e6c80eb3d943.json")
     passfile_path = pkg_resources.resource_filename(__name__, "accounts/pass")
 
-    register_key(web3, keyfile_path, passfile_path)
+    register_key_file(web3, keyfile_path, passfile_path)
 
     # and
     # [we do this in order to make sure that the message was signed using the local key]
