@@ -20,58 +20,11 @@ from typing import Optional
 
 from eth_account import Account
 from web3 import Web3
-from web3.utils.toolz import assoc, compose, curry
-from web3.utils.transactions import fill_transaction_defaults
+from web3.middleware import construct_sign_and_send_raw_middleware
 
 from pymaker import Address
 
 _registered_accounts = {}
-
-
-@curry
-def _parity_aware_fill_nonce(is_parity, web3, transaction):
-    if 'from' in transaction and 'nonce' not in transaction:
-        if is_parity:
-            next_nonce = web3.manager.request_blocking("parity_nextNonce", [transaction['from']])
-
-        else:
-            next_nonce = web3.eth.getTransactionCount(transaction['from'], block_identifier='pending')
-
-        return assoc(transaction, 'nonce', next_nonce)
-
-    else:
-        return transaction
-
-
-def _construct_local_sign_middleware(is_parity):
-
-    def local_sign_middleware(make_request, w3):
-
-        fill_tx = compose(
-            fill_transaction_defaults(w3),
-            _parity_aware_fill_nonce(is_parity)(w3))
-
-        def middleware(method, params):
-            if method == "eth_sendTransaction":
-                transaction = fill_tx(params[0])
-
-                if 'from' not in transaction:
-                    return make_request(method, params)
-
-                elif (w3, Address(transaction.get('from'))) not in _registered_accounts:
-                    return make_request(method, params)
-
-                account = _registered_accounts[(w3, Address(transaction.get('from')))]
-                raw_tx = account.signTransaction(transaction).rawTransaction
-
-                return make_request("eth_sendRawTransaction", [raw_tx])
-
-            else:
-                return make_request(method, params)
-
-        return middleware
-
-    return local_sign_middleware
 
 
 def register_keys(web3: Web3, keys: Optional[list]):
@@ -98,10 +51,6 @@ def register_key_file(web3: Web3, key_file: str, pass_file: Optional[str] = None
     assert(isinstance(key_file, str))
     assert(isinstance(pass_file, str) or (pass_file is None))
 
-    if "sign_and_send" not in web3.middleware_stack._queue:
-        is_parity = "parity" in web3.version.node.lower()
-        web3.middleware_stack.add(_construct_local_sign_middleware(is_parity), name="sign_and_send")
-
     with open(key_file) as key_file_open:
         read_key = key_file_open.read()
         if pass_file:
@@ -114,3 +63,4 @@ def register_key_file(web3: Web3, key_file: str, pass_file: Optional[str] = None
         account = Account.privateKeyToAccount(private_key)
 
         _registered_accounts[(web3, Address(account.address))] = account
+        web3.middleware_stack.add(construct_sign_and_send_raw_middleware(account))

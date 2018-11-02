@@ -22,6 +22,7 @@ import sys
 import time
 from enum import Enum, auto
 from functools import total_ordering, wraps
+from threading import Lock
 from typing import Optional
 
 import eth_utils
@@ -35,6 +36,8 @@ from pymaker.numeric import Wad
 from pymaker.util import synchronize, bytes_to_hexstring
 
 filter_threads = []
+node_is_parity = None
+transaction_lock = Lock()
 
 
 def register_filter_thread(filter_thread):
@@ -335,6 +338,13 @@ class Transact:
         self.status = TransactStatus.NEW
         self.nonce = None
 
+    def _is_parity(self) -> bool:
+        global node_is_parity
+        if node_is_parity is None:
+            node_is_parity = "parity" in self.web3.version.node.lower()
+
+        return node_is_parity
+
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
         raw_receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
         if raw_receipt is not None and raw_receipt['blockNumber'] is not None:
@@ -544,14 +554,16 @@ class Transact:
                 gas_price_last = gas_price_value
 
                 try:
-                    tx_hash = self._func(from_account, gas, gas_price_value, self.nonce)
-                    tx_hashes.append(tx_hash)
+                    # We need the lock in order to not try to send two transactions with the same nonce.
+                    with transaction_lock:
+                        if self._is_parity():
+                            self.nonce = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
 
-                    # If this is the first transaction sent, get its nonce so we can override the transaction with
-                    # another one using higher gas price if :py:class:`pymaker.gas.GasPrice` tells us to do so,
-                    # or replace it with a completely another transaction
-                    if self.nonce is None:
-                        self.nonce = self.web3.eth.getTransaction(tx_hash)['nonce']
+                        else:
+                            self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
+
+                        tx_hash = self._func(from_account, gas, gas_price_value, self.nonce)
+                        tx_hashes.append(tx_hash)
 
                     self.logger.info(f"Sent transaction {self.name()} with nonce={self.nonce}, gas={gas},"
                                      f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
