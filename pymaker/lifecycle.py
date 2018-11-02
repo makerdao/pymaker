@@ -22,6 +22,7 @@ import threading
 import time
 
 import pytz
+from pymaker.sign import eth_sign
 from web3 import Web3
 
 from pymaker import register_filter_thread, any_filter_thread_present, stop_all_filter_threads, all_filter_threads_alive
@@ -169,10 +170,10 @@ class Lifecycle:
 
     def _check_account_unlocked(self):
         try:
-            self.web3.eth.sign(self.web3.eth.defaultAccount, bytes("pymaker testing if account is unlocked", "utf-8"))
+            eth_sign(bytes("pymaker testing if account is unlocked", "utf-8"), self.web3)
         except:
-            self.logger.fatal(f"Account {self.web3.eth.defaultAccount} is not unlocked")
-            self.logger.fatal(f"Unlocking the account is necessary for the keeper to operate")
+            self.logger.exception(f"Account {self.web3.eth.defaultAccount} is not unlocked and no private key supplied for it")
+            self.logger.fatal(f"Unlocking the account or providing the private key is necessary for the keeper to operate")
             exit(-1)
 
     def wait_for_sync(self, wait_for_sync: bool):
