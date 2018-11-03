@@ -28,9 +28,6 @@ _registered_accounts = {}
 
 
 def register_keys(web3: Web3, keys: Optional[list]):
-    def not_none(x):
-        return x if x is not None else []
-
     for key in keys or []:
         register_key(web3, key)
 
