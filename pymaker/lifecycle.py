@@ -98,7 +98,9 @@ class Lifecycle:
                 self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
                 self._check_account_unlocked()
             else:
-                self.logger.info(f"Keeper operating in read-only mode regarding the chain as no keeper account configured")
+                self.logger.info(f"Keeper not operating as any particular account")
+                # web3 calls do not work correctly if defaultAccount is empty
+                self.web3.eth.defaultAccount = "0x0000000000000000000000000000000000000000"
         else:
             self.logger.info(f"Keeper initializing")
 
