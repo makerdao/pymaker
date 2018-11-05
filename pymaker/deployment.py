@@ -249,6 +249,9 @@ class DssDeployment:
     def from_json(web3: Web3, conf: str):
         return DssDeployment(web3, DssDeployment.Config.from_json(web3, conf))
 
+    def to_json(web3: Web3, conf: str):
+        return self.config.to_json()
+
     @staticmethod
     def deploy(web3: Web3, debt_ceiling: Wad):
         assert isinstance(web3, Web3)
@@ -265,12 +268,13 @@ class DssDeployment:
         assert vat.rely(dai_adapter.address).transact()
         assert vat.rely(dai_move.address).transact()
 
+        mkr = DSToken.deploy(web3=web3, symbol='MKR')
+
         # TODO: use a DSProxy
         mom = DSGuard.deploy(web3)
         assert mom.permit(DSGuard.ANY, DSGuard.ANY, DSGuard.ANY).transact()
         assert dai.set_authority(mom.address).transact()
-
-        mkr = DSToken.deploy(web3=web3, symbol='MKR')
+        assert mkr.set_authority(mom.address).transact()
 
         vow = Vow.deploy(web3=web3)
         drip = Drip.deploy(web3=web3, vat=vat.address)
