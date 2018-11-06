@@ -57,7 +57,13 @@ def register_key_file(web3: Web3, key_file: str, pass_file: Optional[str] = None
             read_pass = getpass.getpass()
 
         private_key = Account.decrypt(read_key, read_pass)
-        account = Account.privateKeyToAccount(private_key)
+        register_private_key(web3, private_key)
 
-        _registered_accounts[(web3, Address(account.address))] = account
-        web3.middleware_stack.add(construct_sign_and_send_raw_middleware(account))
+
+def register_private_key(web3: Web3, private_key):
+    assert(isinstance(web3, Web3))
+
+    account = Account.privateKeyToAccount(private_key)
+
+    _registered_accounts[(web3, Address(account.address))] = account
+    web3.middleware_stack.add(construct_sign_and_send_raw_middleware(account))
