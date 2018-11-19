@@ -1,0 +1,1 @@
+[{"constant":false,"inputs":[{"name":"_code","type":"bytes"}],"name":"write","outputs":[{"name":"target","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_code","type":"bytes"}],"name":"read","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"}]
