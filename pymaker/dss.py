@@ -534,6 +534,9 @@ class Vow(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'file(bytes32,uint256)', [Web3.toBytes(text="sump"), amount.value])
 
+    def vat(self) -> Address:
+        return Address(self._contract.call().vat())
+
     def flapper(self) -> Address:
         return Address(self._contract.call().cow())
 
