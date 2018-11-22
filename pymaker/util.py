@@ -87,7 +87,7 @@ def bytes_to_hexstring(value) -> str:
 def hexstring_to_bytes(value: str) -> bytes:
     assert(isinstance(value, str))
     assert(value.startswith("0x"))
-    return bytes.fromhex(value.replace("0x", ""))
+    return Web3.toBytes(hexstr=value)
 
 
 class AsyncCallback:
