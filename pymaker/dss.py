@@ -179,10 +179,10 @@ class LogFrob:
 
         topics = event.get('topics')
         if topics and topics[0] == HexBytes('0xb2afa28318bcc689926b52835d844de174ef8de97e982a85c0199d584920791b'):
-            log_frob_abi = [abi for abi in Pib.abi if abi.get('name') == 'Bite'][0]
+            log_frob_abi = [abi for abi in Pit.abi if abi.get('name') == 'Frob'][0]
             event_data = get_event_data(log_frob_abi, event)
 
-            return LogBite(event_data)
+            return LogFrob(event_data)
         else:
             logging.warning(f'[from_event] Invalid topic in {event}')
 
@@ -718,7 +718,7 @@ class Pit(Contract):
             event_filter: Filter which will be applied to returned events.
 
         Returns:
-            List of past `LogBite` events represented as :py:class:`pymake.dss.LogBite` class.
+            List of past `LogFrob` events represented as :py:class:`pymake.dss.LogFrob` class.
         """
         assert isinstance(number_of_past_blocks, int)
         assert isinstance(event_filter, dict) or (event_filter is None)
