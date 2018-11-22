@@ -14,16 +14,14 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import logging
-import re
 from typing import List
 
 from hexbytes import HexBytes
-from pymaker.util import hexstring_to_bytes
 from web3 import Web3
 from web3.utils.events import get_event_data
 
 from pymaker import Address, Contract, Transact, Receipt, Calldata
+from pymaker.util import hexstring_to_bytes
 
 
 class DSProxyCache(Contract):
@@ -129,7 +127,7 @@ class LogCreated:
 
             return LogCreated(event_data)
         else:
-            logging.warning(f'[from_event] Invalid topic in {event}')
+            raise Exception(f'[from_event] Invalid topic in {event}')
 
     def __eq__(self, other):
         assert (isinstance(other, LogCreated))
@@ -194,5 +192,11 @@ class DSProxyFactory(Contract):
     def log_created(cls, receipt: Receipt) -> List[LogCreated]:
         assert isinstance(receipt, Receipt)
 
-        events = [LogCreated.from_event(dict(log)) for log in receipt.raw_receipt.logs]
-        return [event for event in events if event]
+        events = []
+        for log in receipt.raw_receipt.logs:
+            try:
+                event = LogCreated.from_event(dict(log))
+                events.append(event)
+            except:
+                pass
+        return events
