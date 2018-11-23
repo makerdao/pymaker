@@ -18,6 +18,7 @@
 import asyncio
 import json
 import logging
+import re
 import sys
 import time
 from enum import Enum, auto
@@ -28,7 +29,9 @@ from typing import Optional
 import eth_utils
 import pkg_resources
 from hexbytes import HexBytes
+
 from web3 import Web3
+from web3.utils.contracts import get_function_info, encode_abi
 from web3.utils.events import get_event_data
 
 from pymaker.gas import DefaultGasPrice, GasPrice
@@ -193,6 +196,28 @@ class Calldata:
         assert(isinstance(value, str))
         assert(value.startswith('0x'))
         self.value = value
+
+    @classmethod
+    def from_signature(cls, fn_sign: str, fn_args: list):
+        """ Allow to create a `Calldata` from a function signature and a list of arguments.
+
+        :param fn_sign: the function signature ie. "function(uint256,address)"
+        :param fn_args: arguments to the function ie. [123, "0x00...00"]
+        :return:
+        """
+        assert isinstance(fn_sign, str)
+        assert isinstance(fn_args, list)
+
+        fn_split = re.split('\W+', fn_sign)
+        fn_name = fn_split[0]
+        fn_args_type = [{"type": type} for type in fn_split[1:] if type]
+
+        fn_abi = {"type": "function", "name": fn_name, "inputs": fn_args_type}
+        fn_abi, fn_selector, fn_arguments = get_function_info("test", fn_abi=fn_abi, args=fn_args)
+
+        calldata = encode_abi(Web3, fn_abi, fn_arguments, fn_selector)
+
+        return cls(calldata)
 
     def as_bytes(self) -> bytes:
         """Return the calldata as a byte array."""

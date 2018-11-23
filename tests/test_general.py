@@ -133,6 +133,17 @@ class TestCalldata:
         assert calldata1a != calldata2
         assert calldata1b != calldata2
 
+    def test_from_signature(self):
+        # given
+        calldata1a = Calldata('0xa9059cbb'  # function 4byte signature
+                              '00000000000000000000000011223344556600000000000000000000000000ff'
+                              '000000000000000000000000000000000000000000000000000000000000007b')
+        calldata1b = Calldata.from_signature('transfer(address,uint256)',
+                                             ['0x11223344556600000000000000000000000000ff', 123])
+
+        # expect
+        assert calldata1a == calldata1b
+
 
 class TestReceipt:
     @pytest.fixture()
