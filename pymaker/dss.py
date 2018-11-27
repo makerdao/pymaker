@@ -627,6 +627,11 @@ class Drip(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'init', [ilk.toBytes()])
 
+    def drip(self, ilk: Ilk) -> Transact:
+        assert isinstance(ilk, Ilk)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [ilk.toBytes()])
+
     def file_vow(self, vow: Vow) -> Transact:
         assert isinstance(vow, Vow)
 
