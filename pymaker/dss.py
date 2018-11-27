@@ -136,6 +136,7 @@ class LogBite:
         self.art = Wad(log['args']['art'])
         self.tab = Wad(log['args']['tab'])
         self.flip = int(log['args']['flip'])
+        self.iInk = Wad(log['args']['iInk'])
         self.iart = Wad(log['args']['iArt'])
         self.raw = log
 
@@ -168,8 +169,10 @@ class LogFrob:
         self.ilk = Ilk.fromBytes(log['args']['ilk'])
         self.urn = Urn.fromBytes(log['args']['urn'])
         self.ink = Wad(log['args']['ink'])
-        self.dart = Wad(log['args']['dart'])
+        self.art = Wad(log['args']['art'])
         self.dink = Wad(log['args']['dink'])
+        self.dart = Wad(log['args']['dart'])
+        self.iink = Wad(log['args']['iInk'])
         self.iart = Wad(log['args']['iArt'])
         self.raw = log
 
