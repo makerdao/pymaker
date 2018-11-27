@@ -553,16 +553,19 @@ class Transact:
             if self.nonce is not None and self.web3.eth.getTransactionCount(from_account) > self.nonce:
                 # Check if any transaction sent so far has been mined (has a receipt).
                 # If it has, we return either the receipt (if if was successful) or `None`.
-                for tx_hash in tx_hashes:
-                    receipt = self._get_receipt(tx_hash)
-                    if receipt:
-                        if receipt.successful:
-                            self.logger.info(f"Transaction {self.name()} was successful (tx_hash={bytes_to_hexstring(tx_hash)})")
-                            return receipt
-                        else:
-                            self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
-                                                f" log entry, assuming it has failed (tx_hash={bytes_to_hexstring(tx_hash)})")
-                            return None
+                for _ in range(5):
+                    for tx_hash in tx_hashes:
+                        receipt = self._get_receipt(tx_hash)
+                        if receipt:
+                            if receipt.successful:
+                                self.logger.info(f"Transaction {self.name()} was successful (tx_hash={bytes_to_hexstring(tx_hash)})")
+                                return receipt
+                            else:
+                                self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
+                                                    f" log entry, assuming it has failed (tx_hash={bytes_to_hexstring(tx_hash)})")
+                                return None
+
+                    await asyncio.sleep(0.5)
 
                 # If we can not find a mined receipt but at the same time we know last used nonce
                 # has increased, then it means that the transaction we tried to send failed.

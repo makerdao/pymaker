@@ -220,7 +220,7 @@ class TestTransactReplace:
         transact_2 = self.token.transfer(self.third_address, Wad(700))
         future_receipt_2 = asyncio.ensure_future(transact_2.transact_async(replace=transact_1))
         # and
-        await asyncio.sleep(2)
+        await asyncio.sleep(10)
         # then
         assert transact_1.status == TransactStatus.FINISHED
         assert future_receipt_1.done()
