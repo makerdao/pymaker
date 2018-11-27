@@ -666,12 +666,6 @@ class Pit(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'rely', [guy.address])
 
-    def file_drip(self, drip: Drip) -> Transact:
-        assert isinstance(drip, Drip)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,address)', [Web3.toBytes(text="drip"), drip.address.address])
-
     def file_global_line(self, ceiling: Wad) -> Transact:
         assert isinstance(ceiling, Wad)
 

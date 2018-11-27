@@ -280,7 +280,6 @@ class DssDeployment:
         drip = Drip.deploy(web3=web3, vat=vat.address)
         flap = Flapper.deploy(web3=web3, dai=dai_move.address, gem=mkr.address)
 
-        assert pit.file_drip(drip).transact()
         assert vow.file_vat(vat).transact()
         assert vow.file_flap(flap).transact()
         assert vow.file_bump(Wad.from_number(1000)).transact()
