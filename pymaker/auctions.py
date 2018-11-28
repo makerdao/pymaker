@@ -83,14 +83,6 @@ class Flipper(Contract):
 
         approval_function(ERC20Token(web3=self.web3, address=self.dai()), self.address, 'Flipper')
 
-    def era(self) -> int:
-        """Returns the current timestamp.
-
-        Returns:
-            The current timestamp.
-        """
-        return self._contract.call().era()
-
     def dai(self) -> Address:
         """Returns the `dai` token.
 
@@ -256,14 +248,6 @@ class Flapper(Contract):
 
         approval_function(ERC20Token(web3=self.web3, address=self.gem()), self.address, 'Flapper')
 
-    def era(self) -> int:
-        """Returns the current timestamp.
-
-        Returns:
-            The current timestamp.
-        """
-        return self._contract.call().era()
-
     def dai(self) -> Address:
         """Returns the `dai` token.
 
@@ -419,14 +403,6 @@ class Flopper(Contract):
         assert(callable(approval_function))
 
         approval_function(ERC20Token(web3=self.web3, address=self.dai()), self.address, 'Flopper')
-
-    def era(self) -> int:
-        """Returns the current timestamp.
-
-        Returns:
-            The current timestamp.
-        """
-        return self._contract.call().era()
 
     def dai(self) -> Address:
         """Returns the `dai` token.
