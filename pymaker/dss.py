@@ -136,6 +136,7 @@ class LogBite:
         self.art = Wad(log['args']['art'])
         self.tab = Wad(log['args']['tab'])
         self.flip = int(log['args']['flip'])
+        self.iInk = Wad(log['args']['iInk'])
         self.iart = Wad(log['args']['iArt'])
         self.raw = log
 
@@ -168,8 +169,10 @@ class LogFrob:
         self.ilk = Ilk.fromBytes(log['args']['ilk'])
         self.urn = Urn.fromBytes(log['args']['urn'])
         self.ink = Wad(log['args']['ink'])
-        self.dart = Wad(log['args']['dart'])
+        self.art = Wad(log['args']['art'])
         self.dink = Wad(log['args']['dink'])
+        self.dart = Wad(log['args']['dart'])
+        self.iink = Wad(log['args']['iInk'])
         self.iart = Wad(log['args']['iArt'])
         self.raw = log
 
@@ -179,10 +182,10 @@ class LogFrob:
 
         topics = event.get('topics')
         if topics and topics[0] == HexBytes('0xb2afa28318bcc689926b52835d844de174ef8de97e982a85c0199d584920791b'):
-            log_frob_abi = [abi for abi in Pib.abi if abi.get('name') == 'Bite'][0]
+            log_frob_abi = [abi for abi in Pit.abi if abi.get('name') == 'Frob'][0]
             event_data = get_event_data(log_frob_abi, event)
 
-            return LogBite(event_data)
+            return LogFrob(event_data)
         else:
             logging.warning(f'[from_event] Invalid topic in {event}')
 
@@ -627,6 +630,11 @@ class Drip(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'init', [ilk.toBytes()])
 
+    def drip(self, ilk: Ilk) -> Transact:
+        assert isinstance(ilk, Ilk)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [ilk.toBytes()])
+
     def file_vow(self, vow: Vow) -> Transact:
         assert isinstance(vow, Vow)
 
@@ -665,12 +673,6 @@ class Pit(Contract):
         assert isinstance(guy, Address)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'rely', [guy.address])
-
-    def file_drip(self, drip: Drip) -> Transact:
-        assert isinstance(drip, Drip)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,address)', [Web3.toBytes(text="drip"), drip.address.address])
 
     def file_global_line(self, ceiling: Wad) -> Transact:
         assert isinstance(ceiling, Wad)
@@ -718,7 +720,7 @@ class Pit(Contract):
             event_filter: Filter which will be applied to returned events.
 
         Returns:
-            List of past `LogBite` events represented as :py:class:`pymake.dss.LogBite` class.
+            List of past `LogFrob` events represented as :py:class:`pymake.dss.LogFrob` class.
         """
         assert isinstance(number_of_past_blocks, int)
         assert isinstance(event_filter, dict) or (event_filter is None)

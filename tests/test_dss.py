@@ -269,3 +269,12 @@ class TestVow:
 
         # then
         assert d.vow.flop().transact()
+
+
+class TestDrip:
+    def test_drip(self, d: DssDeployment):
+        # given
+        c = d.collaterals[0]
+
+        # then
+        assert d.drip.drip(c.ilk).transact()

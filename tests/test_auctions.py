@@ -60,9 +60,6 @@ class TestFlipper:
         assert(isinstance(address, Address))
         return self.gem.balance_of(address)
 
-    def test_era(self):
-        assert self.flipper.era() > 1000000
-
     def test_beg(self):
         assert self.flipper.beg() == Ray.from_number(1.05)
 
@@ -155,9 +152,6 @@ class TestFlapper:
         self.dai = DSToken.deploy(self.web3, 'DAI')
         self.gem = DSToken.deploy(self.web3, 'MKR')
         self.flapper = Flapper.deploy(self.web3, self.dai.address, self.gem.address)
-
-    def test_era(self):
-        assert self.flapper.era() > 1000000
 
     def test_dai(self):
         assert self.flapper.dai() == self.dai.address
@@ -253,9 +247,6 @@ class TestFlopper:
         dad = DSGuard.deploy(self.web3)
         dad.permit(self.flopper.address, self.gem.address, DSGuard.ANY).transact()
         self.gem.set_authority(dad.address).transact()
-
-    def test_era(self):
-        assert self.flopper.era() > 1000000
 
     def test_dai(self):
         assert self.flopper.dai() == self.dai.address
