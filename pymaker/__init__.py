@@ -584,11 +584,12 @@ class Transact:
                 try:
                     # We need the lock in order to not try to send two transactions with the same nonce.
                     with transaction_lock:
-                        if self._is_parity():
-                            self.nonce = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
+                        if self.nonce is None:
+                            if self._is_parity():
+                                self.nonce = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
 
-                        else:
-                            self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
+                            else:
+                                self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
 
                         tx_hash = self._func(from_account, gas, gas_price_value, self.nonce)
                         tx_hashes.append(tx_hash)
