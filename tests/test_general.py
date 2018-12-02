@@ -98,14 +98,14 @@ class TestCalldata:
         # expect
         assert Calldata('0xa9059cbb').value == '0xa9059cbb'
 
+    def test_creation_from_bytes(self):
+        # expect
+        assert Calldata(b'\xa9\x05\x9c\xbb').value == '0xa9059cbb'
+
     def test_should_fail_creation_from_invalid_calldata(self):
         # expect
         with pytest.raises(Exception):
             Calldata('a9059cbb')  # without `0x`
-
-        # expect
-        with pytest.raises(Exception):
-            Calldata(b'\xa9\x05\x9c\xbb')  # from bytes
 
     def test_as_bytes(self):
         # expect

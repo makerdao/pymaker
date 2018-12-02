@@ -190,12 +190,18 @@ class Calldata:
     """Represents Ethereum calldata.
 
     Attributes:
-        value: Calldata as a string starting with `0x`.
+        value: Calldata as either a string starting with `0x`, or as bytes.
     """
-    def __init__(self, value: str):
-        assert(isinstance(value, str))
-        assert(value.startswith('0x'))
-        self.value = value
+    def __init__(self, value):
+        if isinstance(value, str):
+            assert(value.startswith('0x'))
+            self.value = value
+
+        elif isinstance(value, bytes):
+            self.value = bytes_to_hexstring(value)
+
+        else:
+            raise Exception(f"Unable to create calldata from '{value}'")
 
     @classmethod
     def from_signature(cls, fn_sign: str, fn_args: list):
