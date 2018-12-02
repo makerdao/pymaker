@@ -60,6 +60,9 @@ class DSProxyCache(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'write', [b32_code])
 
+    def __repr__(self):
+        return f"DSProxyCache('{self.address}')"
+
 
 class DSProxy(Contract):
     """A client for the `DSProxy` contract.
@@ -105,6 +108,9 @@ class DSProxy(Contract):
 
     def cache(self) -> Address:
         return Address(self._contract.call().cache())
+
+    def __repr__(self):
+        return f"DSProxy('{self.address}')"
 
 
 # event Created(address indexed sender, address indexed owner, address proxy, address cache);
@@ -200,3 +206,6 @@ class DSProxyFactory(Contract):
             except:
                 pass
         return events
+
+    def __repr__(self):
+        return f"DSProxyFactory('{self.address}')"
