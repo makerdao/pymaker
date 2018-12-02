@@ -643,6 +643,15 @@ class ZrxRelayerApiV2:
         else:
             return []
 
+    def get_order(self, order_hash: str) -> Order:
+        assert(isinstance(order_hash, str))
+
+        response = requests.get(f"{self.api_server}/v2/order/{order_hash}", timeout=self.timeout)
+        if not response.ok:
+            raise Exception(f"Failed to 0x order from the relayer: {http_response_summary(response)}")
+
+        return Order.from_json(self.exchange, response.json()['order'])
+
     def get_orders_by_maker(self, maker: Address, per_page: int = 100) -> List[Order]:
         """Returns all active orders created by `maker`.
 
