@@ -272,9 +272,24 @@ class TestVow:
 
 
 class TestDrip:
+    def test_getters(self, d: DssDeployment):
+        c = d.collaterals[0]
+        assert isinstance(d.drip.vow(), Urn)
+        assert isinstance(d.drip.vat(), Address)
+        assert isinstance(d.drip.repo(), Wad)
+        assert isinstance(d.drip.tax(c.ilk), Wad)
+        assert isinstance(d.drip.rho(c.ilk), int)
+
     def test_drip(self, d: DssDeployment):
         # given
         c = d.collaterals[0]
 
         # then
         assert d.drip.drip(c.ilk).transact()
+
+    def test_file_tax(self, d: DssDeployment):
+        # given
+        c = d.collaterals[0]
+
+        # then
+        assert d.drip.file_tax(c.ilk, Wad(1000000564701133626865910626)).transact()
