@@ -36,7 +36,7 @@ from web3.utils.events import get_event_data
 
 from pymaker.gas import DefaultGasPrice, GasPrice
 from pymaker.numeric import Wad
-from pymaker.util import synchronize, bytes_to_hexstring
+from pymaker.util import synchronize, bytes_to_hexstring, is_contract_at
 
 filter_threads = []
 node_is_parity = None
@@ -148,8 +148,7 @@ class Contract:
         assert(isinstance(abi, list))
         assert(isinstance(address, Address))
 
-        code = web3.eth.getCode(address.address)
-        if (code == "0x") or (code == "0x0") or (code == b"\x00") or (code is None):
+        if not is_contract_at(web3, address):
             raise Exception(f"No contract found at {address}")
 
         return web3.eth.contract(abi=abi)(address=address.address)
