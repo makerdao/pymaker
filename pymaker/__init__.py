@@ -439,7 +439,14 @@ class Transact:
             Nicely formatted name of this pending Ethereum transaction.
         """
         if self.origin:
-            name = f"{repr(self.origin)}.{self.function_name}({self.parameters})"
+            def format_parameter(parameter):
+                if isinstance(parameter, bytes):
+                    return bytes_to_hexstring(parameter)
+                else:
+                    return parameter
+
+            formatted_parameters = str(list(map(format_parameter, self.parameters))).lstrip("[").rstrip("]")
+            name = f"{repr(self.origin)}.{self.function_name}({formatted_parameters})"
         else:
             name = f"Regular transfer to {self.address}"
 

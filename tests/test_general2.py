@@ -20,9 +20,10 @@ import pytest
 from mock import MagicMock
 from web3 import Web3, HTTPProvider
 
-from pymaker import Address, eth_transfer, TransactStatus
+from pymaker import Address, eth_transfer, TransactStatus, Calldata
 from pymaker.gas import FixedGasPrice
 from pymaker.numeric import Wad
+from pymaker.proxy import DSProxy, DSProxyCache
 from pymaker.token import DSToken
 from pymaker.util import synchronize, eth_balance
 
@@ -152,6 +153,24 @@ class TestTransact:
 
         # then
         assert Address(self.web3.eth.getTransaction(receipt.transaction_hash)['from']) == self.second_address
+
+    def test_name_formatting(self):
+        # given
+        transact = self.token.transfer(self.second_address, Wad(123))
+
+        # expect
+        assert transact.name() == f"DSToken('{self.token.address}').transfer('{self.second_address}', 123)"
+
+    def test_name_formatting_with_hexstrings(self):
+        # given
+        proxy_cache = DSProxyCache.deploy(self.web3)
+        proxy = DSProxy.deploy(self.web3, proxy_cache.address)
+
+        # when
+        transact = proxy.execute("0x11223344", Calldata("0x55667788"))
+
+        # then
+        assert transact.name() == f"DSProxy('{proxy.address}').execute(bytes,bytes)('0x11223344', '0x55667788')"
 
     def test_eth_transfer(self):
         # given
