@@ -94,12 +94,30 @@ class DSProxy(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'execute(bytes,bytes)', [b32_code, calldata.as_bytes()])
 
+    def call(self, code: str, calldata: Calldata) -> (Address, HexBytes):
+        assert (isinstance(code, str))
+        assert (isinstance(calldata, Calldata))
+
+        fn = self._contract.get_function_by_signature('execute(bytes,bytes)')
+        target, response = fn(code, calldata.value).call()
+
+        return Address(target), HexBytes(response)
+
     def execute_at(self, address: Address, calldata: Calldata) -> Transact:
         assert (isinstance(address, Address))
         assert (isinstance(calldata, Calldata))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'execute(address,bytes)', [address.address, calldata.as_bytes()])
+
+    def call_at(self, address: Address, calldata: Calldata) -> Transact:
+        assert (isinstance(address, Address))
+        assert (isinstance(calldata, Calldata))
+
+        fn = self._contract.get_function_by_signature('execute(address,bytes)')
+        response = fn(address.address, calldata.value).call()
+
+        return HexBytes(response)
 
     def set_cache(self, address: Address) -> Transact:
         assert (isinstance(address, Address))
