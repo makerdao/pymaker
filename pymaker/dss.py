@@ -638,7 +638,7 @@ class Drip(Contract):
         assert isinstance(vow, Vow)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,bytes32)', [Web3.toBytes(text="vow"), vow.address.address])
+                        'file(bytes32,bytes32)', [Web3.toBytes(text="vow"), Urn(vow.address).toBytes()])
 
     def file_tax(self, ilk: Ilk, tax: Wad) -> Transact:
         assert isinstance(ilk, Ilk)
