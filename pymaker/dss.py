@@ -640,9 +640,9 @@ class Drip(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'file(bytes32,bytes32)', [Web3.toBytes(text="vow"), Urn(vow.address).toBytes()])
 
-    def file_tax(self, ilk: Ilk, tax: Wad) -> Transact:
+    def file_tax(self, ilk: Ilk, tax: Ray) -> Transact:
         assert isinstance(ilk, Ilk)
-        assert isinstance(tax, Wad)
+        assert isinstance(tax, Ray)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'file(bytes32,bytes32,uint256)',
@@ -657,10 +657,10 @@ class Drip(Contract):
     def repo(self) -> Wad:
         return Wad(self._contract.call().repo())
 
-    def tax(self, ilk: Ilk) -> Wad:
+    def tax(self, ilk: Ilk) -> Ray:
         assert isinstance(ilk, Ilk)
 
-        return Wad(self._contract.call().ilks(ilk.toBytes())[0])
+        return Ray(self._contract.call().ilks(ilk.toBytes())[0])
 
     def rho(self, ilk: Ilk) -> int:
         assert isinstance(ilk, Ilk)

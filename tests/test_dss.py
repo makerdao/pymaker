@@ -277,7 +277,7 @@ class TestDrip:
         assert isinstance(d.drip.vow(), Urn)
         assert isinstance(d.drip.vat(), Address)
         assert isinstance(d.drip.repo(), Wad)
-        assert isinstance(d.drip.tax(c.ilk), Wad)
+        assert isinstance(d.drip.tax(c.ilk), Ray)
         assert isinstance(d.drip.rho(c.ilk), int)
 
     def test_drip(self, d: DssDeployment):
@@ -292,4 +292,4 @@ class TestDrip:
         c = d.collaterals[0]
 
         # then
-        assert d.drip.file_tax(c.ilk, Wad(1000000564701133626865910626)).transact()
+        assert d.drip.file_tax(c.ilk, Ray(1000000564701133626865910626)).transact()
