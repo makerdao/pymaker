@@ -249,7 +249,7 @@ class DssDeployment:
     def from_json(web3: Web3, conf: str):
         return DssDeployment(web3, DssDeployment.Config.from_json(web3, conf))
 
-    def to_json(web3: Web3, conf: str):
+    def to_json(self):
         return self.config.to_json()
 
     @staticmethod
