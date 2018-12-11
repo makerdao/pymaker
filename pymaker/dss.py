@@ -808,7 +808,7 @@ class Cat(Contract):
         (flip_ilk, flip_urn, flip_ink, flip_tab) = self._contract.call().flips(id)
         urn = Urn.fromBytes(flip_urn)
         urn.ilk = Ilk.fromBytes(flip_ilk)
-        urn.ink = flip_ink
+        urn.ink = Wad(flip_ink)
         return Cat.Flip(id, urn, Wad(flip_tab))
 
     def bite(self, ilk: Ilk, urn: Urn):
