@@ -459,7 +459,7 @@ class SimpleMarket(Contract):
         """
         assert(isinstance(order_id, int))
 
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kill', [int_to_bytes32(order_id)])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kill(bytes32)', [int_to_bytes32(order_id)])
 
     @staticmethod
     def _make_order_id_result_function(receipt):
