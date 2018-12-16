@@ -140,3 +140,28 @@ class TestProxy:
 
         # then
         assert build_event.owner == proxy.address
+
+    def test_call(self, proxy: DSProxy):
+        # when
+        calldata = Calldata.from_signature("isProxy(address)", [Address(40*'0').address])
+        target, response = proxy.call('0x' + DSProxyFactory.bin, calldata)
+
+        # then
+        assert target != Address(40*'0')
+        assert Web3.toInt(response) == 0
+
+    def test_call_at(self, proxy: DSProxy):
+        # given
+        proxy_cache = DSProxyCache(proxy.web3, proxy.cache())
+        proxy_cache.write('0x' + DSProxyFactory.bin).transact()
+        new_factory_addr = proxy_cache.read('0x' + DSProxyFactory.bin)
+        receipt = proxy.execute_at(new_factory_addr, Calldata.from_signature("build(address)",
+                                                                             [proxy.address.address])).transact()
+        log_created: LogCreated = DSProxyFactory.log_created(receipt)[0]
+
+        # when
+        calldata = Calldata.from_signature("isProxy(address)", [log_created.proxy.address])
+        response = proxy.call_at(new_factory_addr, calldata)
+
+        # then
+        assert Web3.toInt(response) == 1

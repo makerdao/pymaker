@@ -81,6 +81,26 @@ class DSProxy(Contract):
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
 
+    def authority(self) -> Address:
+        """Return the current `authority` of a `DSAuth`-ed contract.
+
+        Returns:
+            The address of the current `authority`.
+        """
+        return Address(self._contract.call().authority())
+
+    def set_authority(self, address: Address) -> Transact:
+        """Set the `authority` of a `DSAuth`-ed contract.
+
+        Args:
+            address: The address of the new `authority`.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
+        assert(isinstance(address, Address))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'setAuthority', [address.address])
+
     @classmethod
     def deploy(cls, web3: Web3, cache: Address):
         return cls(web3=web3, address=Contract._deploy(web3, cls.abi, cls.bin, [cache.address]))
@@ -94,12 +114,30 @@ class DSProxy(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'execute(bytes,bytes)', [b32_code, calldata.as_bytes()])
 
+    def call(self, code: str, calldata: Calldata) -> (Address, HexBytes):
+        assert (isinstance(code, str))
+        assert (isinstance(calldata, Calldata))
+
+        fn = self._contract.get_function_by_signature('execute(bytes,bytes)')
+        target, response = fn(code, calldata.value).call()
+
+        return Address(target), HexBytes(response)
+
     def execute_at(self, address: Address, calldata: Calldata) -> Transact:
         assert (isinstance(address, Address))
         assert (isinstance(calldata, Calldata))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'execute(address,bytes)', [address.address, calldata.as_bytes()])
+
+    def call_at(self, address: Address, calldata: Calldata) -> Transact:
+        assert (isinstance(address, Address))
+        assert (isinstance(calldata, Calldata))
+
+        fn = self._contract.get_function_by_signature('execute(address,bytes)')
+        response = fn(address.address, calldata.value).call()
+
+        return HexBytes(response)
 
     def set_cache(self, address: Address) -> Transact:
         assert (isinstance(address, Address))

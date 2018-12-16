@@ -109,11 +109,10 @@ class Urn:
         address = Address(Web3.toHex(urn[-20:]))
         return Urn(address)
 
-
     def __eq__(self, other):
         assert isinstance(other, Urn)
 
-        return (self.address == other.address) and  (self.ilk == other.ilk)
+        return (self.address == other.address) and (self.ilk == other.ilk)
 
     def __repr__(self):
         repr = ''
@@ -142,7 +141,7 @@ class LogBite:
 
     @classmethod
     def from_event(cls, event: dict):
-        assert(isinstance(event, dict))
+        assert isinstance(event, dict)
 
         topics = event.get('topics')
         if topics and topics[0] == HexBytes('0x99b5620489b6ef926d4518936cfec15d305452712b88bd59da2d9c10fb0953e8'):
@@ -157,7 +156,7 @@ class LogBite:
         return web3.eth.getBlock(self.raw['blockNumber'])['timestamp']
 
     def __eq__(self, other):
-        assert(isinstance(other, LogBite))
+        assert isinstance(other, LogBite)
         return self.__dict__ == other.__dict__
 
     def __repr__(self):
@@ -178,7 +177,7 @@ class LogFrob:
 
     @classmethod
     def from_event(cls, event: dict):
-        assert(isinstance(event, dict))
+        assert isinstance(event, dict)
 
         topics = event.get('topics')
         if topics and topics[0] == HexBytes('0xb2afa28318bcc689926b52835d844de174ef8de97e982a85c0199d584920791b'):
@@ -193,7 +192,7 @@ class LogFrob:
         return web3.eth.getBlock(self.raw['blockNumber'])['timestamp']
 
     def __eq__(self, other):
-        assert(isinstance(other, LogFrob))
+        assert isinstance(other, LogFrob)
         return self.__dict__ == other.__dict__
 
     def __repr__(self):
@@ -210,8 +209,8 @@ class DaiAdapter(Contract):
     bin = Contract._load_bin(__name__, 'abi/DaiJoin.bin')
 
     def __init__(self, web3: Web3, address: Address):
-        assert(isinstance(web3, Web3))
-        assert(isinstance(address, Address))
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
 
         self.web3 = web3
         self.address = address
@@ -222,15 +221,15 @@ class DaiAdapter(Contract):
         return cls(web3=web3, address=Contract._deploy(web3, cls.abi, cls.bin, [vat.address, dai.address]))
 
     def join(self, urn: Urn, value: Wad) -> Transact:
-        assert(isinstance(urn, Urn))
-        assert(isinstance(value, Wad))
+        assert isinstance(urn, Urn)
+        assert isinstance(value, Wad)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'join', [urn.toBytes(), value.value])
 
     def exit(self, urn: Urn, value: Wad) -> Transact:
-        assert(isinstance(urn, Urn))
-        assert(isinstance(value, Wad))
+        assert isinstance(urn, Urn)
+        assert isinstance(value, Wad)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'exit', [urn.toBytes(), value.value])
@@ -246,8 +245,8 @@ class DaiVat(Contract):
     bin = Contract._load_bin(__name__, 'abi/DaiMove.bin')
 
     def __init__(self, web3: Web3, address: Address):
-        assert(isinstance(web3, Web3))
-        assert(isinstance(address, Address))
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
 
         self.web3 = web3
         self.address = address
@@ -258,15 +257,15 @@ class DaiVat(Contract):
         return cls(web3=web3, address=Contract._deploy(web3, cls.abi, cls.bin, [vat.address]))
 
     def hope(self, guy: Address) -> Transact:
-        assert(isinstance(guy, Address))
+        assert isinstance(guy, Address)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'hope', [guy.address])
 
     def move(self, src: Address, dst: Address, amount: Wad) -> Transact:
-        assert(isinstance(src, Address))
-        assert(isinstance(dst, Address))
-        assert(isinstance(amount, Wad))
+        assert isinstance(src, Address)
+        assert isinstance(dst, Address)
+        assert isinstance(amount, Wad)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'move', [src.address, dst.address, amount.value])
@@ -282,8 +281,8 @@ class GemAdapter(Contract):
     bin = Contract._load_bin(__name__, 'abi/GemJoin.bin')
 
     def __init__(self, web3: Web3, address: Address):
-        assert(isinstance(web3, Web3))
-        assert(isinstance(address, Address))
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
 
         self.web3 = web3
         self.address = address
@@ -299,15 +298,15 @@ class GemAdapter(Contract):
         return Ilk.fromBytes(self._contract.call().ilk())
 
     def join(self, urn: Urn, value: Wad) -> Transact:
-        assert(isinstance(urn, Urn))
-        assert(isinstance(value, Wad))
+        assert isinstance(urn, Urn)
+        assert isinstance(value, Wad)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'join', [urn.toBytes(), value.value])
 
     def exit(self, urn: Urn, value: Wad) -> Transact:
-        assert(isinstance(urn, Urn))
-        assert(isinstance(value, Wad))
+        assert isinstance(urn, Urn)
+        assert isinstance(value, Wad)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'exit', [urn.toBytes(), value.value])
@@ -323,8 +322,8 @@ class GemVat(Contract):
     bin = Contract._load_bin(__name__, 'abi/GemMove.bin')
 
     def __init__(self, web3: Web3, address: Address):
-        assert(isinstance(web3, Web3))
-        assert(isinstance(address, Address))
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
 
         self.web3 = web3
         self.address = address
@@ -414,12 +413,12 @@ class Collateral:
         assert isinstance(ilk, Ilk)
 
         self.ilk = ilk
-        self.gem : DSToken = None
-        self.adapter : GemAdapter = None
-        self.mover : GemVat = None
-        self.flipper : Flipper = None
+        self.gem: DSToken = None
+        self.adapter: GemAdapter = None
+        self.mover: GemVat = None
+        self.flipper: Flipper = None
         self.pip = None
-        self.spotter : Spotter = None
+        self.spotter: Spotter = None
 
     @staticmethod
     def deploy(web3: Web3, name: str, vat: Vat):
@@ -639,7 +638,34 @@ class Drip(Contract):
         assert isinstance(vow, Vow)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,bytes32)', [Web3.toBytes(text="vow"), vow.address.address])
+                        'file(bytes32,bytes32)', [Web3.toBytes(text="vow"), Urn(vow.address).toBytes()])
+
+    def file_tax(self, ilk: Ilk, tax: Ray) -> Transact:
+        assert isinstance(ilk, Ilk)
+        assert isinstance(tax, Ray)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'file(bytes32,bytes32,uint256)',
+                        [ilk.toBytes(), Web3.toBytes(text="tax"), tax.value])
+
+    def vat(self) -> Address:
+        return Address(self._contract.call().vat())
+
+    def vow(self) -> Urn:
+        return Urn.fromBytes(self._contract.call().vow())
+
+    def repo(self) -> Wad:
+        return Wad(self._contract.call().repo())
+
+    def tax(self, ilk: Ilk) -> Ray:
+        assert isinstance(ilk, Ilk)
+
+        return Ray(self._contract.call().ilks(ilk.toBytes())[0])
+
+    def rho(self, ilk: Ilk) -> int:
+        assert isinstance(ilk, Ilk)
+
+        return Web3.toInt(self._contract.call().ilks(ilk.toBytes())[1])
 
     def __repr__(self):
         return f"Drip('{self.address}')"
@@ -777,13 +803,12 @@ class Cat(Contract):
         return int(self._contract.call().nflip())
 
     def flips(self, id: int) -> Flip:
-
         assert isinstance(id, int)
 
         (flip_ilk, flip_urn, flip_ink, flip_tab) = self._contract.call().flips(id)
         urn = Urn.fromBytes(flip_urn)
         urn.ilk = Ilk.fromBytes(flip_ilk)
-        urn.ink = flip_ink
+        urn.ink = Wad(flip_ink)
         return Cat.Flip(id, urn, Wad(flip_tab))
 
     def bite(self, ilk: Ilk, urn: Urn):
@@ -817,7 +842,8 @@ class Cat(Contract):
         assert isinstance(flipper, Flipper)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,bytes32,address)', [ilk.toBytes(), Web3.toBytes(text="flip"), flipper.address.address])
+                        'file(bytes32,bytes32,address)',
+                        [ilk.toBytes(), Web3.toBytes(text="flip"), flipper.address.address])
 
     def file_lump(self, ilk: Ilk, lump: Wad) -> Transact:
         assert isinstance(ilk, Ilk)
