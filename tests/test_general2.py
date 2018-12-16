@@ -194,6 +194,15 @@ class TestTransact:
         assert eth_balance(self.web3, self.second_address) < initial_balance_second_address
         assert eth_balance(self.web3, self.third_address) == initial_balance_third_address + Wad.from_number(1.5)
 
+    def test_should_raise_exception_on_unknown_kwarg(self):
+        # expect
+        with pytest.raises(Exception):
+            self.token.transfer(self.second_address, Wad(123)).transact(unknown_kwarg="some_value")
+
+        # expect
+        with pytest.raises(Exception):
+            synchronize([self.token.transfer(self.second_address, Wad(123)).transact_async(unknown_kwarg="some_value")])
+
 
 class TestTransactReplace:
     def setup_method(self):

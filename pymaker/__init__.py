@@ -526,6 +526,10 @@ class Transact:
             invocation was successful, or `None` if it failed.
         """
 
+        unknown_kwargs = set(kwargs.keys()) - {'from_address', 'replace', 'gas', 'gas_buffer', 'gas_price'}
+        if len(unknown_kwargs) > 0:
+            raise Exception(f"Unknown kwargs: {unknown_kwargs}")
+
         # Get the from account.
         from_account = kwargs['from_address'].address if ('from_address' in kwargs) else self.web3.eth.defaultAccount
 
