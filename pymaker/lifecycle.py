@@ -262,22 +262,22 @@ class Lifecycle:
                 max_block_number = self.web3.eth.blockNumber
                 if block_number == max_block_number:
                     def on_start():
-                        self.logger.debug(f"Processing block #{block_number} ({block_hash})")
+                        self.logger.debug(f"Processing block #{block_number} ({block_hash.hex()})")
 
                     def on_finish():
-                        self.logger.debug(f"Finished processing block #{block_number} ({block_hash})")
+                        self.logger.debug(f"Finished processing block #{block_number} ({block_hash.hex()})")
 
                     if not self.terminated_internally and not self.terminated_externally and not self.fatal_termination:
                         if not self._on_block_callback.trigger(on_start, on_finish):
-                            self.logger.debug(f"Ignoring block #{block_number} ({block_hash}),"
+                            self.logger.debug(f"Ignoring block #{block_number} ({block_hash.hex()}),"
                                               f" as previous callback is still running")
                     else:
                         self.logger.debug(f"Ignoring block #{block_number} as keeper is already terminating")
                 else:
-                    self.logger.debug(f"Ignoring block #{block_number} ({block_hash}),"
+                    self.logger.debug(f"Ignoring block #{block_number} ({block_hash.hex()}),"
                                       f" as there is already block #{max_block_number} available")
             else:
-                self.logger.info(f"Ignoring block #{block_number} ({block_hash}), as the node is syncing")
+                self.logger.info(f"Ignoring block #{block_number} ({block_hash.hex()}), as the node is syncing")
 
         def new_block_watch():
             event_filter = self.web3.eth.filter('latest')
