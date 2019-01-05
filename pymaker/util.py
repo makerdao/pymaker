@@ -59,7 +59,7 @@ def eth_balance(web3: Web3, address) -> Wad:
 
 def is_contract_at(web3: Web3, address):
     code = web3.eth.getCode(address.address)
-    return (code is not None) and (code != "0x") and (code != "0x0") and (code != b"\x00")
+    return (code is not None) and (code != "0x") and (code != "0x0") and (code != b"\x00") and (code != b"")
 
 
 def int_to_bytes32(value: int) -> bytes:
