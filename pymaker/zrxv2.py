@@ -21,7 +21,7 @@ import logging
 import random
 import time
 from pprint import pformat
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import requests
 from eth_abi import encode_single, encode_abi, decode_single
@@ -610,6 +610,24 @@ class ZrxRelayerApiV2:
 
         self.exchange = exchange
         self.api_server = api_server
+
+    def get_book(self, pay_token: Address, buy_token: Address, depth: int = 100) -> Tuple[List[Order], List[Order]]:
+        assert(isinstance(pay_token, Address))
+        assert(isinstance(buy_token, Address))
+        assert(isinstance(depth, int))
+
+        params = {"baseAssetData": ERC20Asset(pay_token).serialize(),
+                  "quoteAssetData": ERC20Asset(buy_token).serialize(),
+                  "perPage": depth}
+
+        response = requests.get(f"{self.api_server}/v2/orderbook", params, timeout=self.timeout)
+        if not response.ok:
+            raise Exception(f"Failed to fetch 0x orderbook from the relayer: {http_response_summary(response)}")
+
+        data = response.json()
+
+        return list(map(lambda item: Order.from_json(self.exchange, item['order']), data['asks']['records'])), \
+               list(map(lambda item: Order.from_json(self.exchange, item['order']), data['bids']['records']))
 
     def get_orders(self, pay_token: Address, buy_token: Address, per_page: int = 100) -> List[Order]:
         """Returns active orders filtered by token pair (one side).
