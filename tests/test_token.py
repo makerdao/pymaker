@@ -153,6 +153,7 @@ class TestDSToken:
         self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
+        self.second_address = Address(self.web3.eth.accounts[1])
         self.dstoken = DSToken.deploy(self.web3, 'ABC')
 
     def test_fail_when_no_contract_under_that_address(self):
@@ -177,6 +178,13 @@ class TestDSToken:
         # then
         assert self.dstoken.balance_of(self.our_address) == Wad(100000)
 
+    def test_mint_to_other_address(self):
+        # when
+        self.dstoken.mint_to(self.second_address, Wad(100000)).transact()
+
+        # then
+        assert self.dstoken.balance_of(self.second_address) == Wad(100000)
+
     def test_mint_generates_transfer(self):
         # when
         receipt = self.dstoken.mint(Wad(100000)).transact()
@@ -197,6 +205,17 @@ class TestDSToken:
 
         # then
         assert self.dstoken.balance_of(self.our_address) == Wad(60000)
+
+    def test_burn_from_other_address(self):
+        # given
+        self.dstoken.mint_to(self.second_address, Wad(100000)).transact()
+
+        # when
+        self.dstoken.approve(self.our_address).transact(from_address=self.second_address)
+        self.dstoken.burn_from(self.second_address, Wad(40000)).transact()
+
+        # then
+        assert self.dstoken.balance_of(self.second_address) == Wad(60000)
 
     def test_burn_generates_transfer(self):
         # given

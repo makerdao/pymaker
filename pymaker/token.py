@@ -202,6 +202,21 @@ class DSToken(ERC20Token):
         assert(isinstance(amount, Wad))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'mint(uint256)', [amount.value])
 
+    def mint_to(self, address: Address, amount: Wad) -> Transact:
+        """Increase the total supply of the token.
+
+        Args:
+            address: The address to credit the new tokens to.
+            amount: The amount to increase the total supply by.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
+        assert(isinstance(amount, Wad))
+        assert(isinstance(address, Address))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'mint(address,uint256)', [address.address,
+                                                                                                           amount.value])
+
     def burn(self, amount: Wad) -> Transact:
         """Decrease the total supply of the token.
 
@@ -213,6 +228,20 @@ class DSToken(ERC20Token):
         """
         assert(isinstance(amount, Wad))
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'burn(uint256)', [amount.value])
+
+    def burn_from(self, address: Address, amount: Wad) -> Transact:
+        """Decrease the total supply of the token.
+
+        Args:
+            address: The address to burn the tokens from.
+            amount: The amount to decrease the total supply by.
+
+        Returns:
+            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
+        """
+        assert(isinstance(amount, Wad))
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'burn(address,uint256)', [address.address,
+                                                                                                           amount.value])
 
     def __repr__(self):
         return f"DSToken('{self.address}')"
