@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
+
 from web3 import Web3
 
 from pymaker import Contract, Address, Transact
@@ -39,6 +41,30 @@ class ERC20Token(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
+
+    def name(self) -> str:
+        abi_with_string = json.loads("""[{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"}]""")
+        abi_with_bytes32 = json.loads("""[{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"}]""")
+
+        contract_with_string = self._get_contract(self.web3, abi_with_string, self.address)
+        contract_with_bytes32 = self._get_contract(self.web3, abi_with_bytes32, self.address)
+
+        try:
+            return contract_with_string.call().name()
+        except:
+            return str(contract_with_bytes32.call().name(), "utf-8").strip('\x00')
+
+    def symbol(self) -> str:
+        abi_with_string = json.loads("""[{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"}]""")
+        abi_with_bytes32 = json.loads("""[{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"}]""")
+
+        contract_with_string = self._get_contract(self.web3, abi_with_string, self.address)
+        contract_with_bytes32 = self._get_contract(self.web3, abi_with_bytes32, self.address)
+
+        try:
+            return contract_with_string.call().symbol()
+        except:
+            return str(contract_with_bytes32.call().symbol(), "utf-8").strip('\x00')
 
     def total_supply(self) -> Wad:
         """Returns the total supply of the token.

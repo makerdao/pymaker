@@ -39,6 +39,9 @@ class TestERC20Token:
         with pytest.raises(Exception):
             ERC20Token(web3=self.web3, address=Address('0x0123456789012345678901234567890123456789'))
 
+    def test_symbol_for_dstoken_which_returns_bytes32(self):
+        assert self.token.symbol() == 'ABC'
+
     def test_total_supply(self):
         assert self.token.total_supply() == Wad(1000000)
 
