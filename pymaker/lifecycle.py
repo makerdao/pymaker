@@ -151,7 +151,7 @@ class Lifecycle:
             for timer in self.every_timers:
                 timer[1].wait()
 
-        # If any every (timer) callback is still running, wait for it to terminate
+        # If any condition callback is still running, wait for it to terminate
         if len(self.condition_timers) > 0:
             self.logger.info("Waiting for outstanding conditions to terminate...")
             for timer in self.condition_timers:
