@@ -29,6 +29,13 @@ from pymaker import register_filter_thread, any_filter_thread_present, stop_all_
 from pymaker.util import AsyncCallback
 
 
+def trigger_condition(condition: threading.Condition):
+    assert(isinstance(condition, threading.Condition))
+
+    with condition:
+        condition.notify()
+
+
 class Lifecycle:
     """Main keeper lifecycle controller.
 
@@ -79,6 +86,7 @@ class Lifecycle:
         self.shutdown_function = None
         self.block_function = None
         self.every_timers = []
+        self.condition_timers = []
 
         self.terminated_internally = False
         self.terminated_externally = False
@@ -142,6 +150,12 @@ class Lifecycle:
             self.logger.info("Waiting for outstanding timers to terminate...")
             for timer in self.every_timers:
                 timer[1].wait()
+
+        # If any condition callback is still running, wait for it to terminate
+        if len(self.condition_timers) > 0:
+            self.logger.info("Waiting for outstanding conditions to terminate...")
+            for timer in self.condition_timers:
+                timer[2].wait()
 
         # Shutdown phase
         if self.shutdown_function:
@@ -237,6 +251,22 @@ class Lifecycle:
         assert(self.block_function is None)
         self.block_function = callback
 
+    def on_condition(self, condition: threading.Condition, min_frequency_in_seconds: int, callback):
+        """
+        Register the specified callback to be called every time condition is triggered,
+        but at least once every `min_frequency_in_seconds`.
+
+        Args:
+            condition: Condition which should be monitored.
+            min_frequency_in_seconds: Minimum execution frequency (in seconds).
+            callback: Function to be called by the timer.
+        """
+        assert(isinstance(condition, threading.Condition))
+        assert(isinstance(min_frequency_in_seconds, int))
+        assert(callable(callback))
+
+        self.condition_timers.append((condition, min_frequency_in_seconds, AsyncCallback(callback)))
+
     def every(self, frequency_in_seconds: int, callback):
         """Register the specified callback to be called by a timer.
 
@@ -299,8 +329,14 @@ class Lifecycle:
         for timer in self.every_timers:
             self._start_every_timer(timer[0], timer[1])
 
+        for condition_timer in self.condition_timers:
+            self._start_condition_timer(condition_timer[0], condition_timer[1], condition_timer[2])
+
         if len(self.every_timers) > 0:
             self.logger.info("Started timer(s)")
+
+        if len(self.condition_timers) > 0:
+            self.logger.info("Started condition(s)")
 
     def _start_every_timer(self, frequency_in_seconds: int, callback):
         def setup_timer(delay):
@@ -327,6 +363,38 @@ class Lifecycle:
             setup_timer(frequency_in_seconds)
 
         setup_timer(1)
+        self._at_least_one_every = True
+
+    def _start_condition_timer(self, condition: threading.Condition, min_frequency_in_seconds: int, callback):
+        def setup_thread():
+            threading.Thread(target=func, daemon=True).start()
+
+        def func():
+            while True:
+                with condition:
+                    condition_happened = condition.wait(timeout=min_frequency_in_seconds)
+
+                try:
+                    if not self.terminated_internally and not self.terminated_externally and not self.fatal_termination:
+                        def on_start():
+                            self.logger.debug(f"Processing the condition" if condition_happened
+                                              else f"Processing the condition because of minimum frequency")
+
+                        def on_finish():
+                            self.logger.debug(f"Finished processing the condition" if condition_happened
+                                              else f"Finished processing the condition because of minimum frequency")
+
+                        assert callback.trigger(on_start, on_finish)
+                        callback.wait()
+
+                    else:
+                        self.logger.debug(f"Ignoring condition as keeper is terminating" if condition_happened
+                                          else f"Ignoring condition because of minimum frequency as keeper is terminating")
+                except:
+                    setup_thread()
+                    raise
+
+        setup_thread()
         self._at_least_one_every = True
 
     def _main_loop(self):
