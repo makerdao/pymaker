@@ -78,6 +78,36 @@ class TestLifecycle:
         assert end_time - start_time >= 4
 
     @pytest.mark.parametrize('with_web3', [False, True])
+    def test_should_check_initial_checks(self, with_web3):
+        # given
+        check_1 = Mock(return_value=True)
+        check_2 = Mock(return_value=True)
+
+        # when
+        with pytest.raises(SystemExit):
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
+                lifecycle.wait_for(check_1, 5)
+                lifecycle.wait_for(check_2, 5)
+
+        # then
+        assert check_1.call_count == 1
+        assert check_2.call_count == 1
+
+    @pytest.mark.parametrize('with_web3', [False, True])
+    def test_should_time_out_initial_checks_even_if_they_constantly_return_false(self, with_web3):
+        # given
+        start_time = int(time.time())
+
+        # when
+        with pytest.raises(SystemExit):
+            with Lifecycle(self.use_web3(with_web3)) as lifecycle:
+                lifecycle.wait_for(lambda: False, 5)
+
+        # then
+        end_time = int(time.time())
+        assert end_time - start_time >= 4
+
+    @pytest.mark.parametrize('with_web3', [False, True])
     def test_should_call_startup_callback(self, with_web3):
         # given
         startup_mock = MagicMock()

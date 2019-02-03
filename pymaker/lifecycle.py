@@ -82,6 +82,7 @@ class Lifecycle:
 
         self.do_wait_for_sync = True
         self.delay = 0
+        self.wait_for_functions = []
         self.startup_function = None
         self.shutdown_function = None
         self.block_function = None
@@ -120,6 +121,28 @@ class Lifecycle:
         if self.delay > 0:
             self.logger.info(f"Waiting for {self.delay} seconds of initial delay...")
             time.sleep(self.delay)
+
+        # Initial checks
+        if len(self.wait_for_functions) > 0:
+            self.logger.info("Waiting for initial checks to pass...")
+
+            for index, (wait_for_function, max_wait) in enumerate(self.wait_for_functions, start=1):
+                start_time = time.time()
+                while True:
+                    try:
+                        result = wait_for_function()
+                    except Exception as e:
+                        self.logger.exception(f"Initial check #{index} failed with an exception: '{e}'")
+                        result = False
+
+                    if result:
+                        break
+
+                    if time.time() - start_time >= max_wait:
+                        self.logger.warning(f"Initial check #{index} took more than {max_wait} seconds to pass, skipping")
+                        break
+
+                    time.sleep(0.1)
 
         # Startup phase
         if self.startup_function:
@@ -210,6 +233,22 @@ class Lifecycle:
         assert(isinstance(initial_delay, int))
 
         self.delay = initial_delay
+
+    def wait_for(self, initial_check, max_wait: int):
+        """Make the keeper wait for the function to turn true before startup.
+
+        The primary use case is to allow background threads to have a chance to pull necessary
+        information like prices, gas prices etc. At the same time we may not want to wait indefinitely
+        for that information to become available as the price source may be down etc.
+
+        Args:
+            initial_check: Function which will be evaluated and its result compared to True.
+            max_wait: Maximum waiting time (in seconds).
+        """
+        assert(callable(initial_check))
+        assert(isinstance(max_wait, int))
+
+        self.wait_for_functions.append((initial_check, max_wait))
 
     def on_startup(self, callback):
         """Register the specified callback to be run on keeper startup.
