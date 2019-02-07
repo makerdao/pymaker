@@ -409,10 +409,9 @@ class Lifecycle:
             threading.Thread(target=func, daemon=True).start()
 
         def func():
-            while True:
-                with condition:
-                    condition_happened = condition.wait(timeout=min_frequency_in_seconds)
+            condition_happened = False
 
+            while True:
                 try:
                     if not self.terminated_internally and not self.terminated_externally and not self.fatal_termination:
                         def on_start():
@@ -432,6 +431,9 @@ class Lifecycle:
                 except:
                     setup_thread()
                     raise
+
+                with condition:
+                    condition_happened = condition.wait(timeout=min_frequency_in_seconds)
 
         setup_thread()
         self._at_least_one_every = True
