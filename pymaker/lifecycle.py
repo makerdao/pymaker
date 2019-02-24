@@ -364,6 +364,17 @@ class Lifecycle:
 
             self.logger.info("Watching for new blocks")
 
+    def _start_thread_safely(self, t: threading.Thread):
+        delay = 10
+
+        while True:
+            try:
+                t.start()
+                break
+            except Exception as e:
+                self.logger.critical(f"Failed to start a thread ({e}), trying again in {delay} seconds")
+                time.sleep(delay)
+
     def _start_every_timers(self):
         for timer in self.every_timers:
             self._start_every_timer(timer[0], timer[1])
@@ -381,7 +392,8 @@ class Lifecycle:
         def setup_timer(delay):
             timer = threading.Timer(delay, func)
             timer.daemon = True
-            timer.start()
+
+            self._start_thread_safely(timer)
 
         def func():
             try:
@@ -406,7 +418,7 @@ class Lifecycle:
 
     def _start_condition_timer(self, condition: threading.Condition, min_frequency_in_seconds: int, callback):
         def setup_thread():
-            threading.Thread(target=func, daemon=True).start()
+            self._start_thread_safely(threading.Thread(target=func, daemon=True))
 
         def func():
             condition_happened = False
