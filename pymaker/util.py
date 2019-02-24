@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import logging
 import threading
 
 from web3 import Web3
@@ -127,7 +128,8 @@ class AsyncCallback:
             on_finish: Optional method to be called after the actual callback. Can be `None`.
 
         Returns:
-            `True` if callback has been invoked. `False` otherwise.
+            `True` if callback has been invoked, or if it invocation attempt failed.
+            `False` if the previous callback invocation still hasn't finished.
         """
         if self.thread is None or not self.thread.is_alive():
             def thread_target():
@@ -138,7 +140,14 @@ class AsyncCallback:
                     on_finish()
 
             self.thread = threading.Thread(target=thread_target)
-            self.thread.start()
+
+            try:
+                self.thread.start()
+            except Exception as e:
+                self.thread = None
+
+                logging.critical(f"Failed to start the async callback thread ({e})")
+
             return True
         else:
             return False
