@@ -139,12 +139,17 @@ class Order:
 
     @property
     def remaining_buy_amount(self) -> Wad:
-        return self.buy_amount - self._exchange.get_unavailable_buy_amount(self)
+        return Wad.max(self.buy_amount - self._exchange.get_unavailable_buy_amount(self), Wad(0))
 
     @property
     def remaining_sell_amount(self) -> Wad:
-        return self.pay_amount - (self._exchange.get_unavailable_buy_amount(self)
-                                  * self.pay_amount / self.buy_amount)
+        unavailable_buy_amount = self._exchange.get_unavailable_buy_amount(self)
+
+        if unavailable_buy_amount >= self.buy_amount:
+            return Wad(0)
+
+        else:
+            return Wad.max(self.pay_amount - (unavailable_buy_amount * self.pay_amount / self.buy_amount), Wad(0))
 
     @staticmethod
     def from_json(exchange, data: dict):
