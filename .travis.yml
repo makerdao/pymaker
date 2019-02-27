@@ -15,7 +15,7 @@ before_install:
   - . $HOME/.nvm/nvm.sh
   - nvm install stable
   - nvm use stable
-  - npm install -g ganache-cli
+  - npm install -g ganache-cli@6.2.5
 
 install:
   - pip install virtualenv --upgrade
