@@ -398,7 +398,7 @@ class ZrxExchange(Contract):
                      pay_amount=pay_amount,
                      buy_token=buy_token,
                      buy_amount=buy_amount,
-                     salt=self.random_salt(),
+                     salt=self.generate_salt(),
                      fee_recipient=self._ZERO_ADDRESS,
                      expiration=expiration,
                      exchange_contract_address=self.address,
@@ -511,7 +511,7 @@ class ZrxExchange(Contract):
                 order.fee_recipient.address]
 
     @staticmethod
-    def random_salt() -> int:
+    def generate_salt() -> int:
         return random.randint(1, 2**256 - 1)
 
     def __repr__(self):

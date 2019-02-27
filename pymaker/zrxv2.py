@@ -450,7 +450,7 @@ class ZrxExchangeV2(Contract):
                      pay_amount=pay_amount,
                      buy_asset=buy_asset,
                      buy_amount=buy_amount,
-                     salt=self.random_salt(),
+                     salt=self.generate_salt(),
                      fee_recipient=self._ZERO_ADDRESS,
                      expiration=expiration,
                      exchange_contract_address=self.address,
@@ -590,7 +590,7 @@ class ZrxExchangeV2(Contract):
                 hexstring_to_bytes(order.buy_asset.serialize()))
 
     @staticmethod
-    def random_salt() -> int:
+    def generate_salt() -> int:
         return int(time.time() * 1000)
 
     def __repr__(self):
