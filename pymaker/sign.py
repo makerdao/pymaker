@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+import time
 from typing import Tuple
 
 from eth_account.messages import defunct_hash_message
@@ -33,8 +35,16 @@ def eth_sign(message: bytes, web3: Web3):
     local_account = _registered_accounts.get((web3, Address(web3.eth.defaultAccount)))
 
     if local_account:
-        message_hash = defunct_hash_message(primitive=message)
-        signature = web3.eth.account.signHash(message_hash, private_key=local_account.privateKey).signature.hex()
+        start_time = time.time()
+        start_clock = time.clock()
+        try:
+            message_hash = defunct_hash_message(primitive=message)
+            signature = web3.eth.account.signHash(message_hash, private_key=local_account.privateKey).signature.hex()
+        finally:
+            end_time = time.time()
+            end_clock = time.clock()
+
+        logging.debug(f"Local signing took {end_time - start_time:.3f}s time, {end_clock - start_clock:.3f}s clock")
 
         return signature
 
