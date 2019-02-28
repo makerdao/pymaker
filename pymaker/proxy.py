@@ -1,6 +1,6 @@
 # This file is part of Maker Keeper Framework.
 #
-# Copyright (C) 2018 bargst
+# Copyright (C) 2018,2019 bargst
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from typing import List
+from typing import List, Optional
 
 from hexbytes import HexBytes
 from web3 import Web3
@@ -45,18 +45,27 @@ class DSProxyCache(Contract):
     def deploy(cls, web3: Web3):
         return cls(web3=web3, address=Contract._deploy(web3, cls.abi, cls.bin, []))
 
-    def read(self, code: str) -> Address:
+    def read(self, code: str) -> Optional[Address]:
         assert (isinstance(code, str))
 
-        b32_code = hexstring_to_bytes(code)
-        address = self._contract.call().read(b32_code)
+        if code.startswith('0x'):
+            b32_code = hexstring_to_bytes(code)
+        else:
+            b32_code = hexstring_to_bytes('0x' + code)
+        address = Address(self._contract.call().read(b32_code))
 
-        return Address(address)
+        if address == Address('0x0000000000000000000000000000000000000000'):
+            return None
+        else:
+            return address
 
     def write(self, code: str):
         assert (isinstance(code, str))
 
-        b32_code = hexstring_to_bytes(code)
+        if code.startswith('0x'):
+            b32_code = hexstring_to_bytes(code)
+        else:
+            b32_code = hexstring_to_bytes('0x' + code)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'write', [b32_code])
 
@@ -109,7 +118,10 @@ class DSProxy(Contract):
         assert (isinstance(code, str))
         assert (isinstance(calldata, Calldata))
 
-        b32_code = hexstring_to_bytes(code)
+        if code.startswith('0x'):
+            b32_code = hexstring_to_bytes(code)
+        else:
+            b32_code = hexstring_to_bytes('0x' + code)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'execute(bytes,bytes)', [b32_code, calldata.as_bytes()])
