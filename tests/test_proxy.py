@@ -1,6 +1,6 @@
 # This file is part of Maker Keeper Framework.
 #
-# Copyright (C) 2018 bargst
+# Copyright (C) 2018,2019 bargst
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -58,7 +58,7 @@ class TestProxyCache:
     """ `DSProxyCache` class testing"""
 
     def test_read(self, proxy_cache: DSProxyCache):
-        assert proxy_cache.read('0x001122') == Address('0x0000000000000000000000000000000000000000')
+        assert proxy_cache.read('0x001122') == None
 
     def test_write_invalid(self, proxy_cache: DSProxyCache):
         # when
@@ -66,14 +66,14 @@ class TestProxyCache:
 
         # then
         assert address is None
-        assert proxy_cache.read('0x001122') == Address('0x0000000000000000000000000000000000000000')
+        assert proxy_cache.read('0x001122') == None
 
     def test_write(self, proxy_cache: DSProxyCache):
         # when
         proxy_cache.write('0x' + DSProxyCache.bin).transact()
 
         # then
-        assert proxy_cache.read('0x' + DSProxyCache.bin) != Address('0x0000000000000000000000000000000000000000')
+        assert proxy_cache.read('0x' + DSProxyCache.bin) is not None
 
 
 class TestProxyFactory:
@@ -116,7 +116,7 @@ class TestProxyFactory:
         assert proxy_factory.is_proxy(build_event.proxy)
 
     def test_cache(self, proxy_factory: DSProxyFactory, other_address):
-        assert proxy_factory.cache() is not Address('0x0000000000000000000000000000000000000000')
+        assert proxy_factory.cache() is not None
 
 
 class TestProxy:
