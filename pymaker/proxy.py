@@ -48,7 +48,10 @@ class DSProxyCache(Contract):
     def read(self, code: str) -> Optional[Address]:
         assert (isinstance(code, str))
 
-        b32_code = hexstring_to_bytes(code)
+        if code.startswith('0x'):
+            b32_code = hexstring_to_bytes(code)
+        else:
+            b32_code = hexstring_to_bytes('0x' + code)
         address = Address(self._contract.call().read(b32_code))
 
         if address == Address('0x0000000000000000000000000000000000000000'):
@@ -59,7 +62,10 @@ class DSProxyCache(Contract):
     def write(self, code: str):
         assert (isinstance(code, str))
 
-        b32_code = hexstring_to_bytes(code)
+        if code.startswith('0x'):
+            b32_code = hexstring_to_bytes(code)
+        else:
+            b32_code = hexstring_to_bytes('0x' + code)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'write', [b32_code])
 
@@ -112,7 +118,10 @@ class DSProxy(Contract):
         assert (isinstance(code, str))
         assert (isinstance(calldata, Calldata))
 
-        b32_code = hexstring_to_bytes(code)
+        if code.startswith('0x'):
+            b32_code = hexstring_to_bytes(code)
+        else:
+            b32_code = hexstring_to_bytes('0x' + code)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'execute(bytes,bytes)', [b32_code, calldata.as_bytes()])

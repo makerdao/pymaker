@@ -70,10 +70,10 @@ class TestProxyCache:
 
     def test_write(self, proxy_cache: DSProxyCache):
         # when
-        proxy_cache.write('0x' + DSProxyCache.bin).transact()
+        proxy_cache.write(DSProxyCache.bin).transact()
 
         # then
-        assert proxy_cache.read('0x' + DSProxyCache.bin) is not None
+        assert proxy_cache.read(DSProxyCache.bin) is not None
 
 
 class TestProxyFactory:
@@ -123,13 +123,13 @@ class TestProxy:
     """ `DSProxy` class testing"""
 
     def test_execute(self, proxy: DSProxy):
-        assert proxy.execute('0x' + DSProxyFactory.bin, Calldata.from_signature("build()", [])).transact()
+        assert proxy.execute(DSProxyFactory.bin, Calldata.from_signature("build()", [])).transact()
 
     def test_execute_at(self, proxy: DSProxy):
         # given
         proxy_cache = DSProxyCache(proxy.web3, proxy.cache())
-        proxy_cache.write('0x' + DSProxyFactory.bin).transact()
-        new_factory_addr = proxy_cache.read('0x' + DSProxyFactory.bin)
+        proxy_cache.write(DSProxyFactory.bin).transact()
+        new_factory_addr = proxy_cache.read(DSProxyFactory.bin)
         assert new_factory_addr
 
         # when
@@ -144,7 +144,7 @@ class TestProxy:
     def test_call(self, proxy: DSProxy):
         # when
         calldata = Calldata.from_signature("isProxy(address)", [Address(40*'0').address])
-        target, response = proxy.call('0x' + DSProxyFactory.bin, calldata)
+        target, response = proxy.call(DSProxyFactory.bin, calldata)
 
         # then
         assert target != Address(40*'0')
@@ -153,8 +153,8 @@ class TestProxy:
     def test_call_at(self, proxy: DSProxy):
         # given
         proxy_cache = DSProxyCache(proxy.web3, proxy.cache())
-        proxy_cache.write('0x' + DSProxyFactory.bin).transact()
-        new_factory_addr = proxy_cache.read('0x' + DSProxyFactory.bin)
+        proxy_cache.write(DSProxyFactory.bin).transact()
+        new_factory_addr = proxy_cache.read(DSProxyFactory.bin)
         receipt = proxy.execute_at(new_factory_addr, Calldata.from_signature("build(address)",
                                                                              [proxy.address.address])).transact()
         log_created: LogCreated = DSProxyFactory.log_created(receipt)[0]
