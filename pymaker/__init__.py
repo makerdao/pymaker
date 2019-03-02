@@ -613,9 +613,10 @@ class Transact:
                     self.logger.info(f"Sent transaction {self.name()} with nonce={self.nonce}, gas={gas},"
                                      f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
                                      f" (tx_hash={bytes_to_hexstring(tx_hash)})")
-                except:
+                except Exception as e:
                     self.logger.warning(f"Failed to send transaction {self.name()} with nonce={self.nonce}, gas={gas},"
-                                        f" gas_price={gas_price_value if gas_price_value is not None else 'default'}")
+                                        f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
+                                        f" ({e})")
 
                     if len(tx_hashes) == 0:
                         raise
