@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
-from threading import Condition
+from threading import Event
 from unittest.mock import Mock
 
 import pytest
@@ -25,7 +25,7 @@ from web3 import Web3, HTTPProvider
 
 import pymaker
 from pymaker import Address
-from pymaker.lifecycle import Lifecycle, trigger_condition
+from pymaker.lifecycle import Lifecycle, trigger_event
 
 
 @pytest.mark.timeout(60)
@@ -187,13 +187,13 @@ class TestLifecycle:
         assert lifecycle.terminated_internally
 
     @pytest.mark.parametrize('with_web3', [False, True])
-    def test_on_condition_fires_whenever_condition_triggered(self, with_web3):
-        condition = Condition()
+    def test_on_event_fires_whenever_event_triggered(self, with_web3):
+        event = Event()
         self.counter = 0
 
         def every_callback():
             self.counter = self.counter + 1
-            trigger_condition(condition)
+            trigger_event(event)
             if self.counter >= 2:
                 time.sleep(1)
                 lifecycle.terminate("Unit test is over")
@@ -205,14 +205,14 @@ class TestLifecycle:
         with pytest.raises(SystemExit):
             with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 lifecycle.every(1, every_callback)
-                lifecycle.on_condition(condition, 9999, mock)
+                lifecycle.on_event(event, 9999, mock)
 
         # then
         assert mock.call_count >= 2
         assert lifecycle.terminated_internally
 
     @pytest.mark.parametrize('with_web3', [False, True])
-    def test_on_condition_fires_every_min_frequency_if_condition_not_triggered(self, with_web3):
+    def test_on_event_fires_every_min_frequency_if_event_not_triggered(self, with_web3):
         self.counter = 0
 
         def callback():
@@ -226,7 +226,7 @@ class TestLifecycle:
         # when
         with pytest.raises(SystemExit):
             with Lifecycle(self.use_web3(with_web3)) as lifecycle:
-                lifecycle.on_condition(Condition(), 1, mock)
+                lifecycle.on_event(Event(), 1, mock)
 
         # then
         assert mock.call_count >= 2
@@ -255,26 +255,26 @@ class TestLifecycle:
         assert self.every_triggered
 
     @pytest.mark.parametrize('with_web3', [False, True])
-    def test_condition_does_not_start_operating_until_startup_callback_is_finished(self, with_web3):
+    def test_event_does_not_start_operating_until_startup_callback_is_finished(self, with_web3):
         # given
-        self.condition_triggered = False
+        self.event_triggered = False
 
         def startup_callback():
             time.sleep(3)
-            assert not self.condition_triggered
+            assert not self.event_triggered
 
-        def condition_callback():
-            self.condition_triggered = True
+        def event_callback():
+            self.event_triggered = True
             lifecycle.terminate("Unit test is over")
 
         # when
         with pytest.raises(SystemExit):
             with Lifecycle(self.use_web3(with_web3)) as lifecycle:
                 lifecycle.on_startup(startup_callback)
-                lifecycle.on_condition(Condition(), 1, condition_callback)
+                lifecycle.on_event(Event(), 1, event_callback)
 
         # then
-        assert self.condition_triggered
+        assert self.event_triggered
 
     @pytest.mark.parametrize('with_web3', [False, True])
     def test_every_should_not_fire_when_keeper_is_already_terminating(self, with_web3):
@@ -298,25 +298,25 @@ class TestLifecycle:
         assert self.every_counter <= 2
 
     @pytest.mark.parametrize('with_web3', [False, True])
-    def test_conditions_should_not_fire_when_keeper_is_already_terminating(self, with_web3):
+    def test_events_should_not_fire_when_keeper_is_already_terminating(self, with_web3):
         # given
-        self.condition_counter = 0
+        self.event_counter = 0
 
         def shutdown_callback():
             time.sleep(5)
 
-        def condition_callback():
-            self.condition_counter = self.condition_counter + 1
+        def event_callback():
+            self.event_counter = self.event_counter + 1
             lifecycle.terminate("Unit test is over")
 
         # when
         with pytest.raises(SystemExit):
             with Lifecycle(self.use_web3(with_web3)) as lifecycle:
-                lifecycle.on_condition(Condition(), 1, condition_callback)
+                lifecycle.on_event(Event(), 1, event_callback)
                 lifecycle.on_shutdown(shutdown_callback)
 
         # then
-        assert self.condition_counter <= 2
+        assert self.event_counter <= 2
 
     @pytest.mark.parametrize('with_web3', [False, True])
     def test_should_not_call_shutdown_until_every_timer_has_finished(self, with_web3):
@@ -346,28 +346,28 @@ class TestLifecycle:
                 lifecycle.on_shutdown(shutdown_callback)  # assertions are in `shutdown_callback`
 
     @pytest.mark.parametrize('with_web3', [False, True])
-    def test_should_not_call_shutdown_until_every_condition_has_finished(self, with_web3):
+    def test_should_not_call_shutdown_until_every_event_has_finished(self, with_web3):
         # given
-        self.condition1_finished = False
-        self.condition2_finished = False
+        self.event1_finished = False
+        self.event2_finished = False
 
         def shutdown_callback():
-            assert self.condition1_finished
-            assert self.condition2_finished
+            assert self.event1_finished
+            assert self.event2_finished
 
-        def condition_callback_1():
+        def event_callback_1():
             time.sleep(1)
             lifecycle.terminate("Unit test is over")
             time.sleep(4)
-            self.condition1_finished = True
+            self.event1_finished = True
 
-        def condition_callback_2():
+        def event_callback_2():
             time.sleep(2)
-            self.condition2_finished = True
+            self.event2_finished = True
 
         # expect
         with pytest.raises(SystemExit):
             with Lifecycle(self.use_web3(with_web3)) as lifecycle:
-                lifecycle.on_condition(Condition(), 1, condition_callback_1)
-                lifecycle.on_condition(Condition(), 1, condition_callback_2)
+                lifecycle.on_event(Event(), 1, event_callback_1)
+                lifecycle.on_event(Event(), 1, event_callback_2)
                 lifecycle.on_shutdown(shutdown_callback)  # assertions are in `shutdown_callback`
