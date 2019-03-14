@@ -482,6 +482,27 @@ class Transact:
 
         return estimate
 
+    def simulate(self, from_address: Address):
+        """Simulate the transaction's execution
+
+        Will throw an exception if the transaction will fail.
+
+        Args:
+            from_address: Address to simulate sending the transaction from.
+        """
+        assert(isinstance(from_address, Address))
+
+        if self.contract is None:
+            return
+
+        if self.function_name is None:
+            self.web3.eth.call({**self._as_dict(self.extra), **{'from': from_address.address,
+                                                                'to': self.address.address,
+                                                                'data': self.parameters[0]}})
+
+        else:
+            self._contract_function().call({**self._as_dict(self.extra), **{'from': from_address.address}})
+
     def transact(self, **kwargs) -> Optional[Receipt]:
         """Executes the Ethereum transaction synchronously.
 

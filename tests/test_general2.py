@@ -46,6 +46,19 @@ class TestTransact:
         # then
         assert estimate > 21000
 
+    def test_simulation(self):
+        # given
+        transact = self.token.transfer(self.second_address, Wad(500))
+        # expect
+        # [not to raise an exception]
+        transact.simulate(self.our_address)
+
+        # given
+        transact = self.token.transfer(self.second_address, Wad(1000001))
+        # expect
+        with pytest.raises(Exception):
+            transact.simulate(self.our_address)
+
     def test_can_only_execute_once(self):
         # given
         transact = self.token.transfer(self.second_address, Wad(500))
@@ -206,6 +219,13 @@ class TestTransact:
         transact = eth_transfer(self.web3, self.second_address, Wad.from_number(1.5))
         # then
         assert transact.estimated_gas(self.our_address) == 21000
+
+    def test_eth_transfer_simulation(self):
+        # given
+        transact = eth_transfer(self.web3, self.second_address, Wad.from_number(1.5))
+        # expect
+        # [not to raise an exception]
+        transact.simulate(self.our_address)
 
     def test_should_raise_exception_on_unknown_kwarg(self):
         # expect
