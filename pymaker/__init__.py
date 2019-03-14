@@ -536,10 +536,9 @@ class Transact:
         from_account = kwargs['from_address'].address if ('from_address' in kwargs) else self.web3.eth.defaultAccount
 
         # First we try to estimate the gas usage of the transaction. If gas estimation fails
-        # it means there is no point in sending the transaction, thus we fail instantly and
-        # do not increment the nonce. If the estimation is successful, we pass the calculated
-        # gas value (plus some `gas_buffer`) to the subsequent `transact` calls so it does not
-        # try to estimate it again.
+        # it means there is no point in sending the transaction. If the estimation is successful,
+        # we pass the calculated gas value (plus some `gas_buffer`, unless actual `gas` is specified)
+        # to the subsequent `transact` calls so it does not try to estimate it again.
         try:
             gas_estimate = self.estimated_gas(Address(from_account))
         except:
