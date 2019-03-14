@@ -126,7 +126,6 @@ class TestTransact:
         with pytest.raises(Exception):
             self.token.transfer(self.second_address, Wad(500)).transact(gas=129995, gas_buffer=3000000)
 
-    def test_gas_and_gas_buffer_not_allowed_at_the_same_time_async(self):
         # expect
         with pytest.raises(Exception):
             synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas=129995,
