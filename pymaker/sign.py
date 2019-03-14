@@ -34,12 +34,13 @@ def eth_sign(message: bytes, web3: Web3, key=None):
 
     local_account = _registered_accounts.get((web3, Address(web3.eth.defaultAccount)))
 
-    if key is None:
-        pkey = local_account.privateKey
-    else:
-        pkey = key
-
     if local_account:
+
+        if key is None:
+            pkey = local_account.privateKey
+        else:
+            pkey = key
+
         start_time = time.time()
         start_clock = time.clock()
         try:
