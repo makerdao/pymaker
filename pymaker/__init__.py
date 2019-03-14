@@ -558,8 +558,8 @@ class Transact:
         if len(unknown_kwargs) > 0:
             raise Exception(f"Unknown kwargs: {unknown_kwargs}")
 
-        # Get the from account.
-        from_account = kwargs['from_address'].address if ('from_address' in kwargs) else self.web3.eth.defaultAccount
+        # Get the from address.
+        from_address = kwargs['from_address'].address if ('from_address' in kwargs) else self.web3.eth.defaultAccount
 
         # First we try to either simulate the transaction execution, or estimate the gas usage
         # of the transaction (depending on whether `gas` kwarg is specified or not). If any of these fail
@@ -568,12 +568,12 @@ class Transact:
         # to estimate it again.
         try:
             if 'gas' in kwargs:
-                self.simulate(from_address=Address(from_account), gas=kwargs['gas'])
+                self.simulate(from_address=Address(from_address), gas=kwargs['gas'])
 
                 gas_estimate = None
 
             else:
-                gas_estimate = self.estimated_gas(Address(from_account))
+                gas_estimate = self.estimated_gas(Address(from_address))
         except:
             self.logger.warning(f"Transaction {self.name()} will fail, refusing to send ({sys.exc_info()[1]})")
             return None
@@ -600,7 +600,7 @@ class Transact:
         while True:
             seconds_elapsed = int(time.time() - initial_time)
 
-            if self.nonce is not None and self.web3.eth.getTransactionCount(from_account) > self.nonce:
+            if self.nonce is not None and self.web3.eth.getTransactionCount(from_address) > self.nonce:
                 # Check if any transaction sent so far has been mined (has a receipt).
                 # If it has, we return either the receipt (if if was successful) or `None`.
                 for _ in range(5):
@@ -636,12 +636,12 @@ class Transact:
                     with transaction_lock:
                         if self.nonce is None:
                             if self._is_parity():
-                                self.nonce = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
+                                self.nonce = int(self.web3.manager.request_blocking("parity_nextNonce", [from_address]), 16)
 
                             else:
-                                self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
+                                self.nonce = self.web3.eth.getTransactionCount(from_address, block_identifier='pending')
 
-                        tx_hash = self._func(from_account, gas, gas_price_value, self.nonce)
+                        tx_hash = self._func(from_address, gas, gas_price_value, self.nonce)
                         tx_hashes.append(tx_hash)
 
                     self.logger.info(f"Sent transaction {self.name()} with nonce={self.nonce}, gas={gas},"
