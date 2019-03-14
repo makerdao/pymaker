@@ -38,6 +38,14 @@ class TestTransact:
         self.token = DSToken.deploy(self.web3, 'ABC')
         self.token.mint(Wad(1000000)).transact()
 
+    def test_gas_estimation(self):
+        # given
+        transact = self.token.transfer(self.second_address, Wad(500))
+        # when
+        estimate = transact.estimated_gas(self.our_address)
+        # then
+        assert estimate > 21000
+
     def test_can_only_execute_once(self):
         # given
         transact = self.token.transfer(self.second_address, Wad(500))
@@ -193,6 +201,12 @@ class TestTransact:
         # then
         assert eth_balance(self.web3, self.second_address) < initial_balance_second_address
         assert eth_balance(self.web3, self.third_address) == initial_balance_third_address + Wad.from_number(1.5)
+
+    def test_eth_transfer_gas_simulation(self):
+        # when
+        transact = eth_transfer(self.web3, self.second_address, Wad.from_number(1.5))
+        # then
+        assert transact.estimated_gas(self.our_address) == 21000
 
     def test_should_raise_exception_on_unknown_kwarg(self):
         # expect
