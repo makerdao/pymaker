@@ -145,6 +145,17 @@ class TestTransact:
         # then
         assert self.web3.eth.getTransaction(receipt.transaction_hash)['gas'] > 2500000
 
+    def test_forced_transaction(self):
+        # when
+        receipt = self.token.transfer(self.second_address, Wad(500)).transact(gas=129994, force=True)
+        # then
+        assert self.web3.eth.getTransaction(receipt.transaction_hash)['gas'] == 129994
+
+        # when
+        receipt = synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas=129994, force=True)])[0]
+        # then
+        assert self.web3.eth.getTransaction(receipt.transaction_hash)['gas'] == 129994
+
     def test_gas_and_gas_buffer_not_allowed_at_the_same_time(self):
         # expect
         with pytest.raises(Exception):
@@ -154,6 +165,15 @@ class TestTransact:
         with pytest.raises(Exception):
             synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas=129995,
                                                                                            gas_buffer=3000000)])
+
+    def test_force_without_specifying_gas_not_allowed(self):
+        # expect
+        with pytest.raises(Exception):
+            self.token.transfer(self.second_address, Wad(500)).transact(force=True)
+
+        # expect
+        with pytest.raises(Exception):
+            synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(force=True)])
 
     def test_custom_gas_price(self):
         # given

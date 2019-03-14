@@ -398,6 +398,9 @@ class Transact:
         if 'gas' in kwargs and 'gas_buffer' in kwargs:
             raise Exception('"gas" and "gas_buffer" keyword arguments may not be specified at the same time')
 
+        if kwargs.get('force', False) and 'gas' not in kwargs:
+            raise Exception('"gas" has to be specified when "force=True"')
+
         if 'gas' in kwargs:
             return kwargs['gas']
         elif 'gas_buffer' in kwargs:
@@ -554,29 +557,38 @@ class Transact:
             invocation was successful, or `None` if it failed.
         """
 
-        unknown_kwargs = set(kwargs.keys()) - {'from_address', 'replace', 'gas', 'gas_buffer', 'gas_price'}
+        unknown_kwargs = set(kwargs.keys()) - {'from_address', 'replace', 'gas', 'gas_buffer', 'gas_price', 'force'}
         if len(unknown_kwargs) > 0:
             raise Exception(f"Unknown kwargs: {unknown_kwargs}")
 
-        # Get the from address.
+        # Get the from address, and the force flag.
         from_address = kwargs['from_address'].address if ('from_address' in kwargs) else self.web3.eth.defaultAccount
+        force = kwargs.get('force', False)
 
         # First we try to either simulate the transaction execution, or estimate the gas usage
         # of the transaction (depending on whether `gas` kwarg is specified or not). If any of these fail
         # it means there is no point in sending the transaction. If the estimation is successful,
         # we can pass the calculated gas value to the subsequent `transact` calls so it does not try
         # to estimate it again.
-        try:
-            if 'gas' in kwargs:
-                self.simulate(from_address=Address(from_address), gas=kwargs['gas'])
+        #
+        # Neither of these happens when "force=True". In this case we blindly trust the caller and
+        # just sign and broadcast the transaction straight away, without any simulation/estimation.
+        if not force:
+            try:
+                if 'gas' in kwargs:
+                    self.simulate(from_address=Address(from_address), gas=kwargs['gas'])
 
-                gas_estimate = None
+                    gas_estimate = None
 
-            else:
-                gas_estimate = self.estimated_gas(Address(from_address))
-        except:
-            self.logger.warning(f"Transaction {self.name()} will fail, refusing to send ({sys.exc_info()[1]})")
-            return None
+                else:
+                    gas_estimate = self.estimated_gas(Address(from_address))
+
+            except:
+                self.logger.warning(f"Transaction {self.name()} will fail, refusing to send ({sys.exc_info()[1]})")
+                return None
+
+        else:
+            gas_estimate = None
 
         # Get or calculate `gas`. Get `gas_price`, which in fact refers to a gas pricing algorithm.
         gas = self._gas(gas_estimate, **kwargs)
