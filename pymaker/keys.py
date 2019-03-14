@@ -54,7 +54,7 @@ def register_key_file(web3: Web3, key_file: str, pass_file: Optional[str] = None
             with open(pass_file) as pass_file_open:
                 read_pass = pass_file_open.read().replace("\n", "")
         else:
-            read_pass = getpass.getpass()
+            read_pass = getpass.getpass(prompt=f"Password for {key_file}: ")
 
         private_key = Account.decrypt(read_key, read_pass)
         register_private_key(web3, private_key)
