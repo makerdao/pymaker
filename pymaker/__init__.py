@@ -561,12 +561,19 @@ class Transact:
         # Get the from account.
         from_account = kwargs['from_address'].address if ('from_address' in kwargs) else self.web3.eth.defaultAccount
 
-        # First we try to estimate the gas usage of the transaction. If gas estimation fails
+        # First we try to either simulate the transaction execution, or estimate the gas usage
+        # of the transaction (depending on whether `gas` kwarg is specified or not). If any of these fail
         # it means there is no point in sending the transaction. If the estimation is successful,
-        # we pass the calculated gas value (plus some `gas_buffer`, unless actual `gas` is specified)
-        # to the subsequent `transact` calls so it does not try to estimate it again.
+        # we can pass the calculated gas value to the subsequent `transact` calls so it does not try
+        # to estimate it again.
         try:
-            gas_estimate = self.estimated_gas(Address(from_account))
+            if 'gas' in kwargs:
+                self.simulate(from_address=Address(from_account), gas=kwargs['gas'])
+
+                gas_estimate = None
+
+            else:
+                gas_estimate = self.estimated_gas(Address(from_account))
         except:
             self.logger.warning(f"Transaction {self.name()} will fail, refusing to send ({sys.exc_info()[1]})")
             return None
