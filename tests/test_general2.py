@@ -51,13 +51,24 @@ class TestTransact:
         transact = self.token.transfer(self.second_address, Wad(500))
         # expect
         # [not to raise an exception]
-        transact.simulate(self.our_address)
+        transact.simulate(from_address=self.our_address)
 
         # given
         transact = self.token.transfer(self.second_address, Wad(1000001))
         # expect
         with pytest.raises(Exception):
-            transact.simulate(self.our_address)
+            transact.simulate(from_address=self.our_address)
+
+    def test_simulation_should_take_gas_into_account(self):
+        # given
+        transact = self.token.transfer(self.second_address, Wad(500))
+
+        # expect
+        # [not to raise an exception]
+        transact.simulate(from_address=self.our_address, gas=100000)
+        # and
+        with pytest.raises(Exception):
+            transact.simulate(from_address=self.our_address, gas=25000)
 
     def test_can_only_execute_once(self):
         # given
@@ -225,7 +236,7 @@ class TestTransact:
         transact = eth_transfer(self.web3, self.second_address, Wad.from_number(1.5))
         # expect
         # [not to raise an exception]
-        transact.simulate(self.our_address)
+        transact.simulate(from_address=self.our_address)
 
     def test_should_raise_exception_on_unknown_kwarg(self):
         # expect

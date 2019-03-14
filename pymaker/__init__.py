@@ -482,26 +482,31 @@ class Transact:
 
         return estimate
 
-    def simulate(self, from_address: Address):
+    def simulate(self, **kwargs):
         """Simulate the transaction's execution
 
         Will throw an exception if the transaction will fail.
 
-        Args:
-            from_address: Address to simulate sending the transaction from.
+        Allowed keyword arguments are: `from_address` and `gas`.
         """
-        assert(isinstance(from_address, Address))
+        unknown_kwargs = set(kwargs.keys()) - {'from_address', 'gas'}
+        if len(unknown_kwargs) > 0:
+            raise Exception(f"Unknown kwargs: {unknown_kwargs}")
+
+        # Get the from address
+        from_address = kwargs['from_address'].address if ('from_address' in kwargs) else self.web3.eth.defaultAccount
+        gas = {'gas': int(kwargs['gas'])} if 'gas' in kwargs else {}
 
         if self.contract is None:
             return
 
         if self.function_name is None:
-            self.web3.eth.call({**self._as_dict(self.extra), **{'from': from_address.address,
+            self.web3.eth.call({**self._as_dict(self.extra), **{'from': from_address,
                                                                 'to': self.address.address,
-                                                                'data': self.parameters[0]}})
+                                                                'data': self.parameters[0]}, **gas})
 
         else:
-            self._contract_function().call({**self._as_dict(self.extra), **{'from': from_address.address}})
+            self._contract_function().call({**self._as_dict(self.extra), **{'from': from_address}, **gas})
 
     def transact(self, **kwargs) -> Optional[Receipt]:
         """Executes the Ethereum transaction synchronously.
