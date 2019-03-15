@@ -375,11 +375,11 @@ class Lifecycle:
                 time.sleep(delay)
 
     def _start_every_timers(self):
-        for timer in self.every_timers:
-            self._start_every_timer(timer[0], timer[1])
+        for idx, timer in enumerate(self.every_timers, start=1):
+            self._start_every_timer(idx, timer[0], timer[1])
 
-        for event_timer in self.event_timers:
-            self._start_event_timer(event_timer[0], event_timer[1], event_timer[2])
+        for idx, event_timer in enumerate(self.event_timers, start=1):
+            self._start_event_timer(idx, event_timer[0], event_timer[1], event_timer[2])
 
         if len(self.every_timers) > 0:
             self.logger.info("Started timer(s)")
@@ -387,7 +387,7 @@ class Lifecycle:
         if len(self.event_timers) > 0:
             self.logger.info("Started event(s)")
 
-    def _start_every_timer(self, frequency_in_seconds: int, callback):
+    def _start_every_timer(self, idx: int, frequency_in_seconds: int, callback):
         def setup_timer(delay):
             timer = threading.Timer(delay, func)
             timer.daemon = True
@@ -398,15 +398,15 @@ class Lifecycle:
             try:
                 if not self.terminated_internally and not self.terminated_externally and not self.fatal_termination:
                     def on_start():
-                        self.logger.debug(f"Processing the timer")
+                        self.logger.debug(f"Processing the timer #{idx}")
 
                     def on_finish():
-                        self.logger.debug(f"Finished processing the timer")
+                        self.logger.debug(f"Finished processing the timer #{idx}")
 
                     if not callback.trigger(on_start, on_finish):
-                        self.logger.debug(f"Ignoring timer as previous one is already running")
+                        self.logger.debug(f"Ignoring timer #{idx} as previous one is already running")
                 else:
-                    self.logger.debug(f"Ignoring timer as keeper is already terminating")
+                    self.logger.debug(f"Ignoring timer #{idx} as keeper is already terminating")
             except:
                 setup_timer(frequency_in_seconds)
                 raise
@@ -415,7 +415,7 @@ class Lifecycle:
         setup_timer(1)
         self._at_least_one_every = True
 
-    def _start_event_timer(self, event: threading.Event, min_frequency_in_seconds: int, callback):
+    def _start_event_timer(self, idx: int, event: threading.Event, min_frequency_in_seconds: int, callback):
         def setup_thread():
             self._start_thread_safely(threading.Thread(target=func, daemon=True))
 
@@ -426,19 +426,19 @@ class Lifecycle:
                 try:
                     if not self.terminated_internally and not self.terminated_externally and not self.fatal_termination:
                         def on_start():
-                            self.logger.debug(f"Processing the event" if event_happened
-                                              else f"Processing the event because of minimum frequency")
+                            self.logger.debug(f"Processing the event #{idx}" if event_happened
+                                              else f"Processing the event #{idx} because of minimum frequency")
 
                         def on_finish():
-                            self.logger.debug(f"Finished processing the event" if event_happened
-                                              else f"Finished processing the event because of minimum frequency")
+                            self.logger.debug(f"Finished processing the event #{idx}" if event_happened
+                                              else f"Finished processing the event #{idx} because of minimum frequency")
 
                         assert callback.trigger(on_start, on_finish)
                         callback.wait()
 
                     else:
-                        self.logger.debug(f"Ignoring event as keeper is terminating" if event_happened
-                                          else f"Ignoring event because of minimum frequency as keeper is terminating")
+                        self.logger.debug(f"Ignoring event #{idx} as keeper is terminating" if event_happened
+                                          else f"Ignoring event #{idx} because of minimum frequency as keeper is terminating")
                 except:
                     setup_thread()
                     raise
