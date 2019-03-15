@@ -382,10 +382,10 @@ class Lifecycle:
             self._start_event_timer(event_timer[0], event_timer[1], event_timer[2])
 
         if len(self.every_timers) > 0:
-            self.logger.info("Started timer(s)")
+            self.logger.info(f"Started {len(self.every_timers)} timer(s)")
 
         if len(self.event_timers) > 0:
-            self.logger.info("Started event(s)")
+            self.logger.info(f"Started {len(self.event_timers)} event(s)")
 
     def _start_every_timer(self, frequency_in_seconds: int, callback):
         def setup_timer(delay):
