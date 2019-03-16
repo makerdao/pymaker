@@ -102,7 +102,7 @@ class Lifecycle:
         # Initialization phase
         if self.web3:
             self.logger.info(f"Keeper connected to {self.web3.providers[0]}")
-            if self.web3.eth.defaultAccount:
+            if self.web3.eth.defaultAccount and self.web3.eth.defaultAccount != "0x0000000000000000000000000000000000000000":
                 self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
                 self._check_account_unlocked()
             else:
