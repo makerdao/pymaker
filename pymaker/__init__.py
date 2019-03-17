@@ -571,7 +571,7 @@ class Transact:
             if self.nonce is not None and self.web3.eth.getTransactionCount(from_account) > self.nonce:
                 # Check if any transaction sent so far has been mined (has a receipt).
                 # If it has, we return either the receipt (if if was successful) or `None`.
-                for _ in range(5):
+                for _ in range(10):
                     for tx_hash in tx_hashes:
                         receipt = self._get_receipt(tx_hash)
                         if receipt:
