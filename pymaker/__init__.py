@@ -571,7 +571,7 @@ class Transact:
             if self.nonce is not None and self.web3.eth.getTransactionCount(from_account) > self.nonce:
                 # Check if any transaction sent so far has been mined (has a receipt).
                 # If it has, we return either the receipt (if if was successful) or `None`.
-                for _ in range(10):
+                for attempt in range(1, 11):
                     for tx_hash in tx_hashes:
                         receipt = self._get_receipt(tx_hash)
                         if receipt:
@@ -582,6 +582,9 @@ class Transact:
                                 self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
                                                     f" log entry, assuming it has failed (tx_hash={bytes_to_hexstring(tx_hash)})")
                                 return None
+
+                    self.logger.debug(f"No receipt found in attempt #{attempt}/10 (nonce={self.nonce},"
+                                      f" getTransactionCount={self.web3.eth.getTransactionCount(from_account)})")
 
                     await asyncio.sleep(0.5)
 
