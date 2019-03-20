@@ -144,6 +144,18 @@ class TestCalldata:
         # expect
         assert calldata1a == calldata1b
 
+        # given
+        calldata2a = Calldata('0x2b4e4e96'  # function 4byte signature
+                              '00000000000000000000000011223344556600000000000000000000000000ff'
+                              '0000000000000000000000000000000000000000000000000000000000000040'
+                              '0000000000000000000000000000000000000000000000000000000000000002'
+                              '000000000000000000000000000000000000000000000000000000000000007b'
+                              '00000000000000000000000000000000000000000000000000000000000001c8')
+        calldata2b = Calldata.from_signature('transfer(address,uint256[])',
+                                             ['0x11223344556600000000000000000000000000ff', [123, 456]])
+
+        # expect
+        assert calldata2a == calldata2b
 
 class TestReceipt:
     @pytest.fixture()

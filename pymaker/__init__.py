@@ -215,7 +215,7 @@ class Calldata:
         assert isinstance(fn_sign, str)
         assert isinstance(fn_args, list)
 
-        fn_split = re.split('\W+', fn_sign)
+        fn_split = re.split('[(),]', fn_sign)
         fn_name = fn_split[0]
         fn_args_type = [{"type": type} for type in fn_split[1:] if type]
 
