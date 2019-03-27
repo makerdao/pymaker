@@ -190,6 +190,41 @@ class Flipper(Contract):
         return f"Flipper('{self.address}')"
 
 
+class FlipperMcd(Flipper):
+    """A client for the `Flipper` MCD contract, TODO.
+
+    You can find the source code of the `Flipper` contract here:
+    <https://github.com/makerdao/dss/blob/master/src/flip.sol>.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `Flipper` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/mcd/Flipper.abi')
+
+    def approve(self, approval_function):
+        """Approve the `Flipper` to access our `dai` so we can participate in auctions.
+
+        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+        in `pymaker.approval`. #TODO hope_directly()
+
+        Args:
+            approval_function: Approval function (i.e. approval mode).
+        """
+        assert(callable(approval_function))
+
+        approval_function(ERC20Token(web3=self.web3, address=self.vat()), self.address, 'Flipper')
+
+    def vat(self) -> Address:
+        """Returns the `vat` token.
+
+        Returns:
+            The address of the `vat` token.
+        """
+        return Address(self._contract.call().vat())
+
+
 class Flapper(Contract):
     """A client for the `Flapper` contract, TODO.
 
@@ -339,6 +374,20 @@ class Flapper(Contract):
 
     def __repr__(self):
         return f"Flapper('{self.address}')"
+
+
+class FlapperMcd(Flapper):
+    """A client for the `Flapper` MCD contract, TODO.
+
+    You can find the source code of the `Flapper` contract here:
+    <https://github.com/makerdao/dss/blob/master/src/flap.sol>.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `Flapper` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/mcd/Flapper.abi')
 
 
 class Flopper(Contract):
@@ -495,3 +544,17 @@ class Flopper(Contract):
 
     def __repr__(self):
         return f"Flopper('{self.address}')"
+
+
+class FlopperMcd(Flopper):
+    """A client for the `Flopper` contract, TODO.
+
+    You can find the source code of the `Flopper` contract here:
+    <https://github.com/makerdao/dss/blob/master/src/flop.sol>.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `Flopper` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/mcd/Flopper.abi')

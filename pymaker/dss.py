@@ -199,6 +199,23 @@ class LogFrob:
         return pformat(vars(self))
 
 
+class LogNote(LogFrob):
+
+    @classmethod
+    def from_event(cls, event: dict):
+        assert isinstance(event, dict)
+
+        topics = event.get('topics')
+        # TODO
+        # handle Note event, return LogNote object
+
+    def __eq__(self, other):
+        assert isinstance(other, LogNote)
+        return self.__dict__ == other.__dict__
+
+
+
+
 class DaiAdapter(Contract):
     """A client for the `DaiJoin` contract.
 
@@ -403,6 +420,24 @@ class Vat(Contract):
 
     def __repr__(self):
         return f"Vat('{self.address}')"
+
+
+class VatMcd(Vat):
+
+    def past_note(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogNote]:
+        """Synchronously retrieve past LogNote events.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+            event_filter: Filter which will be applied to returned events.
+
+        Returns:
+            List of past `LogNote` events represented as :py:class:`pymake.dss.LogNote` class.
+        """
+        assert isinstance(number_of_past_blocks, int)
+        assert isinstance(event_filter, dict) or (event_filter is None)
+
+        return self._past_events(self._contract, 'Note', LogNote, number_of_past_blocks, event_filter)
 
 
 class Collateral:
