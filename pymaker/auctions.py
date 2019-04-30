@@ -81,15 +81,14 @@ class Flipper(Contract):
         """
         assert(callable(approval_function))
 
-        approval_function(ERC20Token(web3=self.web3, address=self.dai()), self.address, 'Flipper')
+        approval_function(ERC20Token(web3=self.web3, address=self.vat()), self.address, 'Flipper')
 
-    def dai(self) -> Address:
-        """Returns the `dai` token.
-
-        Returns:
-            The address of the `dai` token.
+    def vat(self) -> Address:
+        """Returns the `vat` token.
+         Returns:
+            The address of the `vat` token.
         """
-        return Address(self._contract.call().dai())
+        return Address(self._contract.call().vat())
 
     def gem(self) -> Address:
         """Returns the `gem` token.
