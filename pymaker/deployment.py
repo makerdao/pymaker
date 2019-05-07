@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import eth_utils
 import json
 from typing import Optional, List
 
@@ -26,7 +27,7 @@ from pymaker import Address
 from pymaker.approval import directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
-from pymaker.dss import Vat, Spotter, Vow, Drip, Pit, Cat, Collateral, DaiAdapter, DaiVat, Ilk, GemAdapter, GemVat
+from pymaker.dss import Vat, Spotter, Vow, Drip, Cat, Collateral, DaiJoin, Ilk, GemAdapter
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray
 from pymaker.oasis import MatchingMarket
@@ -61,7 +62,7 @@ def deploy_contract(web3: Web3, contract_name: str, args: Optional[list] = None)
 
 
 class Deployment:
-    """Represents a test deployment of the entire Maker smart contract ecosystem.
+    """Represents a test deployment of the Maker smart contract ecosystem for single collateral Dai (SCD).
 
     Creating an instance of this class creates a testrpc web3 provider with the entire set
     of Maker smart contracts deployed to it. It is used in unit tests of PyMaker, and also in
@@ -141,27 +142,25 @@ class Deployment:
 
 
 class DssDeployment:
-    """Represents a Dai Stablecoin System deployment.
+    """Represents a Dai Stablecoin System deployment for multi-collateral Dai (MCD).
 
     Static method `from_json()` should be used to instantiate all the objet of
     a deployment from a json description of all the system addresses.
     """
 
     class Config:
-        def __init__(self, mom: DSGuard, vat: Vat, vow: Vow, drip: Drip, pit: Pit, cat: Cat, flap: Flapper,
-                     flop: Flopper, dai: DSToken, dai_adapter: DaiAdapter, dai_move: DaiVat, mkr: DSToken,
+        def __init__(self, mom: DSGuard, vat: Vat, vow: Vow, drip: Drip, cat: Cat, flap: Flapper,
+                     flop: Flopper, dai: DSToken, dai_join: DaiJoin, mkr: DSToken,
                      collaterals: Optional[List[Collateral]] = None):
             self.mom = mom
             self.vat = vat
             self.vow = vow
             self.drip = drip
-            self.pit = pit
             self.cat = cat
             self.flap = flap
             self.flop = flop
             self.dai = dai
-            self.dai_adapter = dai_adapter
-            self.dai_move = dai_move
+            self.dai_join = dai_join
             self.mkr = mkr
             self.collaterals = collaterals or []
 
@@ -172,26 +171,22 @@ class DssDeployment:
             vat = Vat(web3, Address(conf['MCD_VAT']))
             vow = Vow(web3, Address(conf['MCD_VOW']))
             drip = Drip(web3, Address(conf['MCD_DRIP']))
-            pit = Pit(web3, Address(conf['MCD_PIT']))
             cat = Cat(web3, Address(conf['MCD_CAT']))
             flap = Flapper(web3, Address(conf['MCD_FLAP']))
             flop = Flopper(web3, Address(conf['MCD_FLOP']))
             dai = DSToken(web3, Address(conf['MCD_DAI']))
-            dai_adapter = DaiAdapter(web3, Address(conf['MCD_JOIN_DAI']))
-            dai_move = DaiVat(web3, Address(conf['MCD_MOVE_DAI']))
+            dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']))
             mkr = DSToken(web3, Address(conf['MCD_GOV']))
             collaterals = []
             for name in conf['COLLATERALS']:
                 collateral = Collateral(Ilk(name))
                 collateral.gem = DSToken(web3, Address(conf[name]))
                 collateral.adapter = GemAdapter(web3, Address(conf[f'MCD_JOIN_{name}']))
-                collateral.mover = GemVat(web3, Address(conf[f'MCD_MOVE_{name}']))
                 collateral.flipper = Flipper(web3, Address(conf[f'MCD_FLIP_{name}']))
                 collateral.pip = DSValue(web3, Address(conf[f'PIP_{name}']))
                 collateral.spotter = Spotter(web3, Address(conf[f'MCD_SPOT_{name}']))
                 collaterals.append(collateral)
-            return DssDeployment.Config(mom, vat, vow, drip, pit, cat, flap, flop, dai, dai_adapter, dai_move, mkr,
-                                        collaterals)
+            return DssDeployment.Config(mom, vat, vow, drip, cat, flap, flop, dai, dai_adapter, mkr, collaterals)
 
         def to_dict(self) -> dict:
             conf_dict = {
@@ -199,13 +194,11 @@ class DssDeployment:
                 'MCD_VAT': self.vat.address.address,
                 'MCD_VOW': self.vow.address.address,
                 'MCD_DRIP': self.drip.address.address,
-                'MCD_PIT': self.pit.address.address,
                 'MCD_CAT': self.cat.address.address,
                 'MCD_FLAP': self.flap.address.address,
                 'MCD_FLOP': self.flop.address.address,
                 'MCD_DAI': self.dai.address.address,
-                'MCD_JOIN_DAI': self.dai_adapter.address.address,
-                'MCD_MOVE_DAI': self.dai_move.address.address,
+                'MCD_JOIN_DAI': self.dai_join.address.address,
                 'MCD_GOV': self.mkr.address.address,
                 'COLLATERALS': []
             }
@@ -215,7 +208,6 @@ class DssDeployment:
                 conf_dict['COLLATERALS'].append(name)
                 conf_dict[name] = collateral.gem.address.address
                 conf_dict[f'MCD_JOIN_{name}'] = collateral.adapter.address.address
-                conf_dict[f'MCD_MOVE_{name}'] = collateral.mover.address.address
                 conf_dict[f'MCD_FLIP_{name}'] = collateral.flipper.address.address
                 conf_dict[f'MCD_SPOT_{name}'] = collateral.spotter.address.address
                 conf_dict[f'PIP_{name}'] = collateral.pip.address.address
@@ -235,13 +227,11 @@ class DssDeployment:
         self.vat = config.vat
         self.vow = config.vow
         self.drip = config.drip
-        self.pit = config.pit
         self.cat = config.cat
         self.flap = config.flap
         self.flop = config.flop
         self.dai = config.dai
-        self.dai_adapter = config.dai_adapter
-        self.dai_move = config.dai_move
+        self.dai_adapter = config.dai_join
         self.mkr = config.mkr
         self.collaterals = config.collaterals
 
@@ -253,20 +243,21 @@ class DssDeployment:
         return self.config.to_json()
 
     @staticmethod
-    def deploy(web3: Web3, debt_ceiling: Wad):
+    def deploy(web3: Web3):
         assert isinstance(web3, Web3)
 
         vat = Vat.deploy(web3=web3)
+        assert vat.rely(Address(web3.eth.defaultAccount)).transact(
+            from_address=Address(eth_utils.to_checksum_address(web3.eth.defaultAccount)))
 
-        pit = Pit.deploy(web3=web3, vat=vat.address)
-        assert pit.file_global_line(debt_ceiling).transact()  # Global debt Ceiling
-        assert vat.rely(pit.address).transact()
+        spotter = Spotter.deploy(web3=web3, vat=vat.address)
+        print(f"account  address: {type(Address(web3.eth.defaultAccount))}")
+        print(f"contract address: {type(spotter.address)}")
+        assert vat.rely(spotter.address).transact()
 
         dai = DSToken.deploy(web3=web3, symbol='DAI')
-        dai_adapter = DaiAdapter.deploy(web3=web3, vat=vat.address, dai=dai.address)
-        dai_move = DaiVat.deploy(web3=web3, vat=vat.address)
-        assert vat.rely(dai_adapter.address).transact()
-        assert vat.rely(dai_move.address).transact()
+        dai_join = DaiJoin.deploy(web3=web3, vat=vat.address, dai=dai.address)
+        assert vat.rely(dai_join.address).transact()
 
         mkr = DSToken.deploy(web3=web3, symbol='MKR')
 
@@ -278,7 +269,7 @@ class DssDeployment:
 
         vow = Vow.deploy(web3=web3)
         drip = Drip.deploy(web3=web3, vat=vat.address)
-        flap = Flapper.deploy(web3=web3, dai=dai_move.address, gem=mkr.address)
+        flap = Flapper.deploy(web3=web3, dai=dai.address, gem=mkr.address)
 
         assert vow.file_vat(vat).transact()
         assert vow.file_flap(flap).transact()
@@ -292,9 +283,8 @@ class DssDeployment:
 
         cat = Cat.deploy(web3=web3, vat=vat.address)
         assert cat.file_vow(vow).transact()
-        assert cat.file_pit(pit).transact()
 
-        flop = Flopper.deploy(web3=web3, dai=dai_move.address, gem=mkr.address)
+        flop = Flopper.deploy(web3=web3, dai=dai.address, gem=mkr.address)
 
         assert vow.file_flop(flop).transact()
 
@@ -303,11 +293,13 @@ class DssDeployment:
         assert vow.rely(cat.address).transact()
         assert flop.rely(vow.address).transact()
 
-        config = DssDeployment.Config(mom, vat, vow, drip, pit, cat, flap, flop, dai, dai_adapter, dai_move, mkr)
+        config = DssDeployment.Config(mom, vat, vow, drip, cat, flap, flop, dai, dai_join, mkr)
         deployment = DssDeployment(web3, config)
 
+        spotter = Spotter.deploy(web3=web3, vat=vat.address)
+
         collateral = Collateral.deploy(web3=web3, name='WETH', vat=vat)
-        deployment.deploy_collateral(collateral,
+        deployment.deploy_collateral(collateral, spotter,
                                      debt_ceiling=Wad.from_number(100000),
                                      penalty=Ray.from_number(1),
                                      flop_lot=Wad.from_number(10000),
@@ -316,33 +308,34 @@ class DssDeployment:
 
         return deployment
 
-    def deploy_collateral(self, collateral: Collateral,
+    def deploy_collateral(self, collateral: Collateral, spotter: Spotter,
                           debt_ceiling: Wad, penalty: Ray, flop_lot: Wad, ratio: Ray, initial_price: Wad):
 
+        # TODO: Do something with debt_ceiling.
         collateral.pip = DSValue.deploy(web3=self.web3)
         assert collateral.pip.poke_with_int(initial_price.value).transact()  # Initial price
 
-        collateral.flipper = Flipper.deploy(web3=self.web3, dai=self.dai_move.address, gem=collateral.mover.address)
+        collateral.flipper = Flipper.deploy(web3=self.web3, vat=self.vat.address, ilk=collateral.ilk.toBytes())
 
-        collateral.spotter = Spotter.deploy(web3=self.web3, pit=self.pit.address, ilk=collateral.ilk)
-        collateral.spotter.file_pip(collateral.pip.address).transact()
-        collateral.spotter.file_mat(ratio).transact()  # Liquidation ratio
+        assert self.vat.init(collateral.ilk).transact()
 
         assert collateral.gem.approve(collateral.adapter.address).transact()
 
+        # FIXME: Flipper.flips is not populating with all the required fields.
         assert self.cat.file_flip(collateral.ilk, collateral.flipper).transact()
         assert self.cat.file_lump(collateral.ilk, flop_lot).transact()  # Liquidation Quantity
         assert self.cat.file_chop(collateral.ilk, penalty).transact()  # Liquidation Penalty
-        assert self.vat.init(collateral.ilk).transact()
         assert self.drip.init(collateral.ilk).transact()
 
         assert self.vat.rely(collateral.flipper.address).transact()
         assert self.vat.rely(collateral.adapter.address).transact()
-        assert self.vat.rely(collateral.mover.address).transact()
-        assert self.pit.rely(collateral.spotter.address).transact()
 
-        assert self.pit.file_line(collateral.ilk, debt_ceiling).transact()  # Collateral debt Ceiling
-        assert collateral.spotter.poke().transact()
+        # TODO: Set up ilks in the spotter
+        spotter.file_pip(collateral.ilk, collateral.pip.address).transact()
+        spotter.file_mat(collateral.ilk, ratio).transact()  # Liquidation ratio
+
+        # FIXME: Figure out why this fails with {'code': -32016, 'message': 'The execution failed due to an exception.'}
+        # assert spotter.poke(collateral.ilk).transact()
 
         self.collaterals.append(collateral)
 

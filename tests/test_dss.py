@@ -24,13 +24,29 @@ from pymaker import Address
 from pymaker.auctions import Flipper
 from pymaker.deployment import DssDeployment
 from pymaker.dss import Cat, Ilk, Urn
+from pymaker.keys import register_keys
 from pymaker.numeric import Ray, Wad, Rad
 
 
 @pytest.fixture(scope="session")
 def web3():
-    web3 = Web3(HTTPProvider("http://localhost:8555"))
-    web3.eth.defaultAccount = web3.eth.accounts[0]
+    # web3 = Web3(HTTPProvider("http://localhost:8555"))
+    # web3.eth.defaultAccount = web3.eth.accounts[0]
+
+    # web3 = Web3(HTTPProvider(endpoint_uri="https://parity0.kovan.makerfoundation.com:8545",
+    #                          request_kwargs={"timeout": 10}))
+    # web3.eth.defaultAccount = "0xC140ce1be1c0edA2f06319d984c404251C59494e"
+    # register_keys(web3,
+    #               ["key_file=/home/ed/Projects/member-account.json,pass_file=/home/ed/Projects/member-account.pass"])
+
+    web3 = Web3(HTTPProvider("http://0.0.0.0:8345"))
+    web3.eth.defaultAccount = "0x6c626f45e3b7aE5A3998478753634790fd0E82EE"
+    register_keys(web3,
+                  ["key_file=tests/config/keys/UnlimitedChain/key1.json,"
+                   "pass_file=/dev/null",
+                   "key_file=tests/config/keys/UnlimitedChain/key2.json,"
+                   "pass_file=/dev/null"])
+    assert len(web3.eth.accounts) > 1
     return web3
 
 
@@ -46,7 +62,7 @@ def our_address(web3):
 
 @pytest.fixture(scope="session")
 def d(web3):
-    deployment = DssDeployment.deploy(web3=web3, debt_ceiling=Wad.from_number(1000000))
+    deployment = DssDeployment.deploy(web3=web3)
     for c in deployment.collaterals:
         assert c.gem.mint(Wad.from_number(1000)).transact()
     return deployment
@@ -58,15 +74,15 @@ def bite_event(our_address: Address, d: DssDeployment):
 
     # Add collateral to our CDP
     assert collateral.adapter.join(Urn(our_address), Wad.from_number(1)).transact()
-    assert d.pit.frob(collateral.ilk, Wad.from_number(1), Wad(0)).transact()
+    assert d.vat.frob(ilk=collateral.ilk, address=our_address, dink=Wad.from_number(1), dart=Wad(0)).transact()
 
     # Define required bite parameters
     our_urn = d.vat.urn(collateral.ilk, our_address)
-    max_dart = our_urn.ink * d.pit.spot(collateral.ilk) - our_urn.art
+    max_dart = our_urn.ink * d.vat.spot - our_urn.art
     to_price = Wad(Web3.toInt(collateral.pip.read())) - Wad.from_number(1)
 
     # Manipulate price to make our CDP underwater
-    assert d.pit.frob(collateral.ilk, Wad(0), max_dart).transact()
+    assert d.vat.frob(ilk=collateral.ilk, address=our_address, dink=Wad(0), dart=max_dart).transact()
     assert collateral.pip.poke_with_int(to_price.value).transact()
     assert collateral.spotter.poke().transact()
 
@@ -99,7 +115,7 @@ class TestVat:
         # then
         assert d.vat.gem(collateral.ilk, our_address) == Rad(Wad(10))
 
-
+@pytest.mark.skip(reason="need to move these into vat")
 class TestPit:
     def test_frob_noop(self, d: DssDeployment, our_address: Address):
         # given
@@ -107,7 +123,7 @@ class TestPit:
         our_urn = d.vat.urn(collateral.ilk, our_address)
 
         # when
-        assert d.pit.frob(collateral.ilk, Wad(0), Wad(0)).transact()
+        assert d.vat.frob(collateral.ilk, Wad(0), Wad(0)).transact()
 
         # then
         assert d.vat.urn(collateral.ilk, our_address) == our_urn
@@ -119,7 +135,7 @@ class TestPit:
 
         # when
         assert collateral.adapter.join(our_urn, Wad(10)).transact()
-        assert d.pit.frob(collateral.ilk, Wad(10), Wad(0)).transact()
+        assert d.vat.frob(collateral.ilk, Wad(10), Wad(0)).transact()
 
         # then
         assert d.vat.urn(collateral.ilk, our_address).ink == our_urn.ink + Wad(10)
@@ -131,7 +147,7 @@ class TestPit:
 
         # when
         assert collateral.adapter.join(our_urn, Wad.from_number(10)).transact()
-        assert d.pit.frob(collateral.ilk, Wad(0), Wad(10)).transact()
+        assert d.vat.frob(collateral.ilk, Wad(0), Wad(10)).transact()
 
         # then
         assert d.vat.urn(collateral.ilk, our_address).art == our_urn.art + Wad(10)
@@ -141,7 +157,7 @@ class TestPit:
         c = d.collaterals[0]
 
         # when
-        assert d.pit.frob(c.ilk, Wad(0), Wad(0)).transact()
+        assert d.vat.frob(c.ilk, Wad(0), Wad(0)).transact()
 
         # then
         last_frob_event = d.pit.past_frob(1, event_filter={'ilk': c.ilk.toBytes()})[-1]
@@ -162,13 +178,13 @@ class TestCat:
         # given
         collateral = d.collaterals[0]
         assert collateral.adapter.join(Urn(our_address), Wad.from_number(2)).transact()
-        assert d.pit.frob(collateral.ilk, Wad.from_number(2), Wad(0)).transact()
+        assert d.vat.frob(ilk=collateral.ilk, address=our_address, dink=Wad.from_number(2), dart=Wad(0)).transact()
         our_urn = d.vat.urn(collateral.ilk, our_address)
         max_dart = our_urn.ink * d.pit.spot(collateral.ilk) - our_urn.art
         to_price = Wad(Web3.toInt(collateral.pip.read())) - Wad.from_number(10)
 
         # when
-        assert d.pit.frob(collateral.ilk, Wad(0), max_dart).transact()
+        assert d.vat.frob(ilk=collateral.ilk, address=our_address, dink=Wad(0), dart=max_dart).transact()
         assert collateral.pip.poke_with_int(to_price.value).transact()
         assert collateral.spotter.poke().transact()
 
@@ -241,7 +257,7 @@ class TestVow:
         snap_id = snapshot(web3)
         c = d.collaterals[0]
         assert c.adapter.join(Urn(our_address), Wad.from_number(200)).transact()
-        assert d.pit.frob(c.ilk, Wad.from_number(200), Wad.from_number(11000)).transact()
+        assert d.vat.frob(c.ilk, Wad.from_number(200), Wad.from_number(11000)).transact()
         assert d.dai_move.move(our_address, d.vow.address, Wad.from_number(11000)).transact()
 
         # when

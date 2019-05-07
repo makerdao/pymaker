@@ -1,0 +1,25 @@
+version: "3.2"
+services:
+  parity:
+    image: parity/parity:stable
+    container_name: parity-pymaker-test
+    ports:
+      - "8345:8345"
+      - "8346:8346"
+    expose:
+      - "8345"
+      - "8346"
+    user: root
+    working_dir: /home/parity
+    volumes:
+      - $PWD/tests/config/keys:/home/parity/.local/share/io.parity.ethereum/keys
+      - $PWD/tests/config/parity-dev-constantinopole.json:/home/parity/config/parity-dev-constantinopole.json
+    command: ["--chain=/home/parity/config/parity-dev-constantinopole.json",
+              "--tracing=on",
+              "--pruning=archive",
+              "--jsonrpc-interface=all",
+              "--jsonrpc-hosts=all",
+              "--ws-port=8346",
+              "--jsonrpc-port=8345",              
+              "--base-path=/home/parity/.local/share/io.parity.ethereum/"]
+

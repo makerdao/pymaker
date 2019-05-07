@@ -1,6 +1,6 @@
 # This file is part of Maker Keeper Framework.
 #
-# Copyright (C) 2018 reverendus, bargst
+# Copyright (C) 2018-2019 reverendus, bargst, EdNoepel
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -19,6 +19,11 @@ from web3 import Web3
 
 from pymaker import Contract, Address, Transact, Wad
 from pymaker.token import ERC20Token
+
+
+def toBytes(string: str):
+    assert(isinstance(string, str))
+    return string.encode('utf-8').ljust(32, bytes(1))
 
 
 class Flipper(Contract):
@@ -56,11 +61,11 @@ class Flipper(Contract):
             self.tab = tab
 
     @staticmethod
-    def deploy(web3: Web3, dai: Address, gem: Address):
-        assert(isinstance(dai, Address))
-        assert(isinstance(gem, Address))
+    def deploy(web3: Web3, vat: Address, ilk):
+        assert(isinstance(vat, Address))
+        assert(isinstance(ilk, bytes))
 
-        return Flipper(web3=web3, address=Contract._deploy(web3, Flipper.abi, Flipper.bin, [dai.address, gem.address]))
+        return Flipper(web3=web3, address=Contract._deploy(web3, Flipper.abi, Flipper.bin, [vat.address, ilk]))
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -148,7 +153,7 @@ class Flipper(Contract):
                            guy=Address(array[2]),
                            tic=int(array[3]),
                            end=int(array[4]),
-                           urn=Address(Web3.toHex(array[5])[-40:]),
+                           urn=Address(array[5]),
                            gal=Address(array[6]),
                            tab=Wad(array[7]))
 
@@ -159,8 +164,7 @@ class Flipper(Contract):
         assert(isinstance(lot, Wad))
         assert(isinstance(bid, Wad))
 
-        bytes32_urn = Web3.toBytes(hexstr='0x'+urn.address[2:].zfill(64))
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kick', [bytes32_urn,
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kick', [urn.address,
                                                                                           gal.address,
                                                                                           tab.value,
                                                                                           lot.value,
