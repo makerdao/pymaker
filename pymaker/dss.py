@@ -324,19 +324,26 @@ class Vat(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'init', [ilk.toBytes()])
 
+    def file_line(self, ilk: Ilk, amount: Wad) -> Transact:
+        assert isinstance(amount, Wad)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'file(bytes32,bytes32,uint256)', [ilk.toBytes(), Web3.toBytes(text="line"), amount.value])
+
     def ilk(self, name: str) -> Ilk:
         assert isinstance(name, str)
 
         b32_ilk = Ilk(name).toBytes()
-        (art, rate, spot, line) = self._contract.call().ilks(b32_ilk)
+        (art, rate, spot, line, dust) = self._contract.call().ilks(b32_ilk)
 
+        # FIXME: Where do we get "take" from?
         return Ilk(name, rate=Ray(rate), art=Wad(art))
 
     def gem(self, ilk: Ilk, urn: Address) -> Rad:
         assert isinstance(ilk, Ilk)
         assert isinstance(urn, Address)
 
-        return Rad(self._contract.call().gem(ilk.toBytes(), Urn(urn).toBytes()))
+        return Rad(self._contract.call().gem(ilk.toBytes(), urn.address))
 
     def dai(self, urn: Address) -> Rad:
         assert isinstance(urn, Address)
@@ -347,7 +354,7 @@ class Vat(Contract):
         assert isinstance(ilk, Ilk)
         assert isinstance(address, Address)
 
-        (ink, art) = self._contract.call().urns(ilk.toBytes(), Urn(address).toBytes())
+        (ink, art) = self._contract.call().urns(ilk.toBytes(), urn.address)
         return Urn(address, ilk, Wad(ink), Wad(art))
 
     def spot(self, ilk: Ilk) -> Ray:
@@ -373,6 +380,11 @@ class Vat(Contract):
         # Usually these addresses are the same as the account holding the urn
         v = collateral_owner or address
         w = dai_recipient or address
+        assert isinstance(v, Address)
+        assert isinstance(w, Address)
+        assert address is not None
+        assert v is not None
+        assert w is not None
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'frob', [ilk.toBytes(), address.address, v.address, w.address, dink.value, dart.value])
@@ -603,14 +615,14 @@ class Vow(Contract):
         return f"Vow('{self.address}')"
 
 
-class Drip(Contract):
-    """A client for the `Drip` contract.
+class Jug(Contract):
+    """A client for the `Jug` contract.
 
-    Ref. <https://github.com/makerdao/dss/blob/master/src/drip.sol>
+    Ref. <https://github.com/makerdao/dss/blob/master/src/jug.sol>
     """
 
-    abi = Contract._load_abi(__name__, 'abi/Drip.abi')
-    bin = Contract._load_bin(__name__, 'abi/Drip.bin')
+    abi = Contract._load_abi(__name__, 'abi/Jug.abi')
+    bin = Contract._load_bin(__name__, 'abi/Jug.bin')
 
     def __init__(self, web3: Web3, address: Address):
         assert isinstance(web3, Web3)
@@ -625,7 +637,7 @@ class Drip(Contract):
         assert isinstance(web3, Web3)
         assert isinstance(vat, Address)
 
-        return Drip(web3=web3, address=Contract._deploy(web3, Drip.abi, Drip.bin, [vat.address]))
+        return Jug(web3=web3, address=Contract._deploy(web3, Jug.abi, Jug.bin, [vat.address]))
 
     def init(self, ilk: Ilk) -> Transact:
         assert isinstance(ilk, Ilk)
@@ -637,19 +649,26 @@ class Drip(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [ilk.toBytes()])
 
+    def file_duty(self, ilk: Ilk, duty: Ray) -> Transact:
+        assert isinstance(ilk, Ilk)
+        assert isinstance(duty, Ray)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'file(bytes32,bytes32,uint256)',
+                        [ilk.toBytes(), Web3.toBytes(text="duty"), duty.value])
+
+    def file_base(self, base: Ray) -> Transact:
+        assert isinstance(base, Ray)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'file(bytes32,uint256)',
+                        [Web3.toBytes("base"), base.value])
+
     def file_vow(self, vow: Vow) -> Transact:
         assert isinstance(vow, Vow)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,bytes32)', [Web3.toBytes(text="vow"), Urn(vow.address).toBytes()])
-
-    def file_tax(self, ilk: Ilk, tax: Ray) -> Transact:
-        assert isinstance(ilk, Ilk)
-        assert isinstance(tax, Ray)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,bytes32,uint256)',
-                        [ilk.toBytes(), Web3.toBytes(text="tax"), tax.value])
+                        'file(bytes32,address)', [Web3.toBytes(text="vow"), vow.address.address])
 
     def vat(self) -> Address:
         return Address(self._contract.call().vat())
@@ -671,7 +690,7 @@ class Drip(Contract):
         return Web3.toInt(self._contract.call().ilks(ilk.toBytes())[1])
 
     def __repr__(self):
-        return f"Drip('{self.address}')"
+        return f"Jug('{self.address}')"
 
 
 class Cat(Contract):

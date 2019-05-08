@@ -27,7 +27,7 @@ from pymaker import Address
 from pymaker.approval import directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
-from pymaker.dss import Vat, Spotter, Vow, Drip, Cat, Collateral, DaiJoin, Ilk, GemAdapter
+from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemAdapter
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray
 from pymaker.oasis import MatchingMarket
@@ -149,13 +149,13 @@ class DssDeployment:
     """
 
     class Config:
-        def __init__(self, mom: DSGuard, vat: Vat, vow: Vow, drip: Drip, cat: Cat, flap: Flapper,
+        def __init__(self, mom: DSGuard, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flap: Flapper,
                      flop: Flopper, dai: DSToken, dai_join: DaiJoin, mkr: DSToken,
                      collaterals: Optional[List[Collateral]] = None):
             self.mom = mom
             self.vat = vat
             self.vow = vow
-            self.drip = drip
+            self.jug = jug
             self.cat = cat
             self.flap = flap
             self.flop = flop
@@ -193,7 +193,7 @@ class DssDeployment:
                 'MCD_MOM': self.mom.address.address,
                 'MCD_VAT': self.vat.address.address,
                 'MCD_VOW': self.vow.address.address,
-                'MCD_DRIP': self.drip.address.address,
+                'MCD_JUG': self.jug.address.address,
                 'MCD_CAT': self.cat.address.address,
                 'MCD_FLAP': self.flap.address.address,
                 'MCD_FLOP': self.flop.address.address,
@@ -226,7 +226,7 @@ class DssDeployment:
         self.mom = config.mom
         self.vat = config.vat
         self.vow = config.vow
-        self.drip = config.drip
+        self.jug = config.jug
         self.cat = config.cat
         self.flap = config.flap
         self.flop = config.flop
@@ -246,17 +246,19 @@ class DssDeployment:
     def deploy(web3: Web3):
         assert isinstance(web3, Web3)
 
+        # deployVat
         vat = Vat.deploy(web3=web3)
         assert vat.rely(Address(web3.eth.defaultAccount)).transact(
             from_address=Address(eth_utils.to_checksum_address(web3.eth.defaultAccount)))
-
         spotter = Spotter.deploy(web3=web3, vat=vat.address)
         print(f"account  address: {type(Address(web3.eth.defaultAccount))}")
         print(f"contract address: {type(spotter.address)}")
         assert vat.rely(spotter.address).transact()
 
+        # deployDai
         dai = DSToken.deploy(web3=web3, symbol='DAI')
         dai_join = DaiJoin.deploy(web3=web3, vat=vat.address, dai=dai.address)
+        # dai.rely(dai_join)
         assert vat.rely(dai_join.address).transact()
 
         mkr = DSToken.deploy(web3=web3, symbol='MKR')
@@ -268,17 +270,17 @@ class DssDeployment:
         assert mkr.set_authority(mom.address).transact()
 
         vow = Vow.deploy(web3=web3)
-        drip = Drip.deploy(web3=web3, vat=vat.address)
+        jug = Jug.deploy(web3=web3, vat=vat.address)
         flap = Flapper.deploy(web3=web3, dai=dai.address, gem=mkr.address)
 
         assert vow.file_vat(vat).transact()
         assert vow.file_flap(flap).transact()
         assert vow.file_bump(Wad.from_number(1000)).transact()
         assert vow.file_sump(Wad.from_number(10)).transact()
-        assert drip.file_vow(vow).transact()
+        assert jug.file_vow(vow).transact()
 
         assert vat.rely(vow.address).transact()
-        assert vat.rely(drip.address).transact()
+        assert vat.rely(jug.address).transact()
         assert vat.rely(flap.address).transact()
 
         cat = Cat.deploy(web3=web3, vat=vat.address)
@@ -293,7 +295,7 @@ class DssDeployment:
         assert vow.rely(cat.address).transact()
         assert flop.rely(vow.address).transact()
 
-        config = DssDeployment.Config(mom, vat, vow, drip, cat, flap, flop, dai, dai_join, mkr)
+        config = DssDeployment.Config(mom, vat, vow, jug, cat, flap, flop, dai, dai_join, mkr)
         deployment = DssDeployment(web3, config)
 
         spotter = Spotter.deploy(web3=web3, vat=vat.address)
@@ -310,14 +312,18 @@ class DssDeployment:
 
     def deploy_collateral(self, collateral: Collateral, spotter: Spotter,
                           debt_ceiling: Wad, penalty: Ray, flop_lot: Wad, ratio: Ray, initial_price: Wad):
+        assert isinstance(collateral, Collateral)
+        assert collateral.ilk.name is not None
+        assert self.vat.address is not None
+        assert self.cat.address is not None
 
-        # TODO: Do something with debt_ceiling.
         collateral.pip = DSValue.deploy(web3=self.web3)
+        assert collateral.pip.address is not None
         assert collateral.pip.poke_with_int(initial_price.value).transact()  # Initial price
-
         collateral.flipper = Flipper.deploy(web3=self.web3, vat=self.vat.address, ilk=collateral.ilk.toBytes())
 
         assert self.vat.init(collateral.ilk).transact()
+        assert self.vat.file_line(collateral.ilk, debt_ceiling)
 
         assert collateral.gem.approve(collateral.adapter.address).transact()
 
@@ -325,17 +331,15 @@ class DssDeployment:
         assert self.cat.file_flip(collateral.ilk, collateral.flipper).transact()
         assert self.cat.file_lump(collateral.ilk, flop_lot).transact()  # Liquidation Quantity
         assert self.cat.file_chop(collateral.ilk, penalty).transact()  # Liquidation Penalty
-        assert self.drip.init(collateral.ilk).transact()
+        assert self.jug.init(collateral.ilk).transact()
 
         assert self.vat.rely(collateral.flipper.address).transact()
         assert self.vat.rely(collateral.adapter.address).transact()
 
-        # TODO: Set up ilks in the spotter
         spotter.file_pip(collateral.ilk, collateral.pip.address).transact()
         spotter.file_mat(collateral.ilk, ratio).transact()  # Liquidation ratio
-
         # FIXME: Figure out why this fails with {'code': -32016, 'message': 'The execution failed due to an exception.'}
-        # assert spotter.poke(collateral.ilk).transact()
+        assert spotter.poke(collateral.ilk).transact()
 
         self.collaterals.append(collateral)
 

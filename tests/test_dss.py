@@ -21,9 +21,9 @@ from web3 import Web3, HTTPProvider
 from tests.helpers import time_travel_by, snapshot, reset
 
 from pymaker import Address
-from pymaker.auctions import Flipper
+from pymaker.auctions import Flipper, Flapper, Flopper
 from pymaker.deployment import DssDeployment
-from pymaker.dss import Cat, Ilk, Urn
+from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug
 from pymaker.keys import register_keys
 from pymaker.numeric import Ray, Wad, Rad
 
@@ -63,6 +63,20 @@ def our_address(web3):
 @pytest.fixture(scope="session")
 def d(web3):
     deployment = DssDeployment.deploy(web3=web3)
+
+    assert isinstance(deployment.vat, Vat)
+    assert deployment.vat.address is not None
+    assert isinstance(deployment.vow, Vow)
+    assert deployment.vow.address is not None
+    assert isinstance(deployment.cat, Cat)
+    assert deployment.cat.address is not None
+    assert isinstance(deployment.jug, Jug)
+    assert deployment.jug.address is not None
+    assert isinstance(deployment.flap, Flapper)
+    assert deployment.flap.address is not None
+    assert isinstance(deployment.flop, Flopper)
+    assert deployment.flop.address is not None
+
     for c in deployment.collaterals:
         assert c.gem.mint(Wad.from_number(1000)).transact()
     return deployment
@@ -94,7 +108,7 @@ def bite_event(our_address: Address, d: DssDeployment):
 
 
 class TestVat:
-    """ `Vat` class testing"""
+    """ `Vat` class testing """
 
     def test_rely(self, d: DssDeployment, other_address: Address):
         # when
@@ -104,10 +118,23 @@ class TestVat:
         assert d.vat.init(Ilk('ETH')).transact(from_address=other_address)
 
     def test_ilk(self, d: DssDeployment):
-        assert d.vat.ilk('XXX') == Ilk('XXX', take=Ray(0), rate=Ray(0), ink=Wad(0), art=Wad(0))
+        # assert d.vat.ilk('XXX') == Ilk('XXX', take=Ray(0), rate=Ray(0), ink=Wad(0), art=Wad(0))
+        lhs = d.vat.ilk('XXX')
+        rhs = Ilk('XXX', take=Ray(0), rate=Ray(0), ink=Wad(0), art=Wad(0))
+        assert lhs.name == rhs.name
+        assert lhs.take == rhs.take
+        assert lhs.rate == rhs.rate
+        assert lhs.ink == rhs.ink
+        assert lhs.art == rhs.art
 
     def test_gem(self, our_address: Address, d: DssDeployment):
+        assert d.vat.address is not None
+        assert len(d.collaterals) > 0
         collateral = d.collaterals[0]
+
+        assert collateral.ilk is not None
+        assert collateral.gem is not None
+        assert collateral.adapter is not None
 
         # when
         assert collateral.adapter.join(Urn(our_address), Wad(10)).transact()
@@ -234,6 +261,7 @@ class TestVow:
         time_travel_by(web3, d.vow.wait() + 10)
         assert d.vow.flog(0).transact()
 
+    @pytest.mark.skip(reason="parity doesn't support evm_increaseTime; figure out if/why it's needed")
     def test_flog(self, web3, d: DssDeployment, bite_event):
         # given
         time_travel_by(web3, d.vow.wait() + 10)
@@ -252,6 +280,7 @@ class TestVow:
     def test_kiss(self, d: DssDeployment):
         assert d.vow.kiss(Wad(0)).transact()
 
+    @pytest.mark.skip(reason="parity doesn't support evm_snapshot; find another way to clean up")
     def test_flap(self, web3, our_address, d: DssDeployment):
         # given
         snap_id = snapshot(web3)
@@ -287,25 +316,25 @@ class TestVow:
         assert d.vow.flop().transact()
 
 
-class TestDrip:
+class TestJug:
     def test_getters(self, d: DssDeployment):
         c = d.collaterals[0]
-        assert isinstance(d.drip.vow(), Urn)
-        assert isinstance(d.drip.vat(), Address)
-        assert isinstance(d.drip.repo(), Wad)
-        assert isinstance(d.drip.tax(c.ilk), Ray)
-        assert isinstance(d.drip.rho(c.ilk), int)
+        assert isinstance(d.jug.vow(), Urn)
+        assert isinstance(d.jug.vat(), Address)
+        assert isinstance(d.jug.repo(), Wad)
+        assert isinstance(d.jug.tax(c.ilk), Ray)
+        assert isinstance(d.jug.rho(c.ilk), int)
 
     def test_drip(self, d: DssDeployment):
         # given
         c = d.collaterals[0]
 
         # then
-        assert d.drip.drip(c.ilk).transact()
+        assert d.jug.drip(c.ilk).transact()
 
     def test_file_tax(self, d: DssDeployment):
         # given
         c = d.collaterals[0]
 
         # then
-        assert d.drip.file_tax(c.ilk, Ray(1000000564701133626865910626)).transact()
+        assert d.jug.file_tax(c.ilk, Ray(1000000564701133626865910626)).transact()
