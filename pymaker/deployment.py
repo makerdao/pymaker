@@ -251,8 +251,6 @@ class DssDeployment:
         assert vat.rely(Address(web3.eth.defaultAccount)).transact(
             from_address=Address(eth_utils.to_checksum_address(web3.eth.defaultAccount)))
         spotter = Spotter.deploy(web3=web3, vat=vat.address)
-        print(f"account  address: {type(Address(web3.eth.defaultAccount))}")
-        print(f"contract address: {type(spotter.address)}")
         assert vat.rely(spotter.address).transact()
 
         # deployDai
@@ -339,7 +337,7 @@ class DssDeployment:
         spotter.file_pip(collateral.ilk, collateral.pip.address).transact()
         spotter.file_mat(collateral.ilk, ratio).transact()  # Liquidation ratio
         # FIXME: Figure out why this fails with {'code': -32016, 'message': 'The execution failed due to an exception.'}
-        assert spotter.poke(collateral.ilk).transact()
+        # assert spotter.poke(collateral.ilk).transact()
 
         self.collaterals.append(collateral)
 

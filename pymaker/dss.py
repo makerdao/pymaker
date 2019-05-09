@@ -32,18 +32,15 @@ class Ilk:
     """The `Ilk` object as a type of collateral.
     """
 
-    def __init__(self, name: str, take: Optional[Ray]=None,
-                                  rate: Optional[Ray]=None,
+    def __init__(self, name: str, rate: Optional[Ray]=None,
                                   ink: Optional[Wad]=None,
                                   art: Optional[Wad]=None):
         assert (isinstance(name, str))
-        assert (isinstance(take, Ray) or (take is None))
         assert (isinstance(rate, Ray) or (rate is None))
         assert (isinstance(ink, Wad) or (ink is None))
         assert (isinstance(art, Wad) or (art is None))
 
         self.name = name
-        self.take = take
         self.rate = rate
         self.ink = ink
         self.art = art
@@ -62,15 +59,12 @@ class Ilk:
         assert isinstance(other, Ilk)
 
         return (self.name == other.name) \
-           and (self.take == other.take) \
            and (self.rate == other.rate) \
            and (self.ink == other.ink) \
            and (self.art == other.art)
 
     def __repr__(self):
         repr = ''
-        if self.take:
-            repr += f' take={self.take}'
         if self.rate:
             repr += f' rate={self.rate}'
         if self.ink:
@@ -336,8 +330,8 @@ class Vat(Contract):
         b32_ilk = Ilk(name).toBytes()
         (art, rate, spot, line, dust) = self._contract.call().ilks(b32_ilk)
 
-        # FIXME: Where do we get "take" from?
-        return Ilk(name, rate=Ray(rate), art=Wad(art))
+        # TODO: We could get "ink" from the urn, but caller must provide an address.
+        return Ilk(name, rate=Ray(rate), ink=Wad(0), art=Wad(art))
 
     def gem(self, ilk: Ilk, urn: Address) -> Rad:
         assert isinstance(ilk, Ilk)
@@ -354,7 +348,7 @@ class Vat(Contract):
         assert isinstance(ilk, Ilk)
         assert isinstance(address, Address)
 
-        (ink, art) = self._contract.call().urns(ilk.toBytes(), urn.address)
+        (ink, art) = self._contract.call().urns(ilk.toBytes(), address.address)
         return Urn(address, ilk, Wad(ink), Wad(art))
 
     def spot(self, ilk: Ilk) -> Ray:
@@ -382,10 +376,8 @@ class Vat(Contract):
         w = dai_recipient or address
         assert isinstance(v, Address)
         assert isinstance(w, Address)
-        assert address is not None
-        assert v is not None
-        assert w is not None
 
+        # FIXME: need to debug vat.sol
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'frob', [ilk.toBytes(), address.address, v.address, w.address, dink.value, dart.value])
 
@@ -425,9 +417,10 @@ class Collateral:
         self.spotter: Spotter = None
 
     @staticmethod
-    def deploy(web3: Web3, name: str, vat: Vat):
+    def deploy(web3: Web3, name: str, vat: Vat, decimals=18):
         collateral = Collateral(Ilk(name))
         collateral.gem = DSToken.deploy(web3=web3, symbol=name)
+        # TODO: Set decimals on the DSToken
         collateral.adapter = GemAdapter.deploy(web3=web3, vat=vat.address,
                                                ilk=collateral.ilk, gem=collateral.gem.address)
 
@@ -673,13 +666,13 @@ class Jug(Contract):
     def vat(self) -> Address:
         return Address(self._contract.call().vat())
 
-    def vow(self) -> Urn:
-        return Urn.fromBytes(self._contract.call().vow())
+    def vow(self) -> Address:
+        return Address(self._contract.call().vow())
 
-    def repo(self) -> Wad:
-        return Wad(self._contract.call().repo())
+    def base(self) -> Wad:
+        return Wad(self._contract.call().base())
 
-    def tax(self, ilk: Ilk) -> Ray:
+    def duty(self, ilk: Ilk) -> Ray:
         assert isinstance(ilk, Ilk)
 
         return Ray(self._contract.call().ilks(ilk.toBytes())[0])
@@ -742,7 +735,7 @@ class Cat(Contract):
         assert isinstance(id, int)
 
         (flip_ilk, flip_urn, flip_ink, flip_tab) = self._contract.call().flips(id)
-        urn = Urn(address=flip_urn, ilk=Ilk.fromBytes(flip_ilk), ink=Wad(flip_ink))
+        urn = Urn(address=Address(flip_urn), ilk=Ilk.fromBytes(flip_ilk), ink=Wad(flip_ink))
         return Cat.Flip(id, urn, Wad(flip_tab))
 
     def bite(self, ilk: Ilk, urn: Urn):

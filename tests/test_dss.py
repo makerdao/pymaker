@@ -30,15 +30,19 @@ from pymaker.numeric import Ray, Wad, Rad
 
 @pytest.fixture(scope="session")
 def web3():
+    # for ganache
     # web3 = Web3(HTTPProvider("http://localhost:8555"))
     # web3.eth.defaultAccount = web3.eth.accounts[0]
 
+    # for Kovan
     # web3 = Web3(HTTPProvider(endpoint_uri="https://parity0.kovan.makerfoundation.com:8545",
     #                          request_kwargs={"timeout": 10}))
     # web3.eth.defaultAccount = "0xC140ce1be1c0edA2f06319d984c404251C59494e"
     # register_keys(web3,
-    #               ["key_file=/home/ed/Projects/member-account.json,pass_file=/home/ed/Projects/member-account.pass"])
+    #               ["key_file=/home/ed/Projects/member-account.json,pass_file=/home/ed/Projects/member-account.pass",
+    #                "key_file=/home/ed/Projects/reserve-account.json,pass_file=/home/ed/Projects/reserve-account.pass"])
 
+    # for dockerized empty local parity testchain
     web3 = Web3(HTTPProvider("http://0.0.0.0:8345"))
     web3.eth.defaultAccount = "0x6c626f45e3b7aE5A3998478753634790fd0E82EE"
     register_keys(web3,
@@ -46,6 +50,7 @@ def web3():
                    "pass_file=/dev/null",
                    "key_file=tests/config/keys/UnlimitedChain/key2.json,"
                    "pass_file=/dev/null"])
+
     assert len(web3.eth.accounts) > 1
     return web3
 
@@ -118,14 +123,7 @@ class TestVat:
         assert d.vat.init(Ilk('ETH')).transact(from_address=other_address)
 
     def test_ilk(self, d: DssDeployment):
-        # assert d.vat.ilk('XXX') == Ilk('XXX', take=Ray(0), rate=Ray(0), ink=Wad(0), art=Wad(0))
-        lhs = d.vat.ilk('XXX')
-        rhs = Ilk('XXX', take=Ray(0), rate=Ray(0), ink=Wad(0), art=Wad(0))
-        assert lhs.name == rhs.name
-        assert lhs.take == rhs.take
-        assert lhs.rate == rhs.rate
-        assert lhs.ink == rhs.ink
-        assert lhs.art == rhs.art
+        assert d.vat.ilk('XXX') == Ilk('XXX', rate=Ray(0), ink=Wad(0), art=Wad(0))
 
     def test_gem(self, our_address: Address, d: DssDeployment):
         assert d.vat.address is not None
@@ -140,17 +138,16 @@ class TestVat:
         assert collateral.adapter.join(Urn(our_address), Wad(10)).transact()
 
         # then
+        # FIXME: This is off by 10^27...unsure why
         assert d.vat.gem(collateral.ilk, our_address) == Rad(Wad(10))
 
-@pytest.mark.skip(reason="need to move these into vat")
-class TestPit:
     def test_frob_noop(self, d: DssDeployment, our_address: Address):
         # given
         collateral = d.collaterals[0]
         our_urn = d.vat.urn(collateral.ilk, our_address)
 
         # when
-        assert d.vat.frob(collateral.ilk, Wad(0), Wad(0)).transact()
+        assert d.vat.frob(collateral.ilk, our_address, Wad(0), Wad(0)).transact()
 
         # then
         assert d.vat.urn(collateral.ilk, our_address) == our_urn
@@ -162,7 +159,7 @@ class TestPit:
 
         # when
         assert collateral.adapter.join(our_urn, Wad(10)).transact()
-        assert d.vat.frob(collateral.ilk, Wad(10), Wad(0)).transact()
+        assert d.vat.frob(collateral.ilk, our_address, Wad(10), Wad(0)).transact()
 
         # then
         assert d.vat.urn(collateral.ilk, our_address).ink == our_urn.ink + Wad(10)
@@ -174,7 +171,7 @@ class TestPit:
 
         # when
         assert collateral.adapter.join(our_urn, Wad.from_number(10)).transact()
-        assert d.vat.frob(collateral.ilk, Wad(0), Wad(10)).transact()
+        assert d.vat.frob(collateral.ilk, our_address, Wad(0), Wad(10)).transact()
 
         # then
         assert d.vat.urn(collateral.ilk, our_address).art == our_urn.art + Wad(10)
@@ -184,7 +181,7 @@ class TestPit:
         c = d.collaterals[0]
 
         # when
-        assert d.vat.frob(c.ilk, Wad(0), Wad(0)).transact()
+        assert d.vat.frob(c.ilk, our_address, Wad(0), Wad(0)).transact()
 
         # then
         last_frob_event = d.pit.past_frob(1, event_filter={'ilk': c.ilk.toBytes()})[-1]
@@ -198,7 +195,7 @@ class TestCat:
     def test_empty_flips(self, d: DssDeployment):
         nflip = d.cat.nflip()
         assert d.cat.flips(nflip + 1) == Cat.Flip(nflip + 1,
-                                                  Urn(Address('0x0000000000000000000000000000000000000000')),
+                                                  Urn(address=Address('0x0000000000000000000000000000000000000000')),
                                                   Wad(0))
 
     def test_bite(self, our_address, d: DssDeployment):
@@ -258,7 +255,6 @@ class TestVow:
         assert isinstance(d.vow.hump(), Wad)
 
     def test_empty_flog(self, web3, d: DssDeployment):
-        time_travel_by(web3, d.vow.wait() + 10)
         assert d.vow.flog(0).transact()
 
     @pytest.mark.skip(reason="parity doesn't support evm_increaseTime; figure out if/why it's needed")
@@ -319,10 +315,10 @@ class TestVow:
 class TestJug:
     def test_getters(self, d: DssDeployment):
         c = d.collaterals[0]
-        assert isinstance(d.jug.vow(), Urn)
+        assert isinstance(d.jug.vow(), Address)
         assert isinstance(d.jug.vat(), Address)
-        assert isinstance(d.jug.repo(), Wad)
-        assert isinstance(d.jug.tax(c.ilk), Ray)
+        assert isinstance(d.jug.base(), Wad)
+        assert isinstance(d.jug.duty(c.ilk), Ray)
         assert isinstance(d.jug.rho(c.ilk), int)
 
     def test_drip(self, d: DssDeployment):
@@ -332,9 +328,9 @@ class TestJug:
         # then
         assert d.jug.drip(c.ilk).transact()
 
-    def test_file_tax(self, d: DssDeployment):
+    def test_file_duty(self, d: DssDeployment):
         # given
         c = d.collaterals[0]
 
         # then
-        assert d.jug.file_tax(c.ilk, Ray(1000000564701133626865910626)).transact()
+        assert d.jug.file_duty(c.ilk, Ray(1000000564701133626865910626)).transact()
