@@ -35,23 +35,23 @@ def web3():
     # web3.eth.defaultAccount = web3.eth.accounts[0]
 
     # for Kovan
-    # web3 = Web3(HTTPProvider(endpoint_uri="https://parity0.kovan.makerfoundation.com:8545",
-    #                          request_kwargs={"timeout": 10}))
-    # web3.eth.defaultAccount = "0xC140ce1be1c0edA2f06319d984c404251C59494e"
-    # register_keys(web3,
-    #               ["key_file=/home/ed/Projects/member-account.json,pass_file=/home/ed/Projects/member-account.pass",
-    #                "key_file=/home/ed/Projects/reserve-account.json,pass_file=/home/ed/Projects/reserve-account.pass"])
+    web3 = Web3(HTTPProvider(endpoint_uri="https://parity0.kovan.makerfoundation.com:8545",
+                             request_kwargs={"timeout": 10}))
+    web3.eth.defaultAccount = "0xC140ce1be1c0edA2f06319d984c404251C59494e"
+    register_keys(web3,
+                  ["key_file=/home/ed/Projects/member-account.json,pass_file=/home/ed/Projects/member-account.pass",
+                   "key_file=/home/ed/Projects/reserve-account.json,pass_file=/home/ed/Projects/reserve-account.pass"])
 
     # for dockerized empty local parity testchain
-    web3 = Web3(HTTPProvider("http://0.0.0.0:8345"))
-    web3.eth.defaultAccount = "0x6c626f45e3b7aE5A3998478753634790fd0E82EE"
-    register_keys(web3,
-                  ["key_file=tests/config/keys/UnlimitedChain/key1.json,"
-                   "pass_file=/dev/null",
-                   "key_file=tests/config/keys/UnlimitedChain/key2.json,"
-                   "pass_file=/dev/null"])
+    # web3 = Web3(HTTPProvider("http://0.0.0.0:8345"))
+    # web3.eth.defaultAccount = "0x6c626f45e3b7aE5A3998478753634790fd0E82EE"
+    # register_keys(web3,
+    #               ["key_file=tests/config/keys/UnlimitedChain/key1.json,"
+    #                "pass_file=/dev/null",
+    #                "key_file=tests/config/keys/UnlimitedChain/key2.json,"
+    #                "pass_file=/dev/null"])
 
-    assert len(web3.eth.accounts) > 1
+    # assert len(web3.eth.accounts) > 1
     return web3
 
 
@@ -111,6 +111,17 @@ def bite_event(our_address: Address, d: DssDeployment):
     # Return the corresponding event
     return d.cat.past_bite(1)[0]
 
+
+class TestConfig:
+    def test_from_json(self, web3: Web3):
+        addresses = open("tests/config/kovan-addresses.json", "r").read()
+        config = DssDeployment.Config.from_json(web3, addresses)
+        d = DssDeployment(web3, config)
+        assert isinstance(d.web3, Web3)
+        assert isinstance(d.config, DssDeployment.Config)
+        assert len(d.collaterals) > 1
+        assert len(d.config.to_dict()) > 10
+        assert len(d.collaterals) == len(d.config.collaterals)
 
 class TestVat:
     """ `Vat` class testing """

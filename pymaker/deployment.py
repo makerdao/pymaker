@@ -17,6 +17,7 @@
 
 import eth_utils
 import json
+import re
 from typing import Optional, List
 
 import pkg_resources
@@ -167,30 +168,44 @@ class DssDeployment:
         @staticmethod
         def from_json(web3: Web3, conf: str):
             conf = json.loads(conf)
-            mom = DSGuard(web3, Address(conf['MCD_MOM']))
+            # TODO: replace with MCD_PAUSE, a DSPause
+            # mom = DSGuard(web3, Address(conf['MCD_MOM']))
             vat = Vat(web3, Address(conf['MCD_VAT']))
             vow = Vow(web3, Address(conf['MCD_VOW']))
-            drip = Drip(web3, Address(conf['MCD_DRIP']))
+            jug = Jug(web3, Address(conf['MCD_JUG']))
             cat = Cat(web3, Address(conf['MCD_CAT']))
             flap = Flapper(web3, Address(conf['MCD_FLAP']))
             flop = Flopper(web3, Address(conf['MCD_FLOP']))
             dai = DSToken(web3, Address(conf['MCD_DAI']))
             dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']))
             mkr = DSToken(web3, Address(conf['MCD_GOV']))
+
             collaterals = []
-            for name in conf['COLLATERALS']:
-                collateral = Collateral(Ilk(name))
-                collateral.gem = DSToken(web3, Address(conf[name]))
-                collateral.adapter = GemAdapter(web3, Address(conf[f'MCD_JOIN_{name}']))
-                collateral.flipper = Flipper(web3, Address(conf[f'MCD_FLIP_{name}']))
-                collateral.pip = DSValue(web3, Address(conf[f'PIP_{name}']))
-                collateral.spotter = Spotter(web3, Address(conf[f'MCD_SPOT_{name}']))
+            for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
+                collateral = Collateral(Ilk(name[0]))
+                collateral.gem = DSToken(web3, Address(conf[name[1]]))
+                collateral.pip = DSValue(web3, Address(conf[f'PIP_{name[1]}']))
+                collateral.adapter = GemAdapter(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
+                collateral.flipper = Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}']))
+                # FIXME: Move Spotter out of collateral
+                collateral.spotter = Spotter(web3, Address(conf['MCD_SPOT']))
                 collaterals.append(collateral)
-            return DssDeployment.Config(mom, vat, vow, drip, cat, flap, flop, dai, dai_adapter, mkr, collaterals)
+
+            return DssDeployment.Config(None, vat, vow, jug, cat, flap, flop, dai, dai_adapter, mkr, collaterals)
+
+        @staticmethod
+        def _infer_collaterals_from_addresses(keys: []) -> List:
+            collaterals = []
+            for key in keys:
+                match = re.search(r'MCD_FLIP_((\w+)_\w+)', key)
+                if match:
+                    print(f"found collateral {match.group(1)}, {match.group(2)}")
+                    collaterals.append((match.group(1), match.group(2)))
+            return collaterals
 
         def to_dict(self) -> dict:
             conf_dict = {
-                'MCD_MOM': self.mom.address.address,
+                # 'MCD_MOM': self.mom.address.address,
                 'MCD_VAT': self.vat.address.address,
                 'MCD_VOW': self.vow.address.address,
                 'MCD_JUG': self.jug.address.address,
