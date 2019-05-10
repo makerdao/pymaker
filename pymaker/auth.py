@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
 from web3 import Web3
 
 from pymaker import Contract, Address, Transact
@@ -76,3 +77,97 @@ class DSGuard(Contract):
 
     def __repr__(self):
         return f"DSGuard('{self.address}')"
+
+
+# TODO: Complete implementation and unit test
+class DSAuth(Contract):
+
+    abi = Contract._load_abi(__name__, 'abi/DSAuth.abi')
+    bin = Contract._load_bin(__name__, 'abi/DSAuth.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert (isinstance(web3, Web3))
+        assert (isinstance(address, Address))
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+
+    @staticmethod
+    def deploy(web3: Web3):
+        return DSAuth(web3=web3, address=Contract._deploy(web3, DSAuth.abi, DSAuth.bin, []))
+
+    def set_owner(self, owner: Address) -> Transact:
+        assert isinstance(owner, Address)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        "setOwner", [owner.address])
+
+    def set_authority(self, ds_authority: Address):
+        assert isinstance(ds_authority, Address)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        "setAuthority", [ds_authority.address])
+
+
+# TODO: Complete implementation and unit test
+class DSPause(Contract):
+    """A client for the `DSPause` contract.
+
+    You can find the source code of the `DSPause` contract here:
+    <https://github.com/dapphub/ds-pause>.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `DSPause` contract.
+    """
+
+    class Plan:
+        def __init__(self, usr: Address, fax: bytes, eta: datetime):
+            """Creates a plan to be executed later.
+
+            Args:
+            usr: Address of the caller
+            fax: Identifies the calldata
+            eta: Identifies the earliest time of execution
+            """
+            assert isinstance(usr, Address)
+            assert isinstance(fax, bytes)
+            assert isinstance(eta, datetime.datetime)
+
+            self.usr = usr
+            self.fax = fax
+            self.eta = eta.timestamp()
+
+    abi = Contract._load_abi(__name__, 'abi/DSPause.abi')
+    bin = Contract._load_bin(__name__, 'abi/DSPause.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert (isinstance(web3, Web3))
+        assert (isinstance(address, Address))
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+
+    @staticmethod
+    def deploy(web3: Web3, delay: int, owner: Address, ds_auth: DSAuth):
+        return DSPause(web3=web3, address=Contract._deploy(web3, DSGuard.abi, DSGuard.bin,
+                                                           [delay, owner.address, ds_auth.address.address]))
+
+    # TODO: Awaiting updated ABI/BIN from dss-deploy
+    # def plot(self, plan: Plan):
+    #     return self._transact(plan, "plot")
+
+    def drop(self, plan: Plan):
+        return self._transact(plan, "drop")
+
+    def exec(self, plan: Plan) -> Transact:
+        return self._transact(plan, "exec")
+
+    def _transact(self, plan: Plan, function_name: str) -> Transact:
+        assert isinstance(plan, DSPause.Plan)
+        assert isinstance(function_name, str)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, function_name,
+                        [plan.usr.address, plan.fax, int(plan.eta)])

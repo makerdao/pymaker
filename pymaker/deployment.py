@@ -26,7 +26,7 @@ from web3 import Web3, HTTPProvider
 
 from pymaker import Address
 from pymaker.approval import directly
-from pymaker.auth import DSGuard
+from pymaker.auth import DSGuard, DSPause
 from pymaker.etherdelta import EtherDelta
 from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemAdapter
 from pymaker.feed import DSValue
@@ -150,10 +150,10 @@ class DssDeployment:
     """
 
     class Config:
-        def __init__(self, mom: DSGuard, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flap: Flapper,
-                     flop: Flopper, dai: DSToken, dai_join: DaiJoin, mkr: DSToken,
+        def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flap: Flapper,
+                     flop: Flopper, dai: DSToken, dai_join: DaiJoin, mkr: DSToken, spotter: Spotter,
                      collaterals: Optional[List[Collateral]] = None):
-            self.mom = mom
+            self.pause = pause
             self.vat = vat
             self.vow = vow
             self.jug = jug
@@ -163,13 +163,13 @@ class DssDeployment:
             self.dai = dai
             self.dai_join = dai_join
             self.mkr = mkr
+            self.spotter = spotter
             self.collaterals = collaterals or []
 
         @staticmethod
         def from_json(web3: Web3, conf: str):
             conf = json.loads(conf)
-            # TODO: replace with MCD_PAUSE, a DSPause
-            # mom = DSGuard(web3, Address(conf['MCD_MOM']))
+            pause = DSPause(web3, Address(conf['MCD_PAUSE']))
             vat = Vat(web3, Address(conf['MCD_VAT']))
             vow = Vow(web3, Address(conf['MCD_VOW']))
             jug = Jug(web3, Address(conf['MCD_JUG']))
@@ -179,6 +179,7 @@ class DssDeployment:
             dai = DSToken(web3, Address(conf['MCD_DAI']))
             dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']))
             mkr = DSToken(web3, Address(conf['MCD_GOV']))
+            spotter = Spotter(web3, Address(conf['MCD_SPOT']))
 
             collaterals = []
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
@@ -187,11 +188,10 @@ class DssDeployment:
                 collateral.pip = DSValue(web3, Address(conf[f'PIP_{name[1]}']))
                 collateral.adapter = GemAdapter(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
                 collateral.flipper = Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}']))
-                # FIXME: Move Spotter out of collateral
-                collateral.spotter = Spotter(web3, Address(conf['MCD_SPOT']))
                 collaterals.append(collateral)
 
-            return DssDeployment.Config(None, vat, vow, jug, cat, flap, flop, dai, dai_adapter, mkr, collaterals)
+            return DssDeployment.Config(pause, vat, vow, jug, cat, flap, flop,
+                                        dai, dai_adapter, mkr, spotter, collaterals)
 
         @staticmethod
         def _infer_collaterals_from_addresses(keys: []) -> List:
@@ -199,13 +199,12 @@ class DssDeployment:
             for key in keys:
                 match = re.search(r'MCD_FLIP_((\w+)_\w+)', key)
                 if match:
-                    print(f"found collateral {match.group(1)}, {match.group(2)}")
                     collaterals.append((match.group(1), match.group(2)))
             return collaterals
 
         def to_dict(self) -> dict:
             conf_dict = {
-                # 'MCD_MOM': self.mom.address.address,
+                'MCD_PAUSE': self.pause.address.address,
                 'MCD_VAT': self.vat.address.address,
                 'MCD_VOW': self.vow.address.address,
                 'MCD_JUG': self.jug.address.address,
@@ -215,17 +214,16 @@ class DssDeployment:
                 'MCD_DAI': self.dai.address.address,
                 'MCD_JOIN_DAI': self.dai_join.address.address,
                 'MCD_GOV': self.mkr.address.address,
-                'COLLATERALS': []
+                'MCD_SPOT': self.spotter.address.address
             }
 
             for collateral in self.collaterals:
-                name = collateral.ilk.name
-                conf_dict['COLLATERALS'].append(name)
-                conf_dict[name] = collateral.gem.address.address
-                conf_dict[f'MCD_JOIN_{name}'] = collateral.adapter.address.address
-                conf_dict[f'MCD_FLIP_{name}'] = collateral.flipper.address.address
-                conf_dict[f'MCD_SPOT_{name}'] = collateral.spotter.address.address
-                conf_dict[f'PIP_{name}'] = collateral.pip.address.address
+                match = re.search(r'(\w+)_\w+', collateral.ilk.name)
+                name = (collateral.ilk.name, match.group(1))
+                conf_dict[name[1]] = collateral.gem.address.address
+                conf_dict[f'PIP_{name[1]}'] = collateral.pip.address.address
+                conf_dict[f'MCD_JOIN_{name[0]}'] = collateral.adapter.address.address
+                conf_dict[f'MCD_FLIP_{name[0]}'] = collateral.flipper.address.address
 
             return conf_dict
 
@@ -238,7 +236,7 @@ class DssDeployment:
 
         self.web3 = web3
         self.config = config
-        self.mom = config.mom
+        self.pause = config.pause
         self.vat = config.vat
         self.vow = config.vow
         self.jug = config.jug
@@ -271,16 +269,13 @@ class DssDeployment:
         # deployDai
         dai = DSToken.deploy(web3=web3, symbol='DAI')
         dai_join = DaiJoin.deploy(web3=web3, vat=vat.address, dai=dai.address)
-        # dai.rely(dai_join)
+        dai.rely(dai_join)
         assert vat.rely(dai_join.address).transact()
 
         mkr = DSToken.deploy(web3=web3, symbol='MKR')
 
-        # TODO: use a DSProxy
-        mom = DSGuard.deploy(web3)
-        assert mom.permit(DSGuard.ANY, DSGuard.ANY, DSGuard.ANY).transact()
-        assert dai.set_authority(mom.address).transact()
-        assert mkr.set_authority(mom.address).transact()
+        # TODO: use a DSProxy, and auth this with Cat and Vow
+        pause = DSPause.deploy(web3, web3.eth.defaultAccount, Address("0x0"))
 
         vow = Vow.deploy(web3=web3)
         jug = Jug.deploy(web3=web3, vat=vat.address)
@@ -308,10 +303,10 @@ class DssDeployment:
         assert vow.rely(cat.address).transact()
         assert flop.rely(vow.address).transact()
 
-        config = DssDeployment.Config(mom, vat, vow, jug, cat, flap, flop, dai, dai_join, mkr)
-        deployment = DssDeployment(web3, config)
-
         spotter = Spotter.deploy(web3=web3, vat=vat.address)
+
+        config = DssDeployment.Config(pause, vat, vow, jug, cat, flap, flop, dai, dai_join, mkr, spotter)
+        deployment = DssDeployment(web3, config)
 
         collateral = Collateral.deploy(web3=web3, name='WETH', vat=vat)
         deployment.deploy_collateral(collateral, spotter,
@@ -340,7 +335,7 @@ class DssDeployment:
 
         assert collateral.gem.approve(collateral.adapter.address).transact()
 
-        # FIXME: Flipper.flips is not populating with all the required fields.
+        # FIXME: Flipper.flips may not be populating with all the required fields.
         assert self.cat.file_flip(collateral.ilk, collateral.flipper).transact()
         assert self.cat.file_lump(collateral.ilk, flop_lot).transact()  # Liquidation Quantity
         assert self.cat.file_chop(collateral.ilk, penalty).transact()  # Liquidation Penalty
@@ -352,7 +347,7 @@ class DssDeployment:
         spotter.file_pip(collateral.ilk, collateral.pip.address).transact()
         spotter.file_mat(collateral.ilk, ratio).transact()  # Liquidation ratio
         # FIXME: Figure out why this fails with {'code': -32016, 'message': 'The execution failed due to an exception.'}
-        # assert spotter.poke(collateral.ilk).transact()
+        assert spotter.poke(collateral.ilk).transact()
 
         self.collaterals.append(collateral)
 

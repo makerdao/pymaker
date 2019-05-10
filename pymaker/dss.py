@@ -414,7 +414,6 @@ class Collateral:
         self.adapter: GemAdapter = None
         self.flipper: Flipper = None
         self.pip = None
-        self.spotter: Spotter = None
 
     @staticmethod
     def deploy(web3: Web3, name: str, vat: Vat, decimals=18):
