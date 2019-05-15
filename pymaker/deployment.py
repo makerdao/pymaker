@@ -26,10 +26,11 @@ from web3 import Web3, HTTPProvider
 
 from pymaker import Address
 from pymaker.approval import directly
-from pymaker.auth import DSGuard, DSPause
+from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
 from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemAdapter
 from pymaker.feed import DSValue
+from pymaker.governance import DSPause
 from pymaker.numeric import Wad, Ray
 from pymaker.oasis import MatchingMarket
 from pymaker.sai import Tub, Tap, Top, Vox
@@ -247,6 +248,7 @@ class DssDeployment:
         self.dai_adapter = config.dai_join
         self.mkr = config.mkr
         self.collaterals = config.collaterals
+        self.spotter = config.spotter
 
     @staticmethod
     def from_json(web3: Web3, conf: str):

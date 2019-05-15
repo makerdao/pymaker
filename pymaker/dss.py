@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import logging
 from pprint import pformat
 from typing import Optional, List
@@ -24,6 +25,7 @@ from web3.utils.events import get_event_data
 
 from pymaker import Address, Contract, Transact
 from pymaker.auctions import Flapper, Flipper, Flopper
+from pymaker.logging import LogNote
 from pymaker.token import DSToken
 from pymaker.numeric import Wad, Ray, Rad
 
@@ -121,42 +123,6 @@ class Urn:
         return f"Urn('{self.address}'){repr}"
 
 
-class LogBite:
-    def __init__(self, log):
-        self.ilk = Ilk.fromBytes(log['args']['ilk'])
-        self.urn = Urn.fromBytes(log['args']['urn'])
-        self.ink = Wad(log['args']['ink'])
-        self.art = Wad(log['args']['art'])
-        self.tab = Wad(log['args']['tab'])
-        self.flip = int(log['args']['flip'])
-        self.iInk = Wad(log['args']['iInk'])
-        self.iart = Wad(log['args']['iArt'])
-        self.raw = log
-
-    @classmethod
-    def from_event(cls, event: dict):
-        assert isinstance(event, dict)
-
-        topics = event.get('topics')
-        if topics and topics[0] == HexBytes('0x99b5620489b6ef926d4518936cfec15d305452712b88bd59da2d9c10fb0953e8'):
-            log_bite_abi = [abi for abi in Cat.abi if abi.get('name') == 'Bite'][0]
-            event_data = get_event_data(log_bite_abi, event)
-
-            return LogBite(event_data)
-        else:
-            logging.warning(f'[from_event] Invalid topic in {event}')
-
-    def era(self, web3: Web3):
-        return web3.eth.getBlock(self.raw['blockNumber'])['timestamp']
-
-    def __eq__(self, other):
-        assert isinstance(other, LogBite)
-        return self.__dict__ == other.__dict__
-
-    def __repr__(self):
-        return pformat(vars(self))
-
-
 class LogFrob:
     def __init__(self, log):
         self.ilk = Ilk.fromBytes(log['args']['ilk'])
@@ -165,7 +131,6 @@ class LogFrob:
         self.art = Wad(log['args']['art'])
         self.dink = Wad(log['args']['dink'])
         self.dart = Wad(log['args']['dart'])
-        self.iink = Wad(log['args']['iInk'])
         self.iart = Wad(log['args']['iArt'])
         self.raw = log
 
@@ -175,7 +140,7 @@ class LogFrob:
 
         topics = event.get('topics')
         if topics and topics[0] == HexBytes('0xb2afa28318bcc689926b52835d844de174ef8de97e982a85c0199d584920791b'):
-            log_frob_abi = [abi for abi in Pit.abi if abi.get('name') == 'Frob'][0]
+            log_frob_abi = [abi for abi in Vat.abi if abi.get('name') == 'Vat'][0]
             event_data = get_event_data(log_frob_abi, event)
 
             return LogFrob(event_data)
@@ -191,21 +156,6 @@ class LogFrob:
 
     def __repr__(self):
         return pformat(vars(self))
-
-
-class LogNote(LogFrob):
-
-    @classmethod
-    def from_event(cls, event: dict):
-        assert isinstance(event, dict)
-
-        topics = event.get('topics')
-    # TODO
-    # handle Note event, return LogNote object
-
-    def __eq__(self, other):
-        assert isinstance(other, LogNote)
-        return self.__dict__ == other.__dict__
 
 
 class DaiJoin(Contract):
@@ -288,7 +238,7 @@ class GemAdapter(Contract):
 class Vat(Contract):
     """A client for the `Vat` contract.
 
-    Ref. <https://github.com/makerdao/dss/blob/master/src/tune.sol>
+    Ref. <https://github.com/makerdao/dss/blob/master/src/vat.sol>
     """
 
     abi = Contract._load_abi(__name__, 'abi/Vat.abi')
@@ -354,13 +304,13 @@ class Vat(Contract):
     def spot(self, ilk: Ilk) -> Ray:
         assert isinstance(ilk, Ilk)
 
-        (art, rate, spot, line) = self._contract.call().ilks(ilk.toBytes())
+        (art, rate, spot, line, dust) = self._contract.call().ilks(ilk.toBytes())
         return Ray(spot)
 
     def line(self, ilk: Ilk) -> Wad:
         assert isinstance(ilk, Ilk)
 
-        (art, rate, spot, line) = self._contract.call().ilks(ilk.toBytes())
+        (art, rate, spot, line, dust) = self._contract.call().ilks(ilk.toBytes())
         return Wad(line)
 
     def frob(self, ilk: Ilk, address: Address, dink: Wad, dart: Wad, collateral_owner=None, dai_recipient=None):
@@ -377,7 +327,6 @@ class Vat(Contract):
         assert isinstance(v, Address)
         assert isinstance(w, Address)
 
-        # FIXME: need to debug vat.sol
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'frob', [ilk.toBytes(), address.address, v.address, w.address, dink.value, dart.value])
 
@@ -387,12 +336,12 @@ class Vat(Contract):
             number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
             event_filter: Filter which will be applied to returned events.
          Returns:
-            List of past `LogNote` events represented as :py:class:`pymake.dss.LogNote` class.
+            List of past `LogNote` events represented as :py:class:`pymaker.logging.DSNote.LogNote` class.
         """
         assert isinstance(number_of_past_blocks, int)
         assert isinstance(event_filter, dict) or (event_filter is None)
 
-        return self._past_events(self._contract, 'Note', LogNote, number_of_past_blocks, event_filter)
+        return self._past_events(self._contract, 'LogNote', LogNote, number_of_past_blocks, event_filter)
 
     def __eq__(self, other):
         assert isinstance(other, Vat)
@@ -413,13 +362,13 @@ class Collateral:
         self.gem: DSToken = None
         self.adapter: GemAdapter = None
         self.flipper: Flipper = None
+        # points to `median` for official deployments, `DSValue` for debugging purposes
         self.pip = None
 
     @staticmethod
     def deploy(web3: Web3, name: str, vat: Vat, decimals=18):
         collateral = Collateral(Ilk(name))
         collateral.gem = DSToken.deploy(web3=web3, symbol=name)
-        # TODO: Set decimals on the DSToken
         collateral.adapter = GemAdapter.deploy(web3=web3, vat=vat.address,
                                                ilk=collateral.ilk, gem=collateral.gem.address)
 
@@ -691,6 +640,39 @@ class Cat(Contract):
     Ref. <https://github.com/makerdao/dss/blob/master/src/bite.sol>
     """
 
+    class LogBite:
+        def __init__(self, log):
+            self.ilk = Ilk.fromBytes(log['args']['ilk'])
+            self.urn = Urn.fromBytes(log['args']['urn'])
+            self.ink = Wad(log['args']['ink'])
+            self.art = Wad(log['args']['art'])
+            self.tab = Wad(log['args']['tab'])
+            self.flip = int(log['args']['flip'])
+            self.raw = log
+
+        @classmethod
+        def from_event(cls, event: dict):
+            assert isinstance(event, dict)
+
+            topics = event.get('topics')
+            if topics and topics[0] == HexBytes('0x99b5620489b6ef926d4518936cfec15d305452712b88bd59da2d9c10fb0953e8'):
+                log_bite_abi = [abi for abi in Cat.abi if abi.get('name') == 'Bite'][0]
+                event_data = get_event_data(log_bite_abi, event)
+
+                return Cat.LogBite(event_data)
+            else:
+                logging.warning(f'[from_event] Invalid topic in {event}')
+
+        def era(self, web3: Web3):
+            return web3.eth.getBlock(self.raw['blockNumber'])['timestamp']
+
+        def __eq__(self, other):
+            assert isinstance(other, Cat.LogBite)
+            return self.__dict__ == other.__dict__
+
+        def __repr__(self):
+            return pformat(vars(self))
+
     abi = Contract._load_abi(__name__, 'abi/Cat.abi')
     bin = Contract._load_bin(__name__, 'abi/Cat.bin')
 
@@ -812,7 +794,7 @@ class Cat(Contract):
         assert isinstance(number_of_past_blocks, int)
         assert isinstance(event_filter, dict) or (event_filter is None)
 
-        return self._past_events(self._contract, 'Bite', LogBite, number_of_past_blocks, event_filter)
+        return self._past_events(self._contract, 'Bite', Cat.LogBite, number_of_past_blocks, event_filter)
 
     def __repr__(self):
         return f"Cat('{self.address}')"
