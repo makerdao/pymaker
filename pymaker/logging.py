@@ -20,28 +20,6 @@ from web3 import Web3
 from pymaker import Contract, Address
 
 
-# TODO: Remove; this is just a mixin
-class DSNote(Contract):
-    """A client for the `DSNote` contract, which logs function calls as events.
-
-    You can find the source code of the `DSNote` contract here:
-    <https://github.com/dapphub/ds-note>.
-
-    Attributes:
-        web3: An instance of `Web` from `web3.py`.
-        address: Ethereum address of the `DSNote` contract.
-    """
-
-    abi = Contract._load_abi(__name__, 'abi/DSNote.abi')
-    bin = Contract._load_bin(__name__, 'abi/DSNote.bin')
-
-    @staticmethod
-    def get_contract(web3: Web3, address: Address):
-        assert (isinstance(web3, Web3))
-        assert (isinstance(address, Address))
-        return Contract._get_contract(web3, DSNote.abi, address)
-
-
 # This may be useful with and without DSNote
 class LogNote:
     def __init__(self, log):
