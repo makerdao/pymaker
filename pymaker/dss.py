@@ -161,7 +161,7 @@ class LogFrob:
 class DaiJoin(Contract):
     """A client for the `DaiJoin` contract.
 
-    Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol#L81>
+    Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol>
     """
 
     abi = Contract._load_abi(__name__, 'abi/DaiJoin.abi')
@@ -197,7 +197,7 @@ class DaiJoin(Contract):
 class GemAdapter(Contract):
     """A client for the `GemJoin` contract.
 
-    Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol#L34>
+    Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol>
     """
 
     abi = Contract._load_abi(__name__, 'abi/GemJoin.abi')
@@ -224,15 +224,27 @@ class GemAdapter(Contract):
         assert isinstance(urn, Urn)
         assert isinstance(value, Wad)
 
+        self._approve(value).transact()
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'join', [urn.address.address, value.value])
 
-    def exit(self, usr: Address, value: Wad) -> Transact:
-        assert isinstance(usr, Address)
+    def exit(self, urn: Urn, value: Wad) -> Transact:
+        assert isinstance(urn, Urn)
         assert isinstance(value, Wad)
 
+        self._approve(value).transact()
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'exit', [usr.Address, value.value])
+                        'exit', [urn.address.address, value.value])
+
+    def gem(self) -> DSToken:
+        address = Address(self._contract.call().gem())
+        return DSToken(self.web3, address)
+
+    def _approve(self, value: Wad) -> Transact:
+        assert isinstance(value, Wad)
+
+        print(f"approving adapter {self.address} for {value} of token at {self.gem().address}")
+        return self.gem().approve(self.address, value)
 
 
 class Vat(Contract):
@@ -283,11 +295,11 @@ class Vat(Contract):
         # TODO: We could get "ink" from the urn, but caller must provide an address.
         return Ilk(name, rate=Ray(rate), ink=Wad(0), art=Wad(art))
 
-    def gem(self, ilk: Ilk, urn: Address) -> Rad:
+    def gem(self, ilk: Ilk, urn: Address) -> Wad:
         assert isinstance(ilk, Ilk)
         assert isinstance(urn, Address)
 
-        return Rad(self._contract.call().gem(ilk.toBytes(), urn.address))
+        return Wad(self._contract.call().gem(ilk.toBytes(), urn.address))
 
     def dai(self, urn: Address) -> Rad:
         assert isinstance(urn, Address)
