@@ -336,7 +336,7 @@ class Vat(Contract):
             number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
             event_filter: Filter which will be applied to returned events.
          Returns:
-            List of past `LogNote` events represented as :py:class:`pymaker.logging.DSNote.LogNote` class.
+            List of past `LogNote` events represented as :py:class:`pymaker.logging.LogNote` class.
         """
         assert isinstance(number_of_past_blocks, int)
         assert isinstance(event_filter, dict) or (event_filter is None)

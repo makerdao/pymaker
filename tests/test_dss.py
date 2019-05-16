@@ -25,10 +25,11 @@ from tests.helpers import time_travel_by, snapshot, reset
 from pymaker import Address
 from pymaker.auctions import Flipper, Flapper, Flopper
 from pymaker.deployment import DssDeployment
-from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, Spotter
+from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemAdapter, Spotter
 from pymaker.feed import DSValue
 from pymaker.keys import register_keys
 from pymaker.numeric import Ray, Wad, Rad
+from pymaker.token import DSToken
 
 
 @pytest.fixture(scope="session")
@@ -77,7 +78,7 @@ def d(web3):
     # deployment = DssDeployment.from_json(web3=web3,
     #                                      conf=open("tests/config/kovan-addresses.json", "r").read())
     deployment = DssDeployment.from_json(web3=web3,
-                                         conf=open("/home/ed/Projects/mcd-testchain-docker-deploy/src/deployment-scripts/out/addresses.json", "r").read())
+                                         conf=open("/home/ed/Projects/parity-fixed-addresses.json", "r").read())
 
     assert isinstance(deployment.vat, Vat)
     assert deployment.vat.address is not None
@@ -111,10 +112,10 @@ def bite_event(our_address: Address, d: DssDeployment):
     to_price = Wad(Web3.toInt(collateral.pip.read())) - Wad.from_number(1)
 
     # Manipulate price to make our CDP underwater
-    # Note this will only work on a testchain deployed with fixed prices (PIP is DSValue)
+    # Note this will only work on a testchain deployed with fixed prices, where PIP is a DSValue
     assert d.vat.frob(ilk=collateral.ilk, address=our_address, dink=Wad(0), dart=max_dart).transact()
     assert collateral.pip.poke_with_int(to_price.value).transact()
-    assert collateral.spotter.poke().transact()
+    assert d.spotter.poke(ilk=collateral.ilk).transact()
 
     # Bite the CDP
     assert d.cat.bite(collateral.ilk, Urn(our_address)).transact()
@@ -124,19 +125,27 @@ def bite_event(our_address: Address, d: DssDeployment):
 
 
 class TestConfig:
-    def test_from_json(self, web3: Web3):
-        addresses = open("/home/ed/Projects/mcd-testchain-docker-deploy/src/deployment-scripts/out/addresses.json", "r").read()
-        config = DssDeployment.Config.from_json(web3, addresses)
-        d = DssDeployment(web3, config)
-        assert isinstance(d.web3, Web3)
-        assert isinstance(d.config, DssDeployment.Config)
+    def test_from_json(self, web3: Web3, d: DssDeployment):
+        # fixture calls DssDeployment.from_json
         assert len(d.config.collaterals) > 1
         assert len(d.collaterals) > 1
         assert len(d.config.to_dict()) > 10
         assert len(d.collaterals) == len(d.config.collaterals)
 
-    @pytest.mark.skip(reason="this was working but stopped for some reason")
+    def test_to_json(self, web3: Web3, d: DssDeployment):
+        config_out = d.to_json()
+        dict = json.loads(config_out)
+        assert "MCD_GOV" in dict
+        assert "MCD_DAI" in dict
+        assert len(dict) > 20
+
     def test_get_filter_topics(self, web3: Web3, our_address, d: DssDeployment):
+        changes = self.get_filter_changes(web3, our_address, d)
+        topics = changes[0]['topics']
+        print(f"event topics: {topics}")
+        assert len(topics) > 0
+
+    def get_filter_changes(self, web3: Web3, our_address, d: DssDeployment):
         # attach filter before taking an action
         vat_filter = web3.eth.filter({'address': str(d.vat.address.address)})
 
@@ -144,21 +153,18 @@ class TestConfig:
         c = d.collaterals[0]
         assert d.vat.frob(c.ilk, our_address, Wad(0), Wad(0)).transact()
 
-        # examine event topics
-        print(f"event filter changes: {web3.eth.getFilterChanges(vat_filter.filter_id)}")
-        topics = web3.eth.getFilterChanges(vat_filter.filter_id)[0]['topics']
-        print(f"event topics: {topics}")
-        assert len(topics) > 0
+        # examine event topics; note that reading changes empties the list!
+        return web3.eth.getFilterChanges(vat_filter.filter_id)
 
     def test_vat_events(self, web3: Web3, our_address, d: DssDeployment):
         events = d.vat._contract.events.__dict__["_events"]
         print(f"vat events: {events}")
         assert len(events) > 0
 
-        # event = d.vat._contract.events.LogNote() # ???
-        # log_frob_abi = [abi for abi in Vat.abi if abi.get('name') == 'LogNote'][0]
-        # event_data = get_event_data(log_frob_abi, event)
-        # print(event_data)
+        log_frob_abi = [abi for abi in Vat.abi if abi.get('name') == 'LogNote'][0]
+        event = self.get_filter_changes(web3, our_address, d)[0]  # d.vat._contract.events.LogNote()
+        event_data = get_event_data(log_frob_abi, event)
+        print(event_data)
 
         # logged_events = d.vat.past_note(1, event_filter={'ilk': c.ilk.toBytes()})
         # print(f"logged_events: {logged_events}")
@@ -184,19 +190,26 @@ class TestVat:
         assert d.vat.ilk('XXX') == Ilk('XXX', rate=Ray(0), ink=Wad(0), art=Wad(0))
 
     def test_gem(self, our_address: Address, d: DssDeployment):
-        assert d.vat.address is not None
-        assert len(d.collaterals) > 0
+        # given
         collateral = d.collaterals[0]
-
-        assert collateral.ilk is not None
-        assert collateral.gem is not None
-        assert collateral.adapter is not None
+        amount_to_join = Wad(10)
+        our_urn = d.vat.urn(collateral.ilk, our_address)
+        assert isinstance(collateral.ilk, Ilk)
+        assert isinstance(collateral.gem, DSToken)
+        assert isinstance(collateral.adapter, GemAdapter)
+        assert collateral.ilk == collateral.adapter.ilk()
+        assert our_urn.address == our_address
+        # If this fails, you need to wrap more ETH
+        assert collateral.gem.balance_of(our_address) > amount_to_join
 
         # when
-        assert collateral.adapter.join(Urn(our_address), Wad(10)).transact()
+        before_join = d.vat.gem(collateral.ilk, our_urn.address)
+        assert collateral.adapter.join(our_urn, amount_to_join).transact()
+        after_join = d.vat.gem(collateral.ilk, our_urn.address)
 
         # then
-        assert d.vat.gem(collateral.ilk, our_address) == Rad(Wad(10))
+        print(f"vat.gem {collateral.ilk} balance before join: {before_join}, after join: {after_join}")
+        assert d.vat.gem(collateral.ilk, our_address) == Rad(amount_to_join)
 
     def test_frob_noop(self, d: DssDeployment, our_address: Address):
         # given
@@ -267,7 +280,7 @@ class TestCat:
         # when
         assert d.vat.frob(ilk=collateral.ilk, address=our_address, dink=Wad(0), dart=max_dart).transact()
         assert collateral.pip.poke_with_int(to_price.value).transact()
-        assert collateral.spotter.poke().transact()
+        assert d.spotter.poke(ilk=collateral.ilk).transact()
 
         # then
         assert d.cat.bite(collateral.ilk, Urn(our_address)).transact()

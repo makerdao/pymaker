@@ -184,7 +184,7 @@ class DssDeployment:
 
             collaterals = []
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
-                collateral = Collateral(Ilk(name[0]))
+                collateral = Collateral(Ilk(name[0].replace('_', '-')))
                 collateral.gem = DSToken(web3, Address(conf[name[1]]))
                 collateral.pip = DSValue(web3, Address(conf[f'PIP_{name[1]}']))
                 collateral.adapter = GemAdapter(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
@@ -219,8 +219,8 @@ class DssDeployment:
             }
 
             for collateral in self.collaterals:
-                match = re.search(r'(\w+)_\w+', collateral.ilk.name)
-                name = (collateral.ilk.name, match.group(1))
+                match = re.search(r'(\w+)-\w+', collateral.ilk.name)
+                name = (collateral.ilk.name.replace('-', '_'), match.group(1))
                 conf_dict[name[1]] = collateral.gem.address.address
                 conf_dict[f'PIP_{name[1]}'] = collateral.pip.address.address
                 conf_dict[f'MCD_JOIN_{name[0]}'] = collateral.adapter.address.address
@@ -254,7 +254,7 @@ class DssDeployment:
     def from_json(web3: Web3, conf: str):
         return DssDeployment(web3, DssDeployment.Config.from_json(web3, conf))
 
-    def to_json(self):
+    def to_json(self) -> str:
         return self.config.to_json()
 
     @staticmethod
