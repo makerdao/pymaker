@@ -1,6 +1,6 @@
 # This file is part of Maker Keeper Framework.
 #
-# Copyright (C) 2018 bargst
+# Copyright (C) 2018-2019 bargst, EdNoepel
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -243,7 +243,6 @@ class GemAdapter(Contract):
     def _approve(self, value: Wad) -> Transact:
         assert isinstance(value, Wad)
 
-        print(f"approving adapter {self.address} for {value} of token at {self.gem().address}")
         return self.gem().approve(self.address, value)
 
 
@@ -253,6 +252,8 @@ class Vat(Contract):
     Ref. <https://github.com/makerdao/dss/blob/master/src/vat.sol>
     """
 
+    # CAUTION: As of the 0.2.5 release, Vat.abi needed to be manually updated with a LogNote definition.
+    # This will purportedly be resolved for the 0.2.6 MCD release.
     abi = Contract._load_abi(__name__, 'abi/Vat.abi')
     bin = Contract._load_bin(__name__, 'abi/Vat.bin')
 
@@ -543,6 +544,12 @@ class Vow(Contract):
     def hump(self) -> Wad:
         return Wad(self._contract.call().hump())
 
+    # Protected by an "auth", this cannot be called by consumers
+    # def fess(self, wad: Wad) -> Transact:
+    #     assert isinstance(wad, Wad)
+    #
+    #     return Transact(self, self.web3, self.abi, self.address, self._contract, 'fess', [wad.value])
+
     def flog(self, era: int) -> Transact:
         assert isinstance(era, int)
 
@@ -731,14 +738,14 @@ class Cat(Contract):
         urn = Urn(address=Address(flip_urn), ilk=Ilk.fromBytes(flip_ilk), ink=Wad(flip_ink))
         return Cat.Flip(id, urn, Wad(flip_tab))
 
-    def bite(self, ilk: Ilk, urn: Urn):
+    def bite(self, ilk: Ilk, urn: Urn) -> Transact:
         assert isinstance(ilk, Ilk)
         assert isinstance(urn, Urn)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'bite', [ilk.toBytes(), urn.address])
 
-    def flip(self, flip: Flip, amount: Wad):
+    def flip(self, flip: Flip, amount: Wad) -> Transact:
         assert isinstance(flip, Cat.Flip)
         assert isinstance(amount, Wad)
 

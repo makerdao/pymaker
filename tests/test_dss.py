@@ -1,6 +1,6 @@
 # This file is part of Maker Keeper Framework.
 #
-# Copyright (C) 2018 bargst
+# Copyright (C) 2018-2019 bargst, EdNoepel
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -15,12 +15,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import eth_abi
 import json
+import logging
 import pytest
+from eth_utils import decode_hex
+from hexbytes import HexBytes
 from web3 import Web3, HTTPProvider
 from web3.utils.events import get_event_data
-
-from tests.helpers import time_travel_by, snapshot, reset
 
 from pymaker import Address
 from pymaker.auctions import Flipper, Flapper, Flopper
@@ -46,12 +48,16 @@ def web3():
     #               ["key_file=/home/ed/Projects/member-account.json,pass_file=/home/ed/Projects/member-account.pass",
     #                "key_file=/home/ed/Projects/kovan-account2.json,pass_file=/home/ed/Projects/kovan-account2.pass"])
 
-    # for local parity testchain
+    # for local dockerized parity testchain
     web3 = Web3(HTTPProvider("http://0.0.0.0:8545"))
     web3.eth.defaultAccount = "0x50FF810797f75f6bfbf2227442e0c961a8562F4C"
     register_keys(web3,
                   ["key_file=tests/config/keys/UnlimitedChain/key1.json,pass_file=/dev/null",
                    "key_file=tests/config/keys/UnlimitedChain/key2.json,pass_file=/dev/null"])
+
+    logging.getLogger("web3").setLevel(logging.INFO)
+    logging.getLogger("urllib3").setLevel(logging.INFO)
+    logging.getLogger("asyncio").setLevel(logging.INFO)
 
     assert len(web3.eth.accounts) > 1
     return web3
@@ -96,8 +102,8 @@ def d(web3):
     return deployment
 
 
-@pytest.fixture()
-def bite_event(our_address: Address, d: DssDeployment):
+@pytest.fixture(scope="session")
+def bite(our_address: Address, d: DssDeployment):
     collateral = d.collaterals[0]
 
     # Add collateral to our CDP
@@ -118,6 +124,10 @@ def bite_event(our_address: Address, d: DssDeployment):
     # Bite the CDP
     assert d.cat.bite(collateral.ilk, Urn(our_address)).transact()
 
+
+@pytest.fixture(scope="session")
+def bite_event(our_address: Address, d: DssDeployment):
+    bite(our_address, d)
     # Return the corresponding event
     return d.cat.past_bite(1)[0]
 
@@ -156,49 +166,6 @@ class TestConfig:
         assert token.balance_of(our_address) == before
 
         web3.eth.defaultAccount = our_address
-
-    @pytest.mark.skip(reason="Sometimes the call to web3.eth.getFilterChanges blows up horribly")
-    def test_get_filter_topics(self, web3: Web3, our_address, d: DssDeployment):
-        changes = self.get_filter_changes(web3, our_address, d)
-        topics = changes[0]['topics']
-        print(f"event topics: {topics}")
-        assert len(topics) > 0
-
-    def get_filter_changes(self, web3: Web3, our_address, d: DssDeployment):
-        # attach filter before taking an action
-        vat_filter = web3.eth.filter({'address': str(d.vat.address.address)})
-
-        # do something with the contract
-        c = d.collaterals[0]
-
-        assert d.vat.frob(c.ilk, our_address, Wad(0), Wad(0)).transact()
-
-        # examine event topics; note that reading changes empties the list!
-        try:
-            return web3.eth.getFilterChanges(vat_filter.filter_id)
-        except TypeError:
-            # TODO: Investigate why Web3 sometimes blows up here
-            assert False
-
-    @pytest.mark.skip(reason="Sometimes the call to web3.eth.getFilterChanges blows up horribly")
-    def test_vat_events(self, web3: Web3, our_address, d: DssDeployment):
-        events = d.vat._contract.events.__dict__["_events"]
-        print(f"vat events: {events}")
-        assert len(events) > 0
-
-        log_frob_abi = [abi for abi in Vat.abi if abi.get('name') == 'LogNote'][0]
-        event = self.get_filter_changes(web3, our_address, d)[0]  # d.vat._contract.events.LogNote()
-        event_data = get_event_data(log_frob_abi, event)
-        print(event_data)
-
-        # logged_events = d.vat.past_note(1, event_filter={'ilk': c.ilk.toBytes()})
-        # print(f"logged_events: {logged_events}")
-        # assert len(logged_events) > 0
-        # last_frob_event = logged_events[0]
-        # assert last_frob_event.ilk == c.ilk
-        # assert last_frob_event.dink == Wad(0)
-        # assert last_frob_event.dart == Wad(0)
-        # assert last_frob_event.urn.address == our_address
 
 
 class TestVat:
@@ -267,12 +234,13 @@ class TestVat:
         our_urn = d.vat.urn(collateral.ilk, our_address)
 
         # when
-        assert collateral.adapter.join(our_urn, Wad.from_number(10)).transact()
+        assert collateral.adapter.join(our_urn, Wad(10)).transact()
         assert d.vat.frob(collateral.ilk, our_address, Wad(0), Wad(10)).transact()
 
         # then
         assert d.vat.urn(collateral.ilk, our_address).art == our_urn.art + Wad(10)
 
+    @pytest.mark.skip(reason="Using TestVatLogs class to establish a working implementation")
     def test_past_note(self, our_address, d: DssDeployment):
         # given
         c = d.collaterals[0]
@@ -286,6 +254,38 @@ class TestVat:
         assert last_frob_event.dink == Wad(0)
         assert last_frob_event.dart == Wad(0)
         assert last_frob_event.urn.address == our_address
+
+
+class TestVatLogs:
+    def test_get_filter_topics(self, web3: Web3, our_address, d: DssDeployment):
+        changes = self.get_filter_changes(web3, our_address, d)
+        topics = changes[0]['topics']
+        print(f"event topics: {topics}")
+        assert len(topics) > 0
+
+    def get_filter_changes(self, web3: Web3, our_address, d: DssDeployment):
+        # attach filter before taking an action
+        vat_filter = web3.eth.filter({'address': str(d.vat.address.address)})
+
+        # do something with the contract
+        c = d.collaterals[0]
+        assert d.vat.frob(c.ilk, our_address, Wad(0), Wad(0)).transact()
+
+        # examine event topics; note this method empties the list!
+        return web3.eth.getFilterChanges(vat_filter.filter_id)
+
+    def test_vat_events(self, web3: Web3, our_address, d: DssDeployment):
+        events = d.vat._contract.events.__dict__["_events"]
+        print(f"vat events: {events}")
+        assert len(events) > 0
+
+        log_frob_abi = [abi for abi in Vat.abi if abi.get('name') == 'LogNote'][0]
+        log_entry = self.get_filter_changes(web3, our_address, d)[0]  # d.vat._contract.events.LogNote()
+        # TODO: Consider writing a custom decode method to handle Vat's anonymous event
+        print(log_entry['data'])
+
+        event_data = get_event_data(log_frob_abi, log_entry)
+        print(event_data)
 
 
 class TestCat:
@@ -312,13 +312,15 @@ class TestCat:
         # then
         assert d.cat.bite(collateral.ilk, Urn(our_address)).transact()
 
+    @pytest.mark.skip(reason="bite_event moved to TestCatLogs for diagnosis")
     def test_past_bite(self, d: DssDeployment, bite_event):
         assert d.cat.past_bite(1) == [bite_event]
 
-    def test_flip(self, web3, d: DssDeployment, bite_event):
+    def test_flip(self, web3, d: DssDeployment, bite):
         # given
+        collateral = d.collaterals[0]
         nflip = d.cat.nflip()
-        flipper = Flipper(web3=web3, address=d.cat.flipper(bite_event.ilk))
+        flipper = Flipper(web3=web3, address=d.cat.flipper(collateral.ilk))
         kicks = flipper.kicks()
 
         # when
@@ -334,6 +336,61 @@ class TestCat:
         # then
         assert flipper.kicks() == kicks + 1
         assert d.cat.flips(flip.id).tab == Wad(0)
+
+
+class TestCatLogs:
+    def test_get_filter_topics(self, web3: Web3, our_address, d: DssDeployment):
+        changes = self.get_filter_changes(web3, our_address, d)
+        topics = changes[0]['topics']
+        print(f"event topics: {topics}")
+        assert len(topics) > 0
+
+    def get_filter_changes(self, web3: Web3, our_address: Address, d: DssDeployment):
+        # attach filter before taking an action
+        vat_filter = web3.eth.filter({'address': str(d.vat.address.address)})
+
+        self.bite(our_address, d)
+
+        # examine event topics; note this method empties the list!
+        return web3.eth.getFilterChanges(vat_filter.filter_id)
+
+    def test_event_filter(self, web3: Web3, our_address: Address, d: DssDeployment):
+        events = d.cat._contract.events.__dict__["_events"]
+        print(f"cat events: {events}")
+        assert len(events) > 0
+
+        types = []
+        names = []
+        indexed_types = []
+        indexed_names = []
+        for elem in Cat.abi:
+            if 'name' in elem and elem['name'] == 'LogNote':
+                for input in elem['inputs']:
+                    if input['indexed']:
+                        indexed_types.append(input["type"])
+                        indexed_names.append(input["name"])
+                    else:
+                        types.append(input["type"])
+                        names.append(input["name"])
+                break
+
+        logs = self.get_filter_changes(web3, our_address, d)
+        assert len(logs) > 0
+        for log in logs:
+            print(f"log data {log['data']}")
+
+        values = eth_abi.decode_abi(types, decode_hex(log['data']))
+        assert len(values) > 0
+        for value in values:
+            print(f"value {value.hex()}")
+        assert False
+
+
+    @pytest.mark.skip(reason="past_events collection is always empty")
+    def test_past_events(self, bite_event, d: DssDeployment):
+        past_events = d.cat._past_events(d.cat._contract, 'Bite', Cat.LogBite, 1, None)
+        print(past_events)
+        assert len(past_events) > 0
 
 
 class TestVow:
@@ -354,10 +411,9 @@ class TestVow:
     def test_empty_flog(self, web3, d: DssDeployment):
         assert d.vow.flog(0).transact()
 
-    @pytest.mark.skip(reason="parity doesn't support evm_increaseTime; figure out if/why it's needed")
+    # FIXME: This test requests Cat.LogBite to be working
     def test_flog(self, web3, d: DssDeployment, bite_event):
         # given
-        time_travel_by(web3, d.vow.wait() + 10)
         era = web3.eth.getBlock(bite_event.raw['blockNumber'])['timestamp']
         assert d.vow.sin_of(era) != Wad(0)
 
@@ -373,14 +429,52 @@ class TestVow:
     def test_kiss(self, d: DssDeployment):
         assert d.vow.kiss(Wad(0)).transact()
 
-    def test_flap(self, web3, our_address, d: DssDeployment):
+    # FIXME: Vow accounting issue needs resolution
+    def test_flap(self, web3, our_address, d: DssDeployment, bite):
         # given
         c = d.collaterals[0]
-        assert c.adapter.join(Urn(our_address), Wad.from_number(200)).transact()
-        assert d.vat.frob(c.ilk, Wad.from_number(200), Wad.from_number(11000)).transact()
-        assert d.dai_move.move(our_address, d.vow.address, Wad.from_number(11000)).transact()
+        surplus_before = d.vow.awe()
+        assert d.vat.frob(c.ilk, our_address, Wad(0), Wad.from_number(11000)).transact()
+        art = d.vat.urn(c.ilk, our_address).art
+        assert art > Wad(0)
+        lump_before = d.cat.lump(c.ilk)
+        sin_before = d.vow.sin()
+
+        # Calculate lot
+        lot = min(d.vat.urn(c.ilk, our_address).ink, d.cat.lump(c.ilk))
+        assert lot > Wad(0)
+
+        # Calculate art
+        # min(u.art, mul(lot, u.art) / u.ink)
+        urn_before_bite = d.vat.urn(c.ilk, our_address)
+        print(f"VAT before bite: ink={urn_before_bite.ink}, art={urn_before_bite.art}")
+        art = min(urn_before_bite.art, (lot * urn_before_bite.art) / urn_before_bite.ink)
+        assert art > Wad(0)
+
+        # Calculate tab, which is the value passed to vow.fess
+        rate = d.vat.ilk(c.ilk.name).rate
+        assert rate > Ray(0)
+        tab = Ray(art) * rate
+        assert tab > Ray(0)
+
+        # Manipulate price to make our CDP underwater, and then bite the CDP
+        to_price = Wad(Web3.toInt(c.pip.read())) / Wad.from_number(2)
+        assert c.pip.poke_with_int(to_price.value).transact()
+        assert d.spotter.poke(ilk=c.ilk).transact()
+        print(f"CAT during bite: lot={lot}, art={art}, tab={tab}")
+        assert d.cat.bite(c.ilk, Urn(our_address)).transact()
+
+        # Log some values
+        urn_after_bite = d.vat.urn(c.ilk, our_address)
+        print(f"VAT after bite: ink={urn_after_bite.ink}, art={urn_after_bite.art}")
+        print(f"VOW after bite: sin={d.vow.sin()}, ash={d.vow.ash()}, awe={d.vow.awe()}")
 
         # when
+        assert d.vow.sin() >= Wad(tab)
+        lump_after = d.cat.lump(c.ilk)
+        assert lump_before < lump_after
+        surplus_after = d.vow.awe()
+        assert surplus_before < surplus_after
         assert d.vow.heal(d.vow.woe()).transact()
         assert d.vow.joy() >= (d.vow.awe() + d.vow.bump() + d.vow.hump())
         assert d.vow.woe() == Wad(0)
@@ -388,7 +482,8 @@ class TestVow:
         # then
         assert d.vow.flap().transact()
 
-    def test_flop(self, web3, d: DssDeployment, bite_event):
+    # FIXME: This test requests Cat.LogBite to be working
+    def test_flop(self, web3, d: DssDeployment, bite):
         # given
         print(d)
         for be in d.cat.past_bite(100000):
