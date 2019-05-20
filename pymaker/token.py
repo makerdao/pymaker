@@ -337,30 +337,30 @@ class DSEthToken(ERC20Token):
         return f"DSEthToken('{self.address}')"
 
 
- class EthToken():
-     """Basic ETH token.
+class EthToken():
+    """Basic ETH token.
 
-         Attributes:
-          web3: An instance of `Web` from `web3.py`.
-          address: Ethereum address of the original ETH token.
-     """
+        Attributes:
+         web3: An instance of `Web` from `web3.py`.
+         address: Ethereum address of the original ETH token.
+    """
 
-     def __init__(self, web3: Web3, address: Address):
-         assert(isinstance(web3, Web3))
-         assert(isinstance(address, Address))
+    def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(address, Address))
 
-         self.web3 = web3
-         self.address = address
+        self.web3 = web3
+        self.address = address
 
-     def balance_of(self, address):
-         """Returns the ETH balance of a given Ethereum address.
+    def balance_of(self, address):
+        """Returns the ETH balance of a given Ethereum address.
 
-          Args:
-              address: The address to check the balance of.
+         Args:
+             address: The address to check the balance of.
 
-          Returns:
-              The ETH balance of the address specified.
-          """
-         assert(isinstance(address, Address))
+         Returns:
+             The ETH balance of the address specified.
+         """
+        assert(isinstance(address, Address))
 
-         return Wad(self.web3.eth.getBalance(address.address))
+        return Wad(self.web3.eth.getBalance(address.address))
