@@ -96,6 +96,9 @@ class DSAuth(Contract):
     def deploy(web3: Web3):
         return DSAuth(web3=web3, address=Contract._deploy(web3, DSAuth.abi, DSAuth.bin, []))
 
+    def get_owner(self) -> Address:
+        return Address(self._contract.call().owner())
+
     def set_owner(self, owner: Address) -> Transact:
         assert isinstance(owner, Address)
 

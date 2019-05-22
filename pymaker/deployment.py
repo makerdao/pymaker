@@ -34,7 +34,7 @@ from pymaker.governance import DSPause
 from pymaker.numeric import Wad, Ray
 from pymaker.oasis import MatchingMarket
 from pymaker.sai import Tub, Tap, Top, Vox
-from pymaker.token import DSToken
+from pymaker.token import DSToken, DSEthToken
 from pymaker.vault import DSVault
 
 
@@ -185,7 +185,11 @@ class DssDeployment:
             collaterals = []
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
                 collateral = Collateral(Ilk(name[0].replace('_', '-')))
-                collateral.gem = DSToken(web3, Address(conf[name[1]]))
+                if name[1]=="ETH":
+                    collateral.gem = DSEthToken(web3, Address(conf[name[1]]))
+                else:
+                    collateral.gem = DSToken(web3, Address(conf[name[1]]))
+                # TODO: Skip this for production and other deployments which use a medianizer.
                 collateral.pip = DSValue(web3, Address(conf[f'PIP_{name[1]}']))
                 collateral.adapter = GemAdapter(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
                 collateral.flipper = Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}']))
@@ -257,6 +261,7 @@ class DssDeployment:
     def to_json(self) -> str:
         return self.config.to_json()
 
+    # CAUTION: Facilities to deploy DSS are deprecated and will be removed from pymaker
     @staticmethod
     def deploy(web3: Web3):
         assert isinstance(web3, Web3)

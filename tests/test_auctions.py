@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from pymaker.numeric import Ray
 from web3 import HTTPProvider
 from web3 import Web3
@@ -22,31 +23,39 @@ from pymaker import Address, Wad, Contract
 from pymaker.approval import directly
 from pymaker.auctions import Flipper, Flapper, Flopper
 from pymaker.auth import DSGuard
+from pymaker.deployment import Deployment
 from pymaker.token import DSToken
 from tests.helpers import time_travel_by
 
 
 class TestFlipper:
-    def setup_method(self):
-        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
-        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
-        self.our_address = Address(self.web3.eth.defaultAccount)
+    def setup_method(self, web3: Web3, mcd: Deployment):
+        # for ganache
+        # self.web3 = Web3(HTTPProvider("http://localhost:8555"))
+        # self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
+        # self.our_address = Address(self.web3.eth.defaultAccount)
+
+        self.web3 = web3
+
         self.other_address_1 = Address(self.web3.eth.accounts[1])
         self.other_address_2 = Address(self.web3.eth.accounts[2])
 
-        self.dai = DSToken.deploy(self.web3, 'DAI')
+        self.dai = mcd.sai
+        assert isinstance(self.dai.address, Address)
+        self.flipper = mcd.collaterals[0].flipper
+        assert isinstance(self.flipper, Flipper)
 
         # we need a GemLike version of DSToken with push(bytes32, uint function)
-        self.gem_addr = Contract._deploy(self.web3, Contract._load_abi(__name__, 'abi/GemMock.abi'), Contract._load_bin(__name__, 'abi/GemMock.bin'), [b'ABC'])
-        self.gem = DSToken(web3=self.web3, address=self.gem_addr)
-
-        self.flipper = Flipper.deploy(self.web3, self.dai.address, self.gem.address)
+        # self.gem_addr = Contract._deploy(self.web3, Contract._load_abi(__name__, 'abi/GemMock.abi'), Contract._load_bin(__name__, 'abi/GemMock.bin'), [b'ABC'])
+        # self.gem = DSToken(web3=self.web3, address=self.gem_addr)
+        #
+        # self.flipper = Flipper.deploy(self.web3, self.dai.address, self.gem.address)
 
         # Set allowance to allow flipper to move dai and gem
         # With full deployment kick is only done by Cat via flip() which take care of allowance via gem.hope()
-        self.gem.approve(self.flipper.address).transact()
-        self.gem.approve(self.flipper.address).transact(from_address=self.other_address_1)
-        self.dai.approve(self.flipper.address).transact()
+        # self.gem.approve(self.flipper.address).transact()
+        # self.gem.approve(self.flipper.address).transact(from_address=self.other_address_1)
+        # self.dai.approve(self.flipper.address).transact()
 
     def dai_balance(self, address: Address) -> Wad:
         assert(isinstance(address, Address))

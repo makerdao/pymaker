@@ -16,11 +16,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
-from datetime import datetime, timedelta
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address
-from pymaker.auth import DSGuard, DSAuth, DSPause
+from pymaker.auth import DSGuard, DSAuth
 from pymaker.util import hexstring_to_bytes
 
 
@@ -74,25 +73,18 @@ class TestDSGuard:
                                  sig='0xab121fd8')  # different sig
 
 
-class TestDSPause:
+class TestDSAuth:
     def setup_method(self):
         self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
 
-        ds_auth = DSAuth.deploy(self.web3)
-        self.ds_pause = DSPause.deploy(self.web3, 5, self.our_address, ds_auth)
+        self.ds_auth = DSAuth.deploy(self.web3)
 
-        self.plan = DSPause.Plan(usr=self.our_address,
-                                 fax=self.web3.toBytes(text='abi.encodeWithSignature("sig()")'),
-                                 eta=(datetime.utcnow() + timedelta(seconds=10)))
+    def test_owner(self):
+        owner = self.ds_auth.get_owner()
+        assert isinstance(owner, Address)
+        assert owner == self.web3.eth.accounts[0]
 
-    @pytest.mark.skip(reason="transaction fails on ganache")
-    def test_drop(self):
-        # assert self.ds_pause.plot(self.plan).transact()
-        assert self.ds_pause.drop(self.plan).transact()
-
-    @pytest.mark.skip(reason="transaction fails on ganache")
-    def test_exec(self):
-        # assert self.ds_pause.plot(self.plan).transact()
-        assert self.ds_pause.exec(self.plan).transact()
+        assert self.ds_auth.set_owner(self.web3.eth.accounts[1])
+        assert self.ds_auth.get_owner() == self.web3.eth.accounts[1]

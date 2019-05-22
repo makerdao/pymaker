@@ -18,9 +18,10 @@
 from web3 import Web3
 
 from pymaker import Contract, Address, Transact
+from pymaker.auth import DSAuth
 
 
-class DSValue(Contract):
+class DSValue(DSAuth):
     """A client for the `DSValue` contract, a single-value data feed.
 
     `DSValue` is a single-value data feed, which means it can be in one of two states.

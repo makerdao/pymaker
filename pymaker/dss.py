@@ -34,18 +34,24 @@ class Ilk:
     """The `Ilk` object as a type of collateral.
     """
 
-    def __init__(self, name: str, rate: Optional[Ray]=None,
-                                  ink: Optional[Wad]=None,
-                                  art: Optional[Wad]=None):
+    def __init__(self, name: str, rate: Optional[Ray] = None,
+                 ink: Optional[Wad] = None,
+                 art: Optional[Wad] = None,
+                 line: Optional[Rad] = None,
+                 dust: Optional[Rad] = None):
         assert (isinstance(name, str))
         assert (isinstance(rate, Ray) or (rate is None))
         assert (isinstance(ink, Wad) or (ink is None))
         assert (isinstance(art, Wad) or (art is None))
+        assert (isinstance(line, Rad) or (line is None))
+        assert (isinstance(dust, Rad) or (dust is None))
 
         self.name = name
         self.rate = rate
         self.ink = ink
         self.art = art
+        self.line = line
+        self.dust = dust
 
     def toBytes(self):
         return Web3.toBytes(text=self.name).ljust(32, bytes(1))
@@ -63,7 +69,9 @@ class Ilk:
         return (self.name == other.name) \
            and (self.rate == other.rate) \
            and (self.ink == other.ink) \
-           and (self.art == other.art)
+           and (self.art == other.art) \
+           and (self.line == other.line) \
+           and (self.dust == other.dust)
 
     def __repr__(self):
         repr = ''
@@ -73,6 +81,10 @@ class Ilk:
             repr += f' Ink={self.ink}'
         if self.art:
             repr += f' Art={self.art}'
+        if self.line:
+            repr += f' line={self.line}'
+        if self.dust:
+            repr += f' dust={self.dust}'
         if repr:
             repr = f'[{repr.strip()}]'
 
@@ -271,11 +283,6 @@ class Vat(Contract):
 
         return Vat(web3=web3, address=Contract._deploy(web3, Vat.abi, Vat.bin, []))
 
-    def rely(self, usr: Address) -> Transact:
-        assert isinstance(usr, Address)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'rely', [usr.address])
-
     def init(self, ilk: Ilk) -> Transact:
         assert isinstance(ilk, Ilk)
 
@@ -293,8 +300,8 @@ class Vat(Contract):
         b32_ilk = Ilk(name).toBytes()
         (art, rate, spot, line, dust) = self._contract.call().ilks(b32_ilk)
 
-        # TODO: We could get "ink" from the urn, but caller must provide an address.
-        return Ilk(name, rate=Ray(rate), ink=Wad(0), art=Wad(art))
+        # We could get "ink" from the urn, but caller must provide an address.
+        return Ilk(name, rate=Ray(rate), ink=Wad(0), art=Wad(art), line=Rad(line), dust=Rad(dust))
 
     def gem(self, ilk: Ilk, urn: Address) -> Wad:
         assert isinstance(ilk, Ilk)
@@ -305,7 +312,7 @@ class Vat(Contract):
     def dai(self, urn: Address) -> Rad:
         assert isinstance(urn, Address)
 
-        return Rad(self._contract.call().dai(Urn(urn).toBytes()))
+        return Rad(self._contract.call().dai(urn.address))
 
     def urn(self, ilk: Ilk, address: Address) -> Urn:
         assert isinstance(ilk, Ilk)
@@ -325,6 +332,9 @@ class Vat(Contract):
 
         (art, rate, spot, line, dust) = self._contract.call().ilks(ilk.toBytes())
         return Wad(line)
+
+    def debt(self) -> Rad:
+        return Rad(self._contract.call().debt())
 
     def frob(self, ilk: Ilk, address: Address, dink: Wad, dart: Wad, collateral_owner=None, dai_recipient=None):
         assert isinstance(ilk, Ilk)
@@ -375,7 +385,8 @@ class Collateral:
         self.gem: DSToken = None
         self.adapter: GemAdapter = None
         self.flipper: Flipper = None
-        # points to `median` for official deployments, `DSValue` for debugging purposes
+        # Points to `median` for official deployments, `DSValue` for testing purposes.
+        # Users generally have no need to interact with the pip.
         self.pip = None
 
     @staticmethod
@@ -544,12 +555,6 @@ class Vow(Contract):
     def hump(self) -> Wad:
         return Wad(self._contract.call().hump())
 
-    # Protected by an "auth", this cannot be called by consumers
-    # def fess(self, wad: Wad) -> Transact:
-    #     assert isinstance(wad, Wad)
-    #
-    #     return Transact(self, self.web3, self.abi, self.address, self._contract, 'fess', [wad.value])
-
     def flog(self, era: int) -> Transact:
         assert isinstance(era, int)
 
@@ -608,27 +613,6 @@ class Jug(Contract):
         assert isinstance(ilk, Ilk)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [ilk.toBytes()])
-
-    def file_duty(self, ilk: Ilk, duty: Ray) -> Transact:
-        assert isinstance(ilk, Ilk)
-        assert isinstance(duty, Ray)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,bytes32,uint256)',
-                        [ilk.toBytes(), Web3.toBytes(text="duty"), duty.value])
-
-    def file_base(self, base: Ray) -> Transact:
-        assert isinstance(base, Ray)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint256)',
-                        [Web3.toBytes("base"), base.value])
-
-    def file_vow(self, vow: Vow) -> Transact:
-        assert isinstance(vow, Vow)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,address)', [Web3.toBytes(text="vow"), vow.address.address])
 
     def vat(self) -> Address:
         return Address(self._contract.call().vat())
@@ -743,7 +727,7 @@ class Cat(Contract):
         assert isinstance(urn, Urn)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'bite', [ilk.toBytes(), urn.address])
+                        'bite', [ilk.toBytes(), urn.address.address])
 
     def flip(self, flip: Flip, amount: Wad) -> Transact:
         assert isinstance(flip, Cat.Flip)
