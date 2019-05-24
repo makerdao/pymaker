@@ -321,6 +321,7 @@ class Vat(Contract):
         (ink, art) = self._contract.call().urns(ilk.toBytes(), address.address)
         return Urn(address, ilk, Wad(ink), Wad(art))
 
+    # TODO: Move this into ilk for consistency
     def spot(self, ilk: Ilk) -> Ray:
         assert isinstance(ilk, Ilk)
 

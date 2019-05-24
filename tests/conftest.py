@@ -39,7 +39,7 @@ def deployment(new_deployment: Deployment) -> Deployment:
 
 
 @pytest.fixture(scope="session")
-def web3():
+def web3() -> Web3:
     # for ganache
     # web3 = Web3(HTTPProvider("http://localhost:8555"))
     # web3.eth.defaultAccount = web3.eth.accounts[0]
@@ -70,17 +70,17 @@ def web3():
 
 
 @pytest.fixture(scope="session")
-def other_address(web3):
-    return Address(web3.eth.accounts[1])
-
-
-@pytest.fixture(scope="session")
-def our_address(web3):
+def our_address(web3) -> Address:
     return Address(web3.eth.accounts[0])
 
 
 @pytest.fixture(scope="session")
-def mcd(web3):
+def other_address(web3) -> Address:
+    return Address(web3.eth.accounts[1])
+
+
+@pytest.fixture(scope="session")
+def mcd(web3) -> DssDeployment:
     # for local dockerized parity testchain
     deployment = DssDeployment.from_json(web3=web3, conf=open("tests/config/addresses.json", "r").read())
 

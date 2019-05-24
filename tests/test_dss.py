@@ -58,35 +58,6 @@ def max_dart(mcd: DssDeployment, collateral: Collateral, our_address: Address) -
     return dart
 
 
-@pytest.fixture(scope="session")
-def bite(web3: Web3, our_address: Address, mcd: DssDeployment):
-    collateral = mcd.collaterals[0]
-
-    # Add collateral to our CDP
-    dink = Wad.from_number(1)
-    wrap_eth(mcd, dink)
-    assert collateral.adapter.join(Urn(our_address), dink).transact()
-    frob(mcd, collateral, our_address, dink, Wad(0))
-
-    # Define required bite parameters
-    to_price = Wad(Web3.toInt(collateral.pip.read())) - Wad.from_number(10)
-
-    # Manipulate price to make our CDP underwater
-    # Note this will only work on a testchain deployed with fixed prices, where PIP is a DSValue
-    frob(mcd, collateral, our_address, Wad(0), Wad.from_number(1))
-    set_collateral_price(web3, mcd, collateral, to_price)
-
-    # Bite the CDP
-    assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
-
-
-@pytest.fixture(scope="session")
-def bite_event(our_address: Address, mcd: DssDeployment):
-    bite(our_address, mcd)
-    # Return the corresponding event
-    return mcd.cat.past_bite(1)[0]
-
-
 @pytest.fixture
 def urn(our_address: Address, mcd: DssDeployment):
     collateral = mcd.collaterals[0]
@@ -181,6 +152,57 @@ def frob(mcd: DssDeployment, collateral: Collateral, our_address: Address, dink:
 
     simulate_frob(mcd, collateral, our_address, dink, dart)
     assert mcd.vat.frob(ilk=collateral.ilk, address=our_address, dink=dink, dart=dart).transact()
+
+
+def simulate_bite(mcd: DssDeployment, collateral: Collateral, our_address: Address):
+    assert isinstance(mcd, DssDeployment)
+    assert isinstance(collateral, Collateral)
+    assert isinstance(our_address, Address)
+
+    ilk = mcd.vat.ilk(collateral.ilk.name)
+    urn = mcd.vat.urn(collateral.ilk, our_address)
+
+    # Collateral value should be less than the product of our stablecoin debt and the debt multiplier
+    assert (Ray(urn.ink) * mcd.vat.spot(ilk)) < (Ray(urn.art) * ilk.rate)
+
+    # Lesser of our collateral balance and the liquidation quantity
+    lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
+    # Lesser of our stablecoin debt and the canceled debt pro rata the seized collateral
+    art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
+    # Stablecoin to be raised in flip auction
+    tab = art * ilk.rate  # Ray
+
+    assert -int(lot) < 0 and -int(art) < 0
+
+
+@pytest.fixture(scope="session")
+def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
+    collateral = mcd.collaterals[0]
+
+    # Add collateral to our CDP
+    dink = Wad.from_number(1)
+    wrap_eth(mcd, dink)
+    assert collateral.adapter.join(Urn(our_address), dink).transact()
+    frob(mcd, collateral, our_address, dink, Wad(0))
+
+    # Define required bite parameters
+    to_price = Wad(Web3.toInt(collateral.pip.read())) - Wad.from_number(10)
+
+    # Manipulate price to make our CDP underwater
+    # Note this will only work on a testchain deployed with fixed prices, where PIP is a DSValue
+    frob(mcd, collateral, our_address, Wad(0), Wad.from_number(1))
+    set_collateral_price(web3, mcd, collateral, to_price)
+
+    # Bite the CDP
+    simulate_bite(mcd, collateral, our_address)
+    assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
+
+
+@pytest.fixture(scope="session")
+def bite_event(web3: Web3, mcd: DssDeployment, our_address: Address):
+    bite(web3, mcd, our_address)
+    # Return the corresponding event
+    return mcd.cat.past_bite(1)[0]
 
 
 class TestConfig:
@@ -399,11 +421,12 @@ class TestCatLogs:
         print(f"event topics: {topics}")
         assert len(topics) > 0
 
-    def get_filter_changes(self, web3: Web3, our_address: Address, d: DssDeployment):
+    def get_filter_changes(self, web3: Web3, our_address: Address, mcd: DssDeployment):
         # attach filter before taking an action
-        vat_filter = web3.eth.filter({'address': str(d.vat.address.address)})
+        vat_filter = web3.eth.filter({'address': str(mcd.cat.address.address)})
 
-        self.bite(our_address, d)
+        # not using as a fixture because we needed to attach filter first
+        bite(web3=web3, mcd=mcd, our_address=our_address)
 
         # examine event topics; note this method empties the list!
         return web3.eth.getFilterChanges(vat_filter.filter_id)
@@ -438,7 +461,6 @@ class TestCatLogs:
         for value in values:
             print(f"value {value.hex()}")
         assert False
-
 
     @pytest.mark.skip(reason="past_events collection is always empty")
     def test_past_events(self, bite_event, mcd):
@@ -488,7 +510,7 @@ class TestVow:
         # given
         c = mcd.collaterals[0]
         surplus_before = mcd.vow.awe()
-        assert mcd.vat.frob(c.ilk, our_address, Wad(0), Wad.from_number(11000)).transact()
+        frob(mcd, c, our_address, Wad(0), Wad.from_number(11))
         art = mcd.vat.urn(c.ilk, our_address).art
         assert art > Wad(0)
         lump_before = mcd.cat.lump(c.ilk)
@@ -500,7 +522,6 @@ class TestVow:
 
         # Calculate art
         urn_before_bite = mcd.vat.urn(c.ilk, our_address)
-        print(f"VAT before bite: ink={urn_before_bite.ink}, art={urn_before_bite.art}")
         art = min(urn_before_bite.art, (lot * urn_before_bite.art) / urn_before_bite.ink)
         assert art > Wad(0)
 
@@ -512,9 +533,8 @@ class TestVow:
 
         # Manipulate price to make our CDP underwater, and then bite the CDP
         to_price = Wad(Web3.toInt(c.pip.read())) / Wad.from_number(2)
-        assert c.pip.poke_with_int(to_price.value).transact()
-        assert mcd.spotter.poke(ilk=c.ilk).transact()
-        print(f"CAT during bite: lot={lot}, art={art}, tab={tab}, lump={lump_before}")
+        set_collateral_price(web3, mcd, c, to_price)
+        simulate_bite(mcd, c, our_address)
         assert mcd.cat.bite(c.ilk, Urn(our_address)).transact()
 
         # Log some values
@@ -528,7 +548,13 @@ class TestVow:
         assert lump_before < lump_after
         surplus_after = mcd.vow.awe()
         assert surplus_before < surplus_after
-        assert mcd.vow.heal(mcd.vow.woe()).transact()
+
+        rad = mcd.vow.woe()
+        assert rad <= mcd.vow.joy()
+        assert rad <= mcd.vow.woe()
+        # can only call this when there's more surplus than debt
+        assert mcd.vow.heal(rad).transact()
+        # FIXME: total surplus (joy) is 0 here; unsure why the test author didn't like this
         assert mcd.vow.joy() >= (mcd.vow.awe() + mcd.vow.bump() + mcd.vow.hump())
         assert mcd.vow.woe() == Wad(0)
 
