@@ -26,36 +26,10 @@ from web3.utils.events import get_event_data
 from pymaker import Address
 from pymaker.auctions import Flipper, Flapper, Flopper
 from pymaker.deployment import DssDeployment
-from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemAdapter, Spotter, Collateral
+from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemAdapter, DaiJoin, Spotter, Collateral
 from pymaker.feed import DSValue
 from pymaker.numeric import Ray, Wad, Rad
 from pymaker.token import DSToken, DSEthToken
-
-
-def max_dart(mcd: DssDeployment, collateral: Collateral, our_address: Address) -> Wad:
-    assert isinstance(mcd, DssDeployment)
-    assert isinstance(collateral, Collateral)
-    assert isinstance(our_address, Address)
-
-    urn = mcd.vat.urn(collateral.ilk, our_address)
-    ilk = mcd.vat.ilk(collateral.ilk.name)
-
-    # change in debt = (collateral balance * collateral price with safety margin) - CDP's stablecoin debt
-    dart = urn.ink * mcd.vat.spot(collateral.ilk) - urn.art
-
-    # don't let the change in debt exceed the collateral debt ceiling
-    if (Rad(urn.art) + Rad(dart)) >= ilk.line:
-        print("reducing dart to stay below collateral debt ceiling")
-        dart = Wad(ilk.line - Rad(urn.art)) - Wad.from_number(1)
-
-    # don't let the change in debt exceed the total debt ceiling
-    debt = mcd.vat.debt() + Rad(ilk.rate * dart)
-    if (debt + Rad(dart)) >= debt:
-        print("reducing dart to stay below total debt ceiling")
-        dart = Wad(debt - Rad(urn.art)) - Wad.from_number(1)
-
-    print(f"max_dart={dart}")
-    return dart
 
 
 @pytest.fixture
@@ -99,81 +73,7 @@ def set_collateral_price(web3: Web3, mcd: DssDeployment, collateral: Collateral,
     assert get_collateral_price(collateral) == price
 
 
-def simulate_frob(mcd: DssDeployment, collateral: Collateral, our_address: Address, dink: Wad, dart: Wad):
-    assert isinstance(mcd, DssDeployment)
-    assert isinstance(collateral, Collateral)
-    assert isinstance(our_address, Address)
-    assert isinstance(dink, Wad)
-    assert isinstance(dart, Wad)
-
-    urn = mcd.vat.urn(collateral.ilk, our_address)
-    ilk = mcd.vat.ilk(collateral.ilk.name)
-
-    print(f"urn.ink={urn.ink}, urn.art={urn.art}, ilk.art={ilk.art}, dink={dink}, dart={dart}")
-    ink = urn.ink + dink
-    art = urn.art + dart
-    ilk_art = ilk.art + dart
-    rate = ilk.rate
-
-    gem = mcd.vat.gem(collateral.ilk, urn.address) - dink
-    dai = mcd.vat.dai(urn.address) + Rad(rate * dart)
-    debt = mcd.vat.debt() + Rad(rate * dart)
-
-    # stablecoin debt does not increase
-    cool = dart <= Wad(0)
-    # collateral balance does not decrease
-    firm = dink >= Wad(0)
-    nice = cool and firm
-
-    # CDP remains under both collateral and total debt ceilings
-    under_collateral_debt_ceiling = Rad(ilk_art * rate) <= ilk.line
-    if not under_collateral_debt_ceiling:
-        print(f"CDP would exceed collateral debt ceiling of {ilk.line}")
-    under_total_debt_ceiling = debt < ilk.line
-    if not under_total_debt_ceiling:
-        print(f"CDP would exceed total debt ceiling of {ilk.line}")
-    calm = under_collateral_debt_ceiling and under_total_debt_ceiling
-
-    safe = (urn.art * rate) <= ink * mcd.vat.spot(collateral.ilk)
-
-    assert calm or cool
-    assert nice or safe
-
-    assert Rad(ilk_art * rate) >= ilk.dust or (art == Wad(0))
-    assert rate != Ray(0)
-
-
-def frob(mcd: DssDeployment, collateral: Collateral, our_address: Address, dink: Wad, dart: Wad):
-    assert isinstance(mcd, DssDeployment)
-    assert isinstance(collateral, Collateral)
-    assert isinstance(our_address, Address)
-    assert isinstance(dink, Wad)
-    assert isinstance(dart, Wad)
-
-    simulate_frob(mcd, collateral, our_address, dink, dart)
-    assert mcd.vat.frob(ilk=collateral.ilk, address=our_address, dink=dink, dart=dart).transact()
-
-
-def simulate_bite(mcd: DssDeployment, collateral: Collateral, our_address: Address):
-    assert isinstance(mcd, DssDeployment)
-    assert isinstance(collateral, Collateral)
-    assert isinstance(our_address, Address)
-
-    ilk = mcd.vat.ilk(collateral.ilk.name)
-    urn = mcd.vat.urn(collateral.ilk, our_address)
-
-    # Collateral value should be less than the product of our stablecoin debt and the debt multiplier
-    assert (Ray(urn.ink) * mcd.vat.spot(ilk)) < (Ray(urn.art) * ilk.rate)
-
-    # Lesser of our collateral balance and the liquidation quantity
-    lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
-    # Lesser of our stablecoin debt and the canceled debt pro rata the seized collateral
-    art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
-    # Stablecoin to be raised in flip auction
-    tab = art * ilk.rate  # Ray
-
-    assert -int(lot) < 0 and -int(art) < 0
-
+# TODO: Make these static methods in TestCat instead of fixtures
 
 @pytest.fixture(scope="session")
 def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
@@ -182,19 +82,20 @@ def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
     # Add collateral to our CDP
     dink = Wad.from_number(1)
     wrap_eth(mcd, dink)
+    assert collateral.gem.balance_of(our_address) >= dink
     assert collateral.adapter.join(Urn(our_address), dink).transact()
-    frob(mcd, collateral, our_address, dink, Wad(0))
+    TestVat.frob(mcd, collateral, our_address, dink, Wad(0))
 
     # Define required bite parameters
-    to_price = Wad(Web3.toInt(collateral.pip.read())) - Wad.from_number(10)
+    to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
 
     # Manipulate price to make our CDP underwater
     # Note this will only work on a testchain deployed with fixed prices, where PIP is a DSValue
-    frob(mcd, collateral, our_address, Wad(0), Wad.from_number(1))
+    TestVat.frob(mcd, collateral, our_address, Wad(0), TestVat.max_dart(mcd, collateral, our_address))
     set_collateral_price(web3, mcd, collateral, to_price)
 
     # Bite the CDP
-    simulate_bite(mcd, collateral, our_address)
+    TestCat.simulate_bite(mcd, collateral, our_address)
     assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
 
 
@@ -242,7 +143,96 @@ class TestConfig:
 
 
 class TestVat:
-    """ `Vat` class testing """
+    @staticmethod
+    def max_dart(mcd: DssDeployment, collateral: Collateral, our_address: Address) -> Wad:
+        assert isinstance(mcd, DssDeployment)
+        assert isinstance(collateral, Collateral)
+        assert isinstance(our_address, Address)
+
+        urn = mcd.vat.urn(collateral.ilk, our_address)
+        ilk = mcd.vat.ilk(collateral.ilk.name)
+
+        # change in debt = (collateral balance * collateral price with safety margin) - CDP's stablecoin debt
+        dart = urn.ink * mcd.vat.spot(collateral.ilk) - urn.art
+
+        # don't let the change in debt exceed the collateral debt ceiling
+        if (Rad(urn.art) + Rad(dart)) >= ilk.line:
+            print("reducing dart to stay below collateral debt ceiling")
+            dart = Wad(ilk.line - Rad(urn.art)) - Wad.from_number(1)
+
+        # don't let the change in debt exceed the total debt ceiling
+        debt = mcd.vat.debt() + Rad(ilk.rate * dart)
+        if (debt + Rad(dart)) >= debt:
+            print("reducing dart to stay below total debt ceiling")
+            dart = Wad(debt - Rad(urn.art)) - Wad.from_number(1)
+
+        print(f"max_dart={dart}")
+        return dart
+
+    @staticmethod
+    def simulate_frob(mcd: DssDeployment, collateral: Collateral, our_address: Address, dink: Wad, dart: Wad):
+        assert isinstance(mcd, DssDeployment)
+        assert isinstance(collateral, Collateral)
+        assert isinstance(our_address, Address)
+        assert isinstance(dink, Wad)
+        assert isinstance(dart, Wad)
+
+        urn = mcd.vat.urn(collateral.ilk, our_address)
+        ilk = mcd.vat.ilk(collateral.ilk.name)
+
+        print(f"urn.ink={urn.ink}, urn.art={urn.art}, ilk.art={ilk.art}, dink={dink}, dart={dart}")
+        ink = urn.ink + dink
+        art = urn.art + dart
+        ilk_art = ilk.art + dart
+        rate = ilk.rate
+
+        gem = mcd.vat.gem(collateral.ilk, urn.address) - dink
+        dai = mcd.vat.dai(urn.address) + Rad(rate * dart)
+        debt = mcd.vat.debt() + Rad(rate * dart)
+
+        # stablecoin debt does not increase
+        cool = dart <= Wad(0)
+        # collateral balance does not decrease
+        firm = dink >= Wad(0)
+        nice = cool and firm
+
+        # CDP remains under both collateral and total debt ceilings
+        under_collateral_debt_ceiling = Rad(ilk_art * rate) <= ilk.line
+        if not under_collateral_debt_ceiling:
+            print(f"CDP would exceed collateral debt ceiling of {ilk.line}")
+        under_total_debt_ceiling = debt < ilk.line
+        if not under_total_debt_ceiling:
+            print(f"CDP would exceed total debt ceiling of {ilk.line}")
+        calm = under_collateral_debt_ceiling and under_total_debt_ceiling
+
+        safe = (urn.art * rate) <= ink * mcd.vat.spot(collateral.ilk)
+
+        assert calm or cool
+        assert nice or safe
+
+        assert Rad(ilk_art * rate) >= ilk.dust or (art == Wad(0))
+        assert rate != Ray(0)
+
+    @staticmethod
+    def frob(mcd: DssDeployment, collateral: Collateral, our_address: Address, dink: Wad, dart: Wad):
+        # given
+        assert isinstance(mcd, DssDeployment)
+        assert isinstance(collateral, Collateral)
+        assert isinstance(our_address, Address)
+        assert isinstance(dink, Wad)
+        assert isinstance(dart, Wad)
+        ilk = collateral.ilk
+
+        # when
+        # ink_before = mcd.vat.urn(ilk, our_address).ink
+        # art_before = mcd.vat.urn(ilk, our_address).art
+        TestVat.simulate_frob(mcd, collateral, our_address, dink, dart)
+
+        # then
+        assert mcd.vat.frob(ilk=ilk, address=our_address, dink=dink, dart=dart).transact()
+        # FIXME: Unsure what I'm misunderstanding here
+        # assert mcd.vat.urn(ilk, our_address).ink == ink_before + dink
+        # assert mcd.vat.urn(ilk, our_address).art == art_before + dink
 
     def test_ilk(self, mcd):
         assert mcd.vat.ilk('XXX') == Ilk('XXX', rate=Ray(0), ink=Wad(0), art=Wad(0), line=Rad(0), dust=Rad(0))
@@ -302,6 +292,10 @@ class TestVat:
         # then
         assert mcd.vat.urn(collateral.ilk, our_address).ink == our_urn.ink + Wad(10)
 
+        # rollback
+        assert mcd.vat.frob(collateral.ilk, our_address, Wad(-10), Wad(0)).transact()
+        assert collateral.adapter.exit(our_urn, Wad(10)).transact()
+
     def test_frob_add_art(self, mcd, our_address: Address):
         # given
         collateral = mcd.collaterals[0]
@@ -309,11 +303,15 @@ class TestVat:
 
         # when
         wrap_eth(mcd, Wad(10))
-        assert collateral.adapter.join(our_urn, Wad(10)).transact()
-        assert mcd.vat.frob(collateral.ilk, our_address, Wad(0), Wad(10)).transact()
+        assert collateral.adapter.join(our_urn, Wad(3)).transact()
+        assert mcd.vat.frob(collateral.ilk, our_address, Wad(3), Wad(10)).transact()
 
         # then
         assert mcd.vat.urn(collateral.ilk, our_address).art == our_urn.art + Wad(10)
+
+        # rollback
+        assert mcd.vat.frob(collateral.ilk, our_address, Wad(-3), Wad(-10)).transact()
+        assert collateral.adapter.exit(our_urn, Wad(3)).transact()
 
     @pytest.mark.skip(reason="Using TestVatLogs class to establish a working implementation")
     def test_past_note(self, our_address, mcd):
@@ -364,6 +362,27 @@ class TestVatLogs:
 
 
 class TestCat:
+    @staticmethod
+    def simulate_bite(mcd: DssDeployment, collateral: Collateral, our_address: Address):
+        assert isinstance(mcd, DssDeployment)
+        assert isinstance(collateral, Collateral)
+        assert isinstance(our_address, Address)
+
+        ilk = mcd.vat.ilk(collateral.ilk.name)
+        urn = mcd.vat.urn(collateral.ilk, our_address)
+
+        # Collateral value should be less than the product of our stablecoin debt and the debt multiplier
+        assert (Ray(urn.ink) * mcd.vat.spot(ilk)) < (Ray(urn.art) * ilk.rate)
+
+        # Lesser of our collateral balance and the liquidation quantity
+        lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
+        # Lesser of our stablecoin debt and the canceled debt pro rata the seized collateral
+        art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
+        # Stablecoin to be raised in flip auction
+        tab = art * ilk.rate  # Ray
+
+        assert -int(lot) < 0 and -int(art) < 0
+
     def test_empty_flips(self, mcd):
         nflip = mcd.cat.nflip()
         assert mcd.cat.flips(nflip + 1) == Cat.Flip(nflip + 1,
@@ -381,12 +400,11 @@ class TestCat:
 
         # when
         to_price = Wad(Web3.toInt(collateral.pip.read())) - Wad.from_number(10)
-        frob(mcd, collateral, our_address, Wad(0), max_dart(mcd, collateral, our_address))
+        TestVat.frob(mcd, collateral, our_address, Wad(0), TestVat.max_dart(mcd, collateral, our_address))
         set_collateral_price(web3, mcd, collateral, to_price)
 
         # then
         assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
-
 
     @pytest.mark.skip(reason="bite_event moved to TestCatLogs for diagnosis")
     def test_past_bite(self, mcd, bite_event):
@@ -402,8 +420,11 @@ class TestCat:
         # when
         assert nflip > 0
         flip = mcd.cat.flips(nflip - 1)
+        # ensure some dai needs to be raised
         assert flip.tab > Wad(0)
+        # determine the liquidation quantity
         lump = mcd.cat.lump(flip.urn.ilk)
+        # flip the smaller of the dai to be raised or the liquidation quantity
         if flip.tab < lump:
             assert mcd.cat.flip(flip, flip.tab).transact()
         else:
@@ -510,7 +531,7 @@ class TestVow:
         # given
         c = mcd.collaterals[0]
         surplus_before = mcd.vow.awe()
-        frob(mcd, c, our_address, Wad(0), Wad.from_number(11))
+        TestVat.frob(mcd, c, our_address, Wad(0), Wad.from_number(11))
         art = mcd.vat.urn(c.ilk, our_address).art
         assert art > Wad(0)
         lump_before = mcd.cat.lump(c.ilk)
@@ -534,7 +555,7 @@ class TestVow:
         # Manipulate price to make our CDP underwater, and then bite the CDP
         to_price = Wad(Web3.toInt(c.pip.read())) / Wad.from_number(2)
         set_collateral_price(web3, mcd, c, to_price)
-        simulate_bite(mcd, c, our_address)
+        TestCat.simulate_bite(mcd, c, our_address)
         assert mcd.cat.bite(c.ilk, Urn(our_address)).transact()
 
         # Log some values
@@ -594,3 +615,59 @@ class TestJug:
         # then
         assert mcd.jug.drip(c.ilk).transact()
 
+
+class TestMcd:
+    def test_healthy_cdp(self, web3, mcd, our_address):
+        collateral = mcd.collaterals[0]
+        ilk = collateral.ilk
+        wrap_eth(mcd, Wad.from_number(9))
+        assert mcd.vat.urn(ilk, our_address).ink == Wad(0)
+        assert mcd.vat.urn(ilk, our_address).art == Wad(0)
+        assert mcd.vat.dai(our_address) == Rad(0)
+
+        # Ensure our collateral enters the urn
+        collateral_balance_before = collateral.gem.balance_of(our_address)
+        assert collateral.adapter.join(Urn(our_address), Wad.from_number(9)).transact()
+        assert collateral.gem.balance_of(our_address) == collateral_balance_before - Wad.from_number(9)
+
+        # Add collateral without minting Dai
+        TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(3), dart=Wad(0))
+        print(f"After adding collateral:         {mcd.vat.urn(ilk, our_address)}")
+        assert mcd.vat.urn(ilk, our_address).ink == Wad.from_number(3)
+        assert mcd.vat.urn(ilk, our_address).art == Wad(0)
+
+        # Mint some Dai
+        TestVat.frob(mcd, collateral, our_address, dink=Wad(0), dart=Wad.from_number(153))
+        print(f"After minting dai:               {mcd.vat.urn(ilk, our_address)}")
+        assert mcd.vat.urn(ilk, our_address).ink == Wad.from_number(3)
+        assert mcd.vat.urn(ilk, our_address).art == Wad.from_number(153)
+        assert mcd.vat.dai(our_address) == Rad.from_number(153)
+
+        # Add collateral and mint some more Dai
+        TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(6), dart=Wad.from_number(180))
+        print(f"After adding collateral and dai: {mcd.vat.urn(ilk, our_address)}")
+        assert mcd.vat.urn(ilk, our_address).ink == Wad.from_number(9)
+        assert mcd.vat.urn(ilk, our_address).art == Wad.from_number(333)
+        assert mcd.vat.dai(our_address) == Rad.from_number(333)
+
+        # Withdraw our Dai
+        dai_balance_before = mcd.dai.balance_of(our_address)
+        assert isinstance(mcd.dai_adapter, DaiJoin)
+        # Ensure vat permissions are set up for our account
+        assert Urn(our_address).address == our_address
+        mcd.vat.hope(mcd.dai_adapter.address)
+        # Move the Dai into our account
+        # FIXME: This transaction fails
+        assert mcd.dai_adapter.exit(Urn(our_address), Wad.from_number(1)).transact()
+        # TODO: Confirm vat.dai(urn) decreases
+        assert mcd.dai.balance_of(our_address) == dai_balance_before + Wad.from_number(333)
+        assert mcd.vat.dai(our_address) == Wad(0)
+
+        # Now let's repay our Dai
+        #assert collateral.adapter.exit(Urn(our_address), Wad.from_number(333)).transact()
+
+
+    def test_auctions(self, web3, mcd, our_address):
+        # TODO: Take all the collateral out of a CDP, cut the spot price, bite/kick,
+        # TODO: and test all the auctions.
+        pass

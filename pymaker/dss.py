@@ -179,12 +179,13 @@ class DaiJoin(Contract):
     abi = Contract._load_abi(__name__, 'abi/DaiJoin.abi')
     bin = Contract._load_bin(__name__, 'abi/DaiJoin.bin')
 
-    def __init__(self, web3: Web3, address: Address):
+    def __init__(self, web3: Web3, address: Address, dai: Address):
         assert isinstance(web3, Web3)
         assert isinstance(address, Address)
 
         self.web3 = web3
         self.address = address
+        self.dai = dai
         self._contract = self._get_contract(web3, self.abi, address)
 
     @classmethod
@@ -195,17 +196,26 @@ class DaiJoin(Contract):
         assert isinstance(urn, Urn)
         assert isinstance(value, Wad)
 
+        self._approve(value).transact()
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'join', [urn.address, value.value])
+                        'join', [urn.address.address, value.value])
 
     def exit(self, urn: Urn, value: Wad) -> Transact:
         assert isinstance(urn, Urn)
         assert isinstance(value, Wad)
 
+        self._approve(value).transact()
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'exit', [urn.address, value.value])
+                        'exit', [urn.address.address, value.value])
+
+    def _approve(self, value: Wad) -> Transact:
+        assert isinstance(value, Wad)
+
+        dai = DSToken(self.web3, self.dai)
+        return dai.approve(self.address, value)
 
 
+# TODO: Rename GemJoin for consistency?
 class GemAdapter(Contract):
     """A client for the `GemJoin` contract.
 
@@ -287,6 +297,11 @@ class Vat(Contract):
         assert isinstance(ilk, Ilk)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'init', [ilk.toBytes()])
+
+    def hope(self, address: Address):
+        assert isinstance(address, Address)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'hope', [address.address])
 
     def file_line(self, ilk: Ilk, amount: Wad) -> Transact:
         assert isinstance(amount, Wad)

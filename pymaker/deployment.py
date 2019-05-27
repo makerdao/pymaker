@@ -178,7 +178,7 @@ class DssDeployment:
             flap = Flapper(web3, Address(conf['MCD_FLAP']))
             flop = Flopper(web3, Address(conf['MCD_FLOP']))
             dai = DSToken(web3, Address(conf['MCD_DAI']))
-            dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']))
+            dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']), dai.address)
             mkr = DSToken(web3, Address(conf['MCD_GOV']))
             spotter = Spotter(web3, Address(conf['MCD_SPOT']))
 
@@ -253,6 +253,10 @@ class DssDeployment:
         self.mkr = config.mkr
         self.collaterals = config.collaterals
         self.spotter = config.spotter
+
+        # Instruct Vat to allow the default account to move Dai into and out of CDPs
+        self.vat.hope(self.dai_adapter.address)
+
 
     @staticmethod
     def from_json(web3: Web3, conf: str):
