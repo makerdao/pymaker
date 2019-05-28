@@ -56,8 +56,7 @@ def web3() -> Web3:
     web3 = Web3(HTTPProvider("http://0.0.0.0:8545"))
     web3.eth.defaultAccount = "0x50FF810797f75f6bfbf2227442e0c961a8562F4C"
     register_keys(web3,
-                  ["key_file=tests/config/keys/UnlimitedChain/key.json,pass_file=/dev/null",
-                   "key_file=tests/config/keys/UnlimitedChain/key1.json,pass_file=/dev/null",
+                  ["key_file=tests/config/keys/UnlimitedChain/key1.json,pass_file=/dev/null",
                    "key_file=tests/config/keys/UnlimitedChain/key2.json,pass_file=/dev/null"])
 
     # reduce logspew
@@ -66,6 +65,7 @@ def web3() -> Web3:
     logging.getLogger("asyncio").setLevel(logging.INFO)
 
     assert len(web3.eth.accounts) > 1
+    assert web3.eth.defaultAccount == web3.eth.accounts[0]
     return web3
 
 

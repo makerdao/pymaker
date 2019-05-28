@@ -655,13 +655,13 @@ class TestMcd:
         assert isinstance(mcd.dai_adapter, DaiJoin)
         # Ensure vat permissions are set up for our account
         assert Urn(our_address).address == our_address
-        mcd.vat.hope(mcd.dai_adapter.address)
+        assert mcd.vat.wards(mcd.dai_adapter.address)
+        assert mcd.vat.can(our_address, mcd.dai_adapter.address)
+
         # Move the Dai into our account
-        # FIXME: This transaction fails
-        assert mcd.dai_adapter.exit(Urn(our_address), Wad.from_number(1)).transact()
-        # TODO: Confirm vat.dai(urn) decreases
+        assert mcd.dai_adapter.exit(Urn(our_address), Wad.from_number(333)).transact()
         assert mcd.dai.balance_of(our_address) == dai_balance_before + Wad.from_number(333)
-        assert mcd.vat.dai(our_address) == Wad(0)
+        assert mcd.vat.dai(our_address) == Rad(0)
 
         # Now let's repay our Dai
         #assert collateral.adapter.exit(Urn(our_address), Wad.from_number(333)).transact()

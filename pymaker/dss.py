@@ -298,10 +298,21 @@ class Vat(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'init', [ilk.toBytes()])
 
+    def wards(self, address: Address):
+        assert isinstance(address, Address)
+
+        return bool(self._contract.call().wards(address.address))
+
     def hope(self, address: Address):
         assert isinstance(address, Address)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'hope', [address.address])
+
+    def can(self, sender: Address, usr: Address):
+        assert isinstance(sender, Address)
+        assert isinstance(usr, Address)
+
+        return bool(self._contract.call().can(sender.address, usr.address))
 
     def file_line(self, ilk: Ilk, amount: Wad) -> Transact:
         assert isinstance(amount, Wad)

@@ -255,7 +255,7 @@ class DssDeployment:
         self.spotter = config.spotter
 
         # Instruct Vat to allow the default account to move Dai into and out of CDPs
-        self.vat.hope(self.dai_adapter.address)
+        self.vat.hope(self.dai_adapter.address).transact()
 
 
     @staticmethod
