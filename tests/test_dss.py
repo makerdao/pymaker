@@ -630,41 +630,51 @@ class TestMcd:
         assert collateral.adapter.join(Urn(our_address), Wad.from_number(9)).transact()
         assert collateral.gem.balance_of(our_address) == collateral_balance_before - Wad.from_number(9)
 
-        # Add collateral without minting Dai
+        # Add collateral without generating Dai
         TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(3), dart=Wad(0))
         print(f"After adding collateral:         {mcd.vat.urn(ilk, our_address)}")
         assert mcd.vat.urn(ilk, our_address).ink == Wad.from_number(3)
         assert mcd.vat.urn(ilk, our_address).art == Wad(0)
+        assert mcd.vat.gem(ilk, our_address) == collateral_balance_before - mcd.vat.urn(ilk, our_address).ink
 
-        # Mint some Dai
+        # Generate some Dai
         TestVat.frob(mcd, collateral, our_address, dink=Wad(0), dart=Wad.from_number(153))
-        print(f"After minting dai:               {mcd.vat.urn(ilk, our_address)}")
+        print(f"After generating dai:            {mcd.vat.urn(ilk, our_address)}")
         assert mcd.vat.urn(ilk, our_address).ink == Wad.from_number(3)
         assert mcd.vat.urn(ilk, our_address).art == Wad.from_number(153)
         assert mcd.vat.dai(our_address) == Rad.from_number(153)
 
-        # Add collateral and mint some more Dai
+        # Add collateral and generate some more Dai
         TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(6), dart=Wad.from_number(180))
         print(f"After adding collateral and dai: {mcd.vat.urn(ilk, our_address)}")
         assert mcd.vat.urn(ilk, our_address).ink == Wad.from_number(9)
+        assert mcd.vat.gem(ilk, our_address) == Wad(0)
         assert mcd.vat.urn(ilk, our_address).art == Wad.from_number(333)
         assert mcd.vat.dai(our_address) == Rad.from_number(333)
 
-        # Withdraw our Dai
+        # Mint and withdraw our Dai
         dai_balance_before = mcd.dai.balance_of(our_address)
         assert isinstance(mcd.dai_adapter, DaiJoin)
         # Ensure vat permissions are set up for our account
         assert Urn(our_address).address == our_address
         assert mcd.vat.wards(mcd.dai_adapter.address)
         assert mcd.vat.can(our_address, mcd.dai_adapter.address)
-
-        # Move the Dai into our account
         assert mcd.dai_adapter.exit(Urn(our_address), Wad.from_number(333)).transact()
         assert mcd.dai.balance_of(our_address) == dai_balance_before + Wad.from_number(333)
         assert mcd.vat.dai(our_address) == Rad(0)
 
-        # Now let's repay our Dai
-        #assert collateral.adapter.exit(Urn(our_address), Wad.from_number(333)).transact()
+        # Repay (and burn) our Dai
+        assert mcd.dai_adapter.join(Urn(our_address), Wad.from_number(333)).transact()
+        assert mcd.dai.balance_of(our_address) == Wad(0)
+        assert mcd.vat.dai(our_address) == Rad.from_number(333)
+
+        # Withdraw our collateral
+        TestVat.frob(mcd, collateral, our_address, dink=Wad(0), dart=Wad.from_number(-333))
+        TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(-9), dart=Wad(0))
+        assert mcd.vat.gem(ilk, our_address) == Wad.from_number(9)
+        assert collateral.adapter.exit(Urn(our_address), Wad.from_number(9)).transact()
+        collateral_balance_after = collateral.gem.balance_of(our_address)
+        assert collateral_balance_before == collateral_balance_after
 
 
     def test_auctions(self, web3, mcd, our_address):
