@@ -354,14 +354,17 @@ class Vat(Contract):
         (art, rate, spot, line, dust) = self._contract.call().ilks(ilk.toBytes())
         return Ray(spot)
 
+    def debt(self) -> Rad:
+        return Rad(self._contract.call().debt())
+
+    def vice(self) -> Rad:
+        return Rad(self._contract.call().vice())
+
     def line(self, ilk: Ilk) -> Wad:
         assert isinstance(ilk, Ilk)
 
         (art, rate, spot, line, dust) = self._contract.call().ilks(ilk.toBytes())
         return Wad(line)
-
-    def debt(self) -> Rad:
-        return Rad(self._contract.call().debt())
 
     def frob(self, ilk: Ilk, address: Address, dink: Wad, dart: Wad, collateral_owner=None, dai_recipient=None):
         assert isinstance(ilk, Ilk)
@@ -552,11 +555,11 @@ class Vow(Contract):
     def flopper(self) -> Address:
         return Address(self._contract.call().row())
 
-    def sin(self) -> Wad:
-        return Wad(self._contract.call().Sin())
+    def sin(self) -> Rad:
+        return Rad(self._contract.call().Sin())
 
-    def sin_of(self, era: int) -> Wad:
-        return Wad(self._contract.call().sin(era))
+    def sin_of(self, era: int) -> Rad:
+        return Rad(self._contract.call().sin(era))
 
     def woe(self) -> Wad:
         return Wad(self._contract.call().Woe())
@@ -673,7 +676,7 @@ class Cat(Contract):
     class LogBite:
         def __init__(self, log):
             self.ilk = Ilk.fromBytes(log['args']['ilk'])
-            self.urn = Urn.fromBytes(log['args']['urn'])
+            self.urn = Urn(Address(log['args']['urn']))
             self.ink = Wad(log['args']['ink'])
             self.art = Wad(log['args']['art'])
             self.tab = Wad(log['args']['tab'])
@@ -763,6 +766,18 @@ class Cat(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'flip', [flip.id, amount.value])
 
+    def lump(self, ilk: Ilk) -> Wad:
+        assert isinstance(ilk, Ilk)
+
+        (flip, chop, lump) = self._contract.call().ilks(ilk.toBytes())
+        return Wad(lump)
+
+    def chop(self, ilk: Ilk) -> Ray:
+        assert isinstance(ilk, Ilk)
+
+        (flip, chop, lump) = self._contract.call().ilks(ilk.toBytes())
+        return Ray(chop)
+
     def file_vow(self, vow: Vow) -> Transact:
         assert isinstance(vow, Vow)
 
@@ -790,12 +805,6 @@ class Cat(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'file(bytes32,bytes32,uint256)', [ilk.toBytes(), Web3.toBytes(text="chop"), chop.value])
-
-    def lump(self, ilk: Ilk) -> Wad:
-        assert isinstance(ilk, Ilk)
-
-        (flip, chop, lump) = self._contract.call().ilks(ilk.toBytes())
-        return Wad(lump)
 
     def flipper(self, ilk: Ilk) -> Address:
         assert isinstance(ilk, Ilk)

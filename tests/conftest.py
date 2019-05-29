@@ -57,7 +57,8 @@ def web3() -> Web3:
     web3.eth.defaultAccount = "0x50FF810797f75f6bfbf2227442e0c961a8562F4C"
     register_keys(web3,
                   ["key_file=tests/config/keys/UnlimitedChain/key1.json,pass_file=/dev/null",
-                   "key_file=tests/config/keys/UnlimitedChain/key2.json,pass_file=/dev/null"])
+                   "key_file=tests/config/keys/UnlimitedChain/key2.json,pass_file=/dev/null",
+                   "key_file=tests/config/keys/UnlimitedChain/key.json,pass_file=/dev/null"])
 
     # reduce logspew
     logging.getLogger("web3").setLevel(logging.INFO)

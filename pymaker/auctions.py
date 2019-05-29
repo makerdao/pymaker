@@ -56,9 +56,12 @@ class Flipper(Contract):
             self.guy = guy
             self.tic = tic
             self.end = end
-            self.lad = urn
+            self.urn = urn
             self.gal = gal
             self.tab = tab
+
+        def __repr__(self):
+            return f"Flipper.Bid(bid={self.bid}, lot={self.lot}, guy={self.guy}, urn={self.urn}, tab={self.tab})"
 
     @staticmethod
     def deploy(web3: Web3, vat: Address, ilk):
@@ -89,9 +92,9 @@ class Flipper(Contract):
         approval_function(ERC20Token(web3=self.web3, address=self.vat()), self.address, 'Flipper')
 
     def vat(self) -> Address:
-        """Returns the `vat` token.
+        """Returns the `vat` address.
          Returns:
-            The address of the `vat` token.
+            The address of the `vat` contract.
         """
         return Address(self._contract.call().vat())
 

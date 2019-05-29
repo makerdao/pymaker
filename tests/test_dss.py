@@ -154,19 +154,24 @@ class TestVat:
 
         # change in debt = (collateral balance * collateral price with safety margin) - CDP's stablecoin debt
         dart = urn.ink * mcd.vat.spot(collateral.ilk) - urn.art
+        print(f"dart={dart} = urn.ink={urn.ink} * spot={mcd.vat.spot(collateral.ilk)} - urn.art={urn.art}")
 
         # don't let the change in debt exceed the collateral debt ceiling
         if (Rad(urn.art) + Rad(dart)) >= ilk.line:
-            print("reducing dart to stay below collateral debt ceiling")
-            dart = Wad(ilk.line - Rad(urn.art)) - Wad.from_number(1)
+            print(f"reducing dart to stay below collateral debt ceiling of {ilk.line}")
+            dart = Wad(ilk.line - Rad(urn.art))
+            print(f"dart={dart} = ilk.line={ilk.lane} - urn.art={urn.art} - one={Wad.from_number(1)}")
 
         # don't let the change in debt exceed the total debt ceiling
         debt = mcd.vat.debt() + Rad(ilk.rate * dart)
-        if (debt + Rad(dart)) >= debt:
-            print("reducing dart to stay below total debt ceiling")
-            dart = Wad(debt - Rad(urn.art)) - Wad.from_number(1)
+        line = Rad(mcd.vat.line(ilk))
+        if (debt + Rad(dart)) >= line:
+            print(f"reducing dart to stay below total debt ceiling of {line}")
+            dart = Wad(debt - Rad(urn.art))
+            print(f"dart={dart} = debt={Wad(debt)} - urn.art={Wad(urn.art)} - one={Wad.from_number(1)}")
 
         print(f"max_dart={dart}")
+        assert dart > Wad(0)
         return dart
 
     @staticmethod
@@ -494,8 +499,8 @@ class TestVow:
     def test_getters(self, mcd):
         assert isinstance(mcd.vow.flopper(), Address)
         assert isinstance(mcd.vow.flopper(), Address)
-        assert isinstance(mcd.vow.sin(), Wad)
-        assert isinstance(mcd.vow.sin_of(0), Wad)
+        assert isinstance(mcd.vow.sin(), Rad)
+        assert isinstance(mcd.vow.sin_of(0), Rad)
         assert isinstance(mcd.vow.woe(), Wad)
         assert isinstance(mcd.vow.ash(), Wad)
         assert isinstance(mcd.vow.joy(), Wad)
@@ -508,17 +513,16 @@ class TestVow:
     def test_empty_flog(self, web3, mcd):
         assert mcd.vow.flog(0).transact()
 
-    # FIXME: This test requests Cat.LogBite to be working
     def test_flog(self, web3, mcd, bite_event):
         # given
         era = web3.eth.getBlock(bite_event.raw['blockNumber'])['timestamp']
-        assert mcd.vow.sin_of(era) != Wad(0)
+        assert mcd.vow.sin_of(era) != Rad(0)
 
         # when
         assert mcd.vow.flog(era).transact()
 
         # then
-        assert mcd.vow.sin_of(era) == Wad(0)
+        assert mcd.vow.sin_of(era) == Rad(0)
 
     def test_heal(self, mcd):
         assert mcd.vow.heal(Wad(0)).transact()
@@ -526,6 +530,7 @@ class TestVow:
     def test_kiss(self, mcd):
         assert mcd.vow.kiss(Wad(0)).transact()
 
+    # TODO: Rework this into TestMcd; we'll probably need to add collateral to the CDP first
     # FIXME: Vow accounting issue needs resolution
     def test_flap(self, web3, our_address, mcd):
         # given
@@ -678,6 +683,56 @@ class TestMcd:
 
 
     def test_auctions(self, web3, mcd, our_address):
-        # TODO: Take all the collateral out of a CDP, cut the spot price, bite/kick,
-        # TODO: and test all the auctions.
-        pass
+        # Create a CDP
+        collateral = mcd.collaterals[0]
+        assert collateral.flipper.kicks() == 0
+        ilk = collateral.ilk
+        wrap_eth(mcd, Wad.from_number(6))
+        assert collateral.adapter.join(Urn(our_address), Wad.from_number(6)).transact()
+        TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(6), dart=Wad(0))
+        max_dart = TestVat.max_dart(mcd, collateral, our_address) - Wad(1)
+        TestVat.frob(mcd, collateral, our_address, dink=Wad(0), dart=max_dart)
+
+        # Mint and withdraw all the Dai
+        assert mcd.dai_adapter.exit(Urn(our_address), max_dart).transact()
+        assert mcd.dai.balance_of(our_address) == max_dart
+        assert mcd.vat.dai(our_address) == Rad(0)
+
+        # Undercollateralize the CDP
+        to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
+        set_collateral_price(web3, mcd, collateral, to_price)
+        urn = mcd.vat.urn(collateral.ilk, our_address)
+        assert mcd.vat.ilk(ilk.name).rate is not None
+        assert mcd.vat.spot(collateral.ilk) is not None
+        safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * mcd.vat.spot(collateral.ilk)
+        assert not safe
+
+        # Bite the CDP, which moves debt to the vow and kicks the flipper
+        urn = mcd.vat.urn(collateral.ilk, our_address)
+        ilk = mcd.vat.ilk(ilk.name)
+        assert urn.ink > Wad(0)
+        lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
+        art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
+        tab = art * ilk.rate * Wad(mcd.cat.chop(ilk))  # Wad
+        assert tab == max_dart
+        TestCat.simulate_bite(mcd, collateral, our_address)
+        assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
+        assert mcd.cat.nflip() > 0
+        urn = mcd.vat.urn(collateral.ilk, our_address)
+        assert urn.ink == Wad(0)
+        assert urn.art == max_dart - art
+        assert mcd.vat.vice() > Rad(0)
+        assert mcd.vow.sin() == Rad(tab)
+        assert mcd.cat.flipper(ilk).address == collateral.flipper.address.address
+        # FIXME: Why didn't cat.bite kick the flipper?
+        print(collateral.flipper.bids(0))
+        assert collateral.flipper.kicks() == 1
+
+        # TODO: If the flip auction didn't cover the debt, kick the flopper
+        # awe = vat.sin
+        # woe = (awe-sin)-ash
+        # assert mcd.vow.woe() >= mcd.vow.sump()
+        # assert mcd.vow.joy() == Wad(0)
+        # assert mcd.vow.flop().transact()
+
+        # TODO: If there is surplus Dai, kick the flapper
