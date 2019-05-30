@@ -14,6 +14,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from pprint import pformat
 from pymaker.numeric import Ray
 from web3 import Web3
 
@@ -26,7 +28,79 @@ def toBytes(string: str):
     return string.encode('utf-8').ljust(32, bytes(1))
 
 
-class Flipper(Contract):
+class AuctionContract(Contract):
+    def __init__(self, web3: Web3, address: Address, abi: list):
+        if self.__class__ == AuctionContract:
+            raise NotImplemented('Abstract class; please call Flipper, Flapper, or Flopper ctor')
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
+        assert isinstance(abi, list)
+
+        self.web3 = web3
+        self.address = address
+        self.abi = abi
+        self._contract = self._get_contract(web3, abi, address)
+
+    def wards(self, address: Address):
+        assert isinstance(address, Address)
+
+        return bool(self._contract.call().wards(address.address))
+
+    def file_beg(self, beg: Ray) -> Transact:
+        assert isinstance(beg, Ray)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'file(bytes32,uint)',
+                        [Web3.toBytes(text="beg"), beg.value])
+
+    def file_ttl(self, ttl: int) -> Transact:
+        assert isinstance(ttl, int)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'file(bytes32,uint)',
+                        [Web3.toBytes(text="ttl"), ttl])
+
+    def file_tau(self, tau: int) -> Transact:
+        assert isinstance(tau, int)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'file(bytes32,uint)',
+                        [Web3.toBytes(text="tau"), tau])
+
+    def beg(self) -> Ray:
+        """Returns the percentage minimum bid increase.
+
+        Returns:
+            The percentage minimum bid increase.
+        """
+        return Ray(self._contract.call().beg())
+
+    def ttl(self) -> int:
+        """Returns the bid lifetime.
+
+        Returns:
+            The bid lifetime (in seconds).
+        """
+        return int(self._contract.call().ttl())
+
+    def tau(self) -> int:
+        """Returns the total auction length.
+
+        Returns:
+            The total auction length (in seconds).
+        """
+        return int(self._contract.call().tau())
+
+    def kicks(self) -> int:
+        """Returns the number of auctions started so far.
+
+        Returns:
+            The number of auctions started so far.
+        """
+        return int(self._contract.call().kicks())
+
+
+class Flipper(AuctionContract):
     """A client for the `Flipper` contract, TODO.
 
     You can find the source code of the `Flipper` contract here:
@@ -71,12 +145,7 @@ class Flipper(Contract):
         return Flipper(web3=web3, address=Contract._deploy(web3, Flipper.abi, Flipper.bin, [vat.address, ilk]))
 
     def __init__(self, web3: Web3, address: Address):
-        assert(isinstance(web3, Web3))
-        assert(isinstance(address, Address))
-
-        self.web3 = web3
-        self.address = address
-        self._contract = self._get_contract(web3, self.abi, address)
+        super(Flipper, self).__init__(web3, address, Flipper.abi)
 
     def approve(self, approval_function):
         """Approve the `Flipper` to access our `dai` so we can participate in auctions.
@@ -105,38 +174,6 @@ class Flipper(Contract):
             The address of the `gem` token.
         """
         return Address(self._contract.call().gem())
-
-    def beg(self) -> Ray:
-        """Returns the percentage minimum bid increase.
-
-        Returns:
-            The percentage minimum bid increase.
-        """
-        return Ray(self._contract.call().beg())
-
-    def ttl(self) -> int:
-        """Returns the bid lifetime.
-
-        Returns:
-            The bid lifetime (in seconds).
-        """
-        return int(self._contract.call().ttl())
-
-    def tau(self) -> int:
-        """Returns the total auction length.
-
-        Returns:
-            The total auction length (in seconds).
-        """
-        return int(self._contract.call().tau())
-
-    def kicks(self) -> int:
-        """Returns the number of auctions started so far.
-
-        Returns:
-            The number of auctions started so far.
-        """
-        return int(self._contract.call().kicks())
 
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
@@ -193,10 +230,10 @@ class Flipper(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
 
     def __repr__(self):
-        return f"Flipper('{self.address}')"
+        return f"Flipper('{pformat(vars(self))}')"
 
 
-class Flapper(Contract):
+class Flapper(AuctionContract):
     """A client for the `Flapper` contract, TODO.
 
     You can find the source code of the `Flapper` contract here:
@@ -234,12 +271,10 @@ class Flapper(Contract):
         return Flapper(web3=web3, address=Contract._deploy(web3, Flapper.abi, Flapper.bin, [dai.address, gem.address]))
 
     def __init__(self, web3: Web3, address: Address):
-        assert(isinstance(web3, Web3))
-        assert(isinstance(address, Address))
+        super(Flapper, self).__init__(web3, address, Flapper.abi)
 
-        self.web3 = web3
-        self.address = address
-        self._contract = self._get_contract(web3, self.abi, address)
+    def live(self) -> bool:
+        return self._contract.call().live() > 0
 
     def approve(self, approval_function):
         """Approve the `Flapper` to access our `gem` so we can participate in auctions.
@@ -269,38 +304,6 @@ class Flapper(Contract):
             The address of the `gem` token.
         """
         return Address(self._contract.call().gem())
-
-    def beg(self) -> Ray:
-        """Returns the percentage minimum bid increase.
-
-        Returns:
-            The percentage minimum bid increase.
-        """
-        return Ray(self._contract.call().beg())
-
-    def ttl(self) -> int:
-        """Returns the bid lifetime.
-
-        Returns:
-            The bid lifetime (in seconds).
-        """
-        return int(self._contract.call().ttl())
-
-    def tau(self) -> int:
-        """Returns the total auction length.
-
-        Returns:
-            The total auction length (in seconds).
-        """
-        return int(self._contract.call().tau())
-
-    def kicks(self) -> int:
-        """Returns the number of auctions started so far.
-
-        Returns:
-            The number of auctions started so far.
-        """
-        return int(self._contract.call().kicks())
 
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
@@ -344,10 +347,10 @@ class Flapper(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
 
     def __repr__(self):
-        return f"Flapper('{self.address}')"
+        return f"Flapper('{pformat(vars(self))}')"
 
 
-class Flopper(Contract):
+class Flopper(AuctionContract):
     """A client for the `Flopper` contract, TODO.
 
     You can find the source code of the `Flopper` contract here:
@@ -385,17 +388,10 @@ class Flopper(Contract):
         return Flopper(web3=web3, address=Contract._deploy(web3, Flopper.abi, Flopper.bin, [dai.address, gem.address]))
 
     def __init__(self, web3: Web3, address: Address):
-        assert(isinstance(web3, Web3))
-        assert(isinstance(address, Address))
+        super(Flopper, self).__init__(web3, address, Flopper.abi)
 
-        self.web3 = web3
-        self.address = address
-        self._contract = self._get_contract(web3, self.abi, address)
-
-    def rely(self, guy: Address) -> Transact:
-        assert isinstance(guy, Address)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'rely', [guy.address])
+    def live(self) -> bool:
+        return self._contract.call().live() > 0
 
     def approve(self, approval_function):
         """Approve the `Flapper` to access our `gem` so we can participate in auctions.
@@ -425,38 +421,6 @@ class Flopper(Contract):
             The address of the `gem` token.
         """
         return Address(self._contract.call().gem())
-
-    def beg(self) -> Ray:
-        """Returns the percentage minimum bid increase.
-
-        Returns:
-            The percentage minimum bid increase.
-        """
-        return Ray(self._contract.call().beg())
-
-    def ttl(self) -> int:
-        """Returns the bid lifetime.
-
-        Returns:
-            The bid lifetime (in seconds).
-        """
-        return int(self._contract.call().ttl())
-
-    def tau(self) -> int:
-        """Returns the total auction length.
-
-        Returns:
-            The total auction length (in seconds).
-        """
-        return int(self._contract.call().tau())
-
-    def kicks(self) -> int:
-        """Returns the number of auctions started so far.
-
-        Returns:
-            The number of auctions started so far.
-        """
-        return int(self._contract.call().kicks())
 
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
@@ -500,4 +464,4 @@ class Flopper(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
 
     def __repr__(self):
-        return f"Flopper('{self.address}')"
+        return f"Flopper('{pformat(vars(self))}')"

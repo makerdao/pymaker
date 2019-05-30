@@ -160,7 +160,7 @@ class TestVat:
         if (Rad(urn.art) + Rad(dart)) >= ilk.line:
             print(f"reducing dart to stay below collateral debt ceiling of {ilk.line}")
             dart = Wad(ilk.line - Rad(urn.art))
-            print(f"dart={dart} = ilk.line={ilk.lane} - urn.art={urn.art} - one={Wad.from_number(1)}")
+            print(f"dart={dart} = ilk.line={ilk.line} - urn.art={urn.art} - one={Wad.from_number(1)}")
 
         # don't let the change in debt exceed the total debt ceiling
         debt = mcd.vat.debt() + Rad(ilk.rate * dart)
@@ -239,6 +239,35 @@ class TestVat:
         # assert mcd.vat.urn(ilk, our_address).ink == ink_before + dink
         # assert mcd.vat.urn(ilk, our_address).art == art_before + dink
 
+    @staticmethod
+    def ensure_clean_urn(mcd: DssDeployment, collateral: Collateral, our_address: Address):
+        assert isinstance(mcd, DssDeployment)
+        assert isinstance(collateral, Collateral)
+        assert isinstance(our_address, Address)
+
+        urn = mcd.vat.urn(collateral.ilk, our_address)
+        assert urn.ink == Wad(0)
+        assert urn.art == Wad(0)
+        assert mcd.vat.dai(our_address) == Rad(0)
+        assert mcd.vat.gem(collateral.ilk, our_address) == Wad(0)
+
+    @staticmethod
+    def cleanup_urn(mcd: DssDeployment, collateral: Collateral, our_address: Address):
+        assert isinstance(mcd, DssDeployment)
+        assert isinstance(collateral, Collateral)
+        assert isinstance(our_address, Address)
+        urn = mcd.vat.urn(collateral.ilk, our_address)
+
+        # TODO: Repay Dai
+        assert mcd.vat.frob(collateral.ilk, our_address, Wad(0), urn.art * -1).transact()
+        assert mcd.vat.frob(collateral.ilk, our_address, urn.ink * -1, Wad(0)).transact()
+        assert collateral.adapter.exit(urn, mcd.vat.gem(collateral.ilk, our_address)).transact()
+
+        TestVat.ensure_clean_urn(mcd, collateral, our_address)
+
+    def test_getters(self, mcd):
+        assert isinstance(mcd.vat.live(), bool)
+
     def test_ilk(self, mcd):
         assert mcd.vat.ilk('XXX') == Ilk('XXX', rate=Ray(0), ink=Wad(0), art=Wad(0), line=Rad(0), dust=Rad(0))
 
@@ -269,6 +298,11 @@ class TestVat:
         dai = mcd.vat.dai(urn.address)
         assert dai >= Rad(0)
 
+    def test_sin(self, mcd, urn):
+        sin = mcd.vat.sin(urn.address)
+        assert isinstance(sin, Rad)
+        assert sin == Rad(0)
+
     def test_debt(self, mcd):
         debt = mcd.vat.debt()
         assert debt >= Rad(0)
@@ -298,8 +332,7 @@ class TestVat:
         assert mcd.vat.urn(collateral.ilk, our_address).ink == our_urn.ink + Wad(10)
 
         # rollback
-        assert mcd.vat.frob(collateral.ilk, our_address, Wad(-10), Wad(0)).transact()
-        assert collateral.adapter.exit(our_urn, Wad(10)).transact()
+        self.cleanup_urn(mcd, collateral, our_address)
 
     def test_frob_add_art(self, mcd, our_address: Address):
         # given
@@ -315,8 +348,13 @@ class TestVat:
         assert mcd.vat.urn(collateral.ilk, our_address).art == our_urn.art + Wad(10)
 
         # rollback
-        assert mcd.vat.frob(collateral.ilk, our_address, Wad(-3), Wad(-10)).transact()
-        assert collateral.adapter.exit(our_urn, Wad(3)).transact()
+        self.cleanup_urn(mcd, collateral, our_address)
+
+    def test_heal(self, mcd):
+        assert mcd.vat.heal(Rad(0))
+
+    def test_suck(self, mcd, our_address):
+        assert mcd.vat.suck(our_address, our_address, Rad(0))
 
     @pytest.mark.skip(reason="Using TestVatLogs class to establish a working implementation")
     def test_past_note(self, our_address, mcd):
@@ -388,12 +426,10 @@ class TestCat:
 
         assert -int(lot) < 0 and -int(art) < 0
 
-    def test_empty_flips(self, mcd):
-        nflip = mcd.cat.nflip()
-        assert mcd.cat.flips(nflip + 1) == Cat.Flip(nflip + 1,
-                                                    Urn(address=Address('0x0000000000000000000000000000000000000000')),
-                                                    Wad(0))
+    def test_getters(self, mcd):
+        assert isinstance(mcd.cat.live(), bool)
 
+    @pytest.mark.skip(reason="needs to be tested with auctions to leave urn in a clean state")
     def test_bite(self, web3, our_address, mcd):
         # given
         collateral = mcd.collaterals[0]
@@ -411,35 +447,8 @@ class TestCat:
         # then
         assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
 
-    @pytest.mark.skip(reason="bite_event moved to TestCatLogs for diagnosis")
-    def test_past_bite(self, mcd, bite_event):
-        assert mcd.cat.past_bite(1) == [bite_event]
 
-    def test_flip(self, web3, mcd, bite):
-        # given
-        collateral = mcd.collaterals[0]
-        nflip = mcd.cat.nflip()
-        flipper = Flipper(web3=web3, address=mcd.cat.flipper(collateral.ilk))
-        kicks = flipper.kicks()
-
-        # when
-        assert nflip > 0
-        flip = mcd.cat.flips(nflip - 1)
-        # ensure some dai needs to be raised
-        assert flip.tab > Wad(0)
-        # determine the liquidation quantity
-        lump = mcd.cat.lump(flip.urn.ilk)
-        # flip the smaller of the dai to be raised or the liquidation quantity
-        if flip.tab < lump:
-            assert mcd.cat.flip(flip, flip.tab).transact()
-        else:
-            assert mcd.cat.flip(flip, lump).transact()
-
-        # then
-        assert flipper.kicks() == kicks + 1
-        assert mcd.cat.flips(flip.id).tab == Wad(0)
-
-
+@pytest.mark.skip(reason="using TestCat.test_past_bite at the moment")
 class TestCatLogs:
     def test_get_filter_topics(self, web3: Web3, our_address, mcd):
         changes = self.get_filter_changes(web3, our_address, mcd)
@@ -497,6 +506,7 @@ class TestCatLogs:
 
 class TestVow:
     def test_getters(self, mcd):
+        assert isinstance(mcd.vow.live(), bool)
         assert isinstance(mcd.vow.flopper(), Address)
         assert isinstance(mcd.vow.flopper(), Address)
         assert isinstance(mcd.vow.sin(), Rad)
@@ -513,6 +523,7 @@ class TestVow:
     def test_empty_flog(self, web3, mcd):
         assert mcd.vow.flog(0).transact()
 
+    @pytest.mark.skip(reason="needs to be tested with auctions to leave urn in a clean state")
     def test_flog(self, web3, mcd, bite_event):
         # given
         era = web3.eth.getBlock(bite_event.raw['blockNumber'])['timestamp']
@@ -525,7 +536,7 @@ class TestVow:
         assert mcd.vow.sin_of(era) == Rad(0)
 
     def test_heal(self, mcd):
-        assert mcd.vow.heal(Wad(0)).transact()
+        assert mcd.vow.heal(Rad(0)).transact()
 
     def test_kiss(self, mcd):
         assert mcd.vow.kiss(Wad(0)).transact()
@@ -587,7 +598,7 @@ class TestVow:
         # then
         assert mcd.vow.flap().transact()
 
-    # FIXME: This test requests Cat.LogBite to be working
+    @pytest.mark.skip(reason="needs to be tested with auctions to leave urn in a clean state")
     def test_flop(self, web3, mcd, bite):
         # given
         print(mcd)
@@ -623,12 +634,10 @@ class TestJug:
 
 class TestMcd:
     def test_healthy_cdp(self, web3, mcd, our_address):
-        collateral = mcd.collaterals[0]
+        collateral = mcd.collaterals[1]
         ilk = collateral.ilk
+        TestVat.ensure_clean_urn(mcd, collateral, our_address)
         wrap_eth(mcd, Wad.from_number(9))
-        assert mcd.vat.urn(ilk, our_address).ink == Wad(0)
-        assert mcd.vat.urn(ilk, our_address).art == Wad(0)
-        assert mcd.vat.dai(our_address) == Rad(0)
 
         # Ensure our collateral enters the urn
         collateral_balance_before = collateral.gem.balance_of(our_address)
@@ -640,13 +649,15 @@ class TestMcd:
         print(f"After adding collateral:         {mcd.vat.urn(ilk, our_address)}")
         assert mcd.vat.urn(ilk, our_address).ink == Wad.from_number(3)
         assert mcd.vat.urn(ilk, our_address).art == Wad(0)
-        assert mcd.vat.gem(ilk, our_address) == collateral_balance_before - mcd.vat.urn(ilk, our_address).ink
+        assert mcd.vat.gem(ilk, our_address) == Wad.from_number(9) - mcd.vat.urn(ilk, our_address).ink
+        assert mcd.vat.dai(our_address) == Rad(0)
 
         # Generate some Dai
         TestVat.frob(mcd, collateral, our_address, dink=Wad(0), dart=Wad.from_number(153))
         print(f"After generating dai:            {mcd.vat.urn(ilk, our_address)}")
         assert mcd.vat.urn(ilk, our_address).ink == Wad.from_number(3)
         assert mcd.vat.urn(ilk, our_address).art == Wad.from_number(153)
+        # TODO: Determine why other tests seem to affect vat.dai, even though it's 0 a few lines above here
         assert mcd.vat.dai(our_address) == Rad.from_number(153)
 
         # Add collateral and generate some more Dai
@@ -685,7 +696,7 @@ class TestMcd:
     def test_auctions(self, web3, mcd, our_address):
         # Create a CDP
         collateral = mcd.collaterals[0]
-        assert collateral.flipper.kicks() == 0
+        kicks_before = collateral.flipper.kicks()
         ilk = collateral.ilk
         wrap_eth(mcd, Wad.from_number(6))
         assert collateral.adapter.join(Urn(our_address), Wad.from_number(6)).transact()
@@ -717,16 +728,21 @@ class TestMcd:
         assert tab == max_dart
         TestCat.simulate_bite(mcd, collateral, our_address)
         assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
-        assert mcd.cat.nflip() > 0
         urn = mcd.vat.urn(collateral.ilk, our_address)
         assert urn.ink == Wad(0)
         assert urn.art == max_dart - art
         assert mcd.vat.vice() > Rad(0)
         assert mcd.vow.sin() == Rad(tab)
         assert mcd.cat.flipper(ilk).address == collateral.flipper.address.address
-        # FIXME: Why didn't cat.bite kick the flipper?
-        print(collateral.flipper.bids(0))
-        assert collateral.flipper.kicks() == 1
+        print(f"first bid={collateral.flipper.bids(1)}")
+        assert collateral.flipper.kicks() == kicks_before + 1
+
+        # Test the flip
+        bites = mcd.cat.past_bite(10)
+        assert len(bites) == 1
+        last_bite = bites[0]
+        assert last_bite.tab > Wad(0)
+        print(f"last_bite={last_bite}")
 
         # TODO: If the flip auction didn't cover the debt, kick the flopper
         # awe = vat.sin

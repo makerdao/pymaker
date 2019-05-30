@@ -78,7 +78,10 @@ class TestFlipper:
 class TestFlapper:
     @pytest.fixture(scope="session")
     def flapper(self, mcd: DssDeployment) -> Flapper:
-        # TODO: Call file methods to reduce ttl and tau to testable durations
+        # Call file methods to produce testable durations
+        mcd.flap.file_beg(Ray.from_number(1.04))  # 4% bid increment
+        mcd.flap.file_ttl(2)   # 2 second bids
+        mcd.flap.file_tau(15)  # 15 second auctions
         return mcd.flap
 
     def test_getters(self, mcd, flapper):
@@ -107,6 +110,9 @@ class TestFlapper:
         assert flapper.bids(1).tic > 0
         flapper.tend(1, Wad.from_number(20000), Wad.from_number(2.0)).transact()
         assert flapper.bids(1).tic > 0
+
+        # TODO: Test removal of bid
+        flapper.yank(1).transact()
 
         # TODO: Wait for auction to end
         flapper.deal(1).transact()
