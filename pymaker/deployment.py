@@ -25,7 +25,7 @@ from pymaker.auctions import Flapper, Flopper, Flipper
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address
-from pymaker.approval import directly
+from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
 from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemAdapter
@@ -255,7 +255,7 @@ class DssDeployment:
         self.spotter = config.spotter
 
         # Instruct Vat to allow the default account to move Dai into and out of CDPs
-        self.vat.hope(self.dai_adapter.address).transact()
+        self.dai_adapter.approve(hope_directly(), self.vat.address)
 
 
     @staticmethod
@@ -264,103 +264,6 @@ class DssDeployment:
 
     def to_json(self) -> str:
         return self.config.to_json()
-
-    # CAUTION: Facilities to deploy DSS are deprecated and will be removed from pymaker
-    @staticmethod
-    def deploy(web3: Web3):
-        assert isinstance(web3, Web3)
-
-        # deployVat
-        vat = Vat.deploy(web3=web3)
-        assert vat.rely(Address(web3.eth.defaultAccount)).transact(
-            from_address=Address(eth_utils.to_checksum_address(web3.eth.defaultAccount)))
-        spotter = Spotter.deploy(web3=web3, vat=vat.address)
-        assert vat.rely(spotter.address).transact()
-
-        # deployDai
-        dai = DSToken.deploy(web3=web3, symbol='DAI')
-        dai_join = DaiJoin.deploy(web3=web3, vat=vat.address, dai=dai.address)
-        dai.rely(dai_join)
-        assert vat.rely(dai_join.address).transact()
-
-        mkr = DSToken.deploy(web3=web3, symbol='MKR')
-
-        # TODO: use a DSProxy, and auth this with Cat and Vow
-        pause = DSPause.deploy(web3, web3.eth.defaultAccount, Address("0x0"))
-
-        vow = Vow.deploy(web3=web3)
-        jug = Jug.deploy(web3=web3, vat=vat.address)
-        flap = Flapper.deploy(web3=web3, dai=dai.address, gem=mkr.address)
-
-        assert vow.file_vat(vat).transact()
-        assert vow.file_flap(flap).transact()
-        assert vow.file_bump(Wad.from_number(1000)).transact()
-        assert vow.file_sump(Wad.from_number(10)).transact()
-        assert jug.file_vow(vow).transact()
-
-        assert vat.rely(vow.address).transact()
-        assert vat.rely(jug.address).transact()
-        assert vat.rely(flap.address).transact()
-
-        cat = Cat.deploy(web3=web3, vat=vat.address)
-        assert cat.file_vow(vow).transact()
-
-        flop = Flopper.deploy(web3=web3, dai=dai.address, gem=mkr.address)
-
-        assert vow.file_flop(flop).transact()
-
-        assert vat.rely(cat.address).transact()
-        assert vat.rely(flop.address).transact()
-        assert vow.rely(cat.address).transact()
-        assert flop.rely(vow.address).transact()
-
-        spotter = Spotter.deploy(web3=web3, vat=vat.address)
-
-        config = DssDeployment.Config(pause, vat, vow, jug, cat, flap, flop, dai, dai_join, mkr, spotter)
-        deployment = DssDeployment(web3, config)
-
-        collateral = Collateral.deploy(web3=web3, name='WETH', vat=vat)
-        deployment.deploy_collateral(collateral, spotter,
-                                     debt_ceiling=Wad.from_number(100000),
-                                     penalty=Ray.from_number(1),
-                                     flop_lot=Wad.from_number(10000),
-                                     ratio=Ray.from_number(1.5),
-                                     initial_price=Wad.from_number(219))
-
-        return deployment
-
-    def deploy_collateral(self, collateral: Collateral, spotter: Spotter,
-                          debt_ceiling: Wad, penalty: Ray, flop_lot: Wad, ratio: Ray, initial_price: Wad):
-        assert isinstance(collateral, Collateral)
-        assert collateral.ilk.name is not None
-        assert self.vat.address is not None
-        assert self.cat.address is not None
-
-        collateral.pip = DSValue.deploy(web3=self.web3)
-        assert collateral.pip.address is not None
-        assert collateral.pip.poke_with_int(initial_price.value).transact()  # Initial price
-        collateral.flipper = Flipper.deploy(web3=self.web3, vat=self.vat.address, ilk=collateral.ilk.toBytes())
-
-        assert self.vat.init(collateral.ilk).transact()
-        assert self.vat.file_line(collateral.ilk, debt_ceiling)
-
-        assert collateral.gem.approve(collateral.adapter.address).transact()
-
-        # FIXME: Flipper.flips may not be populating with all the required fields.
-        assert self.cat.file_flip(collateral.ilk, collateral.flipper).transact()
-        assert self.cat.file_lump(collateral.ilk, flop_lot).transact()  # Liquidation Quantity
-        assert self.cat.file_chop(collateral.ilk, penalty).transact()  # Liquidation Penalty
-        assert self.jug.init(collateral.ilk).transact()
-
-        assert self.vat.rely(collateral.flipper.address).transact()
-        assert self.vat.rely(collateral.adapter.address).transact()
-
-        spotter.file_pip(collateral.ilk, collateral.pip.address).transact()
-        spotter.file_mat(collateral.ilk, ratio).transact()  # Liquidation ratio
-        # FIXME: Figure out why this fails with {'code': -32016, 'message': 'The execution failed due to an exception.'}
-        assert spotter.poke(collateral.ilk).transact()
-
-        self.collaterals.append(collateral)
 
     def __repr__(self):
         return f'DssDeployment({self.config.to_json()})'

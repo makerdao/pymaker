@@ -55,7 +55,7 @@ class TestFlipper:
         flipper.deal(1).transact()
 
     def kick(self, flipper, our_address, other_address):
-        assert self.flapper.kicks() == 0
+        assert flipper.kicks() == 0
         assert flipper.kick(urn=our_address,
                             gal=other_address,
                             tab=Wad.from_number(5000),

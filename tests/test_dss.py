@@ -18,12 +18,14 @@
 import eth_abi
 import json
 import pytest
+from datetime import datetime
 from eth_utils import decode_hex
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.utils.events import get_event_data
 
 from pymaker import Address
+from pymaker.approval import hope_directly
 from pymaker.auctions import Flipper, Flapper, Flopper
 from pymaker.deployment import DssDeployment
 from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemAdapter, DaiJoin, Spotter, Collateral
@@ -38,14 +40,15 @@ def urn(our_address: Address, mcd: DssDeployment):
     return mcd.vat.urn(collateral.ilk, our_address)
 
 
-def wrap_eth(mcd: DssDeployment, amount: Wad):
+def wrap_eth(mcd: DssDeployment, address: Address, amount: Wad):
     assert isinstance(mcd, DssDeployment)
+    assert isinstance(address, Address)
     assert isinstance(amount, Wad)
     assert amount > Wad(0)
 
     collateral = [c for c in mcd.collaterals if c.gem.symbol() == "WETH"][0]
     assert isinstance(collateral.gem, DSEthToken)
-    assert collateral.gem.deposit(amount).transact()
+    assert collateral.gem.deposit(amount).transact(from_address=address)
 
 
 def get_collateral_price(collateral: Collateral):
@@ -53,23 +56,19 @@ def get_collateral_price(collateral: Collateral):
     return Wad(Web3.toInt(collateral.pip.read()))
 
 
-def set_collateral_price(web3: Web3, mcd: DssDeployment, collateral: Collateral, price: Wad):
-    assert isinstance(web3, Web3)
+def set_collateral_price(mcd: DssDeployment, collateral: Collateral, price: Wad):
     assert isinstance(mcd, DssDeployment)
     assert isinstance(collateral, Collateral)
     assert isinstance(price, Wad)
     assert price > Wad(0)
 
-    account = web3.eth.defaultAccount
     pip = collateral.pip
     assert isinstance(pip, DSValue)
-    web3.eth.defaultAccount = pip.get_owner().address
 
-    print(f"Changing price of {collateral.ilk.name} to {price} as {web3.eth.defaultAccount}")
-    assert pip.poke_with_int(price.value).transact()
-    assert mcd.spotter.poke(ilk=collateral.ilk).transact()
+    print(f"Changing price of {collateral.ilk.name} to {price}")
+    assert pip.poke_with_int(price.value).transact(from_address=pip.get_owner())
+    assert mcd.spotter.poke(ilk=collateral.ilk).transact(from_address=pip.get_owner())
 
-    web3.eth.defaultAccount = account
     assert get_collateral_price(collateral) == price
 
 
@@ -81,7 +80,7 @@ def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
 
     # Add collateral to our CDP
     dink = Wad.from_number(1)
-    wrap_eth(mcd, dink)
+    wrap_eth(mcd, our_address, dink)
     assert collateral.gem.balance_of(our_address) >= dink
     assert collateral.adapter.join(Urn(our_address), dink).transact()
     TestVat.frob(mcd, collateral, our_address, dink, Wad(0))
@@ -92,7 +91,7 @@ def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
     # Manipulate price to make our CDP underwater
     # Note this will only work on a testchain deployed with fixed prices, where PIP is a DSValue
     TestVat.frob(mcd, collateral, our_address, Wad(0), TestVat.max_dart(mcd, collateral, our_address))
-    set_collateral_price(web3, mcd, collateral, to_price)
+    set_collateral_price(mcd, collateral, to_price)
 
     # Bite the CDP
     TestCat.simulate_bite(mcd, collateral, our_address)
@@ -128,18 +127,16 @@ class TestConfig:
 
         assert web3.eth.defaultAccount == our_address.address
         assert our_address != other_address
-        wrap_eth(mcd, amount)
+        wrap_eth(mcd, our_address, amount)
 
         # Move eth between each account to confirm keys are properly set up
         before = token.balance_of(our_address)
         assert token.transfer_from(our_address, other_address, amount).transact()
-        web3.eth.defaultAccount = other_address.address  # Unsure why this is necessary
         after = token.balance_of(our_address)
         assert (before - amount) == after
-        assert token.transfer_from(other_address, our_address, amount).transact()
-        assert token.balance_of(our_address) == before
 
-        web3.eth.defaultAccount = our_address.address
+        assert token.transfer_from(other_address, our_address, amount).transact(from_address=other_address)
+        assert token.balance_of(our_address) == before
 
 
 class TestVat:
@@ -153,8 +150,8 @@ class TestVat:
         ilk = mcd.vat.ilk(collateral.ilk.name)
 
         # change in debt = (collateral balance * collateral price with safety margin) - CDP's stablecoin debt
-        dart = urn.ink * mcd.vat.spot(collateral.ilk) - urn.art
-        print(f"dart={dart} = urn.ink={urn.ink} * spot={mcd.vat.spot(collateral.ilk)} - urn.art={urn.art}")
+        dart = urn.ink * ilk.spot - urn.art
+        print(f"dart={dart} = urn.ink={urn.ink} * spot={ilk.spot} - urn.art={urn.art}")
 
         # don't let the change in debt exceed the collateral debt ceiling
         if (Rad(urn.art) + Rad(dart)) >= ilk.line:
@@ -164,7 +161,7 @@ class TestVat:
 
         # don't let the change in debt exceed the total debt ceiling
         debt = mcd.vat.debt() + Rad(ilk.rate * dart)
-        line = Rad(mcd.vat.line(ilk))
+        line = Rad(ilk.line)
         if (debt + Rad(dart)) >= line:
             print(f"reducing dart to stay below total debt ceiling of {line}")
             dart = Wad(debt - Rad(urn.art))
@@ -175,14 +172,14 @@ class TestVat:
         return dart
 
     @staticmethod
-    def simulate_frob(mcd: DssDeployment, collateral: Collateral, our_address: Address, dink: Wad, dart: Wad):
+    def simulate_frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad, dart: Wad):
         assert isinstance(mcd, DssDeployment)
         assert isinstance(collateral, Collateral)
-        assert isinstance(our_address, Address)
+        assert isinstance(address, Address)
         assert isinstance(dink, Wad)
         assert isinstance(dart, Wad)
 
-        urn = mcd.vat.urn(collateral.ilk, our_address)
+        urn = mcd.vat.urn(collateral.ilk, address)
         ilk = mcd.vat.ilk(collateral.ilk.name)
 
         print(f"urn.ink={urn.ink}, urn.art={urn.art}, ilk.art={ilk.art}, dink={dink}, dart={dart}")
@@ -210,7 +207,7 @@ class TestVat:
             print(f"CDP would exceed total debt ceiling of {ilk.line}")
         calm = under_collateral_debt_ceiling and under_total_debt_ceiling
 
-        safe = (urn.art * rate) <= ink * mcd.vat.spot(collateral.ilk)
+        safe = (urn.art * rate) <= ink * ilk.spot
 
         assert calm or cool
         assert nice or safe
@@ -219,57 +216,58 @@ class TestVat:
         assert rate != Ray(0)
 
     @staticmethod
-    def frob(mcd: DssDeployment, collateral: Collateral, our_address: Address, dink: Wad, dart: Wad):
+    def frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad, dart: Wad):
         # given
         assert isinstance(mcd, DssDeployment)
         assert isinstance(collateral, Collateral)
-        assert isinstance(our_address, Address)
+        assert isinstance(address, Address)
         assert isinstance(dink, Wad)
         assert isinstance(dart, Wad)
         ilk = collateral.ilk
 
         # when
-        # ink_before = mcd.vat.urn(ilk, our_address).ink
-        # art_before = mcd.vat.urn(ilk, our_address).art
-        TestVat.simulate_frob(mcd, collateral, our_address, dink, dart)
+        # ink_before = mcd.vat.urn(ilk, address).ink
+        # art_before = mcd.vat.urn(ilk, address).art
+        TestVat.simulate_frob(mcd, collateral, address, dink, dart)
 
         # then
-        assert mcd.vat.frob(ilk=ilk, address=our_address, dink=dink, dart=dart).transact()
+        assert mcd.vat.frob(ilk=ilk, address=address, dink=dink, dart=dart).transact(from_address=address)
         # FIXME: Unsure what I'm misunderstanding here
-        # assert mcd.vat.urn(ilk, our_address).ink == ink_before + dink
-        # assert mcd.vat.urn(ilk, our_address).art == art_before + dink
+        # assert mcd.vat.urn(ilk, address).ink == ink_before + dink
+        # assert mcd.vat.urn(ilk, address).art == art_before + dink
 
     @staticmethod
-    def ensure_clean_urn(mcd: DssDeployment, collateral: Collateral, our_address: Address):
+    def ensure_clean_urn(mcd: DssDeployment, collateral: Collateral, address: Address):
         assert isinstance(mcd, DssDeployment)
         assert isinstance(collateral, Collateral)
-        assert isinstance(our_address, Address)
+        assert isinstance(address, Address)
 
-        urn = mcd.vat.urn(collateral.ilk, our_address)
+        urn = mcd.vat.urn(collateral.ilk, address)
         assert urn.ink == Wad(0)
         assert urn.art == Wad(0)
-        assert mcd.vat.dai(our_address) == Rad(0)
-        assert mcd.vat.gem(collateral.ilk, our_address) == Wad(0)
+        assert mcd.vat.dai(address) == Rad(0)
+        assert mcd.vat.gem(collateral.ilk, address) == Wad(0)
 
     @staticmethod
-    def cleanup_urn(mcd: DssDeployment, collateral: Collateral, our_address: Address):
+    def cleanup_urn(mcd: DssDeployment, collateral: Collateral, address: Address):
         assert isinstance(mcd, DssDeployment)
         assert isinstance(collateral, Collateral)
-        assert isinstance(our_address, Address)
-        urn = mcd.vat.urn(collateral.ilk, our_address)
+        assert isinstance(address, Address)
+        urn = mcd.vat.urn(collateral.ilk, address)
 
         # TODO: Repay Dai
-        assert mcd.vat.frob(collateral.ilk, our_address, Wad(0), urn.art * -1).transact()
-        assert mcd.vat.frob(collateral.ilk, our_address, urn.ink * -1, Wad(0)).transact()
-        assert collateral.adapter.exit(urn, mcd.vat.gem(collateral.ilk, our_address)).transact()
+        assert mcd.vat.frob(collateral.ilk, address, Wad(0), urn.art * -1).transact(from_address=address)
+        assert mcd.vat.frob(collateral.ilk, address, urn.ink * -1, Wad(0)).transact(from_address=address)
+        assert collateral.adapter.exit(urn, mcd.vat.gem(collateral.ilk, address)).transact(from_address=address)
 
-        TestVat.ensure_clean_urn(mcd, collateral, our_address)
+        TestVat.ensure_clean_urn(mcd, collateral, address)
 
     def test_getters(self, mcd):
         assert isinstance(mcd.vat.live(), bool)
 
     def test_ilk(self, mcd):
-        assert mcd.vat.ilk('XXX') == Ilk('XXX', rate=Ray(0), ink=Wad(0), art=Wad(0), line=Rad(0), dust=Rad(0))
+        assert mcd.vat.ilk('XXX') == Ilk('XXX',
+                                         rate=Ray(0), ink=Wad(0), art=Wad(0), spot=Ray(0), line=Rad(0), dust=Rad(0))
 
     def test_gem(self, web3: Web3, mcd: DssDeployment, our_address: Address):
         # given
@@ -280,7 +278,7 @@ class TestVat:
         assert isinstance(collateral.adapter, GemAdapter)
         assert collateral.ilk == collateral.adapter.ilk()
         assert our_urn.address == our_address
-        wrap_eth(mcd, amount_to_join)
+        wrap_eth(mcd, our_address, amount_to_join)
         assert collateral.gem.balance_of(our_address) >= amount_to_join
 
         # when
@@ -324,7 +322,7 @@ class TestVat:
         our_urn = mcd.vat.urn(collateral.ilk, our_address)
 
         # when
-        wrap_eth(mcd, Wad(10))
+        wrap_eth(mcd, our_address, Wad(10))
         assert collateral.adapter.join(our_urn, Wad(10)).transact()
         assert mcd.vat.frob(collateral.ilk, our_address, Wad(10), Wad(0)).transact()
 
@@ -340,7 +338,7 @@ class TestVat:
         our_urn = mcd.vat.urn(collateral.ilk, our_address)
 
         # when
-        wrap_eth(mcd, Wad(10))
+        wrap_eth(mcd, our_address, Wad(10))
         assert collateral.adapter.join(our_urn, Wad(3)).transact()
         assert mcd.vat.frob(collateral.ilk, our_address, Wad(3), Wad(10)).transact()
 
@@ -349,6 +347,26 @@ class TestVat:
 
         # rollback
         self.cleanup_urn(mcd, collateral, our_address)
+
+    def test_frob_other_account(self, web3, mcd, other_address):
+        # given
+        collateral = mcd.collaterals[0]
+        our_urn = mcd.vat.urn(collateral.ilk, other_address)
+        assert our_urn.address == other_address
+
+        # when
+        wrap_eth(mcd, other_address, Wad(10))
+        assert collateral.gem.balance_of(other_address) >= Wad(10)
+        assert collateral.gem == collateral.adapter.gem()
+        collateral.gem.approve(collateral.adapter.address)
+        assert collateral.adapter.join(our_urn, Wad(3)).transact(from_address=other_address)
+        assert mcd.vat.frob(collateral.ilk, other_address, Wad(3), Wad(10)).transact(from_address=other_address)
+
+        # then
+        assert mcd.vat.urn(collateral.ilk, other_address).art == our_urn.art + Wad(10)
+
+        # rollback
+        self.cleanup_urn(mcd, collateral, other_address)
 
     def test_heal(self, mcd):
         assert mcd.vat.heal(Rad(0))
@@ -415,7 +433,7 @@ class TestCat:
         urn = mcd.vat.urn(collateral.ilk, our_address)
 
         # Collateral value should be less than the product of our stablecoin debt and the debt multiplier
-        assert (Ray(urn.ink) * mcd.vat.spot(ilk)) < (Ray(urn.art) * ilk.rate)
+        assert (Ray(urn.ink) * ilk.spot) < (Ray(urn.art) * ilk.rate)
 
         # Lesser of our collateral balance and the liquidation quantity
         lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
@@ -428,24 +446,6 @@ class TestCat:
 
     def test_getters(self, mcd):
         assert isinstance(mcd.cat.live(), bool)
-
-    @pytest.mark.skip(reason="needs to be tested with auctions to leave urn in a clean state")
-    def test_bite(self, web3, our_address, mcd):
-        # given
-        collateral = mcd.collaterals[0]
-        amount = Wad.from_number(2)
-        wrap_eth(mcd, amount)
-        assert collateral.adapter.join(Urn(our_address), amount).transact()
-        assert mcd.vat.frob(ilk=collateral.ilk, address=our_address, dink=amount, dart=Wad(0)).transact()
-        our_urn = mcd.vat.urn(collateral.ilk, our_address)
-
-        # when
-        to_price = Wad(Web3.toInt(collateral.pip.read())) - Wad.from_number(10)
-        TestVat.frob(mcd, collateral, our_address, Wad(0), TestVat.max_dart(mcd, collateral, our_address))
-        set_collateral_price(web3, mcd, collateral, to_price)
-
-        # then
-        assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
 
 
 @pytest.mark.skip(reason="using TestCat.test_past_bite at the moment")
@@ -570,7 +570,7 @@ class TestVow:
 
         # Manipulate price to make our CDP underwater, and then bite the CDP
         to_price = Wad(Web3.toInt(c.pip.read())) / Wad.from_number(2)
-        set_collateral_price(web3, mcd, c, to_price)
+        set_collateral_price(mcd, c, to_price)
         TestCat.simulate_bite(mcd, c, our_address)
         assert mcd.cat.bite(c.ilk, Urn(our_address)).transact()
 
@@ -637,7 +637,7 @@ class TestMcd:
         collateral = mcd.collaterals[1]
         ilk = collateral.ilk
         TestVat.ensure_clean_urn(mcd, collateral, our_address)
-        wrap_eth(mcd, Wad.from_number(9))
+        wrap_eth(mcd, our_address, Wad.from_number(9))
 
         # Ensure our collateral enters the urn
         collateral_balance_before = collateral.gem.balance_of(our_address)
@@ -693,12 +693,12 @@ class TestMcd:
         assert collateral_balance_before == collateral_balance_after
 
 
-    def test_auctions(self, web3, mcd, our_address):
+    def test_auctions(self, web3, mcd, our_address, other_address):
         # Create a CDP
         collateral = mcd.collaterals[0]
         kicks_before = collateral.flipper.kicks()
         ilk = collateral.ilk
-        wrap_eth(mcd, Wad.from_number(6))
+        wrap_eth(mcd, our_address, Wad.from_number(6))
         assert collateral.adapter.join(Urn(our_address), Wad.from_number(6)).transact()
         TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(6), dart=Wad(0))
         max_dart = TestVat.max_dart(mcd, collateral, our_address) - Wad(1)
@@ -711,16 +711,16 @@ class TestMcd:
 
         # Undercollateralize the CDP
         to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
-        set_collateral_price(web3, mcd, collateral, to_price)
+        set_collateral_price(mcd, collateral, to_price)
         urn = mcd.vat.urn(collateral.ilk, our_address)
-        assert mcd.vat.ilk(ilk.name).rate is not None
-        assert mcd.vat.spot(collateral.ilk) is not None
-        safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * mcd.vat.spot(collateral.ilk)
+        ilk = mcd.vat.ilk(ilk.name)
+        assert ilk.rate is not None
+        assert ilk.spot is not None
+        safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * ilk.spot
         assert not safe
 
         # Bite the CDP, which moves debt to the vow and kicks the flipper
         urn = mcd.vat.urn(collateral.ilk, our_address)
-        ilk = mcd.vat.ilk(ilk.name)
         assert urn.ink > Wad(0)
         lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
         art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
@@ -729,20 +729,53 @@ class TestMcd:
         TestCat.simulate_bite(mcd, collateral, our_address)
         assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
         urn = mcd.vat.urn(collateral.ilk, our_address)
+        # Check vat, vow, and cat
         assert urn.ink == Wad(0)
         assert urn.art == max_dart - art
         assert mcd.vat.vice() > Rad(0)
         assert mcd.vow.sin() == Rad(tab)
-        assert mcd.cat.flipper(ilk).address == collateral.flipper.address.address
-        print(f"first bid={collateral.flipper.bids(1)}")
-        assert collateral.flipper.kicks() == kicks_before + 1
-
-        # Test the flip
         bites = mcd.cat.past_bite(10)
         assert len(bites) == 1
         last_bite = bites[0]
-        assert last_bite.tab > Wad(0)
+        assert last_bite.tab > Rad(0)
         print(f"last_bite={last_bite}")
+        # Check the flipper
+        assert collateral.flipper.kicks() == kicks_before + 1
+        current_bid = collateral.flipper.bids(1)
+        print(f"first bid={current_bid}")
+        assert isinstance(current_bid, Flipper.Bid)
+        assert current_bid.lot > Wad(0)
+        assert current_bid.tab > Rad(0)
+        assert current_bid.bid == Rad(0)
+        assert last_bite.tab == current_bid.tab
+
+        # Bid on the flip auction
+        bid = current_bid.bid + (Rad.from_number(3) * Rad(current_bid.lot))
+        eth_required = Wad(bid / Rad(ilk.spot)) * Wad.from_number(1.1)
+        wrap_eth(mcd, other_address, eth_required)
+        assert collateral.gem == collateral.adapter.gem()
+        assert collateral.gem.balance_of(other_address) >= eth_required
+        collateral.gem.approve(collateral.adapter.address)
+        other_urn = mcd.vat.urn(collateral.ilk, other_address)
+        assert collateral.adapter.join(other_urn, eth_required).transact(from_address=other_address)
+        # FIXME: need a way to pass from_address to the approval function
+        web3.eth.defaultAccount = other_address.address
+        collateral.flipper.approve(approval_function=hope_directly())
+        assert mcd.vat.can(other_address, collateral.flipper.address)
+        print(f"dink={eth_required}, dart={Wad(bid)}")
+        TestVat.frob(mcd, collateral, other_address, dink=eth_required, dart=Wad(bid))
+        assert current_bid.guy is not Address("0x0000000000000000000000000000000000000000")
+        assert current_bid.tic > datetime.utcnow().timestamp() or current_bid.tic == 0
+        assert current_bid.end > datetime.utcnow().timestamp()
+        assert bid <= current_bid.tab
+        assert bid > current_bid.bid
+        assert bid >= current_bid.bid * Rad(collateral.flipper.beg())
+        assert collateral.flipper.tend(1, current_bid.lot, bid).transact()
+        current_bid = collateral.flipper.bids(1)
+        assert current_bid.guy == other_address
+        assert current_bid.bid == bid
+
+        # TODO: Sleep if necessary, and then test the dent phase of the auction
 
         # TODO: If the flip auction didn't cover the debt, kick the flopper
         # awe = vat.sin

@@ -19,7 +19,8 @@ from pprint import pformat
 from pymaker.numeric import Ray
 from web3 import Web3
 
-from pymaker import Contract, Address, Transact, Wad
+from pymaker import Contract, Address, Transact
+from pymaker.numeric import Wad, Rad
 from pymaker.token import ERC20Token
 
 
@@ -115,15 +116,15 @@ class Flipper(AuctionContract):
     bin = Contract._load_bin(__name__, 'abi/Flipper.bin')
 
     class Bid:
-        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int, urn: Address, gal: Address, tab: Wad):
-            assert(isinstance(bid, Wad))
+        def __init__(self, bid: Rad, lot: Wad, guy: Address, tic: int, end: int, urn: Address, gal: Address, tab: Rad):
+            assert(isinstance(bid, Rad))
             assert(isinstance(lot, Wad))
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
             assert(isinstance(end, int))
             assert(isinstance(urn, Address))
             assert(isinstance(gal, Address))
-            assert(isinstance(tab, Wad))
+            assert(isinstance(tab, Rad))
 
             self.bid = bid
             self.lot = lot
@@ -135,7 +136,7 @@ class Flipper(AuctionContract):
             self.tab = tab
 
         def __repr__(self):
-            return f"Flipper.Bid(bid={self.bid}, lot={self.lot}, guy={self.guy}, urn={self.urn}, tab={self.tab})"
+            return f"Flipper.Bid({pformat(vars(self))})"
 
     @staticmethod
     def deploy(web3: Web3, vat: Address, ilk):
@@ -147,18 +148,19 @@ class Flipper(AuctionContract):
     def __init__(self, web3: Web3, address: Address):
         super(Flipper, self).__init__(web3, address, Flipper.abi)
 
-    def approve(self, approval_function):
+    def approve(self, approval_function, **kwargs):
         """Approve the `Flipper` to access our `dai` so we can participate in auctions.
 
         For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
-        in `pymaker.approval`. #TODO hope_directly()
+        in `pymaker.approval`.
 
         Args:
             approval_function: Approval function (i.e. approval mode).
         """
         assert(callable(approval_function))
 
-        approval_function(ERC20Token(web3=self.web3, address=self.vat()), self.address, 'Flipper')
+        approval_function(token=ERC20Token(web3=self.web3, address=self.vat()),
+                          spender_address=self.address, spender_name='Flipper', **kwargs)
 
     def vat(self) -> Address:
         """Returns the `vat` address.
@@ -188,21 +190,21 @@ class Flipper(AuctionContract):
 
         array = self._contract.call().bids(id)
 
-        return Flipper.Bid(bid=Wad(array[0]),
+        return Flipper.Bid(bid=Rad(array[0]),
                            lot=Wad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),
                            end=int(array[4]),
                            urn=Address(array[5]),
                            gal=Address(array[6]),
-                           tab=Wad(array[7]))
+                           tab=Rad(array[7]))
 
-    def kick(self, urn: Address, gal: Address, tab: Wad, lot: Wad, bid: Wad) -> Transact:
+    def kick(self, urn: Address, gal: Address, tab: Rad, lot: Wad, bid: Rad) -> Transact:
         assert(isinstance(urn, Address))
         assert(isinstance(gal, Address))
-        assert(isinstance(tab, Wad))
+        assert(isinstance(tab, Rad))
         assert(isinstance(lot, Wad))
-        assert(isinstance(bid, Wad))
+        assert(isinstance(bid, Rad))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'kick', [urn.address,
                                                                                           gal.address,
@@ -210,10 +212,10 @@ class Flipper(AuctionContract):
                                                                                           lot.value,
                                                                                           bid.value])
 
-    def tend(self, id: int, lot: Wad, bid: Wad) -> Transact:
+    def tend(self, id: int, lot: Wad, bid: Rad) -> Transact:
         assert(isinstance(id, int))
         assert(isinstance(lot, Wad))
-        assert(isinstance(bid, Wad))
+        assert(isinstance(bid, Rad))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tend', [id, lot.value, bid.value])
 
