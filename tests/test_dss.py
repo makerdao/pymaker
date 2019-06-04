@@ -30,7 +30,7 @@ from pymaker.auctions import Flipper, Flapper, Flopper
 from pymaker.deployment import DssDeployment
 from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemAdapter, DaiJoin, Spotter, Collateral
 from pymaker.feed import DSValue
-from pymaker.numeric import Ray, Wad, Rad
+from pymaker.numeric import Wad, Ray, Rad
 from pymaker.token import DSToken, DSEthToken
 
 
@@ -691,97 +691,3 @@ class TestMcd:
         assert collateral.adapter.exit(Urn(our_address), Wad.from_number(9)).transact()
         collateral_balance_after = collateral.gem.balance_of(our_address)
         assert collateral_balance_before == collateral_balance_after
-
-
-    def test_auctions(self, web3, mcd, our_address, other_address):
-        # Create a CDP
-        collateral = mcd.collaterals[0]
-        kicks_before = collateral.flipper.kicks()
-        ilk = collateral.ilk
-        wrap_eth(mcd, our_address, Wad.from_number(6))
-        assert collateral.adapter.join(Urn(our_address), Wad.from_number(6)).transact()
-        TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(6), dart=Wad(0))
-        max_dart = TestVat.max_dart(mcd, collateral, our_address) - Wad(1)
-        TestVat.frob(mcd, collateral, our_address, dink=Wad(0), dart=max_dart)
-
-        # Mint and withdraw all the Dai
-        assert mcd.dai_adapter.exit(Urn(our_address), max_dart).transact()
-        assert mcd.dai.balance_of(our_address) == max_dart
-        assert mcd.vat.dai(our_address) == Rad(0)
-
-        # Undercollateralize the CDP
-        to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
-        set_collateral_price(mcd, collateral, to_price)
-        urn = mcd.vat.urn(collateral.ilk, our_address)
-        ilk = mcd.vat.ilk(ilk.name)
-        assert ilk.rate is not None
-        assert ilk.spot is not None
-        safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * ilk.spot
-        assert not safe
-
-        # Bite the CDP, which moves debt to the vow and kicks the flipper
-        urn = mcd.vat.urn(collateral.ilk, our_address)
-        assert urn.ink > Wad(0)
-        lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
-        art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
-        tab = art * ilk.rate * Wad(mcd.cat.chop(ilk))  # Wad
-        assert tab == max_dart
-        TestCat.simulate_bite(mcd, collateral, our_address)
-        assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
-        urn = mcd.vat.urn(collateral.ilk, our_address)
-        # Check vat, vow, and cat
-        assert urn.ink == Wad(0)
-        assert urn.art == max_dart - art
-        assert mcd.vat.vice() > Rad(0)
-        assert mcd.vow.sin() == Rad(tab)
-        bites = mcd.cat.past_bite(10)
-        assert len(bites) == 1
-        last_bite = bites[0]
-        assert last_bite.tab > Rad(0)
-        print(f"last_bite={last_bite}")
-        # Check the flipper
-        assert collateral.flipper.kicks() == kicks_before + 1
-        current_bid = collateral.flipper.bids(1)
-        print(f"first bid={current_bid}")
-        assert isinstance(current_bid, Flipper.Bid)
-        assert current_bid.lot > Wad(0)
-        assert current_bid.tab > Rad(0)
-        assert current_bid.bid == Rad(0)
-        assert last_bite.tab == current_bid.tab
-
-        # Bid on the flip auction
-        bid = current_bid.bid + (Rad.from_number(3) * Rad(current_bid.lot))
-        eth_required = Wad(bid / Rad(ilk.spot)) * Wad.from_number(1.1)
-        wrap_eth(mcd, other_address, eth_required)
-        assert collateral.gem == collateral.adapter.gem()
-        assert collateral.gem.balance_of(other_address) >= eth_required
-        collateral.gem.approve(collateral.adapter.address)
-        other_urn = mcd.vat.urn(collateral.ilk, other_address)
-        assert collateral.adapter.join(other_urn, eth_required).transact(from_address=other_address)
-        # FIXME: need a way to pass from_address to the approval function
-        web3.eth.defaultAccount = other_address.address
-        collateral.flipper.approve(approval_function=hope_directly())
-        assert mcd.vat.can(other_address, collateral.flipper.address)
-        print(f"dink={eth_required}, dart={Wad(bid)}")
-        TestVat.frob(mcd, collateral, other_address, dink=eth_required, dart=Wad(bid))
-        assert current_bid.guy is not Address("0x0000000000000000000000000000000000000000")
-        assert current_bid.tic > datetime.utcnow().timestamp() or current_bid.tic == 0
-        assert current_bid.end > datetime.utcnow().timestamp()
-        assert bid <= current_bid.tab
-        assert bid > current_bid.bid
-        assert bid >= current_bid.bid * Rad(collateral.flipper.beg())
-        assert collateral.flipper.tend(1, current_bid.lot, bid).transact()
-        current_bid = collateral.flipper.bids(1)
-        assert current_bid.guy == other_address
-        assert current_bid.bid == bid
-
-        # TODO: Sleep if necessary, and then test the dent phase of the auction
-
-        # TODO: If the flip auction didn't cover the debt, kick the flopper
-        # awe = vat.sin
-        # woe = (awe-sin)-ash
-        # assert mcd.vow.woe() >= mcd.vow.sump()
-        # assert mcd.vow.joy() == Wad(0)
-        # assert mcd.vow.flop().transact()
-
-        # TODO: If there is surplus Dai, kick the flapper

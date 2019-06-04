@@ -81,6 +81,12 @@ def other_address(web3) -> Address:
 
 
 @pytest.fixture(scope="session")
+def deployment_address(web3) -> Address:
+    # FIXME: Unsure why it isn't added to web3.eth.accounts list
+    return Address("0x00a329c0648769A73afAc7F9381E08FB43dBEA72")
+
+
+@pytest.fixture(scope="session")
 def mcd(web3) -> DssDeployment:
     # for local dockerized parity testchain
     deployment = DssDeployment.from_json(web3=web3, conf=open("tests/config/addresses.json", "r").read())

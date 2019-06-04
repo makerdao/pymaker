@@ -42,7 +42,7 @@ class AuctionContract(Contract):
         self.abi = abi
         self._contract = self._get_contract(web3, abi, address)
 
-    def wards(self, address: Address):
+    def wards(self, address: Address) -> bool:
         assert isinstance(address, Address)
 
         return bool(self._contract.call().wards(address.address))
@@ -51,21 +51,21 @@ class AuctionContract(Contract):
         assert isinstance(beg, Ray)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint)',
+                        'file(bytes32,uint256)',
                         [Web3.toBytes(text="beg"), beg.value])
 
     def file_ttl(self, ttl: int) -> Transact:
         assert isinstance(ttl, int)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint)',
+                        'file(bytes32,uint256)',
                         [Web3.toBytes(text="ttl"), ttl])
 
     def file_tau(self, tau: int) -> Transact:
         assert isinstance(tau, int)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint)',
+                        'file(bytes32,uint256)',
                         [Web3.toBytes(text="tau"), tau])
 
     def beg(self) -> Ray:
@@ -169,14 +169,6 @@ class Flipper(AuctionContract):
         """
         return Address(self._contract.call().vat())
 
-    def gem(self) -> Address:
-        """Returns the `gem` token.
-
-        Returns:
-            The address of the `gem` token.
-        """
-        return Address(self._contract.call().gem())
-
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
 
@@ -219,10 +211,10 @@ class Flipper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tend', [id, lot.value, bid.value])
 
-    def dent(self, id: int, lot: Wad, bid: Wad) -> Transact:
+    def dent(self, id: int, lot: Wad, bid: Rad) -> Transact:
         assert(isinstance(id, int))
         assert(isinstance(lot, Wad))
-        assert(isinstance(bid, Wad))
+        assert(isinstance(bid, Rad))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'dent', [id, lot.value, bid.value])
 
