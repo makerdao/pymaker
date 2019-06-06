@@ -102,6 +102,7 @@ class TestFlipper:
         assert ilk.spot is not None
         safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * ilk.spot
         assert not safe
+        assert len(flipper.active_auctions()) == 0
 
         # Bite the CDP, which moves debt to the vow and kicks the flipper
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
@@ -133,6 +134,7 @@ class TestFlipper:
         assert current_bid.bid == Rad(0)
         # Cat doesn't incorporate the liquidation penalty (chop), but the kicker includes it.
         # assert last_bite.tab == current_bid.tab
+        assert len(flipper.active_auctions()) == 1
 
         # Test the _tend_ phase of the auction
         eth_required = Wad(current_bid.tab / Rad(ilk.spot)) * Wad.from_number(1.1)

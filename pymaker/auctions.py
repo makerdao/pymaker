@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 from pprint import pformat
 from pymaker.numeric import Ray
 from web3 import Web3
@@ -30,7 +31,7 @@ def toBytes(string: str):
 
 
 class AuctionContract(Contract):
-    def __init__(self, web3: Web3, address: Address, abi: list):
+    def __init__(self, web3: Web3, address: Address, abi: list, bids: callable):
         if self.__class__ == AuctionContract:
             raise NotImplemented('Abstract class; please call Flipper, Flapper, or Flopper ctor')
         assert isinstance(web3, Web3)
@@ -41,11 +42,24 @@ class AuctionContract(Contract):
         self.address = address
         self.abi = abi
         self._contract = self._get_contract(web3, abi, address)
+        self._bids = bids
 
     def wards(self, address: Address) -> bool:
         assert isinstance(address, Address)
 
         return bool(self._contract.call().wards(address.address))
+
+    def active_auctions(self) -> list:
+        active_auctions = []
+        index = 1  # Yes, the first bid is in the second element of the array
+        bid = self._bids(index)
+        while bid.guy != Address("0x0000000000000000000000000000000000000000"):
+            now = datetime.now().timestamp()
+            if (bid.tic == 0 or now < bid.tic) and now < bid.end:
+                active_auctions.append(bid)
+            index += 1
+            bid = self._bids(index)
+        return active_auctions
 
     def file_beg(self, beg: Ray) -> Transact:
         assert isinstance(beg, Ray)
@@ -146,7 +160,7 @@ class Flipper(AuctionContract):
         return Flipper(web3=web3, address=Contract._deploy(web3, Flipper.abi, Flipper.bin, [vat.address, ilk]))
 
     def __init__(self, web3: Web3, address: Address):
-        super(Flipper, self).__init__(web3, address, Flipper.abi)
+        super(Flipper, self).__init__(web3, address, Flipper.abi, self.bids)
 
     def approve(self, approval_function, **kwargs):
         """Approve the `Flipper` to access our `dai` so we can participate in auctions.
@@ -224,7 +238,7 @@ class Flipper(AuctionContract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
 
     def __repr__(self):
-        return f"Flipper('{pformat(vars(self))}')"
+        return f"Flipper('{self.address}')"
 
 
 class Flapper(AuctionContract):
@@ -265,7 +279,7 @@ class Flapper(AuctionContract):
         return Flapper(web3=web3, address=Contract._deploy(web3, Flapper.abi, Flapper.bin, [dai.address, gem.address]))
 
     def __init__(self, web3: Web3, address: Address):
-        super(Flapper, self).__init__(web3, address, Flapper.abi)
+        super(Flapper, self).__init__(web3, address, Flapper.abi, self.bids)
 
     def live(self) -> bool:
         return self._contract.call().live() > 0
@@ -333,7 +347,7 @@ class Flapper(AuctionContract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
 
     def __repr__(self):
-        return f"Flapper('{pformat(vars(self))}')"
+        return f"Flapper('{self.address}')"
 
 
 class Flopper(AuctionContract):
@@ -374,7 +388,7 @@ class Flopper(AuctionContract):
         return Flopper(web3=web3, address=Contract._deploy(web3, Flopper.abi, Flopper.bin, [dai.address, gem.address]))
 
     def __init__(self, web3: Web3, address: Address):
-        super(Flopper, self).__init__(web3, address, Flopper.abi)
+        super(Flopper, self).__init__(web3, address, Flopper.abi, self.bids)
 
     def live(self) -> bool:
         return self._contract.call().live() > 0
@@ -450,4 +464,4 @@ class Flopper(AuctionContract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
 
     def __repr__(self):
-        return f"Flopper('{pformat(vars(self))}')"
+        return f"Flopper('{self.address}')"

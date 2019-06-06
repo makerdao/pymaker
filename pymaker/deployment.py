@@ -265,5 +265,16 @@ class DssDeployment:
     def to_json(self) -> str:
         return self.config.to_json()
 
+    def active_auctions(self) -> dict:
+        flips = {}
+        for collateral in self.collaterals:
+            flips[collateral.ilk.name] = collateral.flipper.active_auctions()
+
+        return {
+            "flips": flips,
+            "flaps": self.flap.active_auctions(),
+            "flops": self.flop.active_auctions()
+        }
+
     def __repr__(self):
         return f'DssDeployment({self.config.to_json()})'

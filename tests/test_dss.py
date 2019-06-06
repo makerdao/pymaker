@@ -136,6 +136,12 @@ class TestConfig:
         assert token.transfer_from(other_address, our_address, amount).transact(from_address=other_address)
         assert token.balance_of(our_address) == before
 
+    def test_get_active_auctions(self, mcd):
+        auctions = mcd.get_active_auctions()
+        assert "flips" in auctions
+        assert "flaps" in auctions
+        assert "flops" in auctions
+
 
 class TestVat:
     @staticmethod
