@@ -72,8 +72,6 @@ def set_collateral_price(mcd: DssDeployment, collateral: Collateral, price: Wad)
     assert get_collateral_price(collateral) == price
 
 
-# TODO: Make these static methods in TestCat instead of fixtures
-
 @pytest.fixture(scope="session")
 def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
     collateral = mcd.collaterals[0]
@@ -446,62 +444,13 @@ class TestCat:
 
     def test_getters(self, mcd):
         assert isinstance(mcd.cat.live(), bool)
+        assert mcd.cat.vat() == mcd.vat.address
+        assert mcd.cat.vow() == mcd.vow.address
 
-
-@pytest.mark.skip(reason="using TestCat.test_past_bite at the moment")
-class TestCatLogs:
-    def test_get_filter_topics(self, web3: Web3, our_address, mcd):
-        changes = self.get_filter_changes(web3, our_address, mcd)
-        topics = changes[0]['topics']
-        print(f"event topics: {topics}")
-        assert len(topics) > 0
-
-    def get_filter_changes(self, web3: Web3, our_address: Address, mcd: DssDeployment):
-        # attach filter before taking an action
-        vat_filter = web3.eth.filter({'address': str(mcd.cat.address.address)})
-
-        # not using as a fixture because we needed to attach filter first
-        bite(web3=web3, mcd=mcd, our_address=our_address)
-
-        # examine event topics; note this method empties the list!
-        return web3.eth.getFilterChanges(vat_filter.filter_id)
-
-    def test_event_filter(self, web3: Web3, our_address: Address, mcd):
-        events = mcd.cat._contract.events.__dict__["_events"]
-        print(f"cat events: {events}")
-        assert len(events) > 0
-
-        types = []
-        names = []
-        indexed_types = []
-        indexed_names = []
-        for elem in Cat.abi:
-            if 'name' in elem and elem['name'] == 'LogNote':
-                for input in elem['inputs']:
-                    if input['indexed']:
-                        indexed_types.append(input["type"])
-                        indexed_names.append(input["name"])
-                    else:
-                        types.append(input["type"])
-                        names.append(input["name"])
-                break
-
-        logs = self.get_filter_changes(web3, our_address, mcd)
-        assert len(logs) > 0
-        for log in logs:
-            print(f"log data {log['data']}")
-
-        values = eth_abi.decode_abi(types, decode_hex(log['data']))
-        assert len(values) > 0
-        for value in values:
-            print(f"value {value.hex()}")
-        assert False
-
-    @pytest.mark.skip(reason="past_events collection is always empty")
-    def test_past_events(self, bite_event, mcd):
-        past_events = mcd.cat._past_events(mcd.cat._contract, 'Bite', Cat.LogBite, 1, None)
-        print(past_events)
-        assert len(past_events) > 0
+        collateral = mcd.collaterals[2]
+        assert mcd.cat.flipper(collateral.ilk) == collateral.flipper.address
+        assert isinstance(mcd.cat.lump(collateral.ilk), Wad)
+        assert isinstance(mcd.cat.chop(collateral.ilk), Ray)
 
 
 class TestVow:
@@ -511,14 +460,14 @@ class TestVow:
         assert isinstance(mcd.vow.flopper(), Address)
         assert isinstance(mcd.vow.sin(), Rad)
         assert isinstance(mcd.vow.sin_of(0), Rad)
-        assert isinstance(mcd.vow.woe(), Wad)
-        assert isinstance(mcd.vow.ash(), Wad)
-        assert isinstance(mcd.vow.joy(), Wad)
-        assert isinstance(mcd.vow.awe(), Wad)
+        assert isinstance(mcd.vow.woe(), Rad)
+        assert isinstance(mcd.vow.ash(), Rad)
+        assert isinstance(mcd.vow.joy(), Rad)
+        assert isinstance(mcd.vow.awe(), Rad)
         assert isinstance(mcd.vow.wait(), int)
-        assert isinstance(mcd.vow.sump(), Wad)
-        assert isinstance(mcd.vow.bump(), Wad)
-        assert isinstance(mcd.vow.hump(), Wad)
+        assert isinstance(mcd.vow.sump(), Rad)
+        assert isinstance(mcd.vow.bump(), Rad)
+        assert isinstance(mcd.vow.hump(), Rad)
 
     def test_empty_flog(self, web3, mcd):
         assert mcd.vow.flog(0).transact()
@@ -539,19 +488,22 @@ class TestVow:
         assert mcd.vow.heal(Rad(0)).transact()
 
     def test_kiss(self, mcd):
-        assert mcd.vow.kiss(Wad(0)).transact()
+        assert mcd.vow.kiss(Rad(0)).transact()
 
-    # TODO: Rework this into TestMcd; we'll probably need to add collateral to the CDP first
-    # FIXME: Vow accounting issue needs resolution
+    @pytest.mark.skip(reason="moving to test_auctions::TestFlapper")
     def test_flap(self, web3, our_address, mcd):
-        # given
+        # Create a CDP
         c = mcd.collaterals[0]
+        TestVat.ensure_clean_urn(mcd, c, our_address)
+        eth_for_deposit = Wad.from_number(1)
+        wrap_eth(mcd, our_address, eth_for_deposit)
+        assert c.adapter.join(our_address, eth_for_deposit).transact()
         surplus_before = mcd.vow.awe()
-        TestVat.frob(mcd, c, our_address, Wad(0), Wad.from_number(11))
+        TestVat.frob(mcd, c, our_address, eth_for_deposit, Wad(0))
+        TestVat.frob(mcd, c, our_address, Wad(0), TestVat.max_dart(mcd, c, our_address))
         art = mcd.vat.urn(c.ilk, our_address).art
         assert art > Wad(0)
         lump_before = mcd.cat.lump(c.ilk)
-        sin_before = mcd.vow.sin()
 
         # Calculate lot
         lot = min(mcd.vat.urn(c.ilk, our_address).ink, mcd.cat.lump(c.ilk))
@@ -580,17 +532,15 @@ class TestVow:
         print(f"VOW after bite: sin={mcd.vow.sin()}, ash={mcd.vow.ash()}, awe={mcd.vow.awe()}")
 
         # when
-        assert mcd.vow.sin() >= Wad(tab)
+        assert Ray(mcd.vow.sin()) >= tab
         lump_after = mcd.cat.lump(c.ilk)
         assert lump_before < lump_after
         surplus_after = mcd.vow.awe()
         assert surplus_before < surplus_after
 
-        rad = mcd.vow.woe()
-        assert rad <= mcd.vow.joy()
-        assert rad <= mcd.vow.woe()
+        assert mcd.vow.woe() <= mcd.vow.joy()
         # can only call this when there's more surplus than debt
-        assert mcd.vow.heal(rad).transact()
+        assert mcd.vow.heal(mcd.vow.woe()).transact()
         # FIXME: total surplus (joy) is 0 here; unsure why the test author didn't like this
         assert mcd.vow.joy() >= (mcd.vow.awe() + mcd.vow.bump() + mcd.vow.hump())
         assert mcd.vow.woe() == Wad(0)
@@ -598,7 +548,7 @@ class TestVow:
         # then
         assert mcd.vow.flap().transact()
 
-    @pytest.mark.skip(reason="needs to be tested with auctions to leave urn in a clean state")
+    @pytest.mark.skip(reason="moving to test_auctions::TestFlopper")
     def test_flop(self, web3, mcd, bite):
         # given
         print(mcd)

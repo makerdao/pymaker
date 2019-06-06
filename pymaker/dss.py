@@ -575,29 +575,29 @@ class Vow(Contract):
     def sin_of(self, era: int) -> Rad:
         return Rad(self._contract.call().sin(era))
 
-    def woe(self) -> Wad:
-        return Wad(self._contract.call().Woe())
+    def woe(self) -> Rad:
+        return Rad(self._contract.call().Woe())
 
-    def ash(self) -> Wad:
-        return Wad(self._contract.call().Ash())
+    def ash(self) -> Rad:
+        return Rad(self._contract.call().Ash())
 
-    def joy(self) -> Wad:
-        return Wad(self._contract.call().Joy())
+    def joy(self) -> Rad:
+        return Rad(self._contract.call().Joy())
 
-    def awe(self) -> Wad:
-        return Wad(self._contract.call().Awe())
+    def awe(self) -> Rad:
+        return Rad(self._contract.call().Awe())
 
     def wait(self) -> int:
         return int(self._contract.call().wait())
 
-    def sump(self) -> Wad:
-        return Wad(self._contract.call().sump())
+    def sump(self) -> Rad:
+        return Rad(self._contract.call().sump())
 
-    def bump(self) -> Wad:
-        return Wad(self._contract.call().bump())
+    def bump(self) -> Rad:
+        return Rad(self._contract.call().bump())
 
-    def hump(self) -> Wad:
-        return Wad(self._contract.call().hump())
+    def hump(self) -> Rad:
+        return Rad(self._contract.call().hump())
 
     def flog(self, era: int) -> Transact:
         assert isinstance(era, int)
@@ -609,10 +609,10 @@ class Vow(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'heal', [rad.value])
 
-    def kiss(self, wad: Wad) -> Transact:
-        assert isinstance(wad, Wad)
+    def kiss(self, rad: Rad) -> Transact:
+        assert isinstance(rad, Rad)
 
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kiss', [wad.value])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kiss', [rad.value])
 
     def flop(self) -> Transact:
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'flop', [])
