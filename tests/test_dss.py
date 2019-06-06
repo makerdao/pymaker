@@ -82,7 +82,7 @@ def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
     dink = Wad.from_number(1)
     wrap_eth(mcd, our_address, dink)
     assert collateral.gem.balance_of(our_address) >= dink
-    assert collateral.adapter.join(Urn(our_address), dink).transact()
+    assert collateral.adapter.join(our_address, dink).transact()
     TestVat.frob(mcd, collateral, our_address, dink, Wad(0))
 
     # Define required bite parameters
@@ -258,7 +258,7 @@ class TestVat:
         # TODO: Repay Dai
         assert mcd.vat.frob(collateral.ilk, address, Wad(0), urn.art * -1).transact(from_address=address)
         assert mcd.vat.frob(collateral.ilk, address, urn.ink * -1, Wad(0)).transact(from_address=address)
-        assert collateral.adapter.exit(urn, mcd.vat.gem(collateral.ilk, address)).transact(from_address=address)
+        assert collateral.adapter.exit(address, mcd.vat.gem(collateral.ilk, address)).transact(from_address=address)
 
         TestVat.ensure_clean_urn(mcd, collateral, address)
 
@@ -283,9 +283,9 @@ class TestVat:
 
         # when
         before_join = mcd.vat.gem(collateral.ilk, our_urn.address)
-        assert collateral.adapter.join(our_urn, amount_to_join).transact()
+        assert collateral.adapter.join(our_address, amount_to_join).transact()
         after_join = mcd.vat.gem(collateral.ilk, our_urn.address)
-        assert collateral.adapter.exit(our_urn, amount_to_join).transact()
+        assert collateral.adapter.exit(our_address, amount_to_join).transact()
         after_exit = mcd.vat.gem(collateral.ilk, our_urn.address)
 
         # then
@@ -323,7 +323,7 @@ class TestVat:
 
         # when
         wrap_eth(mcd, our_address, Wad(10))
-        assert collateral.adapter.join(our_urn, Wad(10)).transact()
+        assert collateral.adapter.join(our_address, Wad(10)).transact()
         assert mcd.vat.frob(collateral.ilk, our_address, Wad(10), Wad(0)).transact()
 
         # then
@@ -339,7 +339,7 @@ class TestVat:
 
         # when
         wrap_eth(mcd, our_address, Wad(10))
-        assert collateral.adapter.join(our_urn, Wad(3)).transact()
+        assert collateral.adapter.join(our_address, Wad(3)).transact()
         assert mcd.vat.frob(collateral.ilk, our_address, Wad(3), Wad(10)).transact()
 
         # then
@@ -351,19 +351,19 @@ class TestVat:
     def test_frob_other_account(self, web3, mcd, other_address):
         # given
         collateral = mcd.collaterals[0]
-        our_urn = mcd.vat.urn(collateral.ilk, other_address)
-        assert our_urn.address == other_address
+        urn = mcd.vat.urn(collateral.ilk, other_address)
+        assert urn.address == other_address
 
         # when
         wrap_eth(mcd, other_address, Wad(10))
         assert collateral.gem.balance_of(other_address) >= Wad(10)
         assert collateral.gem == collateral.adapter.gem()
         collateral.gem.approve(collateral.adapter.address)
-        assert collateral.adapter.join(our_urn, Wad(3)).transact(from_address=other_address)
+        assert collateral.adapter.join(other_address, Wad(3)).transact(from_address=other_address)
         assert mcd.vat.frob(collateral.ilk, other_address, Wad(3), Wad(10)).transact(from_address=other_address)
 
         # then
-        assert mcd.vat.urn(collateral.ilk, other_address).art == our_urn.art + Wad(10)
+        assert mcd.vat.urn(collateral.ilk, other_address).art == urn.art + Wad(10)
 
         # rollback
         self.cleanup_urn(mcd, collateral, other_address)
@@ -641,7 +641,7 @@ class TestMcd:
 
         # Ensure our collateral enters the urn
         collateral_balance_before = collateral.gem.balance_of(our_address)
-        assert collateral.adapter.join(Urn(our_address), Wad.from_number(9)).transact()
+        assert collateral.adapter.join(our_address, Wad.from_number(9)).transact()
         assert collateral.gem.balance_of(our_address) == collateral_balance_before - Wad.from_number(9)
 
         # Add collateral without generating Dai
@@ -672,15 +672,13 @@ class TestMcd:
         dai_balance_before = mcd.dai.balance_of(our_address)
         assert isinstance(mcd.dai_adapter, DaiJoin)
         # Ensure vat permissions are set up for our account
-        assert Urn(our_address).address == our_address
-        assert mcd.vat.wards(mcd.dai_adapter.address)
         assert mcd.vat.can(our_address, mcd.dai_adapter.address)
-        assert mcd.dai_adapter.exit(Urn(our_address), Wad.from_number(333)).transact()
+        assert mcd.dai_adapter.exit(our_address, Wad.from_number(333)).transact()
         assert mcd.dai.balance_of(our_address) == dai_balance_before + Wad.from_number(333)
         assert mcd.vat.dai(our_address) == Rad(0)
 
         # Repay (and burn) our Dai
-        assert mcd.dai_adapter.join(Urn(our_address), Wad.from_number(333)).transact()
+        assert mcd.dai_adapter.join(our_address, Wad.from_number(333)).transact()
         assert mcd.dai.balance_of(our_address) == Wad(0)
         assert mcd.vat.dai(our_address) == Rad.from_number(333)
 
@@ -688,6 +686,6 @@ class TestMcd:
         TestVat.frob(mcd, collateral, our_address, dink=Wad(0), dart=Wad.from_number(-333))
         TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(-9), dart=Wad(0))
         assert mcd.vat.gem(ilk, our_address) == Wad.from_number(9)
-        assert collateral.adapter.exit(Urn(our_address), Wad.from_number(9)).transact()
+        assert collateral.adapter.exit(our_address, Wad.from_number(9)).transact()
         collateral_balance_after = collateral.gem.balance_of(our_address)
         assert collateral_balance_before == collateral_balance_after

@@ -23,10 +23,11 @@ from pymaker import Contract, Address
 # This may be useful with and without DSNote
 class LogNote:
     def __init__(self, log):
-        self.user = Address(log['args']['user'])
+        self.usr = Address(log['args']['usr'])
         self.arg1 = log['args']['arg1']
         self.arg2 = log['args']['arg2']
         self.data = log['args']['data']
+        self.sig = log['args']['sig']
         self.raw = log
 
     @classmethod

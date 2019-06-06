@@ -21,6 +21,7 @@ import time
 from datetime import datetime
 from web3 import Web3
 
+from pymaker import Address
 from pymaker.approval import hope_directly
 from pymaker.auctions import Flipper, Flapper, Flopper
 from pymaker.deployment import DssDeployment
@@ -46,10 +47,30 @@ class TestFlipper:
         # assert flipper.tau == 10
         return flipper
 
+    @staticmethod
+    def tend(flipper: Flipper, id: int, address: Address, lot: Wad, bid: Rad):
+        assert (isinstance(id, int))
+        assert (isinstance(lot, Wad))
+        assert (isinstance(bid, Rad))
+
+        current_bid = flipper.bids(id)
+        assert current_bid.guy != Address("0x0000000000000000000000000000000000000000")
+        assert current_bid.tic > datetime.now().timestamp() or current_bid.tic == 0
+        assert current_bid.end > datetime.now().timestamp()
+        print(f"bid.tic={current_bid.tic}, now={datetime.now().timestamp()}")
+        print(f"bid.end={current_bid.end}, now={datetime.now().timestamp()}")
+
+        assert lot == current_bid.lot
+        assert bid <= current_bid.tab
+        assert bid > current_bid.bid
+        assert (bid >= Rad(flipper.beg()) * current_bid.bid) or (bid == current_bid.tab)
+
+        assert flipper.tend(id, lot, bid).transact(from_address=address)
+
     def test_getters(self, mcd, flipper):
         assert flipper.beg() == Ray.from_number(1.05)
-        assert flipper.ttl() == 3 * 60 * 60  # 3 hours
-        assert flipper.tau() == 2 * 24 * 60 * 60  # 2 days
+        assert flipper.ttl() > 0
+        assert flipper.tau() > flipper.ttl()
         assert flipper.kicks() >= 0
 
     def test_scenario(self, web3, mcd, collateral, flipper, our_address, other_address, deployment_address):
@@ -58,7 +79,7 @@ class TestFlipper:
         kicks_before = flipper.kicks()
         ilk = collateral.ilk
         wrap_eth(mcd, deployment_address, Wad.from_number(1))
-        assert collateral.adapter.join(Urn(deployment_address), Wad.from_number(1)).transact(
+        assert collateral.adapter.join(deployment_address, Wad.from_number(1)).transact(
             from_address=deployment_address)
         TestVat.frob(mcd, collateral, deployment_address, dink=Wad.from_number(1), dart=Wad(0))
         max_dart = TestVat.max_dart(mcd, collateral, deployment_address) - Wad(1)
@@ -68,7 +89,7 @@ class TestFlipper:
         # FIXME: need a way to pass from_address to the approval function
         web3.eth.defaultAccount = deployment_address.address
         mcd.dai_adapter.approve(approval_function=hope_directly(), vat=mcd.vat.address)
-        assert mcd.dai_adapter.exit(Urn(deployment_address), max_dart).transact(from_address=deployment_address)
+        assert mcd.dai_adapter.exit(deployment_address, max_dart).transact(from_address=deployment_address)
         assert mcd.dai.balance_of(deployment_address) == max_dart
         assert mcd.vat.dai(deployment_address) == Rad(0)
 
@@ -87,7 +108,7 @@ class TestFlipper:
         assert urn.ink > Wad(0)
         lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
         art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
-        tab = art * ilk.rate * Wad(mcd.cat.chop(ilk))  # Wad
+        tab = art * ilk.rate  # Wad
         assert tab == max_dart
         TestCat.simulate_bite(mcd, collateral, deployment_address)
         assert mcd.cat.bite(collateral.ilk, Urn(deployment_address)).transact()
@@ -110,37 +131,38 @@ class TestFlipper:
         assert current_bid.lot > Wad(0)
         assert current_bid.tab > Rad(0)
         assert current_bid.bid == Rad(0)
-        assert last_bite.tab == current_bid.tab
+        # Cat doesn't incorporate the liquidation penalty (chop), but the kicker includes it.
+        # assert last_bite.tab == current_bid.tab
 
         # Test the _tend_ phase of the auction
         eth_required = Wad(current_bid.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
         wrap_eth(mcd, other_address, eth_required)
         assert collateral.gem.balance_of(other_address) >= eth_required
         collateral.gem.approve(collateral.adapter.address)
-        other_urn = mcd.vat.urn(collateral.ilk, other_address)
-        assert collateral.adapter.join(other_urn, eth_required).transact(from_address=other_address)
+        assert collateral.adapter.join(other_address, eth_required).transact(from_address=other_address)
         # FIXME: need a way to pass from_address to the approval function
         web3.eth.defaultAccount = other_address.address
         flipper.approve(approval_function=hope_directly())
         assert mcd.vat.can(other_address, flipper.address)
-        TestVat.frob(mcd, collateral, other_address, dink=eth_required, dart=Wad(current_bid.tab))
+        # Add Wad(1) to counter rounding error converting tab from Rad to Wad
+        TestVat.frob(mcd, collateral, other_address, dink=eth_required, dart=Wad(current_bid.tab) + Wad(1))
+        urn = mcd.vat.urn(collateral.ilk, other_address)
+        assert Rad(urn.art) >= current_bid.tab
         # Bid the tab to instantly transition to dent stage
-        assert flipper.tend(1, current_bid.lot, current_bid.tab).transact(from_address=other_address)
+        TestFlipper.tend(flipper, 1, other_address, current_bid.lot, current_bid.tab)
         current_bid = flipper.bids(1)
         assert current_bid.guy == other_address
         assert current_bid.bid == current_bid.tab
 
         # Test the _dent_ phase of the auction
         wrap_eth(mcd, our_address, eth_required)
-        our_urn = mcd.vat.urn(collateral.ilk, our_address)
-        assert collateral.adapter.join(our_urn, eth_required).transact(from_address=our_address)
+        assert collateral.adapter.join(our_address, eth_required).transact(from_address=our_address)
+        # FIXME: need a way to pass from_address to the approval function
         web3.eth.defaultAccount = our_address.address
         flipper.approve(approval_function=hope_directly())
-        TestVat.frob(mcd, collateral, our_address, dink=eth_required, dart=Wad(current_bid.tab))
+        TestVat.frob(mcd, collateral, our_address, dink=eth_required, dart=Wad(current_bid.tab) + Wad(1))
         lot = current_bid.lot - Wad.from_number(0.2)
         assert flipper.beg() * Ray(lot) <= Ray(current_bid.lot)
-        assert current_bid.tic > datetime.now().timestamp() or current_bid.tic == 0
-        assert current_bid.end > datetime.now().timestamp()
         assert mcd.vat.can(our_address, flipper.address)
         assert flipper.dent(1, lot, current_bid.tab).transact(from_address=our_address)
         current_bid = flipper.bids(1)
@@ -158,21 +180,22 @@ class TestFlapper:
     @pytest.fixture(scope="session")
     def flapper(self, mcd: DssDeployment) -> Flapper:
         # Call file methods to produce testable durations
-        mcd.flap.file_beg(Ray.from_number(1.04))  # 4% bid increment
-        mcd.flap.file_ttl(2)   # 2 second bids
-        mcd.flap.file_tau(15)  # 15 second auctions
+        assert mcd.flap.file_beg(Ray.from_number(1.04))  # 4% bid increment
+        assert mcd.flap.file_ttl(2)   # 2 second bids
+        assert mcd.flap.file_tau(15)  # 15 second auctions
         return mcd.flap
 
     def test_getters(self, mcd, flapper):
-        # FIXME: Seems like auction points to DaiMove/GemMove contracts
-        # assert flapper.dai() == mcd.dai.address
-        # assert flapper.gem() == mcd.collaterals[0].gem.address
         assert flapper.beg() == Ray.from_number(1.05)
         assert flapper.ttl() == 3 * 60 * 60
         assert flapper.tau() == 2 * 24 * 60 * 60
         assert flapper.kicks() >= 0
 
-    def test_scenario(self, flapper, our_address, other_address):
+    def test_scenario(self, web3, mcd, flapper, our_address, other_address, deployment_address):
+        collateral = mcd.collaterals[0]
+        assert mcd.jug.wards(deployment_address)
+        assert mcd.jug.file_duty(collateral.ilk, Ray.from_number(1.05)).transact(from_address=deployment_address)
+
         assert flapper.kicks() == 0
         flapper.kick(our_address, Wad.from_number(20000), Wad.from_number(1)).transact()
         assert flapper.kicks() == 1

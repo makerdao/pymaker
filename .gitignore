@@ -11,3 +11,4 @@ __pycache__
 logs/*.json.log
 
 docs/_doc
+_virtualenv

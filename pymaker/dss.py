@@ -199,21 +199,21 @@ class DaiJoin(Contract):
     def deploy(cls, web3: Web3, vat: Address, dai: Address):
         return cls(web3=web3, address=Contract._deploy(web3, cls.abi, cls.bin, [vat.address, dai.address]))
 
-    def join(self, urn: Urn, value: Wad) -> Transact:
-        assert isinstance(urn, Urn)
+    def join(self, usr: Address, value: Wad) -> Transact:
+        assert isinstance(usr, Address)
         assert isinstance(value, Wad)
 
         self._approve(value).transact()
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'join', [urn.address.address, value.value])
+                        'join', [usr.address, value.value])
 
-    def exit(self, urn: Urn, value: Wad) -> Transact:
-        assert isinstance(urn, Urn)
+    def exit(self, usr: Address, value: Wad) -> Transact:
+        assert isinstance(usr, Address)
         assert isinstance(value, Wad)
 
         self._approve(value).transact()
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'exit', [urn.address.address, value.value])
+                        'exit', [usr.address, value.value])
 
     def approve(self, approval_function, vat: Address):
         """Allows this contract to interact with Vat"""
@@ -256,22 +256,22 @@ class GemAdapter(Contract):
     def ilk(self):
         return Ilk.fromBytes(self._contract.call().ilk())
 
-    def join(self, urn: Urn, value: Wad) -> Transact:
-        assert isinstance(urn, Urn)
+    def join(self, usr: Address, value: Wad) -> Transact:
+        assert isinstance(usr, Address)
         assert isinstance(value, Wad)
 
-        assert self.gem().balance_of(urn.address) >= value
-        assert self._approve(value).transact(from_address=urn.address)
+        assert self.gem().balance_of(usr) >= value
+        assert self._approve(value).transact(from_address=usr)
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'join', [urn.address.address, value.value])
+                        'join', [usr.address, value.value])
 
-    def exit(self, urn: Urn, value: Wad) -> Transact:
-        assert isinstance(urn, Urn)
+    def exit(self, usr: Address, value: Wad) -> Transact:
+        assert isinstance(usr, Address)
         assert isinstance(value, Wad)
 
-        assert self._approve(value).transact(from_address=urn.address)
+        assert self._approve(value).transact(from_address=usr)
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'exit', [urn.address.address, value.value])
+                        'exit', [usr.address, value.value])
 
     def gem(self) -> DSToken:
         address = Address(self._contract.call().gem())
@@ -652,6 +652,23 @@ class Jug(Contract):
         assert isinstance(ilk, Ilk)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'init', [ilk.toBytes()])
+
+    def wards(self, address: Address):
+        assert isinstance(address, Address)
+
+        return bool(self._contract.call().wards(address.address))
+
+    def file_base(self, amount: Wad) -> Transact:
+        assert isinstance(amount, Wad)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'file(bytes32,uint256)', [Web3.toBytes(text="base"), amount.value])
+
+    def file_duty(self, ilk: Ilk, amount: Ray) -> Transact:
+        assert isinstance(amount, Ray)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'file(bytes32,bytes32,uint256)', [ilk.toBytes(), Web3.toBytes(text="duty"), amount.value])
 
     def drip(self, ilk: Ilk) -> Transact:
         assert isinstance(ilk, Ilk)

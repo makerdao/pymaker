@@ -283,14 +283,6 @@ class Flapper(AuctionContract):
 
         approval_function(ERC20Token(web3=self.web3, address=self.gem()), self.address, 'Flapper')
 
-    def dai(self) -> Address:
-        """Returns the `dai` token.
-
-        Returns:
-            The address of the `dai` token.
-        """
-        return Address(self._contract.call().dai())
-
     def gem(self) -> Address:
         """Returns the `gem` token.
 
