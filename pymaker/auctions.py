@@ -51,14 +51,14 @@ class AuctionContract(Contract):
 
     def active_auctions(self) -> list:
         active_auctions = []
-        index = 1  # Yes, the first bid is in the second element of the array
-        bid = self._bids(index)
-        while bid.guy != Address("0x0000000000000000000000000000000000000000"):
-            now = datetime.now().timestamp()
-            if (bid.tic == 0 or now < bid.tic) and now < bid.end:
-                active_auctions.append(bid)
-            index += 1
+        auction_count = self.kicks()+1
+        for index in range(1, auction_count):
             bid = self._bids(index)
+            if bid.guy != Address("0x0000000000000000000000000000000000000000"):
+                now = datetime.now().timestamp()
+                if (bid.tic == 0 or now < bid.tic) and now < bid.end:
+                    active_auctions.append(bid)
+            index += 1
         return active_auctions
 
     def file_beg(self, beg: Ray) -> Transact:

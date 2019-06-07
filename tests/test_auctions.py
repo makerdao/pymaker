@@ -57,8 +57,6 @@ class TestFlipper:
         assert current_bid.guy != Address("0x0000000000000000000000000000000000000000")
         assert current_bid.tic > datetime.now().timestamp() or current_bid.tic == 0
         assert current_bid.end > datetime.now().timestamp()
-        print(f"bid.tic={current_bid.tic}, now={datetime.now().timestamp()}")
-        print(f"bid.end={current_bid.end}, now={datetime.now().timestamp()}")
 
         assert lot == current_bid.lot
         assert bid <= current_bid.tab
@@ -123,11 +121,9 @@ class TestFlipper:
         assert len(bites) == 1
         last_bite = bites[0]
         assert last_bite.tab > Rad(0)
-        print(f"last_bite={last_bite}")
         # Check the flipper
         assert flipper.kicks() == kicks_before + 1
         current_bid = flipper.bids(1)
-        print(f"initial bid={current_bid}")
         assert isinstance(current_bid, Flipper.Bid)
         assert current_bid.lot > Wad(0)
         assert current_bid.tab > Rad(0)
@@ -172,10 +168,16 @@ class TestFlipper:
         assert current_bid.bid == current_bid.tab
         assert current_bid.lot == lot
 
-        # TODO: Exercise _deal_ after a testable bid duration has been configured
-        # time.sleep(3)
-        # assert flipper.deal(1).transact(from_address=our_address)
-        # print(f"bids after deal: {flipper.bids(1)}")
+        # Exercise _deal_ after a testable bid duration has been configured
+        time.sleep(3)
+        now = datetime.now().timestamp()
+        assert current_bid.tic > 0
+        assert 0 < current_bid.tic < now or current_bid.end < now
+        # Mine a block to increment block.timestamp
+        wrap_eth(mcd, our_address, Wad(1))
+        assert mcd.vat.can(our_address, flipper.address)
+        assert flipper.deal(1).transact(from_address=our_address)
+        assert len(flipper.active_auctions()) == 0
 
 
 class TestFlapper:
@@ -211,7 +213,9 @@ class TestFlapper:
         assert mcd.vow.joy() > mcd.vow.awe() + mcd.vow.bump() + mcd.vow.hump()
         assert mcd.vow.woe() == Rad(0)
         # TODO: Get bid_id return value from transaction
-        assert mcd.vow.flap().transact()
+        flap_result = mcd.vow.flap().transact(from_address=deployment_address)
+        print(f"flap_result={flap_result.logs}")
+        assert flap_result.result == 1
 
         # # TODO: Set quantities relative to auction parameters
         # flapper.tend(1, Wad.from_number(20000), Wad.from_number(1.5)).transact()
@@ -221,6 +225,9 @@ class TestFlapper:
         #
         # # TODO: Wait for auction to end
         # flapper.deal(1).transact()
+        assert mcd.vow.joy() == Rad(0)
+        assert mcd.vow.woe() == Rad(0)
+        assert mcd.vow.awe() == Rad(0)
 
 
 class TestFlopper:

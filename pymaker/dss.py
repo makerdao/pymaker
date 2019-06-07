@@ -530,24 +530,6 @@ class Vow(Contract):
     def live(self) -> bool:
         return self._contract.call().live() > 0
 
-    def file_vat(self, vat: Vat) -> Transact:
-        assert isinstance(vat, Vat)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,address)', [Web3.toBytes(text="vat"), vat.address.address])
-
-    def file_flap(self, flap: Flapper) -> Transact:
-        assert isinstance(flap, Flapper)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,address)', [Web3.toBytes(text="flap"), flap.address.address])
-
-    def file_flop(self, flop: Flopper) -> Transact:
-        assert isinstance(flop, Flopper)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,address)', [Web3.toBytes(text="flop"), flop.address.address])
-
     def file_bump(self, amount: Wad) -> Transact:
         assert isinstance(amount, Wad)
 

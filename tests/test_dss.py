@@ -137,7 +137,7 @@ class TestConfig:
         assert token.balance_of(our_address) == before
 
     def test_get_active_auctions(self, mcd):
-        auctions = mcd.get_active_auctions()
+        auctions = mcd.active_auctions()
         assert "flips" in auctions
         assert "flaps" in auctions
         assert "flops" in auctions
