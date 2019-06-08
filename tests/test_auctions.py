@@ -49,6 +49,7 @@ class TestFlipper:
 
     @staticmethod
     def tend(flipper: Flipper, id: int, address: Address, lot: Wad, bid: Rad):
+        assert (isinstance(flipper, Flipper))
         assert (isinstance(id, int))
         assert (isinstance(lot, Wad))
         assert (isinstance(bid, Rad))
@@ -168,10 +169,9 @@ class TestFlipper:
         assert current_bid.bid == current_bid.tab
         assert current_bid.lot == lot
 
-        # Exercise _deal_ after a testable bid duration has been configured
-        time.sleep(3)
+        # Exercise _deal_ after bid has expired
+        time.sleep(5)
         now = datetime.now().timestamp()
-        assert current_bid.tic > 0
         assert 0 < current_bid.tic < now or current_bid.end < now
         # Mine a block to increment block.timestamp
         wrap_eth(mcd, our_address, Wad(1))
@@ -189,19 +189,36 @@ class TestFlapper:
         assert mcd.flap.file_tau(15)  # 15 second auctions
         return mcd.flap
 
+    @staticmethod
+    def tend(flapper: Flapper, id: int, address: Address, lot: Rad, bid: Wad):
+        assert (isinstance(flapper, Flapper))
+        assert (isinstance(id, int))
+        assert (isinstance(lot, Rad))
+        assert (isinstance(bid, Wad))
+
+        assert flapper.live() == 1
+
+        current_bid = flapper.bids(id)
+        assert current_bid.guy != Address("0x0000000000000000000000000000000000000000")
+        assert current_bid.tic > datetime.now().timestamp() or current_bid.tic == 0
+        assert current_bid.end > datetime.now().timestamp()
+
+        assert lot == current_bid.lot
+        assert bid > current_bid.bid
+        assert (bid >= Wad(flapper.beg()) * current_bid.bid)
+
+        assert flapper.tend(id, lot, bid).transact(from_address=address)
+
     def test_getters(self, mcd, flapper):
         assert flapper.beg() == Ray.from_number(1.05)
-        assert flapper.ttl() == 3 * 60 * 60
-        assert flapper.tau() == 2 * 24 * 60 * 60
+        assert flapper.ttl() > 0
+        assert flapper.tau() > flapper.ttl()
         assert flapper.kicks() >= 0
 
     def test_scenario(self, web3, mcd, flapper, our_address, other_address, deployment_address):
-        collateral = mcd.collaterals[0]
-        # FIXME: Cannot adjust the stability fee
-        # assert mcd.jug.wards(deployment_address)
-        # assert mcd.jug.file_duty(collateral.ilk, Ray.from_number(1.05)).transact(from_address=deployment_address)
-        print(f"duty is {mcd.jug.duty(collateral.ilk)}")
-
+        # Create a CDP with surplus
+        collateral = mcd.collaterals[1]
+        assert flapper.kicks() == 0
         wrap_eth(mcd, deployment_address, Wad.from_number(0.1))
         assert collateral.adapter.join(deployment_address, Wad.from_number(0.1)).transact(
             from_address=deployment_address)
@@ -209,23 +226,46 @@ class TestFlapper:
         assert mcd.vow.joy() == Rad(0)
         assert mcd.jug.drip(collateral.ilk).transact(from_address=deployment_address)
         # total surplus > total debt + surplus auction lot size + surplus buffer
-        # FIXME: need to decrease bump (auction lot size) to allow this
         assert mcd.vow.joy() > mcd.vow.awe() + mcd.vow.bump() + mcd.vow.hump()
         assert mcd.vow.woe() == Rad(0)
-        # TODO: Get bid_id return value from transaction
+        joy_before = mcd.vow.joy()
+        # TODO: Get bid_id return value from transaction rather than guessing bid_id==1
         flap_result = mcd.vow.flap().transact(from_address=deployment_address)
         print(f"flap_result={flap_result.logs}")
-        assert flap_result.result == 1
+        assert flapper.kicks() == 1
+        assert len(flapper.active_auctions()) == 1
+        current_bid = flapper.bids(1)
+        assert current_bid.lot > Rad(0)
+        print(f"initial bid={current_bid}")
 
-        # # TODO: Set quantities relative to auction parameters
-        # flapper.tend(1, Wad.from_number(20000), Wad.from_number(1.5)).transact()
-        # assert flapper.bids(1).tic > 0
-        # flapper.tend(1, Wad.from_number(20000), Wad.from_number(2.0)).transact()
-        # assert flapper.bids(1).tic > 0
-        #
-        # # TODO: Wait for auction to end
-        # flapper.deal(1).transact()
-        assert mcd.vow.joy() == Rad(0)
+        # Mint some MKR to use in the auction
+        assert mcd.mkr.mint(Wad.from_number(10)).transact(from_address=deployment_address)
+        assert mcd.mkr.balance_of(deployment_address) > Wad(0)
+        assert mcd.mkr.approve(our_address).transact(from_address=deployment_address)
+        assert mcd.mkr.transfer(our_address, Wad.from_number(10)).transact(from_address=deployment_address)
+
+        # Bid on the surplus
+        assert mcd.mkr.approve(flapper.address).transact(from_address=our_address)
+        bid = Wad.from_number(0.001)
+        assert mcd.mkr.balance_of(our_address) > bid
+        TestFlapper.tend(flapper, 1, our_address, current_bid.lot, bid)
+        current_bid = flapper.bids(1)
+        print(f"first bid={current_bid}")
+        assert current_bid.bid == bid
+        assert current_bid.guy == our_address
+
+        # Exercise _deal_ after bid has expired
+        time.sleep(5)
+        assert flapper.live() == 1
+        now = datetime.now().timestamp()
+        assert 0 < current_bid.tic < now or current_bid.end < now
+        wrap_eth(mcd, our_address, Wad(1))
+        assert flapper.deal(1).transact(from_address=our_address)
+
+        # Grab our dai
+        assert mcd.dai_adapter.exit(our_address, Wad(current_bid.lot)).transact()
+        assert mcd.dai.balance_of(our_address) >= Wad(current_bid.lot)
+        assert joy_before - mcd.vow.bump() == mcd.vow.joy()
         assert mcd.vow.woe() == Rad(0)
         assert mcd.vow.awe() == Rad(0)
 
@@ -241,10 +281,11 @@ class TestFlopper:
         # assert flopper.dai() == mcd.dai.address
         # assert flopper.gem() == mcd.collaterals[0].gem.address
         assert flopper.beg() == Ray.from_number(1.05)
-        assert flopper.ttl() == 3*60*60
-        assert flopper.tau() == 2*24*60*60
+        assert flopper.ttl() > 0
+        assert flopper.tau() > flopper.ttl()
         assert flopper.kicks() >= 0
 
+    @pytest.mark.skip(reason="Not yet implemented")
     def test_scenario(self, flopper, our_address, other_address):
         # TODO: If the flip auction didn't cover the debt, kick the flopper
         # awe = vat.sin

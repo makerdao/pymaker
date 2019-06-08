@@ -256,9 +256,9 @@ class Flapper(AuctionContract):
     bin = Contract._load_bin(__name__, 'abi/Flapper.bin')
 
     class Bid:
-        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int, gal: Address):
-            assert(isinstance(bid, Wad))
-            assert(isinstance(lot, Wad))
+        def __init__(self, bid: Wad, lot: Rad, guy: Address, tic: int, end: int, gal: Address):
+            assert(isinstance(bid, Wad))        # MKR
+            assert(isinstance(lot, Rad))        # DAI
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
             assert(isinstance(end, int))
@@ -270,6 +270,9 @@ class Flapper(AuctionContract):
             self.tic = tic
             self.end = end
             self.gal = gal
+
+        def __repr__(self):
+            return f"Flapper.Bid({pformat(vars(self))})"
 
     @staticmethod
     def deploy(web3: Web3, dai: Address, gem: Address):
@@ -319,24 +322,24 @@ class Flapper(AuctionContract):
         array = self._contract.call().bids(id)
 
         return Flapper.Bid(bid=Wad(array[0]),
-                           lot=Wad(array[1]),
+                           lot=Rad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),
                            end=int(array[4]),
                            gal=Address(array[5]))
 
-    def kick(self, gal: Address, lot: Wad, bid: Wad) -> Transact:
+    def kick(self, gal: Address, lot: Rad, bid: Wad) -> Transact:
         assert(isinstance(gal, Address))
-        assert(isinstance(lot, Wad))
+        assert(isinstance(lot, Rad))
         assert(isinstance(bid, Wad))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'kick', [gal.address,
                                                                                           lot.value,
                                                                                           bid.value])
 
-    def tend(self, id: int, lot: Wad, bid: Wad) -> Transact:
+    def tend(self, id: int, lot: Rad, bid: Wad) -> Transact:
         assert(isinstance(id, int))
-        assert(isinstance(lot, Wad))
+        assert(isinstance(lot, Rad))
         assert(isinstance(bid, Wad))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tend', [id, lot.value, bid.value])
