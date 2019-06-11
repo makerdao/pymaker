@@ -17,8 +17,8 @@
 
 
 import pytest
-import time
 from datetime import datetime
+from typing import Optional
 from web3 import Web3
 
 from pymaker import Address
@@ -27,7 +27,7 @@ from pymaker.auctions import Flipper, Flapper, Flopper
 from pymaker.deployment import DssDeployment
 from pymaker.dss import Collateral, Urn
 from pymaker.numeric import Wad, Ray, Rad
-from tests.test_dss import TestVat, TestCat, wrap_eth, set_collateral_price
+from tests.test_dss import TestVat, TestCat, wrap_eth, set_collateral_price, wait
 
 
 class TestFlipper:
@@ -136,7 +136,7 @@ class TestFlipper:
         # Test the _tend_ phase of the auction
         eth_required = Wad(current_bid.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
         wrap_eth(mcd, other_address, eth_required)
-        assert collateral.gem.balance_of(other_address) >= eth_required
+        assert collateral.gem.balance_of(other_address)  >= eth_required
         collateral.gem.approve(collateral.adapter.address)
         assert collateral.adapter.join(other_address, eth_required).transact(from_address=other_address)
         # FIXME: need a way to pass from_address to the approval function
@@ -170,14 +170,17 @@ class TestFlipper:
         assert current_bid.lot == lot
 
         # Exercise _deal_ after bid has expired
-        time.sleep(5)
+        wait(mcd, our_address, flipper.ttl())
         now = datetime.now().timestamp()
         assert 0 < current_bid.tic < now or current_bid.end < now
-        # Mine a block to increment block.timestamp
-        wrap_eth(mcd, our_address, Wad(1))
-        assert mcd.vat.can(our_address, flipper.address)
         assert flipper.deal(1).transact(from_address=our_address)
         assert len(flipper.active_auctions()) == 0
+
+        # Grab our collateral
+        collateral_before = collateral.gem.balance_of(our_address)
+        assert collateral.adapter.exit(our_address, current_bid.lot).transact(from_address=our_address)
+        collateral_after = collateral.gem.balance_of(our_address)
+        assert collateral_before < collateral_after
 
 
 class TestFlapper:
@@ -255,11 +258,9 @@ class TestFlapper:
         assert current_bid.guy == our_address
 
         # Exercise _deal_ after bid has expired
-        time.sleep(5)
-        assert flapper.live() == 1
+        wait(mcd, our_address, flapper.ttl())
         now = datetime.now().timestamp()
         assert 0 < current_bid.tic < now or current_bid.end < now
-        wrap_eth(mcd, our_address, Wad(1))
         assert flapper.deal(1).transact(from_address=our_address)
 
         # Grab our dai
@@ -276,43 +277,118 @@ class TestFlopper:
         # TODO: Call file methods to reduce ttl and tau to testable durations
         return mcd.flop
 
+    # @staticmethod
+    # def find_bite_era(mcd: DssDeployment, bit_after: Optional[int] = None) -> int:
+    #     assert isinstance(mcd, DssDeployment)
+    #
+    #     if bit_after is None:
+    #         bit_after = int(datetime.now().timestamp()) - 2
+    #     print(f"looking for era from {bit_after}")
+    #     era = bit_after
+    #     while era < bit_after + 15:
+    #         if mcd.vow.sin_of(era) > Rad(0):
+    #             print(f"found era at {era}")
+    #             return era
+    #         era += 1
+
+    @staticmethod
+    def dent(flopper: Flopper, id: int, address: Address, lot: Wad, bid: Rad):
+        assert (isinstance(flopper, Flopper))
+        assert (isinstance(id, int))
+        assert (isinstance(lot, Wad))
+        assert (isinstance(bid, Rad))
+
+        assert flopper.live() == 1
+
+        current_bid = flopper.bids(id)
+        assert current_bid.guy != Address("0x0000000000000000000000000000000000000000")
+        assert current_bid.tic > datetime.now().timestamp() or current_bid.tic == 0
+        assert current_bid.end > datetime.now().timestamp()
+
+        assert bid == current_bid.bid
+        assert lot < current_bid.lot
+        assert (Wad(flopper.beg()) * lot) <= current_bid.lot
+
+        assert flopper.dent(id, lot, bid).transact(from_address=address)
+
     def test_getters(self, mcd, flopper):
-        # FIXME: Seems like auction points to DaiMove/GemMove contracts
-        # assert flopper.dai() == mcd.dai.address
-        # assert flopper.gem() == mcd.collaterals[0].gem.address
         assert flopper.beg() == Ray.from_number(1.05)
         assert flopper.ttl() > 0
         assert flopper.tau() > flopper.ttl()
         assert flopper.kicks() >= 0
 
-    @pytest.mark.skip(reason="Not yet implemented")
-    def test_scenario(self, flopper, our_address, other_address):
-        # TODO: If the flip auction didn't cover the debt, kick the flopper
-        # awe = vat.sin
-        # woe = (awe-sin)-ash
-        # assert mcd.vow.woe() >= mcd.vow.sump()
-        # assert mcd.vow.joy() == Wad(0)
-        # assert mcd.vow.flop().transact()
+    def test_scenario(self, web3, mcd, flopper, our_address, other_address, deployment_address):
+        # Create a CDP
+        collateral = mcd.collaterals[0]
+        ilk = collateral.ilk
+        wrap_eth(mcd, deployment_address, Wad.from_number(1))
+        assert collateral.adapter.join(deployment_address, Wad.from_number(1)).transact(
+            from_address=deployment_address)
+        TestVat.frob(mcd, collateral, deployment_address, dink=Wad.from_number(1), dart=Wad(0))
+        max_dart = TestVat.max_dart(mcd, collateral, deployment_address) - Wad(1)
+        TestVat.frob(mcd, collateral, deployment_address, dink=Wad(0), dart=max_dart)
 
+        # Undercollateralize and bite the CDP
+        to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
+        set_collateral_price(mcd, collateral, to_price)
+        urn = mcd.vat.urn(collateral.ilk, deployment_address)
+        ilk = mcd.vat.ilk(ilk.name)
+        safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * ilk.spot
+        assert not safe
+        TestCat.simulate_bite(mcd, collateral, deployment_address)
+        assert mcd.cat.bite(collateral.ilk, Urn(deployment_address)).transact()
+        last_bite = mcd.cat.past_bite(1)[0]
+        era_bite = last_bite.era(web3)
+        assert era_bite > int(datetime.now().timestamp()) - 10
+
+        # Generate some Dai, bid on and win the flip auction without covering all the debt
+        wrap_eth(mcd, our_address, Wad.from_number(10))
+        collateral.gem.approve(collateral.adapter.address)
+        assert collateral.adapter.join(our_address, Wad.from_number(10)).transact(from_address=our_address)
+        web3.eth.defaultAccount = our_address.address
+        TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(10), dart=Wad.from_number(200))
+        collateral.flipper.approve(approval_function=hope_directly())
+        current_bid = collateral.flipper.bids(1)
+        urn = mcd.vat.urn(collateral.ilk, our_address)
+        assert Rad(urn.art) > current_bid.tab
+        bid = Rad.from_number(150)
+        TestFlipper.tend(collateral.flipper, 1, our_address, current_bid.lot, bid)
+        mcd.vat.can(our_address, collateral.flipper.address)
+        wait(mcd, our_address, collateral.flipper.ttl())
+        assert collateral.flipper.deal(1).transact()
+
+        # Raise debt from the queue
+        assert mcd.vow.sin_of(era_bite) > Rad(0)
+        assert mcd.vow.flog(era_bite).transact()
+        assert mcd.vow.sin_of(era_bite) == Rad(0)
+        # Cancel out surplus and debt
+        assert bid <= mcd.vow.joy()
+        assert bid <= mcd.vow.woe()
+        assert mcd.vow.heal(bid).transact()
+
+        # Kick off the flop auction
         assert flopper.kicks() == 0
-        flopper.kick(our_address, Wad.from_number(10), Wad.from_number(20000)).transact()
+        assert len(flopper.active_auctions()) == 0
+        # TODO: Get bid_id return value from transaction rather than guessing bid_id==1
+        flop_result = mcd.vow.flop().transact()
+        print(f"flop_result={flop_result.logs}")
+        current_bid = flopper.bids(1)
         assert flopper.kicks() == 1
+        assert len(flopper.active_auctions()) == 1
+        assert mcd.vow.woe() >= mcd.vow.sump()
+        assert mcd.vow.joy() == Rad(0)
 
-        auction = flopper.bids(1)
-        assert auction.bid == Wad.from_number(20000)
-        assert auction.lot == Wad.from_number(10)
-        assert auction.guy == our_address
-        assert auction.tic == 0
-        assert auction.end > 0
+        mcd.vat.hope(flopper.address).transact()
+        assert mcd.vat.can(our_address, flopper.address)
+        TestFlopper.dent(flopper, 1, our_address, Wad.from_number(0.5), current_bid.bid)
+        current_bid = flopper.bids(1)
+        assert current_bid.guy == our_address
+        print(current_bid)
 
-        # TODO: Set quantities relative to auction parameters
-        flopper.dent(1, Wad.from_number(9), Wad.from_number(20000)).transact()
-        assert flopper.bids(1).tic > 0
-        flopper.dent(1, Wad.from_number(8), Wad.from_number(20000)).transact()
-        assert flopper.bids(1).tic > 0
-
-        # TODO: Wait for auction to end
-        self.flopper.deal(1).transact()
-
-
-
+        wait(mcd, our_address, flopper.ttl())
+        assert flopper.live()
+        now = int(datetime.now().timestamp())
+        assert (current_bid.tic < now and current_bid.tic != 0) or current_bid.end < now
+        #collateral.gem.approve(flopper.address)
+        # FIXME: Issue minting gems to be resolved in DSS 0.2.8
+        assert flopper.deal(1).transact(from_address=our_address)

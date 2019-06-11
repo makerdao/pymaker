@@ -18,7 +18,7 @@
 import eth_abi
 import json
 import pytest
-from datetime import datetime
+import time
 from eth_utils import decode_hex
 from hexbytes import HexBytes
 from web3 import Web3
@@ -70,6 +70,16 @@ def set_collateral_price(mcd: DssDeployment, collateral: Collateral, price: Wad)
     assert mcd.spotter.poke(ilk=collateral.ilk).transact(from_address=pip.get_owner())
 
     assert get_collateral_price(collateral) == price
+
+
+def wait(mcd: DssDeployment, address: Address, seconds: int):
+    assert isinstance(mcd, DssDeployment)
+    assert isinstance(address, Address)
+    assert seconds > 0
+
+    time.sleep(5)
+    # Mine a block to increment block.timestamp
+    wrap_eth(mcd, address, Wad(1))
 
 
 @pytest.fixture(scope="session")

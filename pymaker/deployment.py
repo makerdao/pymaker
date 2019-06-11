@@ -175,10 +175,10 @@ class DssDeployment:
             vow = Vow(web3, Address(conf['MCD_VOW']))
             jug = Jug(web3, Address(conf['MCD_JUG']))
             cat = Cat(web3, Address(conf['MCD_CAT']))
-            flap = Flapper(web3, Address(conf['MCD_FLAP']))
-            flop = Flopper(web3, Address(conf['MCD_FLOP']))
             dai = DSToken(web3, Address(conf['MCD_DAI']))
             dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']), dai.address)
+            flap = Flapper(web3, Address(conf['MCD_FLAP']))
+            flop = Flopper(web3, Address(conf['MCD_FLOP']))
             mkr = DSToken(web3, Address(conf['MCD_GOV']))
             spotter = Spotter(web3, Address(conf['MCD_SPOT']))
 

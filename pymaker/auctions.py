@@ -152,13 +152,6 @@ class Flipper(AuctionContract):
         def __repr__(self):
             return f"Flipper.Bid({pformat(vars(self))})"
 
-    @staticmethod
-    def deploy(web3: Web3, vat: Address, ilk):
-        assert(isinstance(vat, Address))
-        assert(isinstance(ilk, bytes))
-
-        return Flipper(web3=web3, address=Contract._deploy(web3, Flipper.abi, Flipper.bin, [vat.address, ilk]))
-
     def __init__(self, web3: Web3, address: Address):
         super(Flipper, self).__init__(web3, address, Flipper.abi, self.bids)
 
@@ -274,39 +267,24 @@ class Flapper(AuctionContract):
         def __repr__(self):
             return f"Flapper.Bid({pformat(vars(self))})"
 
-    @staticmethod
-    def deploy(web3: Web3, dai: Address, gem: Address):
-        assert(isinstance(dai, Address))
-        assert(isinstance(gem, Address))
-
-        return Flapper(web3=web3, address=Contract._deploy(web3, Flapper.abi, Flapper.bin, [dai.address, gem.address]))
-
     def __init__(self, web3: Web3, address: Address):
         super(Flapper, self).__init__(web3, address, Flapper.abi, self.bids)
 
     def live(self) -> bool:
         return self._contract.call().live() > 0
 
-    def approve(self, approval_function):
-        """Approve the `Flapper` to access our `gem` so we can participate in auctions.
-
-        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
-        in `pymaker.approval`.
-
-        Args:
-            approval_function: Approval function (i.e. approval mode).
-        """
-        assert(callable(approval_function))
-
-        approval_function(ERC20Token(web3=self.web3, address=self.gem()), self.address, 'Flapper')
-
-    def gem(self) -> Address:
-        """Returns the `gem` token.
-
-        Returns:
-            The address of the `gem` token.
-        """
-        return Address(self._contract.call().gem())
+    # def approve(self, approval_function):
+    #     """Approve the `Flapper` to access our `gem` so we can participate in auctions.
+    #
+    #     For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+    #     in `pymaker.approval`.
+    #
+    #     Args:
+    #         approval_function: Approval function (i.e. approval mode).
+    #     """
+    #     assert(callable(approval_function))
+    #     gem = Address(self._contract.call().gem())
+    #     approval_function(ERC20Token(web3=self.web3, address=gem), self.address, 'Flapper')
 
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
@@ -369,7 +347,7 @@ class Flopper(AuctionContract):
 
     class Bid:
         def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int, vow: Address):
-            assert(isinstance(bid, Wad))
+            assert(isinstance(bid, Rad))
             assert(isinstance(lot, Wad))
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
@@ -383,47 +361,29 @@ class Flopper(AuctionContract):
             self.end = end
             self.vow = vow
 
-    @staticmethod
-    def deploy(web3: Web3, dai: Address, gem: Address):
-        assert(isinstance(dai, Address))
-        assert(isinstance(gem, Address))
-
-        return Flopper(web3=web3, address=Contract._deploy(web3, Flopper.abi, Flopper.bin, [dai.address, gem.address]))
+        def __repr__(self):
+            return f"Flopper.Bid({pformat(vars(self))})"
 
     def __init__(self, web3: Web3, address: Address):
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
+
         super(Flopper, self).__init__(web3, address, Flopper.abi, self.bids)
 
     def live(self) -> bool:
         return self._contract.call().live() > 0
 
-    def approve(self, approval_function):
-        """Approve the `Flapper` to access our `gem` so we can participate in auctions.
-
-        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
-        in `pymaker.approval`.
-
-        Args:
-            approval_function: Approval function (i.e. approval mode).
-        """
-        assert(callable(approval_function))
-
-        approval_function(ERC20Token(web3=self.web3, address=self.dai()), self.address, 'Flopper')
-
-    def dai(self) -> Address:
-        """Returns the `dai` token.
-
-        Returns:
-            The address of the `dai` token.
-        """
-        return Address(self._contract.call().dai())
-
-    def gem(self) -> Address:
-        """Returns the `gem` token.
-
-        Returns:
-            The address of the `gem` token.
-        """
-        return Address(self._contract.call().gem())
+    # def approve(self, approval_function):
+    #     """Approve the `Flapper` to access our `gem` so we can participate in auctions.
+    #
+    #     For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+    #     in `pymaker.approval`.
+    #
+    #     Args:
+    #         approval_function: Approval function (i.e. approval mode).
+    #     """
+    #     assert(callable(approval_function))
+    #     approval_function(ERC20Token(web3=self.web3, address=self.dai), self.address, 'Flopper')
 
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
@@ -438,7 +398,7 @@ class Flopper(AuctionContract):
 
         array = self._contract.call().bids(id)
 
-        return Flopper.Bid(bid=Wad(array[0]),
+        return Flopper.Bid(bid=Rad(array[0]),
                            lot=Wad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),
@@ -454,10 +414,10 @@ class Flopper(AuctionContract):
                                                                                           lot.value,
                                                                                           bid.value])
 
-    def dent(self, id: int, lot: Wad, bid: Wad) -> Transact:
+    def dent(self, id: int, lot: Wad, bid: Rad) -> Transact:
         assert(isinstance(id, int))
         assert(isinstance(lot, Wad))
-        assert(isinstance(bid, Wad))
+        assert(isinstance(bid, Rad))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'dent', [id, lot.value, bid.value])
 
