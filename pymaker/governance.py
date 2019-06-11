@@ -83,3 +83,54 @@ class DSPause(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, function_name,
                         [plan.usr.address, plan.fax, int(plan.eta)])
+
+
+# TODO: Implement and unit test
+class DSRoles(Contract):
+    """A client for the `DSRoles` contract, which manages lists of user roles and capabilities.
+
+    You can find the source code of the `DSRoles` contract here:
+    <https://github.com/dapphub/ds-roles>.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `DSRoles` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/DSRoles.abi')
+    bin = Contract._load_bin(__name__, 'abi/DSRoles.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert (isinstance(web3, Web3))
+        assert (isinstance(address, Address))
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+
+    def is_root_user(self, who: Address) -> bool:
+        assert isinstance(who, Address)
+
+        return bool(self._contract.call().isUserRoot(who.address))
+
+    def set_root_user(self, who: Address, enabled=True) -> Transact:
+        assert isinstance(who, Address)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        "setRootUser", [who.address, enabled])
+
+    def has_user_role(self, who: Address, role: int) -> bool:
+        assert isinstance(who, Address)
+        assert isinstance(role, int)
+        assert 0 <= role <= int('0xFFFFFFFF')
+
+        return bool(self._contract.call().hasUserRole(who.address, role))
+
+    def set_user_role(self, who: Address, role: int, enabled=True) -> Tgitransact:
+        assert isinstance(who, Address)
+        assert isinstance(role, int)
+        assert 0 <= role <= int('0xFFFFFFFF')
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        "setUserRole", [who.address, role, enabled])
+
