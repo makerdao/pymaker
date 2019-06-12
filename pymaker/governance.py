@@ -126,7 +126,7 @@ class DSRoles(Contract):
 
         return bool(self._contract.call().hasUserRole(who.address, role))
 
-    def set_user_role(self, who: Address, role: int, enabled=True) -> Tgitransact:
+    def set_user_role(self, who: Address, role: int, enabled=True) -> Transact:
         assert isinstance(who, Address)
         assert isinstance(role, int)
         assert 0 <= role <= int('0xFFFFFFFF')

@@ -24,7 +24,6 @@ from web3 import Web3
 from web3.utils.events import get_event_data
 
 from pymaker import Address, Contract, Transact
-from pymaker.approval import directly
 from pymaker.auctions import Flapper, Flipper, Flopper
 from pymaker.logging import LogNote
 from pymaker.token import DSToken, ERC20Token
@@ -142,41 +141,6 @@ class Urn:
         return f"Urn('{self.address}'){repr}"
 
 
-class LogFrob:
-    def __init__(self, log):
-        self.ilk = Ilk.fromBytes(log['args']['ilk'])
-        self.urn = Urn.fromBytes(log['args']['urn'])
-        self.ink = Wad(log['args']['ink'])
-        self.art = Wad(log['args']['art'])
-        self.dink = Wad(log['args']['dink'])
-        self.dart = Wad(log['args']['dart'])
-        self.iart = Wad(log['args']['iArt'])
-        self.raw = log
-
-    @classmethod
-    def from_event(cls, event: dict):
-        assert isinstance(event, dict)
-
-        topics = event.get('topics')
-        if topics and topics[0] == HexBytes('0xb2afa28318bcc689926b52835d844de174ef8de97e982a85c0199d584920791b'):
-            log_frob_abi = [abi for abi in Vat.abi if abi.get('name') == 'Vat'][0]
-            event_data = get_event_data(log_frob_abi, event)
-
-            return LogFrob(event_data)
-        else:
-            logging.warning(f'[from_event] Invalid topic in {event}')
-
-    def era(self, web3: Web3):
-        return web3.eth.getBlock(self.raw['blockNumber'])['timestamp']
-
-    def __eq__(self, other):
-        assert isinstance(other, LogFrob)
-        return self.__dict__ == other.__dict__
-
-    def __repr__(self):
-        return pformat(vars(self))
-
-
 class DaiJoin(Contract):
     """A client for the `DaiJoin` contract.
 
@@ -195,10 +159,6 @@ class DaiJoin(Contract):
         self.dai = dai
         self._contract = self._get_contract(web3, self.abi, address)
 
-    @classmethod
-    def deploy(cls, web3: Web3, vat: Address, dai: Address):
-        return cls(web3=web3, address=Contract._deploy(web3, cls.abi, cls.bin, [vat.address, dai.address]))
-
     def join(self, usr: Address, value: Wad) -> Transact:
         assert isinstance(usr, Address)
         assert isinstance(value, Wad)
@@ -215,11 +175,11 @@ class DaiJoin(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'exit', [usr.address, value.value])
 
-    def approve(self, approval_function, vat: Address):
+    def approve(self, approval_function, vat: Address, **kwargs):
         """Allows this contract to interact with Vat"""
         assert(callable(approval_function))
 
-        approval_function(ERC20Token(web3=self.web3, address=vat), self.address, 'DaiJoin')
+        approval_function(ERC20Token(web3=self.web3, address=vat), self.address, 'DaiJoin', **kwargs)
 
     def _approve(self, value: Wad) -> Transact:
         """Allows this contract to interact with the Dai token"""
@@ -246,12 +206,6 @@ class GemAdapter(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
-
-    @classmethod
-    def deploy(cls, web3: Web3, vat: Address, ilk: Ilk, gem: Address):
-        return cls(web3=web3, address=Contract._deploy(web3, cls.abi, cls.bin, [vat.address,
-                                                                                ilk.toBytes(),
-                                                                                gem.address]))
 
     def ilk(self):
         return Ilk.fromBytes(self._contract.call().ilk())
@@ -289,8 +243,31 @@ class Vat(Contract):
     Ref. <https://github.com/makerdao/dss/blob/master/src/vat.sol>
     """
 
-    # CAUTION: As of the 0.2.5 release, Vat.abi needed to be manually updated with a LogNote definition.
-    # This will purportedly be resolved for the 0.2.6 MCD release.
+    # Identifies CDP holders and collateral types they have frobbed
+    class LogFrob(LogNote):
+        def __init__(self, log):
+            super(Vat.LogFrob, self).__init__(log)
+            self.ilk = str(Web3.toText(self.arg1)).replace('\x00', '')
+            self.arg2 = Address(Web3.toHex(self.arg2)[26:])
+            self.arg3 = Address(Web3.toHex(self.arg3)[26:])
+            self.sig = Web3.toHex(self.sig)
+
+        @classmethod
+        def from_event(cls, event: dict):
+            assert isinstance(event, dict)
+
+            topics = event.get('topics')
+            if topics:
+                log_note_abi = [abi for abi in Vat.abi if abi.get('name') == 'LogNote'][0]
+                event_data = get_event_data(log_note_abi, event)
+
+                return Vat.LogFrob(event_data)
+            else:
+                logging.warning(f'[from_event] Invalid topic in {event}')
+
+        def __repr__(self):
+            return f"LogFrob({pformat(vars(self))})"
+
     abi = Contract._load_abi(__name__, 'abi/Vat.abi')
     bin = Contract._load_bin(__name__, 'abi/Vat.bin')
 
@@ -400,18 +377,18 @@ class Vat(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'suck', [address, dai_recipient, vice])
 
-    def past_note(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogNote]:
+    def past_note(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogFrob]:
         """Synchronously retrieve past LogNote events.
          Args:
             number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
             event_filter: Filter which will be applied to returned events.
          Returns:
-            List of past `LogNote` events represented as :py:class:`pymaker.logging.LogNote` class.
+            List of past `LogNFrob` events represented as :py:class:`pymaker.dss.Vat.LogFrob` class.
         """
         assert isinstance(number_of_past_blocks, int)
         assert isinstance(event_filter, dict) or (event_filter is None)
 
-        return self._past_events(self._contract, 'LogNote', LogNote, number_of_past_blocks, event_filter)
+        return self._past_events(self._contract, 'LogNote', Vat.LogFrob, number_of_past_blocks, event_filter)
 
     def __eq__(self, other):
         assert isinstance(other, Vat)
@@ -436,15 +413,6 @@ class Collateral:
         # Users generally have no need to interact with the pip.
         self.pip = None
 
-    @staticmethod
-    def deploy(web3: Web3, name: str, vat: Vat, decimals=18):
-        collateral = Collateral(Ilk(name))
-        collateral.gem = DSToken.deploy(web3=web3, symbol=name)
-        collateral.adapter = GemAdapter.deploy(web3=web3, vat=vat.address,
-                                               ilk=collateral.ilk, gem=collateral.gem.address)
-
-        return collateral
-
 
 class Spotter(Contract):
     """A client for the `Spotter` contract.
@@ -462,13 +430,6 @@ class Spotter(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
-
-    @staticmethod
-    def deploy(web3: Web3, vat: Address):
-        assert isinstance(web3, Web3)
-        assert isinstance(vat, Address)
-
-        return Spotter(web3=web3, address=Contract._deploy(web3, Spotter.abi, Spotter.bin, [vat.address]))
 
     def file_pip(self, ilk: Ilk, pip: Address) -> Transact:
         assert isinstance(ilk, Ilk)
@@ -622,13 +583,6 @@ class Jug(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
-
-    @staticmethod
-    def deploy(web3: Web3, vat: Address):
-        assert isinstance(web3, Web3)
-        assert isinstance(vat, Address)
-
-        return Jug(web3=web3, address=Contract._deploy(web3, Jug.abi, Jug.bin, [vat.address]))
 
     def init(self, ilk: Ilk) -> Transact:
         assert isinstance(ilk, Ilk)

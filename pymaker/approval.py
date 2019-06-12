@@ -76,15 +76,17 @@ def hope_directly(**kwargs):
                  'name': 'can', 'outputs': [{'name': '', 'type': 'bool'}], 'payable': False, 'stateMutability': 'view',
                  'type': 'function'}]
 
-    def approval_function(token: ERC20Token, spender_address: Address, spender_name: str):
+    def approval_function(token: ERC20Token, spender_address: Address, spender_name: str, **kwargs):
         address_to_check = kwargs['from_address'] if 'from_address' in kwargs else Address(
             token.web3.eth.defaultAccount)
+
+        transact_args = {'from': address_to_check.address}
 
         move_contract = Contract._get_contract(web3=token.web3, abi=move_abi, address=token.address)
         if move_contract.call().can(address_to_check.address, spender_address.address) is False:
             logger = logging.getLogger()
             logger.info(f"Approving {spender_name} ({spender_address}) to move our {token.address} directly")
-            if not move_contract.functions.hope(spender_address.address).transact(**kwargs):
+            if not move_contract.functions.hope(spender_address.address).transact(transact_args):
                 raise RuntimeError("Approval failed!")
 
     return approval_function

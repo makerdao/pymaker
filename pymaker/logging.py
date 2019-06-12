@@ -15,30 +15,40 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from web3 import Web3
+import logging
+from pprint import pformat
+from pymaker import Address
+from web3.utils.events import get_event_data
 
-from pymaker import Contract, Address
 
-
-# This may be useful with and without DSNote
+# Shared between DSNote and many MCD contracts
 class LogNote:
     def __init__(self, log):
-        self.usr = Address(log['args']['usr'])
+        #self.usr = Address(log['args']['usr'])
+        self.sig = log['args']['sig']
         self.arg1 = log['args']['arg1']
         self.arg2 = log['args']['arg2']
+        self.arg3 = log['args']['arg3']
         self.data = log['args']['data']
-        self.sig = log['args']['sig']
         self.raw = log
 
     @classmethod
-    def from_event(cls, event: dict):
+    def from_event(cls, event: dict, contract_abi: list):
         assert isinstance(event, dict)
+        assert isinstance(contract_abi, list)
 
         topics = event.get('topics')
+        if topics:
+            log_note_abi = [abi for abi in contract_abi if abi.get('name') == 'LogNote'][0]
+            event_data = get_event_data(log_note_abi, event)
 
-    # TODO
-    # handle Note event, return LogNote object
+            return LogNote(event_data)
+        else:
+            logging.warning(f'[from_event] Invalid topic in {event}')
 
     def __eq__(self, other):
         assert isinstance(other, LogNote)
         return self.__dict__ == other.__dict__
+
+    def __repr__(self):
+        return f"LogNote({pformat(vars(self))})"
