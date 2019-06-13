@@ -24,7 +24,7 @@ from web3.utils.events import get_event_data
 from pymaker import Address
 from pymaker.approval import hope_directly
 from pymaker.deployment import DssDeployment
-from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemAdapter, DaiJoin, Spotter, Collateral
+from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemJoin, DaiJoin, Spotter, Collateral
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray, Rad
 from pymaker.token import DSToken, DSEthToken
@@ -262,7 +262,6 @@ class TestVat:
         urn = mcd.vat.urn(collateral.ilk, address)
         assert urn.ink == Wad(0)
         assert urn.art == Wad(0)
-        assert mcd.vat.dai(address) == Rad(0)
         assert mcd.vat.gem(collateral.ilk, address) == Wad(0)
 
     @staticmethod
@@ -296,7 +295,7 @@ class TestVat:
         amount_to_join = Wad(10)
         our_urn = mcd.vat.urn(collateral.ilk, our_address)
         assert isinstance(collateral.ilk, Ilk)
-        assert isinstance(collateral.adapter, GemAdapter)
+        assert isinstance(collateral.adapter, GemJoin)
         assert collateral.ilk == collateral.adapter.ilk()
         assert our_urn.address == our_address
         wrap_eth(mcd, our_address, amount_to_join)

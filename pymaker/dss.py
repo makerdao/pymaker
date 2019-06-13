@@ -189,8 +189,7 @@ class DaiJoin(Contract):
         return dai.approve(self.address, value)
 
 
-# TODO: Rename GemJoin for consistency?
-class GemAdapter(Contract):
+class GemJoin(Contract):
     """A client for the `GemJoin` contract.
 
     Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol>
@@ -407,7 +406,7 @@ class Collateral:
 
         self.ilk = ilk
         self.gem: DSToken = None
-        self.adapter: GemAdapter = None
+        self.adapter: GemJoin = None
         self.flipper: Flipper = None
         # Points to `median` for official deployments, `DSValue` for testing purposes.
         # Users generally have no need to interact with the pip.

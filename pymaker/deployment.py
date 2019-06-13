@@ -28,7 +28,7 @@ from pymaker import Address
 from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
-from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemAdapter
+from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemJoin
 from pymaker.feed import DSValue
 from pymaker.governance import DSPause
 from pymaker.numeric import Wad, Ray
@@ -191,7 +191,7 @@ class DssDeployment:
                     collateral.gem = DSToken(web3, Address(conf[name[1]]))
                 # TODO: Skip this for production and other deployments which use a medianizer.
                 collateral.pip = DSValue(web3, Address(conf[f'PIP_{name[1]}']))
-                collateral.adapter = GemAdapter(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
+                collateral.adapter = GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
                 collateral.flipper = Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}']))
                 collaterals.append(collateral)
 
