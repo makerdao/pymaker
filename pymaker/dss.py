@@ -30,8 +30,13 @@ from pymaker.token import DSToken, ERC20Token
 from pymaker.numeric import Wad, Ray, Rad
 
 
+logger = logging.getLogger()
+
+
 class Ilk:
-    """The `Ilk` object as a type of collateral.
+    """Models one collateral type, the combination of a token and a set of risk parameters.
+    For example, ETH-A and ETH-B are different collateral types with the same underlying token (WETH) but with
+    different risk parameters.
     """
 
     def __init__(self, name: str, rate: Optional[Ray] = None,
@@ -98,7 +103,8 @@ class Ilk:
 
 
 class Urn:
-    """The `Urn` object as a CDP for a single collateral
+    """Models one CDP for a single collateral type and account.  Note the "address of the Urn" is merely the address
+    of the CDP holder.
     """
 
     def __init__(self, address: Address, ilk: Ilk = None, ink: Wad = None, art: Wad = None):
@@ -142,7 +148,7 @@ class Urn:
 
 
 class DaiJoin(Contract):
-    """A client for the `DaiJoin` contract.
+    """A client for the `DaiJoin` contract, which allows the CDP holder to draw Dai from their Urn and repay it.
 
     Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol>
     """
@@ -190,7 +196,7 @@ class DaiJoin(Contract):
 
 
 class GemJoin(Contract):
-    """A client for the `GemJoin` contract.
+    """A client for the `GemJoin` contract, which allows the user to deposit collateral into a new or existing CDP.
 
     Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol>
     """
@@ -237,35 +243,10 @@ class GemJoin(Contract):
 
 
 class Vat(Contract):
-    """A client for the `Vat` contract.
+    """A client for the `Vat` contract, which manages accounting for all Urns (CDPs).
 
     Ref. <https://github.com/makerdao/dss/blob/master/src/vat.sol>
     """
-
-    # Identifies CDP holders and collateral types they have frobbed
-    class LogFrob(LogNote):
-        def __init__(self, log):
-            super(Vat.LogFrob, self).__init__(log)
-            self.ilk = str(Web3.toText(self.arg1)).replace('\x00', '')
-            self.arg2 = Address(Web3.toHex(self.arg2)[26:])
-            self.arg3 = Address(Web3.toHex(self.arg3)[26:])
-            self.sig = Web3.toHex(self.sig)
-
-        @classmethod
-        def from_event(cls, event: dict):
-            assert isinstance(event, dict)
-
-            topics = event.get('topics')
-            if topics:
-                log_note_abi = [abi for abi in Vat.abi if abi.get('name') == 'LogNote'][0]
-                event_data = get_event_data(log_note_abi, event)
-
-                return Vat.LogFrob(event_data)
-            else:
-                logging.warning(f'[from_event] Invalid topic in {event}')
-
-        def __repr__(self):
-            return f"LogFrob({pformat(vars(self))})"
 
     abi = Contract._load_abi(__name__, 'abi/Vat.abi')
     bin = Contract._load_bin(__name__, 'abi/Vat.bin')
@@ -347,6 +328,16 @@ class Vat(Contract):
         return Rad(self._contract.call().vice())
 
     def frob(self, ilk: Ilk, address: Address, dink: Wad, dart: Wad, collateral_owner=None, dai_recipient=None):
+        """Adjust amount of collateral and reserved amount of Dai for the CDP
+
+        Args:
+            ilk: Identifies the type of collateral.
+            address: CDP holder (address of the Urn).
+            dink: Amount of collateral to add/remove.
+            dart: Adjust CDP debt (amount of Dai available for borrowing).
+            collateral_owner: Holder of the collateral used to fund the CDP.
+            dai_recipient: Party receiving the Dai.
+        """
         assert isinstance(ilk, Ilk)
         assert isinstance(address, Address)
         assert isinstance(dink, Wad)
@@ -359,6 +350,13 @@ class Vat(Contract):
         w = dai_recipient or address
         assert isinstance(v, Address)
         assert isinstance(w, Address)
+
+        if v == address and w == address:
+            logger.info(f"frobbing {ilk.name} urn {address.address} with dink={dink}, dart={dart}")
+        else:
+            logger.info(f"frobbing {ilk.name} urn {address.address} "
+                        f"with dink={dink} from {v.address}, "
+                        f"dart={dart} for {w.address}")
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'frob', [ilk.toBytes(), address.address, v.address, w.address, dink.value, dart.value])
@@ -376,19 +374,6 @@ class Vat(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'suck', [address, dai_recipient, vice])
 
-    def past_note(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogFrob]:
-        """Synchronously retrieve past LogNote events.
-         Args:
-            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
-            event_filter: Filter which will be applied to returned events.
-         Returns:
-            List of past `LogNFrob` events represented as :py:class:`pymaker.dss.Vat.LogFrob` class.
-        """
-        assert isinstance(number_of_past_blocks, int)
-        assert isinstance(event_filter, dict) or (event_filter is None)
-
-        return self._past_events(self._contract, 'LogNote', Vat.LogFrob, number_of_past_blocks, event_filter)
-
     def __eq__(self, other):
         assert isinstance(other, Vat)
         return self.address == other.address
@@ -398,7 +383,9 @@ class Vat(Contract):
 
 
 class Collateral:
-    """The `Collateral` object as a wrapping class for collateral properties.
+    """The `Collateral` object wraps accounting information in the Ilk with token-wide artifacts shared across
+    multiple collateral types for the same token.  For example, ETH-A and ETH-B are represented by different Ilks,
+    but will share the same gem (WETH token), GemJoin instance, and Flipper contract.
     """
 
     def __init__(self, ilk: Ilk):
@@ -414,7 +401,8 @@ class Collateral:
 
 
 class Spotter(Contract):
-    """A client for the `Spotter` contract.
+    """A client for the `Spotter` contract, which interacts with Vat for the purpose of managing collateral prices.
+    Users generally have no need to interact with this contract; it is included for unit testing purposes.
 
     Ref. <https://github.com/makerdao/dss-deploy/blob/master/src/poke.sol>
     """
@@ -466,7 +454,8 @@ class Spotter(Contract):
 
 
 class Vow(Contract):
-    """A client for the `Vow` contract.
+    """A client for the `Vow` contract, which manages liquidation of surplus Dai and settlement of collateral debt.
+    Specifically, this contract is useful for Flap and Flop auctions.
 
     Ref. <https://github.com/makerdao/dss/blob/master/src/heal.sol>
     """
@@ -557,9 +546,15 @@ class Vow(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'kiss', [rad.value])
 
     def flop(self) -> Transact:
+        """Initiate a debt auction"""
+        logger.info("Initiating a flop auction")
+
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'flop', [])
 
     def flap(self) -> Transact:
+        """Initiate a surplus auction"""
+        logger.info("Initiating a flap auction")
+
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'flap', [])
 
     def __repr__(self):
@@ -567,7 +562,7 @@ class Vow(Contract):
 
 
 class Jug(Contract):
-    """A client for the `Jug` contract.
+    """A client for the `Jug` contract, which manages stability fees.
 
     Ref. <https://github.com/makerdao/dss/blob/master/src/jug.sol>
     """
@@ -634,7 +629,8 @@ class Jug(Contract):
 
 
 class Cat(Contract):
-    """A client for the `Cat` contract.
+    """A client for the `Cat` contract, used to liquidate unsafe Urns (CDPs).
+    Specifically, this contract is useful for Flip auctions.
 
     Ref. <https://github.com/makerdao/dss/blob/master/src/bite.sol>
     """
@@ -687,8 +683,16 @@ class Cat(Contract):
         return self._contract.call().live() > 0
 
     def bite(self, ilk: Ilk, urn: Urn) -> Transact:
+        """ Initiate liquidation of a CDP, kicking off a flip auction
+
+        Args:
+            ilk: Identifies the type of collateral.
+            urn: Address of the CDP holder.
+        """
         assert isinstance(ilk, Ilk)
         assert isinstance(urn, Urn)
+
+        logger.info(f"biting {ilk.name} urn {urn.address.address}")
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'bite', [ilk.toBytes(), urn.address.address])

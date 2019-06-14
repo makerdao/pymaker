@@ -140,6 +140,7 @@ class TestFlipper:
         assert current_bid.tab > Rad(0)
         assert current_bid.bid == Rad(0)
         # Cat doesn't incorporate the liquidation penalty (chop), but the kicker includes it.
+        # Awaiting word from @dc why this is so.
         # assert last_bite.tab == current_bid.tab
         assert len(flipper.active_auctions()) == 1
 

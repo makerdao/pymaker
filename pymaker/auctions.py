@@ -31,6 +31,7 @@ def toBytes(string: str):
 
 
 class AuctionContract(Contract):
+    """Abstract baseclass shared across all three auction contracts."""
     def __init__(self, web3: Web3, address: Address, abi: list, bids: callable):
         if self.__class__ == AuctionContract:
             raise NotImplemented('Abstract class; please call Flipper, Flapper, or Flopper ctor')
@@ -116,7 +117,7 @@ class AuctionContract(Contract):
 
 
 class Flipper(AuctionContract):
-    """A client for the `Flipper` contract, TODO.
+    """A client for the `Flipper` contract, used to interact with collateral auctions.
 
     You can find the source code of the `Flipper` contract here:
     <https://github.com/makerdao/dss/blob/master/src/flip.sol>.
@@ -235,7 +236,7 @@ class Flipper(AuctionContract):
 
 
 class Flapper(AuctionContract):
-    """A client for the `Flapper` contract, TODO.
+    """A client for the `Flapper` contract, used to interact with surplus auctions.
 
     You can find the source code of the `Flapper` contract here:
     <https://github.com/makerdao/dss/blob/master/src/flap.sol>.
@@ -335,7 +336,7 @@ class Flapper(AuctionContract):
 
 
 class Flopper(AuctionContract):
-    """A client for the `Flopper` contract, TODO.
+    """A client for the `Flopper` contract, used to interact with debt auctions.
 
     You can find the source code of the `Flopper` contract here:
     <https://github.com/makerdao/dss/blob/master/src/flop.sol>.
