@@ -19,12 +19,11 @@ import json
 import pytest
 import time
 from web3 import Web3
-from web3.utils.events import get_event_data
 
 from pymaker import Address
 from pymaker.approval import hope_directly
 from pymaker.deployment import DssDeployment
-from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemJoin, DaiJoin, Spotter, Collateral
+from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemJoin, DaiJoin, Collateral
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray, Rad
 from pymaker.token import DSToken, DSEthToken
@@ -413,7 +412,7 @@ class TestCat:
         # Lesser of our stablecoin debt and the canceled debt pro rata the seized collateral
         art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
         # Stablecoin to be raised in flip auction
-        tab = art * ilk.rate  # Ray
+        tab = Ray(art) * ilk.rate  # Ray
 
         assert -int(lot) < 0 and -int(art) < 0
         assert tab > Ray(0)
@@ -437,10 +436,7 @@ class TestVow:
         assert isinstance(mcd.vow.flopper(), Address)
         assert isinstance(mcd.vow.sin(), Rad)
         assert isinstance(mcd.vow.sin_of(0), Rad)
-        assert isinstance(mcd.vow.woe(), Rad)
         assert isinstance(mcd.vow.ash(), Rad)
-        assert isinstance(mcd.vow.joy(), Rad)
-        assert isinstance(mcd.vow.awe(), Rad)
         assert isinstance(mcd.vow.wait(), int)
         assert isinstance(mcd.vow.sump(), Rad)
         assert isinstance(mcd.vow.bump(), Rad)

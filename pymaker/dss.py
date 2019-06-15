@@ -25,7 +25,6 @@ from web3.utils.events import get_event_data
 
 from pymaker import Address, Contract, Transact
 from pymaker.auctions import Flapper, Flipper, Flopper
-from pymaker.logging import LogNote
 from pymaker.token import DSToken, ERC20Token
 from pymaker.numeric import Wad, Ray, Rad
 
@@ -506,17 +505,8 @@ class Vow(Contract):
     def sin_of(self, era: int) -> Rad:
         return Rad(self._contract.call().sin(era))
 
-    def woe(self) -> Rad:
-        return Rad(self._contract.call().Woe())
-
     def ash(self) -> Rad:
         return Rad(self._contract.call().Ash())
-
-    def joy(self) -> Rad:
-        return Rad(self._contract.call().Joy())
-
-    def awe(self) -> Rad:
-        return Rad(self._contract.call().Awe())
 
     def wait(self) -> int:
         return int(self._contract.call().wait())

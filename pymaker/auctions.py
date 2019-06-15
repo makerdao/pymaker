@@ -50,6 +50,13 @@ class AuctionContract(Contract):
 
         return bool(self._contract.call().wards(address.address))
 
+    def vat(self) -> Address:
+        """Returns the `vat` address.
+         Returns:
+            The address of the `vat` contract.
+        """
+        return Address(self._contract.call().vat())
+
     def active_auctions(self) -> list:
         active_auctions = []
         auction_count = self.kicks()+1
@@ -131,13 +138,13 @@ class Flipper(AuctionContract):
     bin = Contract._load_bin(__name__, 'abi/Flipper.bin')
 
     class Bid:
-        def __init__(self, bid: Rad, lot: Wad, guy: Address, tic: int, end: int, urn: Address, gal: Address, tab: Rad):
+        def __init__(self, bid: Rad, lot: Wad, guy: Address, tic: int, end: int, usr: Address, gal: Address, tab: Rad):
             assert(isinstance(bid, Rad))
             assert(isinstance(lot, Wad))
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
             assert(isinstance(end, int))
-            assert(isinstance(urn, Address))
+            assert(isinstance(usr, Address))
             assert(isinstance(gal, Address))
             assert(isinstance(tab, Rad))
 
@@ -146,7 +153,7 @@ class Flipper(AuctionContract):
             self.guy = guy
             self.tic = tic
             self.end = end
-            self.urn = urn
+            self.usr = usr
             self.gal = gal
             self.tab = tab
 
@@ -170,13 +177,6 @@ class Flipper(AuctionContract):
         approval_function(token=ERC20Token(web3=self.web3, address=self.vat()),
                           spender_address=self.address, spender_name='Flipper', **kwargs)
 
-    def vat(self) -> Address:
-        """Returns the `vat` address.
-         Returns:
-            The address of the `vat` contract.
-        """
-        return Address(self._contract.call().vat())
-
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
 
@@ -195,18 +195,18 @@ class Flipper(AuctionContract):
                            guy=Address(array[2]),
                            tic=int(array[3]),
                            end=int(array[4]),
-                           urn=Address(array[5]),
+                           usr=Address(array[5]),
                            gal=Address(array[6]),
                            tab=Rad(array[7]))
 
-    def kick(self, urn: Address, gal: Address, tab: Rad, lot: Wad, bid: Rad) -> Transact:
-        assert(isinstance(urn, Address))
+    def kick(self, usr: Address, gal: Address, tab: Rad, lot: Wad, bid: Rad) -> Transact:
+        assert(isinstance(usr, Address))
         assert(isinstance(gal, Address))
         assert(isinstance(tab, Rad))
         assert(isinstance(lot, Wad))
         assert(isinstance(bid, Rad))
 
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kick', [urn.address,
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kick', [usr.address,
                                                                                           gal.address,
                                                                                           tab.value,
                                                                                           lot.value,
@@ -350,20 +350,18 @@ class Flopper(AuctionContract):
     bin = Contract._load_bin(__name__, 'abi/Flopper.bin')
 
     class Bid:
-        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int, vow: Address):
+        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int):
             assert(isinstance(bid, Rad))
             assert(isinstance(lot, Wad))
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
             assert(isinstance(end, int))
-            assert(isinstance(vow, Address))
 
             self.bid = bid
             self.lot = lot
             self.guy = guy
             self.tic = tic
             self.end = end
-            self.vow = vow
 
         def __repr__(self):
             return f"Flopper.Bid({pformat(vars(self))})"
@@ -410,8 +408,7 @@ class Flopper(AuctionContract):
                            lot=Wad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),
-                           end=int(array[4]),
-                           vow=Address(array[5]))
+                           end=int(array[4]))
 
     def kick(self, gal: Address, lot: Wad, bid: Wad) -> Transact:
         assert(isinstance(gal, Address))

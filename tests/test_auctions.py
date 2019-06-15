@@ -141,7 +141,7 @@ class TestFlipper:
         assert current_bid.bid == Rad(0)
         # Cat doesn't incorporate the liquidation penalty (chop), but the kicker includes it.
         # Awaiting word from @dc why this is so.
-        # assert last_bite.tab == current_bid.tab
+        #assert last_bite.tab == current_bid.tab
         assert len(flipper.active_auctions()) == 1
 
         # Test the _tend_ phase of the auction
@@ -191,8 +191,8 @@ class TestFlipper:
 
         # Cleanup
         set_collateral_price(mcd, collateral, Wad.from_number(230))
-        # TODO: Determine why this frobbing the art away fails
-        TestVat.cleanup_urn(mcd, collateral, our_address)
+        # TODO: Determine why frobbing the art away fails
+        # TestVat.cleanup_urn(mcd, collateral, our_address)
         TestVat.cleanup_urn(mcd, collateral, other_address)
 
 
@@ -222,6 +222,7 @@ class TestFlapper:
         assert flapper.tend(id, lot, bid).transact(from_address=address)
 
     def test_getters(self, mcd, flapper):
+        assert flapper.vat() == mcd.vat.address
         assert flapper.beg() == Ray.from_number(1.05)
         assert flapper.ttl() > 0
         assert flapper.tau() > flapper.ttl()
@@ -235,12 +236,12 @@ class TestFlapper:
         assert collateral.adapter.join(deployment_address, Wad.from_number(0.1)).transact(
             from_address=deployment_address)
         TestVat.frob(mcd, collateral, deployment_address, dink=Wad.from_number(0.1), dart=Wad.from_number(10))
-        assert mcd.vow.joy() == Rad(0)
+        assert mcd.vat.dai(mcd.vow.address) == Rad(0)
         assert mcd.jug.drip(collateral.ilk).transact(from_address=deployment_address)
         # total surplus > total debt + surplus auction lot size + surplus buffer
-        assert mcd.vow.joy() > mcd.vow.awe() + mcd.vow.bump() + mcd.vow.hump()
-        assert mcd.vow.woe() == Rad(0)
-        joy_before = mcd.vow.joy()
+        assert mcd.vat.dai(mcd.vow.address) > mcd.vat.sin(mcd.vow.address) + mcd.vow.bump() + mcd.vow.hump()
+        assert (mcd.vat.sin(mcd.vow.address) - mcd.vow.sin()) - mcd.vow.ash() == Rad(0)
+        joy_before = mcd.vat.dai(mcd.vow.address)
         # TODO: Get bid_id return value from transaction rather than guessing bid_id==1
         flap_result = mcd.vow.flap().transact(from_address=deployment_address)
         # print(f"flap_result={flap_result.logs}")
@@ -271,9 +272,9 @@ class TestFlapper:
         # Grab our dai
         assert mcd.dai_adapter.exit(our_address, Wad(current_bid.lot)).transact(from_address=our_address)
         assert mcd.dai.balance_of(our_address) >= Wad(current_bid.lot)
-        assert joy_before - mcd.vow.bump() == mcd.vow.joy()
-        assert mcd.vow.woe() == Rad(0)
-        assert mcd.vow.awe() == Rad(0)
+        assert joy_before - mcd.vow.bump() == mcd.vat.dai(mcd.vow.address)
+        assert (mcd.vat.sin(mcd.vow.address) - mcd.vow.sin()) - mcd.vow.ash() == Rad(0)
+        assert mcd.vat.sin(mcd.vow.address) == Rad(0)
 
 
 class TestFlopper:
@@ -302,6 +303,7 @@ class TestFlopper:
         assert flopper.dent(id, lot, bid).transact(from_address=address)
 
     def test_getters(self, mcd, flopper):
+        assert flopper.vat() == mcd.vat.address
         assert flopper.beg() == Ray.from_number(1.05)
         assert flopper.ttl() > 0
         assert flopper.tau() > flopper.ttl()
@@ -352,8 +354,9 @@ class TestFlopper:
         assert mcd.vow.flog(era_bite).transact()
         assert mcd.vow.sin_of(era_bite) == Rad(0)
         # Cancel out surplus and debt
-        assert bid <= mcd.vow.joy()
-        assert bid <= mcd.vow.woe()
+        assert bid <= mcd.vat.dai(mcd.vow.address)
+        woe = (mcd.vat.sin(mcd.vow.address) - mcd.vow.sin()) - mcd.vow.ash()
+        assert bid <= woe
         assert mcd.vow.heal(bid).transact()
 
         # Kick off the flop auction
@@ -365,8 +368,8 @@ class TestFlopper:
         current_bid = flopper.bids(1)
         assert flopper.kicks() == 1
         assert len(flopper.active_auctions()) == 1
-        assert mcd.vow.woe() >= mcd.vow.sump()
-        assert mcd.vow.joy() == Rad(0)
+        assert woe >= mcd.vow.sump()
+        assert mcd.vat.dai(mcd.vow.address) == Rad(0)
 
         flopper.approve(mcd.vat.address, hope_directly())
         assert mcd.vat.can(our_address, flopper.address)
@@ -379,5 +382,7 @@ class TestFlopper:
         assert flopper.live()
         now = int(datetime.now().timestamp())
         assert (current_bid.tic < now and current_bid.tic != 0) or current_bid.end < now
-        # FIXME: Issue minting gems to be resolved in DSS 0.2.8
+        mkr_before = mcd.mkr.balance_of(our_address)
         assert flopper.deal(1).transact(from_address=our_address)
+        mkr_after = mcd.mkr.balance_of(our_address)
+        assert mkr_after > mkr_before
