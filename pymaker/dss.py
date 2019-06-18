@@ -21,10 +21,12 @@ from typing import Optional, List
 
 from hexbytes import HexBytes
 from web3 import Web3
+
 from web3.utils.events import get_event_data
 
 from pymaker import Address, Contract, Transact
 from pymaker.auctions import Flapper, Flipper, Flopper
+from pymaker.logging import LogNote
 from pymaker.token import DSToken, ERC20Token
 from pymaker.numeric import Wad, Ray, Rad
 
@@ -247,6 +249,18 @@ class Vat(Contract):
     Ref. <https://github.com/makerdao/dss/blob/master/src/vat.sol>
     """
 
+    # Identifies CDP holders and collateral types they have frobbed
+    class LogFrob():
+        def __init__(self, lognote: LogNote):
+            assert isinstance(lognote, LogNote)
+
+            self.ilk = str(Web3.toText(lognote.arg1)).replace('\x00', '')
+            self.urn = Address(Web3.toHex(lognote.arg2)[26:])
+            self.collateral_owner = Address(Web3.toHex(lognote.arg3)[26:])
+
+        def __repr__(self):
+            return f"LogFrob({pformat(vars(self))})"
+
     abi = Contract._load_abi(__name__, 'abi/Vat.abi')
     bin = Contract._load_bin(__name__, 'abi/Vat.bin')
 
@@ -359,6 +373,36 @@ class Vat(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'frob', [ilk.toBytes(), address.address, v.address, w.address, dink.value, dart.value])
+
+    def past_frob(self, number_of_past_blocks: int, ilk=None) -> List[LogFrob]:
+        """Synchronously retrieve past LogNote events.
+         Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+            ilk: Optionally filter frobs by ilk.name
+         Returns:
+            List of past `LogFrob` events represented as :py:class:`pymaker.dss.Vat.LogFrob` class.
+        """
+        assert isinstance(number_of_past_blocks, int)
+        assert isinstance(ilk, Ilk) or ilk is None
+
+        block_number = self._contract.web3.eth.blockNumber
+        filter_params = {
+            'address': self.address.address,
+            'fromBlock': max(block_number-number_of_past_blocks, 0),
+            'toBlock': block_number
+        }
+
+        logs = self.web3.eth.getLogs(filter_params)
+
+        lognotes = list(map(lambda l: LogNote.from_event(l, Vat.abi), logs))
+        # '0x7cdd3fde' is Vat.slip (from GemJoin.join) and '0x76088703' is Vat.frob
+        logfrobs = list(filter(lambda l: l.sig == '0x76088703', lognotes))
+        logfrobs = list(map(lambda l: Vat.LogFrob(l), logfrobs))
+
+        if ilk is not None:
+            logfrobs = list(filter(lambda l: l.ilk == ilk.name, logfrobs))
+
+        return logfrobs
 
     def heal(self, vice: Rad) -> Transact:
         assert isinstance(vice, Rad)

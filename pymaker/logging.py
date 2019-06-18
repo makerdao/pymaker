@@ -18,6 +18,7 @@
 import logging
 from pprint import pformat
 from pymaker import Address
+from web3 import Web3
 from web3.utils.events import get_event_data
 
 
@@ -25,12 +26,12 @@ from web3.utils.events import get_event_data
 class LogNote:
     def __init__(self, log):
         #self.usr = Address(log['args']['usr'])
-        self.sig = log['args']['sig']
+        self.sig = Web3.toHex(log['args']['sig'])
         self.arg1 = log['args']['arg1']
         self.arg2 = log['args']['arg2']
         self.arg3 = log['args']['arg3']
-        self.data = log['args']['data']
-        self.raw = log
+        self._data = log['args']['data']
+        self._raw = log
 
     @classmethod
     def from_event(cls, event: dict, contract_abi: list):

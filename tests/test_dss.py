@@ -387,6 +387,46 @@ class TestVat:
         # rollback
         self.cleanup_urn(mcd, collateral, other_address)
 
+    def test_past_frob(self, mcd, our_address, other_address):
+        # given
+        collateral0 = mcd.collaterals[1]
+        ilk0 = collateral0.ilk
+        collateral1 = mcd.collaterals[2]
+        ilk1 = collateral1.ilk
+
+        # when
+        wrap_eth(mcd, our_address, Wad(18))
+        wrap_eth(mcd, other_address, Wad(18))
+        collateral0.gem.approve(collateral0.adapter.address)
+        collateral1.gem.approve(collateral1.adapter.address)
+        mcd.dai_adapter.approve(hope_directly(from_address=other_address), mcd.vat.address)
+
+        assert collateral0.adapter.join(our_address, Wad(9)).transact()
+        assert mcd.vat.frob(ilk0, our_address, Wad(3), Wad(0)).transact()
+
+        assert collateral1.adapter.join(other_address, Wad(3)).transact(from_address=other_address)
+        assert mcd.vat.frob(ilk1, other_address, Wad(3), Wad(0)).transact(from_address=other_address)
+
+        assert collateral1.adapter.join(other_address, Wad(9)).transact(from_address=other_address)
+        assert mcd.vat.frob(ilk1, our_address, Wad(6), Wad(0),
+                            collateral_owner=other_address, dai_recipient=other_address).transact(
+            from_address=other_address)
+
+        # then
+        frobs = mcd.vat.past_frob(10)
+        assert len(frobs) >= 2
+        assert frobs[0].ilk == ilk0.name
+        assert frobs[0].urn == our_address
+        assert frobs[1].ilk == ilk1.name
+        assert frobs[1].urn == other_address
+        assert frobs[2].ilk == ilk1.name
+        assert frobs[2].urn == our_address
+        assert frobs[2].collateral_owner == other_address
+
+        # teardown
+        TestVat.cleanup_urn(mcd, collateral0, our_address)
+        TestVat.cleanup_urn(mcd, collateral1, other_address)
+
     def test_heal(self, mcd):
         assert mcd.vat.heal(Rad(0))
 
