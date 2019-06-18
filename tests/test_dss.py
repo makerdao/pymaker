@@ -414,7 +414,7 @@ class TestVat:
 
         # then
         frobs = mcd.vat.past_frob(10)
-        assert len(frobs) >= 2
+        assert len(frobs) == 3
         assert frobs[0].ilk == ilk0.name
         assert frobs[0].urn == our_address
         assert frobs[1].ilk == ilk1.name
@@ -422,6 +422,20 @@ class TestVat:
         assert frobs[2].ilk == ilk1.name
         assert frobs[2].urn == our_address
         assert frobs[2].collateral_owner == other_address
+
+        assert len(mcd.vat.past_frob(10, ilk0)) == 1
+        assert len(mcd.vat.past_frob(10, ilk1)) == 2
+        assert len(mcd.vat.past_frob(10, mcd.collaterals[3].ilk)) == 0
+
+        urns0 = mcd.vat.urns(ilk=ilk0)
+        assert len(urns0[ilk0.name]) == 1
+        urns1 = mcd.vat.urns(ilk=ilk1)
+        assert len(urns1[ilk1.name]) == 2
+        urns_all = mcd.vat.urns()
+        print(urns_all)
+        assert len(urns_all) >= 2
+        assert len(urns_all[ilk0.name]) == 1
+        assert len(urns_all[ilk1.name]) == 2
 
         # teardown
         TestVat.cleanup_urn(mcd, collateral0, our_address)

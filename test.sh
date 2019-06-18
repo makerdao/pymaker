@@ -20,7 +20,7 @@ docker-compose up -d
 sleep 2
 
 # Run the tests
-echo py.test --cov=pymaker --cov-report=term --cov-append tests/test_dss.py
+py.test --cov=pymaker --cov-report=term --cov-append tests/test_dss.py
 
 # Cleanup
 kill $ganache_pid

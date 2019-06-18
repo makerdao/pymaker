@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from collections import defaultdict
 from pprint import pformat
 from typing import Optional, List
 
@@ -334,6 +335,30 @@ class Vat(Contract):
         (ink, art) = self._contract.call().urns(ilk.toBytes(), address.address)
         return Urn(address, ilk, Wad(ink), Wad(art))
 
+    def urns(self, ilk=None, from_block=0) -> dict:
+        """Retrieve a collection of Urns indexed by Ilk.name and then Urn address
+
+        Args:
+            ilk: Optionally filter results by ilk.name.
+            from_block: Filter urns adjusted on or after the specified block.
+        """
+        assert isinstance(ilk, Ilk) or ilk is None
+        assert isinstance(from_block, int)
+
+        urn_keys = set()
+        urns = defaultdict(dict)
+
+        number_of_past_blocks = self._contract.web3.eth.blockNumber - from_block
+        logfrobs = self.past_frob(number_of_past_blocks, ilk)
+        for frob in logfrobs:
+            urn_keys.add((frob.ilk, frob.urn))
+        for urn_key in urn_keys:
+            ilk = urn_key[0]
+            urn = urn_key[1]
+            urns[ilk][urn] = self.urn(Ilk(ilk), urn)
+
+        return urns
+
     def debt(self) -> Rad:
         return Rad(self._contract.call().debt())
 
@@ -375,7 +400,7 @@ class Vat(Contract):
                         'frob', [ilk.toBytes(), address.address, v.address, w.address, dink.value, dart.value])
 
     def past_frob(self, number_of_past_blocks: int, ilk=None) -> List[LogFrob]:
-        """Synchronously retrieve past LogNote events.
+        """Synchronously retrieve a list showing which ilks and urns have been frobbed.
          Args:
             number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
             ilk: Optionally filter frobs by ilk.name
