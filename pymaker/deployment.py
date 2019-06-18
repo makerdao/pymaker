@@ -184,15 +184,17 @@ class DssDeployment:
 
             collaterals = []
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
-                collateral = Collateral(Ilk(name[0].replace('_', '-')))
-                if name[1]=="ETH":
-                    collateral.gem = DSEthToken(web3, Address(conf[name[1]]))
+                ilk = Ilk(name[0].replace('_', '-'))
+                if name[1] == "ETH":
+                    gem = DSEthToken(web3, Address(conf[name[1]]))
                 else:
-                    collateral.gem = DSToken(web3, Address(conf[name[1]]))
-                # TODO: Skip this for production and other deployments which use a medianizer.
-                collateral.pip = DSValue(web3, Address(conf[f'PIP_{name[1]}']))
-                collateral.adapter = GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
-                collateral.flipper = Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}']))
+                    gem = DSToken(web3, Address(conf[name[1]]))
+
+                # TODO: If problematic, skip pip for deployments which use a medianizer.
+                collateral = Collateral(ilk=ilk, gem=gem,
+                                        adapter=GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}'])),
+                                        flipper=Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}'])),
+                                        pip=DSValue(web3, Address(conf[f'PIP_{name[1]}'])))
                 collaterals.append(collateral)
 
             return DssDeployment.Config(pause, vat, vow, jug, cat, flap, flop,

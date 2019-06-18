@@ -142,17 +142,18 @@ class TestFlipper:
         # Cat doesn't incorporate the liquidation penalty (chop), but the kicker includes it.
         # Awaiting word from @dc why this is so.
         #assert last_bite.tab == current_bid.tab
-        assert len(flipper.active_auctions()) == 1
 
-        # Test the _tend_ phase of the auction
+        # Wrap some eth and handle approvals before bidding
         eth_required = Wad(current_bid.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
         wrap_eth(mcd, other_address, eth_required)
-        assert collateral.gem.balance_of(other_address)  >= eth_required
+        wrap_eth(mcd, our_address, eth_required)
         collateral.gem.approve(collateral.adapter.address)
         assert collateral.adapter.join(other_address, eth_required).transact(from_address=other_address)
-        flipper.approve(approval_function=hope_directly(), from_address=other_address)
-        assert mcd.vat.can(other_address, flipper.address)
-        # Add Wad(1) to counter rounding error converting tab from Rad to Wad
+        assert collateral.adapter.join(our_address, eth_required).transact(from_address=our_address)
+
+        # Test the _tend_ phase of the auction
+        flipper.approve(mcd.vat.address, approval_function=hope_directly(), from_address=other_address)
+        # Add Wad(1) to counter precision error converting tab from Rad to Wad
         TestVat.frob(mcd, collateral, other_address, dink=eth_required, dart=Wad(current_bid.tab) + Wad(1))
         urn = mcd.vat.urn(collateral.ilk, other_address)
         assert Rad(urn.art) >= current_bid.tab
@@ -163,9 +164,7 @@ class TestFlipper:
         assert current_bid.bid == current_bid.tab
 
         # Test the _dent_ phase of the auction
-        wrap_eth(mcd, our_address, eth_required)
-        assert collateral.adapter.join(our_address, eth_required).transact(from_address=our_address)
-        flipper.approve(approval_function=hope_directly(), from_address=our_address)
+        flipper.approve(mcd.vat.address, approval_function=hope_directly(), from_address=our_address)
         TestVat.frob(mcd, collateral, our_address, dink=eth_required, dart=Wad(current_bid.tab) + Wad(1))
         lot = current_bid.lot - Wad.from_number(0.2)
         assert flipper.beg() * Ray(lot) <= Ray(current_bid.lot)
@@ -339,7 +338,7 @@ class TestFlopper:
         assert collateral.adapter.join(our_address, Wad.from_number(10)).transact(from_address=our_address)
         web3.eth.defaultAccount = our_address.address
         TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(10), dart=Wad.from_number(200))
-        collateral.flipper.approve(approval_function=hope_directly())
+        collateral.flipper.approve(mcd.vat.address, approval_function=hope_directly())
         current_bid = collateral.flipper.bids(1)
         urn = mcd.vat.urn(collateral.ilk, our_address)
         assert Rad(urn.art) > current_bid.tab

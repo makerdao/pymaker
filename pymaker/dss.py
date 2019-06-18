@@ -365,39 +365,39 @@ class Vat(Contract):
     def vice(self) -> Rad:
         return Rad(self._contract.call().vice())
 
-    def frob(self, ilk: Ilk, address: Address, dink: Wad, dart: Wad, collateral_owner=None, dai_recipient=None):
+    def frob(self, ilk: Ilk, urn_address: Address, dink: Wad, dart: Wad, collateral_owner=None, dai_recipient=None):
         """Adjust amount of collateral and reserved amount of Dai for the CDP
 
         Args:
             ilk: Identifies the type of collateral.
-            address: CDP holder (address of the Urn).
+            urn_address: CDP holder (address of the Urn).
             dink: Amount of collateral to add/remove.
             dart: Adjust CDP debt (amount of Dai available for borrowing).
             collateral_owner: Holder of the collateral used to fund the CDP.
             dai_recipient: Party receiving the Dai.
         """
         assert isinstance(ilk, Ilk)
-        assert isinstance(address, Address)
+        assert isinstance(urn_address, Address)
         assert isinstance(dink, Wad)
         assert isinstance(dart, Wad)
         assert isinstance(collateral_owner, Address) or (collateral_owner is None)
         assert isinstance(dai_recipient, Address) or (dai_recipient is None)
 
         # Usually these addresses are the same as the account holding the urn
-        v = collateral_owner or address
-        w = dai_recipient or address
+        v = collateral_owner or urn_address
+        w = dai_recipient or urn_address
         assert isinstance(v, Address)
         assert isinstance(w, Address)
 
-        if v == address and w == address:
-            logger.info(f"frobbing {ilk.name} urn {address.address} with dink={dink}, dart={dart}")
+        if v == urn_address and w == urn_address:
+            logger.info(f"frobbing {ilk.name} urn {urn_address.address} with dink={dink}, dart={dart}")
         else:
-            logger.info(f"frobbing {ilk.name} urn {address.address} "
+            logger.info(f"frobbing {ilk.name} urn {urn_address.address} "
                         f"with dink={dink} from {v.address}, "
                         f"dart={dart} for {w.address}")
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'frob', [ilk.toBytes(), address.address, v.address, w.address, dink.value, dart.value])
+                        'frob', [ilk.toBytes(), urn_address.address, v.address, w.address, dink.value, dart.value])
 
     def past_frob(self, number_of_past_blocks: int, ilk=None) -> List[LogFrob]:
         """Synchronously retrieve a list showing which ilks and urns have been frobbed.
@@ -456,16 +456,19 @@ class Collateral:
     but will share the same gem (WETH token), GemJoin instance, and Flipper contract.
     """
 
-    def __init__(self, ilk: Ilk):
+    def __init__(self, ilk: Ilk, gem: ERC20Token, adapter: GemJoin, flipper: Flipper, pip):
         assert isinstance(ilk, Ilk)
+        assert isinstance(gem, ERC20Token)
+        assert isinstance(adapter, GemJoin)
+        assert isinstance(flipper, Flipper)
 
         self.ilk = ilk
-        self.gem: DSToken = None
-        self.adapter: GemJoin = None
-        self.flipper: Flipper = None
+        self.gem = gem
+        self.adapter = adapter
+        self.flipper = flipper
         # Points to `median` for official deployments, `DSValue` for testing purposes.
         # Users generally have no need to interact with the pip.
-        self.pip = None
+        self.pip = pip
 
 
 class Spotter(Contract):

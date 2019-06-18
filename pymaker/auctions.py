@@ -57,6 +57,23 @@ class AuctionContract(Contract):
         """
         return Address(self._contract.call().vat())
 
+    def approve(self, source: Address, approval_function, **kwargs):
+        """Approve the auction to access our collateral, Dai, or MKR so we can participate in auctions.
+
+        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+        in `pymaker.approval`.
+
+        Args:
+            source: Address of the contract or token relevant to the auction (for Flipper and Flopper pass Vat address,
+            for Flapper pass MKR token address)
+            approval_function: Approval function (i.e. approval mode)
+        """
+        assert isinstance(source, Address)
+        assert(callable(approval_function))
+
+        approval_function(token=ERC20Token(web3=self.web3, address=source),
+                          spender_address=self.address, spender_name=self.__class__.__name__, **kwargs)
+
     def active_auctions(self) -> list:
         active_auctions = []
         auction_count = self.kicks()+1
@@ -122,6 +139,11 @@ class AuctionContract(Contract):
         """
         return int(self._contract.call().kicks())
 
+    def deal(self, id: int) -> Transact:
+        assert(isinstance(id, int))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
+
 
 class Flipper(AuctionContract):
     """A client for the `Flipper` contract, used to interact with collateral auctions.
@@ -162,20 +184,6 @@ class Flipper(AuctionContract):
 
     def __init__(self, web3: Web3, address: Address):
         super(Flipper, self).__init__(web3, address, Flipper.abi, self.bids)
-
-    def approve(self, approval_function, **kwargs):
-        """Approve the `Flipper` to access our `dai` so we can participate in auctions.
-
-        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
-        in `pymaker.approval`.
-
-        Args:
-            approval_function: Approval function (i.e. approval mode).
-        """
-        assert(callable(approval_function))
-
-        approval_function(token=ERC20Token(web3=self.web3, address=self.vat()),
-                          spender_address=self.address, spender_name='Flipper', **kwargs)
 
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
@@ -226,11 +234,6 @@ class Flipper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'dent', [id, lot.value, bid.value])
 
-    def deal(self, id: int) -> Transact:
-        assert(isinstance(id, int))
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
-
     def __repr__(self):
         return f"Flipper('{self.address}')"
 
@@ -274,22 +277,6 @@ class Flapper(AuctionContract):
     def live(self) -> bool:
         return self._contract.call().live() > 0
 
-    def approve(self, mkr: Address, approval_function, **kwargs):
-        """Approve the `Flapper` to access our `gem` so we can participate in auctions.
-
-        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
-        in `pymaker.approval`.
-
-        Args:
-            mkr: Address of the MKR token
-            approval_function: Approval function (i.e. approval mode).
-        """
-        assert isinstance(mkr, Address)
-        assert(callable(approval_function))
-
-        approval_function(token=ERC20Token(web3=self.web3, address=mkr),
-                          spender_address=self.address, spender_name='Flapper', **kwargs)
-
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
 
@@ -325,11 +312,6 @@ class Flapper(AuctionContract):
         assert(isinstance(bid, Wad))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tend', [id, lot.value, bid.value])
-
-    def deal(self, id: int) -> Transact:
-        assert(isinstance(id, int))
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
 
     def __repr__(self):
         return f"Flapper('{self.address}')"
@@ -372,22 +354,6 @@ class Flopper(AuctionContract):
 
         super(Flopper, self).__init__(web3, address, Flopper.abi, self.bids)
 
-    def approve(self, vat: Address, approval_function: callable, **kwargs):
-        """Approve the `Flopper` to access our `dai` so we can participate in auctions.
-
-        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
-        in `pymaker.approval`.
-
-        Args:
-            vat: Address of the Vat contract
-            approval_function: Approval function (i.e. approval mode).
-        """
-        assert isinstance(vat, Address)
-        assert (callable(approval_function))
-
-        approval_function(token=ERC20Token(web3=self.web3, address=vat),
-                          spender_address=self.address, spender_name='Flopper', **kwargs)
-
     def live(self) -> bool:
         return self._contract.call().live() > 0
 
@@ -425,11 +391,6 @@ class Flopper(AuctionContract):
         assert(isinstance(bid, Rad))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'dent', [id, lot.value, bid.value])
-
-    def deal(self, id: int) -> Transact:
-        assert(isinstance(id, int))
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
 
     def __repr__(self):
         return f"Flopper('{self.address}')"

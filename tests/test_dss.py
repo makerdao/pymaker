@@ -248,7 +248,7 @@ class TestVat:
         TestVat.simulate_frob(mcd, collateral, address, dink, dart)
 
         # then
-        assert mcd.vat.frob(ilk=ilk, address=address, dink=dink, dart=dart).transact(from_address=address)
+        assert mcd.vat.frob(ilk=ilk, urn_address=address, dink=dink, dart=dart).transact(from_address=address)
         assert mcd.vat.urn(ilk, address).ink == ink_before + dink
         assert mcd.vat.urn(ilk, address).art == art_before + dart
 
