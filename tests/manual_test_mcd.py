@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import sys
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address
@@ -26,10 +27,8 @@ from pymaker.numeric import Wad
 
 web3 = Web3(HTTPProvider(endpoint_uri="https://parity0.kovan.makerfoundation.com:8545",
                          request_kwargs={"timeout": 10}))
-web3.eth.defaultAccount = "0xC140ce1be1c0edA2f06319d984c404251C59494e"
-register_keys(web3,
-                  ["key_file=/home/ed/Projects/member-account.json,pass_file=/home/ed/Projects/member-account.pass",
-                   "key_file=/home/ed/Projects/kovan-account2.json,pass_file=/home/ed/Projects/kovan-account2.pass"])
+web3.eth.defaultAccount = sys.argv[1]
+register_keys(web3, [sys.argv[2]])
 
 
 mcd = DssDeployment.from_json(web3=web3, conf=open("tests/config/kovan-addresses.json", "r").read())
@@ -38,14 +37,16 @@ our_address = Address(web3.eth.defaultAccount)
 # Choose the desired collateral; in this case we'll wrap some Eth
 collateral = mcd.collaterals[1]
 ilk = collateral.ilk
-collateral.gem.deposit(Wad.from_number(3)).transact()
+#collateral.gem.deposit(Wad.from_number(3)).transact()
 
 # Add collateral and allocate the desired amount of Dai
+collateral.approve(our_address)
 collateral.adapter.join(our_address, Wad.from_number(3)).transact()
 mcd.vat.frob(ilk, our_address, dink=Wad.from_number(3), dart=Wad.from_number(153)).transact()
 print(f"CDP Dai balance before withdrawal: {mcd.vat.dai(our_address)}")
 
 # Mint and withdraw our Dai
+mcd.approve_dai(our_address)
 mcd.dai_adapter.exit(our_address, Wad.from_number(153)).transact()
 print(f"CDP Dai balance after withdrawal:  {mcd.vat.dai(our_address)}")
 

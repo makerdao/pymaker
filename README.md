@@ -221,11 +221,13 @@ ilk = collateral.ilk
 collateral.gem.deposit(Wad.from_number(3)).transact()
 
 # Add collateral and allocate the desired amount of Dai
+collateral.approve(our_address)
 collateral.adapter.join(our_address, Wad.from_number(3)).transact()
 mcd.vat.frob(ilk, our_address, dink=Wad.from_number(3), dart=Wad.from_number(153)).transact()
 print(f"CDP Dai balance before withdrawal: {mcd.vat.dai(our_address)}")
 
 # Mint and withdraw our Dai
+mcd.approve_dai(our_address)
 mcd.dai_adapter.exit(our_address, Wad.from_number(153)).transact()
 print(f"CDP Dai balance after withdrawal:  {mcd.vat.dai(our_address)}")
 

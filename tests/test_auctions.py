@@ -90,6 +90,7 @@ class TestFlipper:
         kicks_before = flipper.kicks()
         ilk = collateral.ilk
         wrap_eth(mcd, deployment_address, Wad.from_number(1))
+        collateral.approve(deployment_address)
         assert collateral.adapter.join(deployment_address, Wad.from_number(1)).transact(
             from_address=deployment_address)
         TestVat.frob(mcd, collateral, deployment_address, dink=Wad.from_number(1), dart=Wad(0))
@@ -97,7 +98,7 @@ class TestFlipper:
         TestVat.frob(mcd, collateral, deployment_address, dink=Wad(0), dart=max_dart)
 
         # Mint and withdraw all the Dai
-        mcd.dai_adapter.approve(approval_function=hope_directly(), vat=mcd.vat.address, from_address=deployment_address)
+        mcd.dai_adapter.approve(approval_function=hope_directly(), source=mcd.vat.address, from_address=deployment_address)
         assert mcd.dai_adapter.exit(deployment_address, max_dart).transact(from_address=deployment_address)
         assert mcd.dai.balance_of(deployment_address) == max_dart
         assert mcd.vat.dai(deployment_address) == Rad(0)
@@ -146,9 +147,10 @@ class TestFlipper:
         # Wrap some eth and handle approvals before bidding
         eth_required = Wad(current_bid.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
         wrap_eth(mcd, other_address, eth_required)
-        wrap_eth(mcd, our_address, eth_required)
-        collateral.gem.approve(collateral.adapter.address)
+        collateral.approve(other_address)
         assert collateral.adapter.join(other_address, eth_required).transact(from_address=other_address)
+        wrap_eth(mcd, our_address, eth_required)
+        collateral.approve(our_address)
         assert collateral.adapter.join(our_address, eth_required).transact(from_address=our_address)
 
         # Test the _tend_ phase of the auction
@@ -232,6 +234,7 @@ class TestFlapper:
         collateral = mcd.collaterals[1]
         assert flapper.kicks() == 0
         wrap_eth(mcd, deployment_address, Wad.from_number(0.1))
+        collateral.approve(deployment_address)
         assert collateral.adapter.join(deployment_address, Wad.from_number(0.1)).transact(
             from_address=deployment_address)
         TestVat.frob(mcd, collateral, deployment_address, dink=Wad.from_number(0.1), dart=Wad.from_number(10))
@@ -269,6 +272,7 @@ class TestFlapper:
         assert flapper.deal(1).transact(from_address=our_address)
 
         # Grab our dai
+        mcd.approve_dai(our_address)
         assert mcd.dai_adapter.exit(our_address, Wad(current_bid.lot)).transact(from_address=our_address)
         assert mcd.dai.balance_of(our_address) >= Wad(current_bid.lot)
         assert joy_before - mcd.vow.bump() == mcd.vat.dai(mcd.vow.address)
@@ -313,6 +317,7 @@ class TestFlopper:
         collateral = mcd.collaterals[0]
         ilk = collateral.ilk
         wrap_eth(mcd, deployment_address, Wad.from_number(1))
+        collateral.approve(deployment_address)
         assert collateral.adapter.join(deployment_address, Wad.from_number(1)).transact(
             from_address=deployment_address)
         TestVat.frob(mcd, collateral, deployment_address, dink=Wad.from_number(1), dart=Wad(0))
@@ -334,7 +339,7 @@ class TestFlopper:
 
         # Generate some Dai, bid on and win the flip auction without covering all the debt
         wrap_eth(mcd, our_address, Wad.from_number(10))
-        collateral.gem.approve(collateral.adapter.address)
+        collateral.approve(our_address)
         assert collateral.adapter.join(our_address, Wad.from_number(10)).transact(from_address=our_address)
         web3.eth.defaultAccount = our_address.address
         TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(10), dart=Wad.from_number(200))

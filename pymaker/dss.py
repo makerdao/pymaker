@@ -26,6 +26,7 @@ from web3 import Web3
 from web3.utils.events import get_event_data
 
 from pymaker import Address, Contract, Transact
+from pymaker.approval import directly, hope_directly
 from pymaker.auctions import Flapper, Flipper, Flopper
 from pymaker.logging import LogNote
 from pymaker.token import DSToken, ERC20Token
@@ -149,7 +150,41 @@ class Urn:
         return f"Urn('{self.address}'){repr}"
 
 
-class DaiJoin(Contract):
+class Join(Contract):
+    def __init__(self, web3: Web3, address: Address):
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+        self._token: DSToken = None
+
+    def approve(self, approval_function, source: Address, **kwargs):
+        assert(callable(approval_function))
+        assert isinstance(source, Address)
+
+        approval_function(ERC20Token(web3=self.web3, address=source), self.address, self.__class__.__name__, **kwargs)
+
+    def approve_token(self, approval_function, **kwargs):
+        return self.approve(approval_function, self._token.address, **kwargs)
+
+    def join(self, usr: Address, value: Wad) -> Transact:
+        assert isinstance(usr, Address)
+        assert isinstance(value, Wad)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'join', [usr.address, value.value])
+
+    def exit(self, usr: Address, value: Wad) -> Transact:
+        assert isinstance(usr, Address)
+        assert isinstance(value, Wad)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'exit', [usr.address, value.value])
+
+
+class DaiJoin(Join):
     """A client for the `DaiJoin` contract, which allows the CDP holder to draw Dai from their Urn and repay it.
 
     Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol>
@@ -158,46 +193,16 @@ class DaiJoin(Contract):
     abi = Contract._load_abi(__name__, 'abi/DaiJoin.abi')
     bin = Contract._load_bin(__name__, 'abi/DaiJoin.bin')
 
-    def __init__(self, web3: Web3, address: Address, dai: Address):
-        assert isinstance(web3, Web3)
-        assert isinstance(address, Address)
+    def __init__(self, web3: Web3, address: Address):
+        super(DaiJoin, self).__init__(web3, address)
+        self._token = self.dai()
 
-        self.web3 = web3
-        self.address = address
-        self.dai = dai
-        self._contract = self._get_contract(web3, self.abi, address)
-
-    def join(self, usr: Address, value: Wad) -> Transact:
-        assert isinstance(usr, Address)
-        assert isinstance(value, Wad)
-
-        self._approve(value).transact()
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'join', [usr.address, value.value])
-
-    def exit(self, usr: Address, value: Wad) -> Transact:
-        assert isinstance(usr, Address)
-        assert isinstance(value, Wad)
-
-        self._approve(value).transact()
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'exit', [usr.address, value.value])
-
-    def approve(self, approval_function, vat: Address, **kwargs):
-        """Allows this contract to interact with Vat"""
-        assert(callable(approval_function))
-
-        approval_function(ERC20Token(web3=self.web3, address=vat), self.address, 'DaiJoin', **kwargs)
-
-    def _approve(self, value: Wad) -> Transact:
-        """Allows this contract to interact with the Dai token"""
-        assert isinstance(value, Wad)
-
-        dai = DSToken(self.web3, self.dai)
-        return dai.approve(self.address, value)
+    def dai(self) -> DSToken:
+        address = Address(self._contract.call().dai())
+        return DSToken(self.web3, address)
 
 
-class GemJoin(Contract):
+class GemJoin(Join):
     """A client for the `GemJoin` contract, which allows the user to deposit collateral into a new or existing CDP.
 
     Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol>
@@ -207,41 +212,15 @@ class GemJoin(Contract):
     bin = Contract._load_bin(__name__, 'abi/GemJoin.bin')
 
     def __init__(self, web3: Web3, address: Address):
-        assert isinstance(web3, Web3)
-        assert isinstance(address, Address)
-
-        self.web3 = web3
-        self.address = address
-        self._contract = self._get_contract(web3, self.abi, address)
+        super(GemJoin, self).__init__(web3, address)
+        self._token = self.gem()
 
     def ilk(self):
         return Ilk.fromBytes(self._contract.call().ilk())
 
-    def join(self, usr: Address, value: Wad) -> Transact:
-        assert isinstance(usr, Address)
-        assert isinstance(value, Wad)
-
-        assert self.gem().balance_of(usr) >= value
-        assert self._approve(value).transact(from_address=usr)
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'join', [usr.address, value.value])
-
-    def exit(self, usr: Address, value: Wad) -> Transact:
-        assert isinstance(usr, Address)
-        assert isinstance(value, Wad)
-
-        assert self._approve(value).transact(from_address=usr)
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'exit', [usr.address, value.value])
-
     def gem(self) -> DSToken:
         address = Address(self._contract.call().gem())
         return DSToken(self.web3, address)
-
-    def _approve(self, value: Wad) -> Transact:
-        assert isinstance(value, Wad)
-
-        return self.gem().approve(self.address, value)
 
 
 class Vat(Contract):
@@ -469,6 +448,16 @@ class Collateral:
         # Points to `median` for official deployments, `DSValue` for testing purposes.
         # Users generally have no need to interact with the pip.
         self.pip = pip
+
+    def approve(self, usr: Address):
+        """
+        Allows the user to move this collateral into and out of their CDP.
+
+        Args
+            usr: User making transactions with this collateral
+        """
+        self.adapter.approve(hope_directly(from_address=usr), self.flipper.vat())
+        self.adapter.approve_token(directly(from_address=usr))
 
 
 class Spotter(Contract):

@@ -176,7 +176,7 @@ class DssDeployment:
             jug = Jug(web3, Address(conf['MCD_JUG']))
             cat = Cat(web3, Address(conf['MCD_CAT']))
             dai = DSToken(web3, Address(conf['MCD_DAI']))
-            dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']), dai.address)
+            dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']))
             flap = Flapper(web3, Address(conf['MCD_FLAP']))
             flop = Flopper(web3, Address(conf['MCD_FLOP']))
             mkr = DSToken(web3, Address(conf['MCD_GOV']))
@@ -256,16 +256,24 @@ class DssDeployment:
         self.collaterals = config.collaterals
         self.spotter = config.spotter
 
-        # Instruct Vat to allow the default account to move Dai into and out of CDPs
-        self.dai_adapter.approve(hope_directly(), self.vat.address)
-
-
     @staticmethod
     def from_json(web3: Web3, conf: str):
         return DssDeployment(web3, DssDeployment.Config.from_json(web3, conf))
 
     def to_json(self) -> str:
         return self.config.to_json()
+
+    def approve_dai(self, usr: Address):
+        """
+        Allows the user to draw Dai from and repay Dai to their CDPs.
+
+        Args
+            usr: Recipient of Dai from one or more CDPs
+        """
+        assert isinstance(usr, Address)
+
+        self.dai_adapter.approve(hope_directly(from_address=usr), self.vat.address)
+        self.dai.approve(self.dai_adapter.address).transact()
 
     def active_auctions(self) -> dict:
         flips = {}

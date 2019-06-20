@@ -21,7 +21,7 @@ import time
 from web3 import Web3
 
 from pymaker import Address
-from pymaker.approval import hope_directly
+from pymaker.approval import directly, hope_directly
 from pymaker.deployment import DssDeployment
 from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemJoin, DaiJoin, Collateral
 from pymaker.feed import DSValue
@@ -271,11 +271,13 @@ class TestVat:
         urn = mcd.vat.urn(collateral.ilk, address)
 
         # Repay borrowed Dai
+        mcd.approve_dai(address)
         if mcd.dai.balance_of(address) >= urn.art:
             assert mcd.dai_adapter.join(address, urn.art).transact(from_address=address)
         TestVat.frob(mcd, collateral, address, Wad(0), urn.art * -1)
 
         # Withdraw collateral
+        collateral.approve(address)
         TestVat.frob(mcd, collateral, address, urn.ink * -1, Wad(0))
         assert collateral.adapter.exit(address, mcd.vat.gem(collateral.ilk, address)).transact(from_address=address)
 
@@ -302,6 +304,7 @@ class TestVat:
 
         # when
         before_join = mcd.vat.gem(collateral.ilk, our_urn.address)
+        collateral.approve(our_address)
         assert collateral.adapter.join(our_address, amount_to_join).transact()
         after_join = mcd.vat.gem(collateral.ilk, our_urn.address)
         assert collateral.adapter.exit(our_address, amount_to_join).transact()
@@ -370,6 +373,8 @@ class TestVat:
     def test_frob_other_account(self, web3, mcd, other_address):
         # given
         collateral = mcd.collaterals[0]
+        collateral.approve(other_address)
+        mcd.dai_adapter.approve(hope_directly(from_address=other_address), mcd.vat.address)
         urn = mcd.vat.urn(collateral.ilk, other_address)
         assert urn.address == other_address
 
@@ -387,7 +392,7 @@ class TestVat:
         # rollback
         self.cleanup_urn(mcd, collateral, other_address)
 
-    def test_past_frob(self, mcd, our_address, other_address):
+    def test_past_frob_and_urns(self, mcd, our_address, other_address):
         # given
         collateral0 = mcd.collaterals[1]
         ilk0 = collateral0.ilk
@@ -397,13 +402,12 @@ class TestVat:
         # when
         wrap_eth(mcd, our_address, Wad(18))
         wrap_eth(mcd, other_address, Wad(18))
-        collateral0.gem.approve(collateral0.adapter.address)
-        collateral1.gem.approve(collateral1.adapter.address)
-        mcd.dai_adapter.approve(hope_directly(from_address=other_address), mcd.vat.address)
 
+        collateral0.approve(our_address)
         assert collateral0.adapter.join(our_address, Wad(9)).transact()
         assert mcd.vat.frob(ilk0, our_address, Wad(3), Wad(0)).transact()
 
+        collateral1.approve(other_address)
         assert collateral1.adapter.join(other_address, Wad(3)).transact(from_address=other_address)
         assert mcd.vat.frob(ilk1, other_address, Wad(3), Wad(0)).transact(from_address=other_address)
 
@@ -423,9 +427,9 @@ class TestVat:
         assert frobs[2].urn == our_address
         assert frobs[2].collateral_owner == other_address
 
-        assert len(mcd.vat.past_frob(10, ilk0)) == 1
-        assert len(mcd.vat.past_frob(10, ilk1)) == 2
-        assert len(mcd.vat.past_frob(10, mcd.collaterals[3].ilk)) == 0
+        assert len(mcd.vat.past_frob(6, ilk0)) == 1
+        assert len(mcd.vat.past_frob(6, ilk1)) == 2
+        assert len(mcd.vat.past_frob(6, mcd.collaterals[3].ilk)) == 0
 
         urns0 = mcd.vat.urns(ilk=ilk0)
         assert len(urns0[ilk0.name]) == 1
@@ -532,6 +536,7 @@ class TestMcd:
 
         # Ensure our collateral enters the urn
         collateral_balance_before = collateral.gem.balance_of(our_address)
+        collateral.approve(our_address)
         assert collateral.adapter.join(our_address, Wad.from_number(9)).transact()
         assert collateral.gem.balance_of(our_address) == collateral_balance_before - Wad.from_number(9)
 
@@ -560,9 +565,8 @@ class TestMcd:
 
         # Mint and withdraw our Dai
         dai_balance_before = mcd.dai.balance_of(our_address)
+        mcd.approve_dai(our_address)
         assert isinstance(mcd.dai_adapter, DaiJoin)
-        # Ensure vat permissions are set up for our account
-        assert mcd.vat.can(our_address, mcd.dai_adapter.address)
         assert mcd.dai_adapter.exit(our_address, Wad.from_number(333)).transact()
         assert mcd.dai.balance_of(our_address) == dai_balance_before + Wad.from_number(333)
         assert mcd.vat.dai(our_address) == Rad(0)
