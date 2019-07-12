@@ -344,6 +344,10 @@ class Vat(Contract):
     def vice(self) -> Rad:
         return Rad(self._contract.call().vice())
 
+    def line(self) -> Rad:
+        """ Total debt ceiling """
+        return Rad(self._contract.call().Line())
+
     def frob(self, ilk: Ilk, urn_address: Address, dink: Wad, dart: Wad, collateral_owner=None, dai_recipient=None):
         """Adjust amount of collateral and reserved amount of Dai for the CDP
 

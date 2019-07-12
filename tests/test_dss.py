@@ -218,9 +218,9 @@ class TestVat:
         under_collateral_debt_ceiling = Rad(ilk_art * rate) <= ilk.line
         if not under_collateral_debt_ceiling:
             print(f"CDP would exceed collateral debt ceiling of {ilk.line}")
-        under_total_debt_ceiling = debt < ilk.line
+        under_total_debt_ceiling = debt < mcd.vat.line()
         if not under_total_debt_ceiling:
-            print(f"CDP would exceed total debt ceiling of {ilk.line}")
+            print(f"CDP would exceed total debt ceiling of {mcd.vat.line()}")
         calm = under_collateral_debt_ceiling and under_total_debt_ceiling
 
         safe = (urn.art * rate) <= ink * ilk.spot
@@ -326,6 +326,7 @@ class TestVat:
     def test_debt(self, mcd):
         debt = mcd.vat.debt()
         assert debt >= Rad(0)
+        assert debt < mcd.vat.line()
 
     def test_frob_noop(self, mcd, our_address):
         # given
