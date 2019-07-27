@@ -85,11 +85,118 @@ def wait(mcd: DssDeployment, address: Address, seconds: int):
     assert isinstance(address, Address)
     assert seconds > 0
 
-    time.sleep(5)
+    time.sleep(seconds)
     # Mine a block to increment block.timestamp
     wrap_eth(mcd, address, Wad(1))
 
 
+def frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad, dart: Wad):
+    """Wraps vat.frob for debugging purposes"""
+    # given
+    assert isinstance(mcd, DssDeployment)
+    assert isinstance(collateral, Collateral)
+    assert isinstance(address, Address)
+    assert isinstance(dink, Wad)
+    assert isinstance(dart, Wad)
+    ilk = collateral.ilk
+
+    # when
+    ink_before = mcd.vat.urn(ilk, address).ink
+    art_before = mcd.vat.urn(ilk, address).art
+    TestVat.simulate_frob(mcd, collateral, address, dink, dart)
+
+    # then
+    assert mcd.vat.frob(ilk=ilk, urn_address=address, dink=dink, dart=dart).transact(from_address=address)
+    assert mcd.vat.urn(ilk, address).ink == ink_before + dink
+    assert mcd.vat.urn(ilk, address).art == art_before + dart
+
+
+def max_dart(mcd: DssDeployment, collateral: Collateral, our_address: Address) -> Wad:
+    """Determines how much stablecoin should be reserved in an `urn` to make it as poorly collateralized as
+    possible, such that a small change to the collateral price could trip the liquidation ratio."""
+    assert isinstance(mcd, DssDeployment)
+    assert isinstance(collateral, Collateral)
+    assert isinstance(our_address, Address)
+
+    urn = mcd.vat.urn(collateral.ilk, our_address)
+    ilk = mcd.vat.ilk(collateral.ilk.name)
+
+    # change in art = (collateral balance * collateral price with safety margin) - CDP's stablecoin debt
+    dart = urn.ink * ilk.spot - Wad(Ray(urn.art) * ilk.rate)
+
+    # change in debt must also take the rate into account
+    dart = dart * Wad(Ray.from_number(1) / ilk.rate)
+
+    # prevent the change in debt from exceeding the collateral debt ceiling
+    if (Rad(urn.art) + Rad(dart)) >= ilk.line:
+        print("max_dart is avoiding collateral debt ceiling")
+        dart = Wad(ilk.line - Rad(urn.art))
+
+    # prevent the change in debt from exceeding the total debt ceiling
+    debt = mcd.vat.debt() + Rad(ilk.rate * dart)
+    line = Rad(ilk.line)
+    if (debt + Rad(dart)) >= line:
+        print("max_dart is avoiding total debt ceiling")
+        dart = Wad(debt - Rad(urn.art))
+
+    assert dart > Wad(0)
+    return dart
+
+
+def cleanup_urn(mcd: DssDeployment, collateral: Collateral, address: Address):
+    assert isinstance(mcd, DssDeployment)
+    assert isinstance(collateral, Collateral)
+    assert isinstance(address, Address)
+    urn = mcd.vat.urn(collateral.ilk, address)
+    ilk = mcd.vat.ilk(collateral.ilk.name)
+
+    # If jug.drip has been called, we won't have sufficient dai to repay the CDP
+    if ilk.rate > Ray.from_number(1):
+        return
+
+    # Repay borrowed Dai
+    mcd.approve_dai(address)
+    # Put all the user's Dai back into the vat
+    if mcd.dai.balance_of(address) >= Wad(0):
+        assert mcd.dai_adapter.join(address, mcd.dai.balance_of(address)).transact(from_address=address)
+    # tab = Ray(urn.art) * ilk.rate
+    # print(f'tab={str(tab)}, rate={str(ilk.rate)}, dai={str(mcd.vat.dai(address))}')
+    if urn.art > Wad(0) and mcd.vat.dai(address) >= Rad(urn.art):
+        frob(mcd, collateral, address, Wad(0), urn.art * -1)
+
+    # Withdraw collateral
+    collateral.approve(address)
+    urn = mcd.vat.urn(collateral.ilk, address)
+    # dink = Wad((Ray(urn.art) * ilk.rate) / ilk.spot)
+    # print(f'dink={str(dink)}, ink={str(urn.ink)}')
+    if urn.art == Wad(0) and urn.ink > Wad(0):
+        frob(mcd, collateral, address, urn.ink * -1, Wad(0))
+    assert collateral.adapter.exit(address, mcd.vat.gem(collateral.ilk, address)).transact(from_address=address)
+    # TestVat.ensure_clean_urn(mcd, collateral, address)
+
+
+def simulate_bite(mcd: DssDeployment, collateral: Collateral, our_address: Address):
+    assert isinstance(mcd, DssDeployment)
+    assert isinstance(collateral, Collateral)
+    assert isinstance(our_address, Address)
+
+    ilk = mcd.vat.ilk(collateral.ilk.name)
+    urn = mcd.vat.urn(collateral.ilk, our_address)
+
+    # Collateral value should be less than the product of our stablecoin debt and the debt multiplier
+    assert (Ray(urn.ink) * ilk.spot) < (Ray(urn.art) * ilk.rate)
+
+    # Lesser of our collateral balance and the liquidation quantity
+    lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
+    # Lesser of our stablecoin debt and the canceled debt pro rata the seized collateral
+    art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
+    # Stablecoin to be raised in flip auction
+    tab = Ray(art) * ilk.rate  # Ray
+
+    assert -int(lot) < 0 and -int(art) < 0
+    assert tab > Ray(0)
+        
+        
 @pytest.fixture(scope="session")
 def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
     collateral = mcd.collaterals[0]
@@ -99,18 +206,18 @@ def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
     wrap_eth(mcd, our_address, dink)
     assert collateral.gem.balance_of(our_address) >= dink
     assert collateral.adapter.join(our_address, dink).transact()
-    TestVat.frob(mcd, collateral, our_address, dink, Wad(0))
+    frob(mcd, collateral, our_address, dink, Wad(0))
 
     # Define required bite parameters
     to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
 
     # Manipulate price to make our CDP underwater
     # Note this will only work on a testchain deployed with fixed prices, where PIP is a DSValue
-    TestVat.frob(mcd, collateral, our_address, Wad(0), TestVat.max_dart(mcd, collateral, our_address))
+    frob(mcd, collateral, our_address, Wad(0), max_dart(mcd, collateral, our_address))
     set_collateral_price(mcd, collateral, to_price)
 
     # Bite the CDP
-    TestCat.simulate_bite(mcd, collateral, our_address)
+    simulate_bite(mcd, collateral, our_address)
     assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
 
 
@@ -163,31 +270,6 @@ class TestConfig:
 
 class TestVat:
     @staticmethod
-    def max_dart(mcd: DssDeployment, collateral: Collateral, our_address: Address) -> Wad:
-        assert isinstance(mcd, DssDeployment)
-        assert isinstance(collateral, Collateral)
-        assert isinstance(our_address, Address)
-
-        urn = mcd.vat.urn(collateral.ilk, our_address)
-        ilk = mcd.vat.ilk(collateral.ilk.name)
-
-        # change in debt = (collateral balance * collateral price with safety margin) - CDP's stablecoin debt
-        dart = urn.ink * ilk.spot - urn.art
-
-        # prevent the change in debt from exceeding the collateral debt ceiling
-        if (Rad(urn.art) + Rad(dart)) >= ilk.line:
-            dart = Wad(ilk.line - Rad(urn.art))
-
-        # prevent the change in debt from exceeding the total debt ceiling
-        debt = mcd.vat.debt() + Rad(ilk.rate * dart)
-        line = Rad(ilk.line)
-        if (debt + Rad(dart)) >= line:
-            dart = Wad(debt - Rad(urn.art))
-
-        assert dart > Wad(0)
-        return dart
-
-    @staticmethod
     def simulate_frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad, dart: Wad):
         assert isinstance(mcd, DssDeployment)
         assert isinstance(collateral, Collateral)
@@ -233,26 +315,6 @@ class TestVat:
         assert mcd.vat.live()
 
     @staticmethod
-    def frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad, dart: Wad):
-        # given
-        assert isinstance(mcd, DssDeployment)
-        assert isinstance(collateral, Collateral)
-        assert isinstance(address, Address)
-        assert isinstance(dink, Wad)
-        assert isinstance(dart, Wad)
-        ilk = collateral.ilk
-
-        # when
-        ink_before = mcd.vat.urn(ilk, address).ink
-        art_before = mcd.vat.urn(ilk, address).art
-        TestVat.simulate_frob(mcd, collateral, address, dink, dart)
-
-        # then
-        assert mcd.vat.frob(ilk=ilk, urn_address=address, dink=dink, dart=dart).transact(from_address=address)
-        assert mcd.vat.urn(ilk, address).ink == ink_before + dink
-        assert mcd.vat.urn(ilk, address).art == art_before + dart
-
-    @staticmethod
     def ensure_clean_urn(mcd: DssDeployment, collateral: Collateral, address: Address):
         assert isinstance(mcd, DssDeployment)
         assert isinstance(collateral, Collateral)
@@ -263,25 +325,6 @@ class TestVat:
         assert urn.art == Wad(0)
         assert mcd.vat.gem(collateral.ilk, address) == Wad(0)
 
-    @staticmethod
-    def cleanup_urn(mcd: DssDeployment, collateral: Collateral, address: Address):
-        assert isinstance(mcd, DssDeployment)
-        assert isinstance(collateral, Collateral)
-        assert isinstance(address, Address)
-        urn = mcd.vat.urn(collateral.ilk, address)
-
-        # Repay borrowed Dai
-        mcd.approve_dai(address)
-        if mcd.dai.balance_of(address) >= urn.art:
-            assert mcd.dai_adapter.join(address, urn.art).transact(from_address=address)
-        TestVat.frob(mcd, collateral, address, Wad(0), urn.art * -1)
-
-        # Withdraw collateral
-        collateral.approve(address)
-        TestVat.frob(mcd, collateral, address, urn.ink * -1, Wad(0))
-        assert collateral.adapter.exit(address, mcd.vat.gem(collateral.ilk, address)).transact(from_address=address)
-
-        TestVat.ensure_clean_urn(mcd, collateral, address)
 
     def test_getters(self, mcd):
         assert isinstance(mcd.vat.live(), bool)
@@ -353,7 +396,7 @@ class TestVat:
         assert mcd.vat.urn(collateral.ilk, our_address).ink == our_urn.ink + Wad(10)
 
         # rollback
-        self.cleanup_urn(mcd, collateral, our_address)
+        cleanup_urn(mcd, collateral, our_address)
 
     def test_frob_add_art(self, mcd, our_address: Address):
         # given
@@ -369,7 +412,7 @@ class TestVat:
         assert mcd.vat.urn(collateral.ilk, our_address).art == our_urn.art + Wad(10)
 
         # rollback
-        self.cleanup_urn(mcd, collateral, our_address)
+        cleanup_urn(mcd, collateral, our_address)
 
     def test_frob_other_account(self, web3, mcd, other_address):
         # given
@@ -391,7 +434,7 @@ class TestVat:
         assert mcd.vat.urn(collateral.ilk, other_address).art == urn.art + Wad(10)
 
         # rollback
-        self.cleanup_urn(mcd, collateral, other_address)
+        cleanup_urn(mcd, collateral, other_address)
 
     def test_past_frob_and_urns(self, mcd, our_address, other_address):
         # given
@@ -443,40 +486,14 @@ class TestVat:
         assert len(urns_all[ilk1.name]) == 2
 
         # teardown
-        TestVat.cleanup_urn(mcd, collateral0, our_address)
-        TestVat.cleanup_urn(mcd, collateral1, other_address)
+        cleanup_urn(mcd, collateral0, our_address)
+        cleanup_urn(mcd, collateral1, other_address)
 
     def test_heal(self, mcd):
-        assert mcd.vat.heal(Rad(0))
-
-    def test_suck(self, mcd, our_address):
-        assert mcd.vat.suck(our_address, our_address, Rad(0))
+        assert mcd.vat.heal(Rad(0)).transact()
 
 
 class TestCat:
-    @staticmethod
-    def simulate_bite(mcd: DssDeployment, collateral: Collateral, our_address: Address):
-        assert isinstance(mcd, DssDeployment)
-        assert isinstance(collateral, Collateral)
-        assert isinstance(our_address, Address)
-
-        ilk = mcd.vat.ilk(collateral.ilk.name)
-        urn = mcd.vat.urn(collateral.ilk, our_address)
-
-        # Collateral value should be less than the product of our stablecoin debt and the debt multiplier
-        assert (Ray(urn.ink) * ilk.spot) < (Ray(urn.art) * ilk.rate)
-
-        # Lesser of our collateral balance and the liquidation quantity
-        lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
-        # Lesser of our stablecoin debt and the canceled debt pro rata the seized collateral
-        art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
-        # Stablecoin to be raised in flip auction
-        tab = Ray(art) * ilk.rate  # Ray
-
-        assert -int(lot) < 0 and -int(art) < 0
-        assert tab > Ray(0)
-
-
     def test_getters(self, mcd):
         assert isinstance(mcd.cat.live(), bool)
         assert mcd.cat.vat() == mcd.vat.address
@@ -533,6 +550,7 @@ class TestMcd:
         collateral = mcd.collaterals[1]
         ilk = collateral.ilk
         TestVat.ensure_clean_urn(mcd, collateral, our_address)
+        initial_dai = mcd.vat.dai(our_address)
         wrap_eth(mcd, our_address, Wad.from_number(9))
 
         # Ensure our collateral enters the urn
@@ -542,27 +560,27 @@ class TestMcd:
         assert collateral.gem.balance_of(our_address) == collateral_balance_before - Wad.from_number(9)
 
         # Add collateral without generating Dai
-        TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(3), dart=Wad(0))
+        frob(mcd, collateral, our_address, dink=Wad.from_number(3), dart=Wad(0))
         print(f"After adding collateral:         {mcd.vat.urn(ilk, our_address)}")
         assert mcd.vat.urn(ilk, our_address).ink == Wad.from_number(3)
         assert mcd.vat.urn(ilk, our_address).art == Wad(0)
         assert mcd.vat.gem(ilk, our_address) == Wad.from_number(9) - mcd.vat.urn(ilk, our_address).ink
-        assert mcd.vat.dai(our_address) == Rad(0)
+        assert mcd.vat.dai(our_address) == initial_dai
 
         # Generate some Dai
-        TestVat.frob(mcd, collateral, our_address, dink=Wad(0), dart=Wad.from_number(153))
+        frob(mcd, collateral, our_address, dink=Wad(0), dart=Wad.from_number(153))
         print(f"After generating dai:            {mcd.vat.urn(ilk, our_address)}")
         assert mcd.vat.urn(ilk, our_address).ink == Wad.from_number(3)
         assert mcd.vat.urn(ilk, our_address).art == Wad.from_number(153)
-        assert mcd.vat.dai(our_address) == Rad.from_number(153)
+        assert mcd.vat.dai(our_address) == initial_dai + Rad.from_number(153)
 
         # Add collateral and generate some more Dai
-        TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(6), dart=Wad.from_number(180))
+        frob(mcd, collateral, our_address, dink=Wad.from_number(6), dart=Wad.from_number(180))
         print(f"After adding collateral and dai: {mcd.vat.urn(ilk, our_address)}")
         assert mcd.vat.urn(ilk, our_address).ink == Wad.from_number(9)
         assert mcd.vat.gem(ilk, our_address) == Wad(0)
         assert mcd.vat.urn(ilk, our_address).art == Wad.from_number(333)
-        assert mcd.vat.dai(our_address) == Rad.from_number(333)
+        assert mcd.vat.dai(our_address) == initial_dai + Rad.from_number(333)
 
         # Mint and withdraw our Dai
         dai_balance_before = mcd.dai.balance_of(our_address)
@@ -570,20 +588,21 @@ class TestMcd:
         assert isinstance(mcd.dai_adapter, DaiJoin)
         assert mcd.dai_adapter.exit(our_address, Wad.from_number(333)).transact()
         assert mcd.dai.balance_of(our_address) == dai_balance_before + Wad.from_number(333)
-        assert mcd.vat.dai(our_address) == Rad(0)
+        assert mcd.vat.dai(our_address) == initial_dai
+        assert mcd.vat.debt() >= initial_dai + Rad.from_number(333)
 
         # Repay (and burn) our Dai
         assert mcd.dai_adapter.join(our_address, Wad.from_number(333)).transact()
         assert mcd.dai.balance_of(our_address) == Wad(0)
-        assert mcd.vat.dai(our_address) == Rad.from_number(333)
+        assert mcd.vat.dai(our_address) == initial_dai + Rad.from_number(333)
 
         # Withdraw our collateral
-        TestVat.frob(mcd, collateral, our_address, dink=Wad(0), dart=Wad.from_number(-333))
-        TestVat.frob(mcd, collateral, our_address, dink=Wad.from_number(-9), dart=Wad(0))
+        frob(mcd, collateral, our_address, dink=Wad(0), dart=Wad.from_number(-333))
+        frob(mcd, collateral, our_address, dink=Wad.from_number(-9), dart=Wad(0))
         assert mcd.vat.gem(ilk, our_address) == Wad.from_number(9)
         assert collateral.adapter.exit(our_address, Wad.from_number(9)).transact()
         collateral_balance_after = collateral.gem.balance_of(our_address)
         assert collateral_balance_before == collateral_balance_after
 
         # Cleanup
-        TestVat.cleanup_urn(mcd, collateral, our_address)
+        cleanup_urn(mcd, collateral, our_address)

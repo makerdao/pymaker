@@ -415,15 +415,7 @@ class Vat(Contract):
     def heal(self, vice: Rad) -> Transact:
         assert isinstance(vice, Rad)
 
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'heal', [])
-
-    def suck(self, address: Address, dai_recipient: Address, vice: Rad) -> Transact:
-        assert isinstance(address, Address)
-        assert isinstance(dai_recipient, Address)
-        assert isinstance(vice, Rad)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'suck', [address, dai_recipient, vice])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'heal', [vice.value])
 
     def __eq__(self, other):
         assert isinstance(other, Vat)
