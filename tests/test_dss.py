@@ -232,7 +232,7 @@ class TestConfig:
     def test_from_json(self, web3: Web3, mcd: DssDeployment):
         # fixture calls DssDeployment.from_json
         assert len(mcd.config.collaterals) > 1
-        assert len(mcd.collaterals) > 1
+        assert len(mcd.collaterals) > 5
         assert len(mcd.config.to_dict()) > 10
         assert len(mcd.collaterals) == len(mcd.config.collaterals)
 

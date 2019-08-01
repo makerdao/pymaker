@@ -335,7 +335,8 @@ print(bump_result.transaction_hash)
 
 ## Testing
 
-This project uses [pytest](https://docs.pytest.org/en/latest/) for unit testing.
+This project uses [pytest](https://docs.pytest.org/en/latest/) for unit testing.  Testing of Multi-collateral Dai is 
+performed on a Dockerized local testchain included in `tests\config`.
 
 In order to be able to run tests, please install development dependencies first by executing:
 ```
