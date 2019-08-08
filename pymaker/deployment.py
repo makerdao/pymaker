@@ -272,7 +272,8 @@ class DssDeployment:
         """
         assert isinstance(usr, Address)
 
-        self.dai_adapter.approve(hope_directly(from_address=usr), self.vat.address)
+        self.dai_adapter.approve(approval_function=hope_directly(), source=self.vat.address,
+                                 from_address=usr)
         self.dai.approve(self.dai_adapter.address).transact()
 
     def active_auctions(self) -> dict:

@@ -97,7 +97,7 @@ class TestFlipper:
         frob(mcd, collateral, deployment_address, dink=Wad(0), dart=dart)
 
         # Mint and withdraw all the Dai
-        mcd.dai_adapter.approve(approval_function=hope_directly(), source=mcd.vat.address, from_address=deployment_address)
+        mcd.approve_dai(deployment_address)
         assert mcd.dai_adapter.exit(deployment_address, dart).transact(from_address=deployment_address)
         assert mcd.dai.balance_of(deployment_address) == dart
         assert mcd.vat.dai(deployment_address) == Rad(0)
