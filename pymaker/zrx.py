@@ -234,7 +234,7 @@ class LogFill:
         assert(isinstance(event, dict))
 
         topics = event.get('topics')
-        if topics and topics[0] == HexBytes('0x0d0b9391970d9a25552f37d436d2aae2925e2bfe1b2a923754bada030c498cb3'):
+        if topics and topics[0] == HexBytes('0x0bcc4c97732e47d9946f229edb95f5b6323f601300e4690de719993f3c371129'):
             log_fill_abi = [abi for abi in ZrxExchange.abi if abi.get('name') == 'LogFill'][0]
             event_data = get_event_data(log_fill_abi, event)
 
