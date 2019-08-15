@@ -2,12 +2,11 @@
 
 # set -e
 
-# If the docker image doesn't already exist, load it from the tarball
-result=$( docker images -q mcd-testchain )
+# If the docker image doesn't already exist, pull it from docker hub
+result=$( docker images -q testchain-pymaker )
 if [[ "$result" == "" ]]; then
-    echo Docker image not found\; loading from tarball
-    gunzip -kf tests/config/mcd-testchain.tar.gz
-    docker load -q < tests/config/mcd-testchain.tar
+    echo Docker image not found\; pulling from docker hub
+    docker pull makerdao/testchain-pymaker:unit-testing
 fi
 
 # Start ganache; record the PID so it can be cleanly stopped after testing
