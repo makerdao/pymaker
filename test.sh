@@ -3,7 +3,7 @@
 # set -e
 
 # If the docker image doesn't already exist, pull it from docker hub
-result=$( docker images -q testchain-pymaker )
+result=$( docker images -q makerdao/testchain-pymaker:unit-testing )
 if [[ "$result" == "" ]]; then
     echo Docker image not found\; pulling from docker hub
     docker pull makerdao/testchain-pymaker:unit-testing
