@@ -182,7 +182,7 @@ class DssDeployment:
             mkr = DSToken(web3, Address(conf['MCD_GOV']))
             spotter = Spotter(web3, Address(conf['MCD_SPOT']))
 
-            collaterals = []
+            collaterals = {}
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
                 ilk = Ilk(name[0].replace('_', '-'))
                 if name[1] == "ETH":
@@ -195,7 +195,7 @@ class DssDeployment:
                                         adapter=GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}'])),
                                         flipper=Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}'])),
                                         pip=DSValue(web3, Address(conf[f'PIP_{name[1]}'])))
-                collaterals.append(collateral)
+                collaterals[ilk.name] = collateral
 
             return DssDeployment.Config(pause, vat, vow, jug, cat, flap, flop,
                                         dai, dai_adapter, mkr, spotter, collaterals)
@@ -224,7 +224,7 @@ class DssDeployment:
                 'MCD_SPOT': self.spotter.address.address
             }
 
-            for collateral in self.collaterals:
+            for collateral in self.collaterals.values():
                 match = re.search(r'(\w+)-\w+', collateral.ilk.name)
                 name = (collateral.ilk.name.replace('-', '_'), match.group(1))
                 conf_dict[name[1]] = collateral.gem.address.address
@@ -278,7 +278,7 @@ class DssDeployment:
 
     def active_auctions(self) -> dict:
         flips = {}
-        for collateral in self.collaterals:
+        for collateral in self.collaterals.values():
             flips[collateral.ilk.name] = collateral.flipper.active_auctions()
 
         return {

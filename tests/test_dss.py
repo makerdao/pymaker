@@ -31,7 +31,7 @@ from pymaker.token import DSToken, DSEthToken
 
 @pytest.fixture
 def urn(our_address: Address, mcd: DssDeployment):
-    collateral = mcd.collaterals[0]
+    collateral = mcd.collaterals['ETH-A']
     return mcd.vat.urn(collateral.ilk, our_address)
 
 
@@ -41,7 +41,7 @@ def wrap_eth(mcd: DssDeployment, address: Address, amount: Wad):
     assert isinstance(amount, Wad)
     assert amount > Wad(0)
 
-    collateral = [c for c in mcd.collaterals if c.gem.symbol() == "WETH"][0]
+    collateral = mcd.collaterals['ETH-A']
     assert isinstance(collateral.gem, DSEthToken)
     assert collateral.gem.deposit(amount).transact(from_address=address)
 
@@ -199,7 +199,7 @@ def simulate_bite(mcd: DssDeployment, collateral: Collateral, our_address: Addre
         
 @pytest.fixture(scope="session")
 def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
-    collateral = mcd.collaterals[0]
+    collateral = mcd.collaterals['ETH-A']
 
     # Add collateral to our CDP
     dink = Wad.from_number(1)
@@ -244,7 +244,8 @@ class TestConfig:
         assert len(dict) > 20
 
     def test_account_transfers(self, web3: Web3, mcd, our_address, other_address):
-        collateral = [c for c in mcd.collaterals if c.gem.symbol() == "WETH"][0]
+        print(mcd.collaterals)
+        collateral = mcd.collaterals['ETH-A']
         token = collateral.gem
         amount = Wad(10)
 
@@ -335,7 +336,7 @@ class TestVat:
 
     def test_gem(self, web3: Web3, mcd: DssDeployment, our_address: Address):
         # given
-        collateral = mcd.collaterals[0]
+        collateral = mcd.collaterals['ETH-A']
         amount_to_join = Wad(10)
         our_urn = mcd.vat.urn(collateral.ilk, our_address)
         assert isinstance(collateral.ilk, Ilk)
@@ -373,7 +374,7 @@ class TestVat:
 
     def test_frob_noop(self, mcd, our_address):
         # given
-        collateral = mcd.collaterals[0]
+        collateral = mcd.collaterals['ETH-A']
         our_urn = mcd.vat.urn(collateral.ilk, our_address)
 
         # when
@@ -384,7 +385,7 @@ class TestVat:
 
     def test_frob_add_ink(self, mcd, our_address):
         # given
-        collateral = mcd.collaterals[0]
+        collateral = mcd.collaterals['ETH-A']
         our_urn = mcd.vat.urn(collateral.ilk, our_address)
 
         # when
@@ -400,7 +401,7 @@ class TestVat:
 
     def test_frob_add_art(self, mcd, our_address: Address):
         # given
-        collateral = mcd.collaterals[0]
+        collateral = mcd.collaterals['ETH-A']
         our_urn = mcd.vat.urn(collateral.ilk, our_address)
 
         # when
@@ -416,7 +417,7 @@ class TestVat:
 
     def test_frob_other_account(self, web3, mcd, other_address):
         # given
-        collateral = mcd.collaterals[0]
+        collateral = mcd.collaterals['ETH-A']
         collateral.approve(other_address)
         mcd.dai_adapter.approve(hope_directly(from_address=other_address), mcd.vat.address)
         urn = mcd.vat.urn(collateral.ilk, other_address)
@@ -438,9 +439,9 @@ class TestVat:
 
     def test_past_frob_and_urns(self, mcd, our_address, other_address):
         # given
-        collateral0 = mcd.collaterals[1]
+        collateral0 = mcd.collaterals['ETH-B']
         ilk0 = collateral0.ilk
-        collateral1 = mcd.collaterals[2]
+        collateral1 = mcd.collaterals['ETH-C']
         ilk1 = collateral1.ilk
 
         # when
@@ -473,7 +474,7 @@ class TestVat:
 
         assert len(mcd.vat.past_frob(6, ilk0)) == 1
         assert len(mcd.vat.past_frob(6, ilk1)) == 2
-        assert len(mcd.vat.past_frob(6, mcd.collaterals[3].ilk)) == 0
+        assert len(mcd.vat.past_frob(6, mcd.collaterals['REP-A'].ilk)) == 0
 
         urns0 = mcd.vat.urns(ilk=ilk0)
         assert len(urns0[ilk0.name]) == 1
@@ -499,7 +500,7 @@ class TestCat:
         assert mcd.cat.vat() == mcd.vat.address
         assert mcd.cat.vow() == mcd.vow.address
 
-        collateral = mcd.collaterals[2]
+        collateral = mcd.collaterals['ETH-C']
         assert mcd.cat.flipper(collateral.ilk) == collateral.flipper.address
         assert isinstance(mcd.cat.lump(collateral.ilk), Wad)
         assert isinstance(mcd.cat.chop(collateral.ilk), Ray)
@@ -530,7 +531,7 @@ class TestVow:
 
 class TestJug:
     def test_getters(self, mcd):
-        c = mcd.collaterals[0]
+        c = mcd.collaterals['ETH-A']
         assert isinstance(mcd.jug.vow(), Address)
         assert isinstance(mcd.jug.vat(), Address)
         assert isinstance(mcd.jug.base(), Wad)
@@ -539,7 +540,7 @@ class TestJug:
 
     def test_drip(self, mcd):
         # given
-        c = mcd.collaterals[0]
+        c = mcd.collaterals['ETH-A']
 
         # then
         assert mcd.jug.drip(c.ilk).transact()
@@ -547,7 +548,7 @@ class TestJug:
 
 class TestMcd:
     def test_healthy_cdp(self, web3, mcd, our_address):
-        collateral = mcd.collaterals[1]
+        collateral = mcd.collaterals['ETH-B']
         ilk = collateral.ilk
         TestVat.ensure_clean_urn(mcd, collateral, our_address)
         initial_dai = mcd.vat.dai(our_address)

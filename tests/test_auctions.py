@@ -32,7 +32,7 @@ from tests.test_dss import wrap_eth, mint_mkr, set_collateral_price, wait, frob,
 class TestFlipper:
     @pytest.fixture(scope="session")
     def collateral(self, mcd: DssDeployment) -> Collateral:
-        return mcd.collaterals[0]
+        return mcd.collaterals['ETH-A']
 
     @pytest.fixture(scope="session")
     def flipper(self, collateral, deployment_address) -> Flipper:
@@ -85,7 +85,7 @@ class TestFlipper:
 
     def test_scenario(self, web3, mcd, collateral, flipper, our_address, other_address, deployment_address):
         # Create a CDP
-        collateral = mcd.collaterals[0]
+        collateral = mcd.collaterals['ETH-A']
         kicks_before = flipper.kicks()
         ilk = collateral.ilk
         wrap_eth(mcd, deployment_address, Wad.from_number(1))
@@ -235,7 +235,7 @@ class TestFlapper:
         if joy == Rad(0):
             # Create a CDP with surplus
             print('Creating a CDP with surplus')
-            collateral = mcd.collaterals[1]
+            collateral = mcd.collaterals['ETH-B']
             assert flapper.kicks() == 0
             wrap_eth(mcd, deployment_address, Wad.from_number(0.1))
             collateral.approve(deployment_address)
@@ -316,7 +316,7 @@ class TestFlopper:
 
     def test_scenario(self, web3, mcd, flopper, our_address, other_address, deployment_address):
         # Create a CDP
-        collateral = mcd.collaterals[0]
+        collateral = mcd.collaterals['ETH-A']
         ilk = collateral.ilk
         wrap_eth(mcd, deployment_address, Wad.from_number(1))
         collateral.approve(deployment_address)
