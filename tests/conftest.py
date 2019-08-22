@@ -100,9 +100,9 @@ def mcd(web3) -> DssDeployment:
     assert deployment.cat.address is not None
     assert isinstance(deployment.jug, Jug)
     assert deployment.jug.address is not None
-    assert isinstance(deployment.flap, Flapper)
-    assert deployment.flap.address is not None
-    assert isinstance(deployment.flop, Flopper)
-    assert deployment.flop.address is not None
+    assert isinstance(deployment.flapper, Flapper)
+    assert deployment.flapper.address is not None
+    assert isinstance(deployment.flopper, Flopper)
+    assert deployment.flopper.address is not None
 
     return deployment

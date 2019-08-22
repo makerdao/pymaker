@@ -200,7 +200,7 @@ class TestFlipper:
 class TestFlapper:
     @pytest.fixture(scope="session")
     def flapper(self, mcd: DssDeployment) -> Flapper:
-        return mcd.flap
+        return mcd.flapper
 
     @staticmethod
     def tend(flapper: Flapper, id: int, address: Address, lot: Rad, bid: Wad):
@@ -285,7 +285,7 @@ class TestFlapper:
 class TestFlopper:
     @pytest.fixture(scope="session")
     def flopper(self, mcd: DssDeployment) -> Flopper:
-        return mcd.flop
+        return mcd.flopper
 
     @staticmethod
     def dent(flopper: Flopper, id: int, address: Address, lot: Wad, bid: Rad):

@@ -151,16 +151,16 @@ class DssDeployment:
     """
 
     class Config:
-        def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flap: Flapper,
-                     flop: Flopper, dai: DSToken, dai_join: DaiJoin, mkr: DSToken, spotter: Spotter,
+        def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flapper: Flapper,
+                     flopper: Flopper, dai: DSToken, dai_join: DaiJoin, mkr: DSToken, spotter: Spotter,
                      collaterals: Optional[List[Collateral]] = None):
             self.pause = pause
             self.vat = vat
             self.vow = vow
             self.jug = jug
             self.cat = cat
-            self.flap = flap
-            self.flop = flop
+            self.flapper = flapper
+            self.flopper = flopper
             self.dai = dai
             self.dai_join = dai_join
             self.mkr = mkr
@@ -177,8 +177,8 @@ class DssDeployment:
             cat = Cat(web3, Address(conf['MCD_CAT']))
             dai = DSToken(web3, Address(conf['MCD_DAI']))
             dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']))
-            flap = Flapper(web3, Address(conf['MCD_FLAP']))
-            flop = Flopper(web3, Address(conf['MCD_FLOP']))
+            flapper = Flapper(web3, Address(conf['MCD_FLAP']))
+            flopper = Flopper(web3, Address(conf['MCD_FLOP']))
             mkr = DSToken(web3, Address(conf['MCD_GOV']))
             spotter = Spotter(web3, Address(conf['MCD_SPOT']))
 
@@ -197,7 +197,7 @@ class DssDeployment:
                                         pip=DSValue(web3, Address(conf[f'PIP_{name[1]}'])))
                 collaterals[ilk.name] = collateral
 
-            return DssDeployment.Config(pause, vat, vow, jug, cat, flap, flop,
+            return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper,
                                         dai, dai_adapter, mkr, spotter, collaterals)
 
         @staticmethod
@@ -216,8 +216,8 @@ class DssDeployment:
                 'MCD_VOW': self.vow.address.address,
                 'MCD_JUG': self.jug.address.address,
                 'MCD_CAT': self.cat.address.address,
-                'MCD_FLAP': self.flap.address.address,
-                'MCD_FLOP': self.flop.address.address,
+                'MCD_FLAP': self.flapper.address.address,
+                'MCD_FLOP': self.flopper.address.address,
                 'MCD_DAI': self.dai.address.address,
                 'MCD_JOIN_DAI': self.dai_join.address.address,
                 'MCD_GOV': self.mkr.address.address,
@@ -248,8 +248,8 @@ class DssDeployment:
         self.vow = config.vow
         self.jug = config.jug
         self.cat = config.cat
-        self.flap = config.flap
-        self.flop = config.flop
+        self.flapper = config.flapper
+        self.flopper = config.flopper
         self.dai = config.dai
         self.dai_adapter = config.dai_join
         self.mkr = config.mkr
@@ -283,8 +283,8 @@ class DssDeployment:
 
         return {
             "flips": flips,
-            "flaps": self.flap.active_auctions(),
-            "flops": self.flop.active_auctions()
+            "flaps": self.flapper.active_auctions(),
+            "flops": self.flopper.active_auctions()
         }
 
     def __repr__(self):
