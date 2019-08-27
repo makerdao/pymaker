@@ -28,7 +28,7 @@ from pymaker.keys import _registered_accounts
 from pymaker.util import bytes_to_hexstring
 
 
-def eth_sign(message: bytes, web3: Web3, key=None):
+def eth_sign(message: bytes, web3: Web3, key=None, in_hexbytes=False):
     assert(isinstance(message, bytes))
     assert(isinstance(web3, Web3))
 
@@ -44,7 +44,10 @@ def eth_sign(message: bytes, web3: Web3, key=None):
         start_time = time.time()
         start_clock = time.clock()
         try:
-            message_hash = defunct_hash_message(primitive=message)
+            if in_hexbytes:
+                message_hash = message
+            else:
+                message_hash = defunct_hash_message(primitive=message)
             signature = web3.eth.account.signHash(message_hash, private_key=pkey).signature.hex()
         finally:
             end_time = time.time()
