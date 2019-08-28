@@ -27,7 +27,7 @@ import requests
 from eth_abi import encode_single, encode_abi, decode_single
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.utils.events import get_event_data
+from web3._utils.events import get_event_data
 
 from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
@@ -302,8 +302,8 @@ class ZrxExchangeV2(Contract):
         address: Ethereum address of the _0x_ `Exchange` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/ExchangeV2.abi')
-    bin = Contract._load_bin(__name__, 'abi/ExchangeV2.bin')
+    abi = Contract._ethpm_load_abi('zrx-v2', '1.0.0', 'Exchange')
+    bin = Contract._ethpm_load_bin('zrx-v2', '1.0.0', 'Exchange')
 
     _ZERO_ADDRESS = Address("0x0000000000000000000000000000000000000000")
 
@@ -321,7 +321,7 @@ class ZrxExchangeV2(Contract):
             A `ZrxExchange` class instance.
         """
         return ZrxExchangeV2(web3=web3,
-                           address=Contract._deploy(web3, ZrxExchangeV2.abi, ZrxExchangeV2.bin, []))
+                           address=Contract._deploy(web3, ZrxExchangeV2.abi, ZrxExchangeV2.bin, ['0xf47261b0000000000000000000000000e41d2489571d322189246dafa5ebde1f4699f498']))
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -337,7 +337,7 @@ class ZrxExchangeV2(Contract):
         Returns:
             The asset data of the `ZRX` token.
         """
-        return str(bytes_to_hexstring(self._contract.call().ZRX_ASSET_DATA()))
+        return str(bytes_to_hexstring(self._contract.caller.ZRX_ASSET_DATA()))
 
     def zrx_token(self) -> Address:
         """Get the address of the ZRX token contract associated with this `ExchangeV2` contract.
@@ -355,7 +355,7 @@ class ZrxExchangeV2(Contract):
         """
         assert(isinstance(proxy_id, str))
 
-        return Address(self._contract.call().getAssetProxy(hexstring_to_bytes(proxy_id)))
+        return Address(self._contract.caller.getAssetProxy(hexstring_to_bytes(proxy_id)))
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         """Approve the 0x ERC20Proxy contract to fully access balances of specified tokens.

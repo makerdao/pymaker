@@ -85,11 +85,11 @@ class TestTxManager:
         # [no approval]
 
         # when
-        res = self.tx.execute([self.token1.address],
+        with pytest.raises(ValueError, match='VM Exception while processing transaction: revert'):
+            self.tx.execute([self.token1.address],
                               [self.token1.transfer(self.other_address, Wad.from_number(500)).invocation()]).transact()
 
         # then
-        assert res is None
         assert self.token1.balance_of(self.our_address) == Wad.from_number(1000000)
         assert self.token1.balance_of(self.other_address) == Wad.from_number(0)
 

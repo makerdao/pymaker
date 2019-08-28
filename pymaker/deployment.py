@@ -25,7 +25,7 @@ import pkg_resources
 from pymaker.auctions import Flapper, Flopper, Flipper
 from web3 import Web3, HTTPProvider
 
-from pymaker import Address
+from pymaker import Address, Contract
 from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
@@ -39,7 +39,7 @@ from pymaker.token import DSToken, DSEthToken
 from pymaker.vault import DSVault
 
 
-def deploy_contract(web3: Web3, contract_name: str, args: Optional[list] = None) -> Address:
+def deploy_contract(web3: Web3, package_name: str, package_version: str, contract_type: str, args: Optional[list] = None) -> Address:
     """Deploys a new contract.
 
     Args:
@@ -51,11 +51,11 @@ def deploy_contract(web3: Web3, contract_name: str, args: Optional[list] = None)
         Ethereum address of the newly deployed contract, as a :py:class:`pymaker.Address` instance.
     """
     assert(isinstance(web3, Web3))
-    assert(isinstance(contract_name, str))
+    assert(isinstance(contract_type, str))
     assert(isinstance(args, list) or (args is None))
 
-    abi = json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/{contract_name}.abi'))
-    bytecode = str(pkg_resources.resource_string('pymaker.deployment', f'abi/{contract_name}.bin'), 'utf-8')
+    abi = Contract._ethpm_load_abi(package_name, package_version, contract_type)
+    bytecode = Contract._ethpm_load_bin(package_name, package_version, contract_type)
     if args is not None:
         tx_hash = web3.eth.contract(abi=abi, bytecode=bytecode).constructor(*args).transact()
     else:
@@ -90,7 +90,7 @@ class Deployment:
         tap = Tap.deploy(web3, tub.address)
         top = Top.deploy(web3, tub.address, tap.address)
 
-        tub._contract.transact().turn(tap.address.address)
+        tub._contract.functions.turn(tap.address.address).transact()
 
         otc = MatchingMarket.deploy(web3, 2600000000)
         etherdelta = EtherDelta.deploy(web3,

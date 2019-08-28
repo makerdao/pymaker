@@ -46,8 +46,8 @@ class TxManager(Contract):
         address: Ethereum address of the `TxManager` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/TxManager.abi')
-    bin = Contract._load_bin(__name__, 'abi/TxManager.bin')
+    abi = Contract._ethpm_load_abi('tx-manager', '1.0.0', 'TxManager')
+    bin = Contract._ethpm_load_bin('tx-manager', '1.0.0', 'TxManager')
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -78,7 +78,7 @@ class TxManager(Contract):
             approval_function(token, self.address, 'TxManager')
 
     def owner(self) -> Address:
-        return Address(self._contract.call().owner())
+        return Address(self._contract.caller.owner())
 
     def execute(self, tokens: List[Address], invocations: List[Invocation]) -> Transact:
         """Executes multiple contract methods in one Ethereum transaction.

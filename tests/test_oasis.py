@@ -386,7 +386,7 @@ class TestExpiringMarket(GeneralMarketTest):
         assert self.otc.is_closed() is False
 
         # when
-        self.otc._contract.transact().stop()
+        self.otc._contract.functions.stop().transact()
 
         # then
         assert self.otc.is_closed() is True

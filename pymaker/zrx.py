@@ -25,7 +25,7 @@ from typing import List, Optional
 import requests
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.utils.events import get_event_data
+from web3._utils.events import get_event_data
 
 from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
@@ -259,8 +259,8 @@ class ZrxExchange(Contract):
         address: Ethereum address of the _0x_ `Exchange` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/Exchange.abi')
-    bin = Contract._load_bin(__name__, 'abi/Exchange.bin')
+    abi = Contract._ethpm_load_abi('zrx-v1', '1.0.0', 'Exchange')
+    bin = Contract._ethpm_load_bin('zrx-v1', '1.0.0', 'Exchange')
 
     _ZERO_ADDRESS = Address("0x0000000000000000000000000000000000000000")
 
@@ -296,7 +296,7 @@ class ZrxExchange(Contract):
         Returns:
             The address of the `ZRX` token.
         """
-        return Address(self._contract.call().ZRX_TOKEN_CONTRACT())
+        return Address(self._contract.caller.ZRX_TOKEN_CONTRACT())
 
     def token_transfer_proxy(self) -> Address:
         """Get the address of the `TokenTransferProxy` contract associated with this `Exchange` contract.
@@ -304,7 +304,7 @@ class ZrxExchange(Contract):
         Returns:
             The address of the `TokenTransferProxy` token.
         """
-        return Address(self._contract.call().TOKEN_TRANSFER_PROXY_CONTRACT())
+        return Address(self._contract.caller.TOKEN_TRANSFER_PROXY_CONTRACT())
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         """Approve the 0x Exchange TokenTransferProxy contract to fully access balances of specified tokens.
@@ -420,7 +420,7 @@ class ZrxExchange(Contract):
         # the hash depends on the exchange contract address as well
         assert(order.exchange_contract_address == self.address)
 
-        result = self._contract.call().getOrderHash(self._order_addresses(order), self._order_values(order))
+        result = self._contract.caller.getOrderHash(self._order_addresses(order), self._order_values(order))
         return bytes_to_hexstring(result)
 
     def get_unavailable_buy_amount(self, order: Order) -> Wad:
@@ -435,7 +435,7 @@ class ZrxExchange(Contract):
         """
         assert(isinstance(order, Order))
 
-        return Wad(self._contract.call().getUnavailableTakerTokenAmount(hexstring_to_bytes(self.get_order_hash(order))))
+        return Wad(self._contract.caller.getUnavailableTakerTokenAmount(hexstring_to_bytes(self.get_order_hash(order))))
 
     def sign_order(self, order: Order) -> Order:
         """Signs an order so it can be submitted to the relayer.

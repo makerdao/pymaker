@@ -18,7 +18,7 @@ from typing import List, Optional
 
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.utils.events import get_event_data
+from web3._utils.events import get_event_data
 
 from pymaker import Address, Contract, Transact, Receipt, Calldata
 from pymaker.util import hexstring_to_bytes
@@ -30,8 +30,8 @@ class DSProxyCache(Contract):
     Ref. <https://github.com/dapphub/ds-proxy/blob/master/src/proxy.sol#L120>
     """
 
-    abi = Contract._load_abi(__name__, 'abi/DSProxyCache.abi')
-    bin = Contract._load_bin(__name__, 'abi/DSProxyCache.bin')
+    abi = Contract._ethpm_load_abi('ds-proxy', '1.0.0', 'DSProxyCache')
+    bin = Contract._ethpm_load_bin('ds-proxy', '1.0.0', 'DSProxyCache')
 
     def __init__(self, web3: Web3, address: Address):
         assert (isinstance(web3, Web3))
@@ -52,7 +52,7 @@ class DSProxyCache(Contract):
             b32_code = hexstring_to_bytes(code)
         else:
             b32_code = hexstring_to_bytes('0x' + code)
-        address = Address(self._contract.call().read(b32_code))
+        address = Address(self._contract.caller.read(b32_code))
 
         if address == Address('0x0000000000000000000000000000000000000000'):
             return None
@@ -79,8 +79,8 @@ class DSProxy(Contract):
     Ref. <https://github.com/dapphub/ds-proxy/blob/master/src/proxy.sol#L28>
     """
 
-    abi = Contract._load_abi(__name__, 'abi/DSProxy.abi')
-    bin = Contract._load_bin(__name__, 'abi/DSProxy.bin')
+    abi = Contract._ethpm_load_abi('ds-proxy', '1.0.0', 'DSProxy')
+    bin = Contract._ethpm_load_bin('ds-proxy', '1.0.0', 'DSProxy')
 
     def __init__(self, web3: Web3, address: Address):
         assert (isinstance(web3, Web3))
@@ -96,7 +96,7 @@ class DSProxy(Contract):
         Returns:
             The address of the current `authority`.
         """
-        return Address(self._contract.call().authority())
+        return Address(self._contract.caller.authority())
 
     def set_authority(self, address: Address) -> Transact:
         """Set the `authority` of a `DSAuth`-ed contract.
@@ -157,7 +157,7 @@ class DSProxy(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'setCache', [address.address])
 
     def cache(self) -> Address:
-        return Address(self._contract.call().cache())
+        return Address(self._contract.caller.cache())
 
     def __repr__(self):
         return f"DSProxy('{self.address}')"
@@ -196,8 +196,8 @@ class DSProxyFactory(Contract):
     Ref. <https://github.com/dapphub/ds-proxy/blob/master/src/proxy.sol#L90>
     """
 
-    abi = Contract._load_abi(__name__, 'abi/DSProxyFactory.abi')
-    bin = Contract._load_bin(__name__, 'abi/DSProxyFactory.bin')
+    abi = Contract._ethpm_load_abi('ds-proxy', '1.0.0', 'DSProxyFactory')
+    bin = Contract._ethpm_load_bin('ds-proxy', '1.0.0', 'DSProxyFactory')
 
     def __init__(self, web3: Web3, address: Address):
         assert (isinstance(web3, Web3))
@@ -220,12 +220,12 @@ class DSProxyFactory(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'build(address)', [address.address])
 
     def cache(self) -> Address:
-        return Address(self._contract.call().cache())
+        return Address(self._contract.caller.cache())
 
     def is_proxy(self, address: Address) -> bool:
         assert (isinstance(address, Address))
 
-        return self._contract.call().isProxy(address.address)
+        return self._contract.caller.isProxy(address.address)
 
     def past_build(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogCreated]:
         """Synchronously retrieve past LogCreated events.

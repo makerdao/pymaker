@@ -18,7 +18,7 @@
 import logging
 from pprint import pformat
 from web3 import Web3
-from web3.utils.events import get_event_data
+from web3._utils.events import get_event_data
 
 
 # Shared between DSNote and many MCD contracts

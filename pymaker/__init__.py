@@ -23,6 +23,7 @@ import sys
 import time
 from enum import Enum, auto
 from functools import total_ordering, wraps
+from pathlib import Path
 from threading import Lock
 from typing import Optional
 
@@ -31,8 +32,8 @@ import pkg_resources
 from hexbytes import HexBytes
 
 from web3 import Web3
-from web3.utils.contracts import get_function_info, encode_abi
-from web3.utils.events import get_event_data
+from web3._utils.contracts import get_function_info, encode_abi
+from web3._utils.events import get_event_data
 
 from pymaker.gas import DefaultGasPrice, GasPrice
 from pymaker.numeric import Wad
@@ -41,7 +42,7 @@ from pymaker.util import synchronize, bytes_to_hexstring, is_contract_at
 filter_threads = []
 node_is_parity = None
 transaction_lock = Lock()
-
+PACKAGES_DIR = Path(__file__).parent / 'packages'
 
 def register_filter_thread(filter_thread):
     filter_threads.append(filter_thread)
@@ -186,6 +187,15 @@ class Contract:
     def _load_bin(package, resource) -> str:
         return str(pkg_resources.resource_string(package, resource), "utf-8")
 
+    @staticmethod
+    def _ethpm_load_abi(package_name, package_version, contract_type) -> list:
+        manifest = json.loads((PACKAGES_DIR / package_name / f"{package_version}.json").read_text())
+        return manifest['contract_types'][contract_type]['abi']
+
+    @staticmethod
+    def _ethpm_load_bin(package_name, package_version, contract_type) -> str:
+        manifest = json.loads((PACKAGES_DIR / package_name / f"{package_version}.json").read_text())
+        return manifest['contract_types'][contract_type]['deployment_bytecode']['bytecode']
 
 class Calldata:
     """Represents Ethereum calldata.
@@ -373,7 +383,7 @@ class Transact:
     def _is_parity(self) -> bool:
         global node_is_parity
         if node_is_parity is None:
-            node_is_parity = "parity" in self.web3.version.node.lower()
+            node_is_parity = "parity" in self.web3.clientVersion.lower()
 
         return node_is_parity
 

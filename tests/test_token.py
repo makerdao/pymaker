@@ -69,19 +69,19 @@ class TestERC20Token:
 
     def test_transfer_failed(self):
         # when
-        receipt = self.token.transfer(self.second_address, Wad(5000000)).transact()
+        with pytest.raises(ValueError, match="revert ds-token-insufficient-balance"):
+            self.token.transfer(self.second_address, Wad(5000000)).transact()
 
         # then
-        assert receipt is None
         assert self.token.balance_of(self.our_address) == Wad(1000000)
         assert self.token.balance_of(self.second_address) == Wad(0)
 
     def test_transfer_failed_async(self):
         # when
-        receipt = synchronize([self.token.transfer(self.second_address, Wad(5000000)).transact_async()])[0]
+        with pytest.raises(ValueError, match="revert ds-token-insufficient-balance"):
+            synchronize([self.token.transfer(self.second_address, Wad(5000000)).transact_async()])[0]
 
         # then
-        assert receipt is None
         assert self.token.balance_of(self.our_address) == Wad(1000000)
         assert self.token.balance_of(self.second_address) == Wad(0)
 

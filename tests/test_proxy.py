@@ -62,10 +62,10 @@ class TestProxyCache:
 
     def test_write_invalid(self, proxy_cache: DSProxyCache):
         # when
-        address = proxy_cache.write('0x001122').transact()
+        with pytest.raises(ValueError, match='VM Exception while processing transaction:'):
+            proxy_cache.write('0x001122').transact()
 
         # then
-        assert address is None
         assert proxy_cache.read('0x001122') == None
 
     def test_write(self, proxy_cache: DSProxyCache):

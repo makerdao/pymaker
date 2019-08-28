@@ -45,8 +45,8 @@ class DSValue(DSAuth):
         address: Ethereum address of the `DSValue` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/DSValue.abi')
-    bin = Contract._load_bin(__name__, 'abi/DSValue.bin')
+    abi = Contract._ethpm_load_abi('ds-value', '1.0.0', 'DSValue')
+    bin = Contract._ethpm_load_bin('ds-value', '1.0.0', 'DSValue')
 
     @staticmethod
     def deploy(web3: Web3):
@@ -66,7 +66,7 @@ class DSValue(DSAuth):
         Returns:
             `True` if this instance contains a value, which can be read. `False` otherwise.
         """
-        return self._contract.call().peek()[1]
+        return self._contract.caller.peek()[1]
 
     def read(self) -> bytes:
         """Reads the current value from this instance as a byte array.
@@ -76,7 +76,7 @@ class DSValue(DSAuth):
         Returns:
             A 32-byte array with the current value of this instance.
         """
-        return self._contract.call().read()
+        return self._contract.caller.read()
 
     def read_as_hex(self) -> str:
         """Reads the current value from this instance and converts it to a hex string.

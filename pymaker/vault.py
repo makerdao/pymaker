@@ -31,8 +31,8 @@ class DSVault(Contract):
         address: Ethereum address of the `DSVault` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/DSVault.abi')
-    bin = Contract._load_bin(__name__, 'abi/DSVault.bin')
+    abi = Contract._ethpm_load_abi('ds-vault', '1.0.0', 'DSVault')
+    bin = Contract._ethpm_load_bin('ds-vault', '1.0.0', 'DSVault')
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -60,7 +60,7 @@ class DSVault(Contract):
         Returns:
             The address of the current `authority`.
         """
-        return Address(self._contract.call().authority())
+        return Address(self._contract.caller.authority())
 
     def set_authority(self, address: Address) -> Transact:
         """Set the `authority` of a `DSAuth`-ed contract.

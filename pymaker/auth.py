@@ -32,8 +32,8 @@ class DSGuard(Contract):
         address: Ethereum address of the `DSGuard` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/DSGuard.abi')
-    bin = Contract._load_bin(__name__, 'abi/DSGuard.bin')
+    abi = Contract._ethpm_load_abi('ds-guard', '1.0.0', 'DSGuard')
+    bin = Contract._ethpm_load_bin('ds-guard', '1.0.0', 'DSGuard')
 
     ANY = int_to_bytes32(2 ** 256 - 1)
 
@@ -97,7 +97,7 @@ class DSAuth(Contract):
         return DSAuth(web3=web3, address=Contract._deploy(web3, DSAuth.abi, DSAuth.bin, []))
 
     def get_owner(self) -> Address:
-        return Address(self._contract.call().owner())
+        return Address(self._contract.caller.owner())
 
     def set_owner(self, owner: Address) -> Transact:
         assert isinstance(owner, Address)

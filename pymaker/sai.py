@@ -70,8 +70,8 @@ class Tub(Contract):
         address: Ethereum address of the `Tub` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/SaiTub.abi')
-    bin = Contract._load_bin(__name__, 'abi/SaiTub.bin')
+    abi = Contract._ethpm_load_abi('sai', '1.0.0', 'SaiTub')
+    bin = Contract._ethpm_load_bin('sai', '1.0.0', 'SaiTub')
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -123,7 +123,7 @@ class Tub(Contract):
         Returns:
             Timestamp as a unix timestamp.
         """
-        return self._contract.call().era()
+        return self._contract.caller.era()
 
     def tap(self) -> Address:
         """Get the address of the `Tap` contract.
@@ -131,7 +131,7 @@ class Tub(Contract):
         Returns:
             The address of the `Tap` contract.
         """
-        return Address(self._contract.call().tap())
+        return Address(self._contract.caller.tap())
 
     def sai(self) -> Address:
         """Get the SAI token.
@@ -139,7 +139,7 @@ class Tub(Contract):
         Returns:
             The address of the SAI token.
         """
-        return Address(self._contract.call().sai())
+        return Address(self._contract.caller.sai())
 
     def sin(self) -> Address:
         """Get the SIN token.
@@ -147,7 +147,7 @@ class Tub(Contract):
         Returns:
             The address of the SIN token.
         """
-        return Address(self._contract.call().sin())
+        return Address(self._contract.caller.sin())
 
     def gov(self) -> Address:
         """Get the MKR token.
@@ -155,7 +155,7 @@ class Tub(Contract):
         Returns:
             The address of the MKR token.
         """
-        return Address(self._contract.call().gov())
+        return Address(self._contract.caller.gov())
 
     def vox(self) -> Address:
         """Get the address of the `Vox` contract.
@@ -163,7 +163,7 @@ class Tub(Contract):
         Returns:
             The address of the `Vox` contract.
         """
-        return Address(self._contract.call().vox())
+        return Address(self._contract.caller.vox())
 
     def pit(self) -> Address:
         """Get the governance vault.
@@ -171,7 +171,7 @@ class Tub(Contract):
         Returns:
             The address of the `DSVault` holding the governance tokens awaiting burn.
         """
-        return Address(self._contract.call().pit())
+        return Address(self._contract.caller.pit())
 
     def skr(self) -> Address:
         """Get the SKR token.
@@ -179,7 +179,7 @@ class Tub(Contract):
         Returns:
             The address of the SKR token.
         """
-        return Address(self._contract.call().skr())
+        return Address(self._contract.caller.skr())
 
     def gem(self) -> Address:
         """Get the collateral token (eg. W-ETH).
@@ -187,7 +187,7 @@ class Tub(Contract):
         Returns:
             The address of the collateral token.
         """
-        return Address(self._contract.call().gem())
+        return Address(self._contract.caller.gem())
 
     def pip(self) -> Address:
         """Get the reference (GEM) price feed.
@@ -195,7 +195,7 @@ class Tub(Contract):
         Returns:
             The address of the reference (GEM) price feed, which could be a `DSValue`, a `DSCache`, `Mednianizer` etc.
         """
-        return Address(self._contract.call().pip())
+        return Address(self._contract.caller.pip())
 
     def pep(self) -> Address:
         """Get the governance (MKR) price feed.
@@ -203,7 +203,7 @@ class Tub(Contract):
         Returns:
             The address of the governance (MKR) price feed, which could be a `DSValue`, a `DSCache`, `Mednianizer` etc.
         """
-        return Address(self._contract.call().pep())
+        return Address(self._contract.caller.pep())
 
     def axe(self) -> Ray:
         """Get the liquidation penalty.
@@ -211,7 +211,7 @@ class Tub(Contract):
         Returns:
             The liquidation penalty. `1.0` means no penalty. `1.2` means 20% penalty.
         """
-        return Ray(self._contract.call().axe())
+        return Ray(self._contract.caller.axe())
 
     def cap(self) -> Wad:
         """Get the debt ceiling.
@@ -219,7 +219,7 @@ class Tub(Contract):
         Returns:
             The debt ceiling in SAI.
         """
-        return Wad(self._contract.call().cap())
+        return Wad(self._contract.caller.cap())
 
     def mat(self) -> Ray:
         """Get the liquidation ratio.
@@ -227,7 +227,7 @@ class Tub(Contract):
         Returns:
             The liquidation ratio. `1.5` means the liquidation ratio is 150%.
         """
-        return Ray(self._contract.call().mat())
+        return Ray(self._contract.caller.mat())
 
     def tax(self) -> Ray:
         """Get the stability fee.
@@ -235,7 +235,7 @@ class Tub(Contract):
         Returns:
             Per-second value of the stability fee. `1.0` means no stability fee.
         """
-        return Ray(self._contract.call().tax())
+        return Ray(self._contract.caller.tax())
 
     def reg(self) -> int:
         """Get the Tub stage ('register').
@@ -243,7 +243,7 @@ class Tub(Contract):
         Returns:
             The current Tub stage (0=Usual, 1=Caged).
         """
-        return self._contract.call().reg()
+        return self._contract.caller.reg()
 
     def fit(self) -> Ray:
         """Get the GEM per SKR settlement price.
@@ -251,7 +251,7 @@ class Tub(Contract):
         Returns:
             The GEM per SKR settlement (kill) price.
         """
-        return Ray(self._contract.call().fit())
+        return Ray(self._contract.caller.fit())
 
     def rho(self) -> int:
         """Get the time of the last drip.
@@ -259,7 +259,7 @@ class Tub(Contract):
         Returns:
             The time of the last drip as a unix timestamp.
         """
-        return self._contract.call().rho()
+        return self._contract.caller.rho()
 
     def tau(self) -> int:
         """Get the time of the last prod.
@@ -267,7 +267,7 @@ class Tub(Contract):
         Returns:
             The time of the last prod as a unix timestamp.
         """
-        return self._contractTip.call().tau()
+        return self._contractTip.caller.tau()
 
     def chi(self) -> Ray:
         """Get the internal debt price.
@@ -279,7 +279,7 @@ class Tub(Contract):
         Returns:
             The internal debt price in SAI.
         """
-        return Ray(self._contract.call().chi())
+        return Ray(self._contract.caller.chi())
 
     def mold_axe(self, new_axe: Ray) -> Transact:
         """Update the liquidation penalty.
@@ -363,7 +363,7 @@ class Tub(Contract):
         Returns:
             The amount of total debt in SAI.
         """
-        return Wad(self._contract.call().din())
+        return Wad(self._contract.caller.din())
 
     def pie(self) -> Wad:
         """Get the amount of raw collateral.
@@ -371,7 +371,7 @@ class Tub(Contract):
         Returns:
             The amount of raw collateral in GEM.
         """
-        return Wad(self._contract.call().pie())
+        return Wad(self._contract.caller.pie())
 
     def air(self) -> Wad:
         """Get the amount of backing collateral.
@@ -379,7 +379,7 @@ class Tub(Contract):
         Returns:
             The amount of backing collateral in SKR.
         """
-        return Wad(self._contract.call().air())
+        return Wad(self._contract.caller.air())
 
     def tag(self) -> Ray:
         """Get the reference price (REF per SKR).
@@ -390,7 +390,7 @@ class Tub(Contract):
         Returns:
             The reference price (REF per SKR).
         """
-        return Ray(self._contract.call().tag())
+        return Ray(self._contract.caller.tag())
 
     def per(self) -> Ray:
         """Get the current average entry/exit price (GEM per SKR).
@@ -401,7 +401,7 @@ class Tub(Contract):
         Returns:
             The current GEM per SKR price.
         """
-        return Ray(self._contract.call().per())
+        return Ray(self._contract.caller.per())
 
     def gap(self) -> Wad:
         """Get the current spread for `join` and `exit`.
@@ -409,7 +409,7 @@ class Tub(Contract):
         Returns:
             The current spread for `join` and `exit`. `1.0` means no spread, `1.01` means 1% spread.
         """
-        return Wad(self._contract.call().gap())
+        return Wad(self._contract.caller.gap())
 
     def bid(self, amount: Wad) -> Wad:
         """Get the current `exit()`.
@@ -419,7 +419,7 @@ class Tub(Contract):
         """
         assert(isinstance(amount, Wad))
 
-        return Wad(self._contract.call().bid(amount.value))
+        return Wad(self._contract.caller.bid(amount.value))
 
     def ask(self, amount: Wad) -> Wad:
         """Get the current `join()` price.
@@ -429,7 +429,7 @@ class Tub(Contract):
         """
         assert(isinstance(amount, Wad))
 
-        return Wad(self._contract.call().ask(amount.value))
+        return Wad(self._contract.caller.ask(amount.value))
 
     def cupi(self) -> int:
         """Get the last cup id
@@ -437,7 +437,7 @@ class Tub(Contract):
         Returns:
             The id of the last cup created. Zero if no cups have been created so far.
         """
-        return self._contract.call().cupi()
+        return self._contract.caller.cupi()
 
     def cups(self, cup_id: int) -> Cup:
         """Get the cup details.
@@ -449,7 +449,7 @@ class Tub(Contract):
             Class encapsulating cup details.
         """
         assert isinstance(cup_id, int)
-        array = self._contract.call().cups(int_to_bytes32(cup_id))
+        array = self._contract.caller.cups(int_to_bytes32(cup_id))
         return Cup(cup_id, Address(array[0]), Wad(array[1]), Wad(array[2]))
 
     def tab(self, cup_id: int) -> Wad:
@@ -462,7 +462,7 @@ class Tub(Contract):
             Amount of debt in the cup, in SAI.
         """
         assert isinstance(cup_id, int)
-        return Wad(self._contract.call().tab(int_to_bytes32(cup_id)))
+        return Wad(self._contract.caller.tab(int_to_bytes32(cup_id)))
 
     def ink(self, cup_id: int) -> Wad:
         """Get the amount of SKR collateral locked in a cup.
@@ -474,7 +474,7 @@ class Tub(Contract):
             Amount of SKR collateral locked in the cup, in SKR.
         """
         assert isinstance(cup_id, int)
-        return Wad(self._contract.call().ink(int_to_bytes32(cup_id)))
+        return Wad(self._contract.caller.ink(int_to_bytes32(cup_id)))
 
     def lad(self, cup_id: int) -> Address:
         """Get the owner of a cup.
@@ -486,7 +486,7 @@ class Tub(Contract):
             Address of the owner of the cup.
         """
         assert isinstance(cup_id, int)
-        return Address(self._contract.call().lad(int_to_bytes32(cup_id)))
+        return Address(self._contract.caller.lad(int_to_bytes32(cup_id)))
 
     def safe(self, cup_id: int) -> bool:
         """Determine if a cup is safe.
@@ -498,7 +498,7 @@ class Tub(Contract):
             `True` if the cup is safe. `False` otherwise.
         """
         assert isinstance(cup_id, int)
-        return self._contract.call().safe(int_to_bytes32(cup_id))
+        return self._contract.caller.safe(int_to_bytes32(cup_id))
 
     def join(self, amount_in_skr: Wad) -> Transact:
         """Buy SKR for GEMs.
@@ -651,8 +651,8 @@ class Tap(Contract):
         address: Ethereum address of the `Tap` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/SaiTap.abi')
-    bin = Contract._load_bin(__name__, 'abi/SaiTap.bin')
+    abi = Contract._ethpm_load_abi('sai', '1.0.0', 'SaiTap')
+    bin = Contract._ethpm_load_bin('sai', '1.0.0', 'SaiTap')
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -694,7 +694,7 @@ class Tap(Contract):
         Returns:
             The address of the `Tub` contract.
         """
-        return Address(self._contract.call().tub())
+        return Address(self._contract.caller.tub())
 
     def sai(self) -> Address:
         """Get the SAI token.
@@ -702,7 +702,7 @@ class Tap(Contract):
         Returns:
             The address of the SAI token.
         """
-        return Address(self._contract.call().sai())
+        return Address(self._contract.caller.sai())
 
     def sin(self) -> Address:
         """Get the SIN token.
@@ -710,7 +710,7 @@ class Tap(Contract):
         Returns:
             The address of the SIN token.
         """
-        return Address(self._contract.call().sin())
+        return Address(self._contract.caller.sin())
 
     def skr(self) -> Address:
         """Get the SKR token.
@@ -718,7 +718,7 @@ class Tap(Contract):
         Returns:
             The address of the SKR token.
         """
-        return Address(self._contract.call().skr())
+        return Address(self._contract.caller.skr())
 
     def woe(self) -> Wad:
         """Get the amount of bad debt.
@@ -726,7 +726,7 @@ class Tap(Contract):
         Returns:
             The amount of bad debt in SAI.
         """
-        return Wad(self._contract.call().woe())
+        return Wad(self._contract.caller.woe())
 
     def fog(self) -> Wad:
         """Get the amount of SKR pending liquidation.
@@ -734,7 +734,7 @@ class Tap(Contract):
         Returns:
             The amount of SKR pending liquidation, in SKR.
         """
-        return Wad(self._contract.call().fog())
+        return Wad(self._contract.caller.fog())
 
     #TODO beware that it doesn't call drip() underneath so if `tax`>1.0 we won't get an up-to-date value of joy()
     def joy(self) -> Wad:
@@ -745,7 +745,7 @@ class Tap(Contract):
         Returns:
             The amount of surplus SAI accumulated in the Tub.
         """
-        return Wad(self._contract.call().joy())
+        return Wad(self._contract.caller.joy())
 
     def gap(self) -> Wad:
         """Get the current spread for `boom` and `bust`.
@@ -753,7 +753,7 @@ class Tap(Contract):
         Returns:
             The current spread for `boom` and `bust`. `1.0` means no spread, `1.01` means 1% spread.
         """
-        return Wad(self._contract.call().gap())
+        return Wad(self._contract.caller.gap())
 
     def mold_gap(self, new_gap: Wad) -> Transact:
         """Update the current spread (`gap`) for `boom` and `bust`.
@@ -773,7 +773,7 @@ class Tap(Contract):
         Returns:
             The current SKR per SAI rate.
         """
-        return Ray(self._contract.call().s2s())
+        return Ray(self._contract.caller.s2s())
 
     def bid(self, amount_in_skr: Wad) -> Wad:
         """Get the current price of `amount_in_skr` SKR in SAI for `boom`.
@@ -782,7 +782,7 @@ class Tap(Contract):
             The amount in SAI which will be received from `boom` in return of
                 `amount_in_skr` SKR.
         """
-        return Wad(self._contract.call().bid(amount_in_skr.value))
+        return Wad(self._contract.caller.bid(amount_in_skr.value))
 
     def ask(self, amount_in_skr: Wad) -> Wad:
         """Get the current price of `amount_in_skr` SKR in SAI for `bust`.
@@ -791,7 +791,7 @@ class Tap(Contract):
             The amount in SAI which will be consumed by `bust` if we want
                 to receive `amount_in_skr` SKR from it.
         """
-        return Wad(self._contract.call().ask(amount_in_skr.value))
+        return Wad(self._contract.caller.ask(amount_in_skr.value))
 
     def boom(self, amount_in_skr: Wad) -> Transact:
         """Buy some amount of SAI to process `joy` (surplus).
@@ -855,8 +855,8 @@ class Top(Contract):
         address: Ethereum address of the `Top` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/SaiTop.abi')
-    bin = Contract._load_bin(__name__, 'abi/SaiTop.bin')
+    abi = Contract._ethpm_load_abi('sai', '1.0.0', 'SaiTop')
+    bin = Contract._ethpm_load_bin('sai', '1.0.0', 'SaiTop')
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -882,7 +882,7 @@ class Top(Contract):
         Returns:
             The GEM per SAI settlement (kill) price.
         """
-        return Ray(self._contract.call().fix())
+        return Ray(self._contract.caller.fix())
 
     def cage(self) -> Transact:
         """Force settlement of the system at a current price.
@@ -910,8 +910,8 @@ class Vox(Contract):
         address: Ethereum address of the `Vox` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/SaiVox.abi')
-    bin = Contract._load_bin(__name__, 'abi/SaiVox.bin')
+    abi = Contract._ethpm_load_abi('sai', '1.0.0', 'SaiVox')
+    bin = Contract._ethpm_load_bin('sai', '1.0.0', 'SaiVox')
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -936,7 +936,7 @@ class Vox(Contract):
         Returns:
             Timestamp as a unix timestamp.
         """
-        return self._contract.call().era()
+        return self._contract.caller.era()
 
     def par(self) -> Ray:
         """Get the accrued holder fee (REF per SAI).
@@ -948,7 +948,7 @@ class Vox(Contract):
         Returns:
             The accrued holder fee.
         """
-        return Ray(self._contract.call().par())
+        return Ray(self._contract.caller.par())
 
     def __eq__(self, other):
         assert(isinstance(other, Vox))

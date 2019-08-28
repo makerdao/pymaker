@@ -22,7 +22,7 @@ import pytest
 from mock import Mock
 from web3 import Web3, HTTPProvider
 
-from pymaker import Address
+from pymaker import Address, Contract
 from pymaker.approval import directly
 from pymaker.deployment import deploy_contract
 from pymaker.numeric import Wad
@@ -38,10 +38,10 @@ class TestZrx:
         self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
-        self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))
-        self.token_transfer_proxy_address = deploy_contract(self.web3, 'TokenTransferProxy')
+        self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'zrx-token-proxy', '1.0.0', 'ZRXToken'))
+        self.token_transfer_proxy_address = deploy_contract(self.web3, 'zrx-token-proxy', '1.0.0', 'TokenTransferProxy')
         self.exchange = ZrxExchange.deploy(self.web3, self.zrx_token.address, self.token_transfer_proxy_address)
-        self.web3.eth.contract(abi=json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/TokenTransferProxy.abi')))(address=self.token_transfer_proxy_address.address).transact().addAuthorizedAddress(self.exchange.address.address)
+        self.web3.eth.contract(abi=Contract._ethpm_load_abi('zrx-token-proxy', '1.0.0', 'TokenTransferProxy'))(address=self.token_transfer_proxy_address.address).functions.addAuthorizedAddress(self.exchange.address.address).transact()
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1.mint(Wad.from_number(100)).transact()
         self.token2 = DSToken.deploy(self.web3, 'BBB')

@@ -50,9 +50,9 @@ class ERC20Token(Contract):
         contract_with_bytes32 = self._get_contract(self.web3, abi_with_bytes32, self.address)
 
         try:
-            return contract_with_string.call().name()
+            return contract_with_string.caller.name()
         except:
-            return str(contract_with_bytes32.call().name(), "utf-8").strip('\x00')
+            return str(contract_with_bytes32.caller.name(), "utf-8").strip('\x00')
 
     def symbol(self) -> str:
         abi_with_string = json.loads("""[{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"}]""")
@@ -62,9 +62,9 @@ class ERC20Token(Contract):
         contract_with_bytes32 = self._get_contract(self.web3, abi_with_bytes32, self.address)
 
         try:
-            return contract_with_string.call().symbol()
+            return contract_with_string.caller.symbol()
         except:
-            return str(contract_with_bytes32.call().symbol(), "utf-8").strip('\x00')
+            return str(contract_with_bytes32.caller.symbol(), "utf-8").strip('\x00')
 
     def total_supply(self) -> Wad:
         """Returns the total supply of the token.
@@ -72,7 +72,7 @@ class ERC20Token(Contract):
         Returns:
             The total supply of the token.
         """
-        return Wad(self._contract.call().totalSupply())
+        return Wad(self._contract.caller.totalSupply())
 
     def balance_of(self, address: Address) -> Wad:
         """Returns the token balance of a given address.
@@ -85,7 +85,7 @@ class ERC20Token(Contract):
         """
         assert(isinstance(address, Address))
 
-        return Wad(self._contract.call().balanceOf(address.address))
+        return Wad(self._contract.caller.balanceOf(address.address))
 
     def allowance_of(self, address: Address, payee: Address) -> Wad:
         """Returns the current allowance of a specified `payee` (delegate account).
@@ -103,7 +103,7 @@ class ERC20Token(Contract):
         assert(isinstance(address, Address))
         assert(isinstance(payee, Address))
 
-        return Wad(self._contract.call().allowance(address.address, payee.address))
+        return Wad(self._contract.caller.allowance(address.address, payee.address))
 
     def transfer(self, address: Address, value: Wad) -> Transact:
         """Transfers tokens to a specified address.
@@ -179,8 +179,8 @@ class DSToken(ERC20Token):
         address: Ethereum address of the `DSToken` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/DSToken.abi')
-    bin = Contract._load_bin(__name__, 'abi/DSToken.bin')
+    abi = Contract._ethpm_load_abi('ds-token', '1.0.0', 'DSToken')
+    bin = Contract._ethpm_load_bin('ds-token', '1.0.0', 'DSToken')
 
     @staticmethod
     def deploy(web3: Web3, symbol: str):
@@ -202,7 +202,7 @@ class DSToken(ERC20Token):
         Returns:
             The address of the current `authority`.
         """
-        return Address(self._contract.call().authority())
+        return Address(self._contract.caller.authority())
 
     def set_authority(self, address: Address) -> Transact:
         """Set the `authority` of a `DSAuth`-ed contract.
@@ -288,8 +288,8 @@ class DSEthToken(ERC20Token):
         address: Ethereum address of the `DSEthToken` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/DSEthToken.abi')
-    bin = Contract._load_bin(__name__, 'abi/DSEthToken.bin')
+    abi = Contract._ethpm_load_abi('ds-eth-token', '1.0.0', 'DSEthToken')
+    bin = Contract._ethpm_load_bin('ds-eth-token', '1.0.0', 'DSEthToken')
 
     @staticmethod
     def deploy(web3: Web3):

@@ -40,14 +40,14 @@ class TestZrxV2:
         self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
-        self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))
+        self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'zrx-token-proxy', '1.0.0', 'ZRXToken'))
 
-        self.asset_proxy = deploy_contract(self.web3, 'ExchangeV2-ERC20Proxy')
+        self.asset_proxy = deploy_contract(self.web3, 'zrx-erc20-proxy', '1.0.0', 'ERC20Proxy')
         self.exchange = ZrxExchangeV2.deploy(self.web3, None)  #"0xf47261b0" + self.zrx_token.address.address - unused yet
-        self.exchange._contract.transact().registerAssetProxy(self.asset_proxy.address)
+        self.exchange._contract.functions.registerAssetProxy(self.asset_proxy.address).transact()
 
         asset_proxy_contract = self.web3.eth.contract(abi=json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/ExchangeV2-ERC20Proxy.abi')))(address=self.asset_proxy.address)
-        asset_proxy_contract.transact().addAuthorizedAddress(self.exchange.address.address)
+        asset_proxy_contract.functions.addAuthorizedAddress(self.exchange.address.address).transact()
 
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1.mint(Wad.from_number(100)).transact()

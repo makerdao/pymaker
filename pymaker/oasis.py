@@ -20,7 +20,7 @@ from typing import Optional, List, Iterable, Iterator
 
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.utils.events import get_event_data
+from web3._utils.events import get_event_data
 
 from pymaker import Contract, Address, Transact, Receipt
 from pymaker.numeric import Wad
@@ -193,8 +193,8 @@ class SimpleMarket(Contract):
         address: Ethereum address of the `SimpleMarket` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/SimpleMarket.abi')
-    bin = Contract._load_bin(__name__, 'abi/SimpleMarket.bin')
+    abi = Contract._ethpm_load_abi('maker-otc', '1.0.0', 'SimpleMarket')
+    bin = Contract._ethpm_load_bin('maker-otc', '1.0.0', 'SimpleMarket')
 
     def __init__(self, web3: Web3, address: Address):
         assert(isinstance(web3, Web3))
@@ -306,7 +306,7 @@ class SimpleMarket(Contract):
         Returns:
             The id of the last order. Returns `0` if no orders have been created at all.
         """
-        return self._contract.call().last_offer_id()
+        return self._contract.caller.last_offer_id()
 
     def get_order(self, order_id: int) -> Optional[Order]:
         """Get order details.
@@ -320,7 +320,7 @@ class SimpleMarket(Contract):
         """
         assert(isinstance(order_id, int))
 
-        array = self._contract.call().offers(order_id)
+        array = self._contract.caller.offers(order_id)
         if array[5] == 0:
             return None
         else:
@@ -480,8 +480,8 @@ class ExpiringMarket(SimpleMarket):
         address: Ethereum address of the `ExpiringMarket` contract.
     """
 
-    abi = Contract._load_abi(__name__, 'abi/ExpiringMarket.abi')
-    bin = Contract._load_bin(__name__, 'abi/ExpiringMarket.bin')
+    abi = Contract._ethpm_load_abi('maker-otc', '1.0.0', 'ExpiringMarket')
+    bin = Contract._ethpm_load_bin('maker-otc', '1.0.0', 'ExpiringMarket')
 
     @staticmethod
     def deploy(web3: Web3, close_time: int):
@@ -503,7 +503,7 @@ class ExpiringMarket(SimpleMarket):
         Returns:
             `True` if the market is closed. `False` otherwise.
         """
-        return self._contract.call().isClosed()
+        return self._contract.caller.isClosed()
 
     def __repr__(self):
         return f"ExpiringMarket('{self.address}')"
@@ -556,7 +556,7 @@ class MatchingMarket(ExpiringMarket):
         Returns:
             `True` if direct buy is enabled, `False` otherwise.
         """
-        return self._contract.call().buyEnabled()
+        return self._contract.caller.buyEnabled()
 
     def set_buy_enabled(self, buy_enabled: bool) -> Transact:
         """Enables or disables direct buy.
@@ -577,7 +577,7 @@ class MatchingMarket(ExpiringMarket):
         Returns:
             `True` if order matching is enabled, `False` otherwise.
         """
-        return self._contract.call().matchingEnabled()
+        return self._contract.caller.matchingEnabled()
 
     def set_matching_enabled(self, matching_enabled: bool) -> Transact:
         """Enables or disables order matching.
@@ -636,7 +636,7 @@ class MatchingMarket(ExpiringMarket):
             orders = []
 
             if self._support_contract:
-                result = self._support_contract.call().getOffers(self.address.address, pay_token.address, buy_token.address)
+                result = self._support_contract.caller.getOffers(self.address.address, pay_token.address, buy_token.address)
 
                 while True:
                     count = 0
@@ -654,20 +654,20 @@ class MatchingMarket(ExpiringMarket):
                                                 timestamp=result[4][i]))
 
                     if count == 100:
-                        next_order_id = self._contract.call().getWorseOffer(orders[-1].order_id)
-                        result = self._support_contract.call().getOffers(self.address.address, next_order_id)
+                        next_order_id = self._contract.caller.getWorseOffer(orders[-1].order_id)
+                        result = self._support_contract.caller.getOffers(self.address.address, next_order_id)
 
                     else:
                         break
 
             else:
-                order_id = self._contract.call().getBestOffer(pay_token.address, buy_token.address)
+                order_id = self._contract.caller.getBestOffer(pay_token.address, buy_token.address)
                 while order_id != 0:
                     order = self.get_order(order_id)
                     if order is not None:
                         orders.append(order)
 
-                    order_id = self._contract.call().getWorseOffer(order_id)
+                    order_id = self._contract.caller.getWorseOffer(order_id)
 
             return sorted(orders, key=lambda order: order.order_id)
         else:

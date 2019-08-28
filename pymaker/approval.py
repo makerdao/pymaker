@@ -83,7 +83,7 @@ def hope_directly(**kwargs):
         transact_args = {'from': address_to_check.address}
 
         move_contract = Contract._get_contract(web3=token.web3, abi=move_abi, address=token.address)
-        if move_contract.call().can(address_to_check.address, spender_address.address) is False:
+        if move_contract.caller.can(address_to_check.address, spender_address.address) is False:
             logger = logging.getLogger()
             logger.info(f"Approving {spender_name} ({spender_address}) to move our {token.address} directly")
             if not move_contract.functions.hope(spender_address.address).transact(transact_args):
