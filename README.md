@@ -346,7 +346,8 @@ print(bump_result.transaction_hash)
 
 Prerequisites:
 * [docker and docker-compose](https://www.docker.com/get-started)
-* [ganache-cli](https://github.com/trufflesuite/ganache-cli)
+* [ganache-cli](https://github.com/trufflesuite/ganache-cli) 6.2.5  
+  (using npm, `sudo npm install -g ganache-cli@6.2.5`)
 
 This project uses [pytest](https://docs.pytest.org/en/latest/) for unit testing.  Testing of Multi-collateral Dai is 
 performed on a Dockerized local testchain included in `tests\config`.

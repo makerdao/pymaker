@@ -682,6 +682,7 @@ class Cat(Contract):
     Ref. <https://github.com/makerdao/dss/blob/master/src/cat.sol>
     """
 
+    # This information is read from the `Bite` event emitted from `Cat.bite`
     class LogBite:
         def __init__(self, log):
             self.ilk = Ilk.fromBytes(log['args']['ilk'])

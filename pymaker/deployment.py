@@ -279,6 +279,7 @@ class DssDeployment:
     def active_auctions(self) -> dict:
         flips = {}
         for collateral in self.collaterals.values():
+            # Each collateral has it's own flip contract; add auctions from each.
             flips[collateral.ilk.name] = collateral.flipper.active_auctions()
 
         return {
