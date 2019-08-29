@@ -60,7 +60,7 @@ class AuctionContract(Contract):
     def approve(self, source: Address, approval_function, **kwargs):
         """Approve the auction to access our collateral, Dai, or MKR so we can participate in auctions.
 
-        For available approval functions (i.e. approval modes) see `directly` and `via_tx_manager`
+        For available approval functions (i.e. approval modes) see `directly` and `hope_directly`
         in `pymaker.approval`.
 
         Args:

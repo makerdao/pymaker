@@ -16,10 +16,11 @@ not only by keepers, but may also be found useful by authors of some other, unre
 utilities aiming to interact with these contracts.
 
 Based on this API, a set of reference Maker keepers is being developed. They all used to reside
-in this repository, but now each of them has an individual one: [bite-keeper](https://github.com/makerdao/bite-keeper),
+in this repository, but now each of them has an individual one: 
+[bite-keeper](https://github.com/makerdao/bite-keeper) (SCD only),
 [arbitrage-keeper](https://github.com/makerdao/arbitrage-keeper),
-[auction-keeper](https://github.com/makerdao/auction-keeper),
-[cdp-keeper](https://github.com/makerdao/cdp-keeper),
+[auction-keeper](https://github.com/makerdao/auction-keeper) (MCD only),
+[cdp-keeper](https://github.com/makerdao/cdp-keeper) (SCD only),
 [market-maker-keeper](https://github.com/makerdao/market-maker-keeper).
 
 You only need to install this project directly if you want to build your own keepers,
@@ -76,6 +77,13 @@ The current version provides APIs around:
 * `EtherDelta` (<https://github.com/etherdelta/etherdelta.github.io>),
 * `0x v1` (<https://etherscan.io/address/0x12459c951127e0c374ff9105dda097662a027093#code>, <https://github.com/0xProject/standard-relayer-api>),
 * `0x v2`.
+
+APIs around the following functionality have not been implemented:
+* Dai Savings Rate (`Pot`)
+* Global Settlement (`End`)
+* Governance (`DSAuth`, `DSChief`, `DSGuard`, `DSSpell`, `Mom`)
+
+Contributions from the community are appreciated.
 
 ## Code samples
 
@@ -198,6 +206,7 @@ for cup_id in range(1, tub.cupi()+1):
 This snippet demonstrates how to create a CDP and draw Dai.
 
 ```python
+import sys
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address
@@ -208,10 +217,10 @@ from pymaker.numeric import Wad
 
 web3 = Web3(HTTPProvider(endpoint_uri="https://localhost:8545",
                          request_kwargs={"timeout": 10}))
-web3.eth.defaultAccount = "0x0000000000000000000000000000000000000001"
-register_keys(web3, ["key_file=~keys/default-account.json,pass_file=~keys/default-account.pass"])
+web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
+register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
 
-mcd = DssDeployment.from_json(web3=web3, conf=open("kovan-addresses.json", "r").read())
+mcd = DssDeployment.from_json(web3=web3, conf=open("tests/config/kovan-addresses.json", "r").read())
 our_address = Address(web3.eth.defaultAccount)
 
 

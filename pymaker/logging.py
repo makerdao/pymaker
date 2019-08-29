@@ -17,7 +17,6 @@
 
 import logging
 from pprint import pformat
-from pymaker import Address
 from web3 import Web3
 from web3.utils.events import get_event_data
 
@@ -25,7 +24,6 @@ from web3.utils.events import get_event_data
 # Shared between DSNote and many MCD contracts
 class LogNote:
     def __init__(self, log):
-        #self.usr = Address(log['args']['usr'])
         self.sig = Web3.toHex(log['args']['sig'])
         self.arg1 = log['args']['arg1']
         self.arg2 = log['args']['arg2']

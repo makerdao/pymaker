@@ -27,8 +27,8 @@ from pymaker.numeric import Wad
 
 web3 = Web3(HTTPProvider(endpoint_uri="http://0.0.0.0:8545",
                          request_kwargs={"timeout": 10}))
-web3.eth.defaultAccount = sys.argv[1]
-register_keys(web3, [sys.argv[2]])
+web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
+register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
 
 
 mcd = DssDeployment.from_json(web3=web3, conf=open("tests/config/kovan-addresses.json", "r").read())

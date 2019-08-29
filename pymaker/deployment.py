@@ -165,7 +165,7 @@ class DssDeployment:
             self.dai_join = dai_join
             self.mkr = mkr
             self.spotter = spotter
-            self.collaterals = collaterals or []
+            self.collaterals = collaterals or {}
 
         @staticmethod
         def from_json(web3: Web3, conf: str):
