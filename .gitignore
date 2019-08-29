@@ -9,6 +9,7 @@ __pycache__
 .DS_Store
 
 logs/*.json.log
+tests/config/keys/UnlimitedChain/address_book.json
 
 docs/_doc
 _virtualenv
