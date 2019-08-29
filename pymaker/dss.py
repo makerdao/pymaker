@@ -679,7 +679,7 @@ class Cat(Contract):
     """A client for the `Cat` contract, used to liquidate unsafe Urns (CDPs).
     Specifically, this contract is useful for Flip auctions.
 
-    Ref. <https://github.com/makerdao/dss/blob/master/src/bite.sol>
+    Ref. <https://github.com/makerdao/dss/blob/master/src/cat.sol>
     """
 
     class LogBite:

@@ -25,7 +25,7 @@ from pymaker.keys import register_keys
 from pymaker.numeric import Wad
 
 
-web3 = Web3(HTTPProvider(endpoint_uri="https://parity0.kovan.makerfoundation.com:8545",
+web3 = Web3(HTTPProvider(endpoint_uri="http://0.0.0.0:8545",
                          request_kwargs={"timeout": 10}))
 web3.eth.defaultAccount = sys.argv[1]
 register_keys(web3, [sys.argv[2]])
@@ -35,9 +35,9 @@ mcd = DssDeployment.from_json(web3=web3, conf=open("tests/config/kovan-addresses
 our_address = Address(web3.eth.defaultAccount)
 
 # Choose the desired collateral; in this case we'll wrap some Eth
-collateral = mcd.collaterals[1]
+collateral = mcd.collaterals['ETH-A']
 ilk = collateral.ilk
-#collateral.gem.deposit(Wad.from_number(3)).transact()
+collateral.gem.deposit(Wad.from_number(3)).transact()
 
 # Add collateral and allocate the desired amount of Dai
 collateral.approve(our_address)

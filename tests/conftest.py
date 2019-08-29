@@ -90,7 +90,7 @@ def deployment_address(web3) -> Address:
 @pytest.fixture(scope="session")
 def mcd(web3) -> DssDeployment:
     # for local dockerized parity testchain
-    deployment = DssDeployment.from_json(web3=web3, conf=open("tests/config/addresses.json", "r").read())
+    deployment = DssDeployment.from_json(web3=web3, conf=open("tests/config/testnet-addresses.json", "r").read())
 
     assert isinstance(deployment.vat, Vat)
     assert deployment.vat.address is not None

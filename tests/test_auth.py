@@ -73,7 +73,6 @@ class TestDSGuard:
                                  sig='0xab121fd8')  # different sig
 
 
-@pytest.mark.skip(reason="DSAuth.get_owner() seems to need attention")
 class TestDSAuth:
     def setup_method(self):
         self.web3 = Web3(HTTPProvider("http://localhost:8555"))
@@ -82,6 +81,7 @@ class TestDSAuth:
 
         self.ds_auth = DSAuth.deploy(self.web3)
 
+    @pytest.mark.skip(reason="calls to ABI/BIN are not working on ganache")
     def test_owner(self):
         owner = self.ds_auth.get_owner()
         assert isinstance(owner, Address)

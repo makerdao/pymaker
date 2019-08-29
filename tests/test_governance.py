@@ -24,7 +24,7 @@ from pymaker.governance import DSPause
 from datetime import datetime, timedelta
 
 
-@pytest.mark.skip(reason="this either needs work or to be removed from the library")
+@pytest.mark.skip(reason="not fully implemented")
 class TestDSPause:
     def setup_method(self):
         self.web3 = Web3(HTTPProvider("http://localhost:8555"))

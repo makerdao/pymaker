@@ -206,7 +206,7 @@ from pymaker.keys import register_keys
 from pymaker.numeric import Wad
 
 
-web3 = Web3(HTTPProvider(endpoint_uri="https://parity0.kovan.makerfoundation.com:8545",
+web3 = Web3(HTTPProvider(endpoint_uri="https://localhost:8545",
                          request_kwargs={"timeout": 10}))
 web3.eth.defaultAccount = "0x0000000000000000000000000000000000000001"
 register_keys(web3, ["key_file=~keys/default-account.json,pass_file=~keys/default-account.pass"])
@@ -216,7 +216,7 @@ our_address = Address(web3.eth.defaultAccount)
 
 
 # Choose the desired collateral; in this case we'll wrap some Eth
-collateral = mcd.collaterals[1]
+collateral = mcd.collaterals['ETH-A']
 ilk = collateral.ilk
 collateral.gem.deposit(Wad.from_number(3)).transact()
 
@@ -334,6 +334,10 @@ print(bump_result.transaction_hash)
 ```
 
 ## Testing
+
+Prerequisites:
+* [docker and docker-compose](https://www.docker.com/get-started)
+* [ganache-cli](https://github.com/trufflesuite/ganache-cli)
 
 This project uses [pytest](https://docs.pytest.org/en/latest/) for unit testing.  Testing of Multi-collateral Dai is 
 performed on a Dockerized local testchain included in `tests\config`.

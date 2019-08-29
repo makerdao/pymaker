@@ -18,7 +18,7 @@
 import eth_utils
 import json
 import re
-from typing import Optional, List
+from typing import Dict, List, Optional
 
 import pkg_resources
 from pymaker.auctions import Flapper, Flopper, Flipper
@@ -153,7 +153,7 @@ class DssDeployment:
     class Config:
         def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flapper: Flapper,
                      flopper: Flopper, dai: DSToken, dai_join: DaiJoin, mkr: DSToken, spotter: Spotter,
-                     collaterals: Optional[List[Collateral]] = None):
+                     collaterals: Optional[Dict[str, Collateral]] = None):
             self.pause = pause
             self.vat = vat
             self.vow = vow
