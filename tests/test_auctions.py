@@ -154,7 +154,7 @@ class TestFlipper:
         assert collateral.adapter.join(our_address, eth_required).transact(from_address=our_address)
 
         # Test the _tend_ phase of the auction
-        flipper.approve(mcd.vat.address, approval_function=hope_directly(), from_address=other_address)
+        flipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=other_address))
         # Add Wad(1) to counter precision error converting tab from Rad to Wad
         frob(mcd, collateral, other_address, dink=eth_required, dart=Wad(current_bid.tab) + Wad(1))
         urn = mcd.vat.urn(collateral.ilk, other_address)
@@ -166,7 +166,7 @@ class TestFlipper:
         assert current_bid.bid == current_bid.tab
 
         # Test the _dent_ phase of the auction
-        flipper.approve(mcd.vat.address, approval_function=hope_directly(), from_address=our_address)
+        flipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=our_address))
         frob(mcd, collateral, our_address, dink=eth_required, dart=Wad(current_bid.tab) + Wad(1))
         lot = current_bid.lot - Wad.from_number(0.2)
         assert flipper.beg() * Ray(lot) <= Ray(current_bid.lot)

@@ -76,7 +76,7 @@ def hope_directly(**kwargs):
                  'name': 'can', 'outputs': [{'name': '', 'type': 'bool'}], 'payable': False, 'stateMutability': 'view',
                  'type': 'function'}]
 
-    def approval_function(token: ERC20Token, spender_address: Address, spender_name: str, **kwargs):
+    def approval_function(token: ERC20Token, spender_address: Address, spender_name: str):
         address_to_check = kwargs['from_address'] if 'from_address' in kwargs else Address(
             token.web3.eth.defaultAccount)
 
