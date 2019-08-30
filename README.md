@@ -16,10 +16,11 @@ not only by keepers, but may also be found useful by authors of some other, unre
 utilities aiming to interact with these contracts.
 
 Based on this API, a set of reference Maker keepers is being developed. They all used to reside
-in this repository, but now each of them has an individual one: [bite-keeper](https://github.com/makerdao/bite-keeper),
+in this repository, but now each of them has an individual one: 
+[bite-keeper](https://github.com/makerdao/bite-keeper) (SCD only),
 [arbitrage-keeper](https://github.com/makerdao/arbitrage-keeper),
-[auction-keeper](https://github.com/makerdao/auction-keeper),
-[cdp-keeper](https://github.com/makerdao/cdp-keeper),
+[auction-keeper](https://github.com/makerdao/auction-keeper) (MCD only),
+[cdp-keeper](https://github.com/makerdao/cdp-keeper) (SCD only),
 [market-maker-keeper](https://github.com/makerdao/market-maker-keeper).
 
 You only need to install this project directly if you want to build your own keepers,
@@ -65,6 +66,7 @@ export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openss
 The current version provides APIs around:
 * `ERC20Token`,
 * `Tub`, `Tap`,`Top` and `Vox` (<https://github.com/makerdao/sai>),
+* `Vat`, `Cat`, `Vow`, `Jug`, `Flipper`, `Flapper`, `Flopper` (<https://github.com/makerdao/dss>)
 * `SimpleMarket`, `ExpiringMarket` and `MatchingMarket` (<https://github.com/makerdao/maker-otc>),
 * `TxManager` (<https://github.com/makerdao/tx-manager>),
 * `DSGuard` (<https://github.com/dapphub/ds-guard>),
@@ -75,6 +77,13 @@ The current version provides APIs around:
 * `EtherDelta` (<https://github.com/etherdelta/etherdelta.github.io>),
 * `0x v1` (<https://etherscan.io/address/0x12459c951127e0c374ff9105dda097662a027093#code>, <https://github.com/0xProject/standard-relayer-api>),
 * `0x v2`.
+
+APIs around the following functionality have not been implemented:
+* Dai Savings Rate (`Pot`)
+* Global Settlement (`End`)
+* Governance (`DSAuth`, `DSChief`, `DSGuard`, `DSSpell`, `Mom`)
+
+Contributions from the community are appreciated.
 
 ## Code samples
 
@@ -192,6 +201,56 @@ for cup_id in range(1, tub.cupi()+1):
     print(f"Cup #{cup_id}, lad={cup.lad}, ink={cup.ink} SKR, tab={tub.tab(cup_id)} SAI, safe={tub.safe(cup_id)}")
 ```
 
+### Multi-collateral Dai
+
+This snippet demonstrates how to create a CDP and draw Dai.
+
+```python
+import sys
+from web3 import Web3, HTTPProvider
+
+from pymaker import Address
+from pymaker.deployment import DssDeployment
+from pymaker.keys import register_keys
+from pymaker.numeric import Wad
+
+
+web3 = Web3(HTTPProvider(endpoint_uri="https://localhost:8545",
+                         request_kwargs={"timeout": 10}))
+web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
+register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
+
+mcd = DssDeployment.from_json(web3=web3, conf=open("tests/config/kovan-addresses.json", "r").read())
+our_address = Address(web3.eth.defaultAccount)
+
+
+# Choose the desired collateral; in this case we'll wrap some Eth
+collateral = mcd.collaterals['ETH-A']
+ilk = collateral.ilk
+collateral.gem.deposit(Wad.from_number(3)).transact()
+
+# Add collateral and allocate the desired amount of Dai
+collateral.approve(our_address)
+collateral.adapter.join(our_address, Wad.from_number(3)).transact()
+mcd.vat.frob(ilk, our_address, dink=Wad.from_number(3), dart=Wad.from_number(153)).transact()
+print(f"CDP Dai balance before withdrawal: {mcd.vat.dai(our_address)}")
+
+# Mint and withdraw our Dai
+mcd.approve_dai(our_address)
+mcd.dai_adapter.exit(our_address, Wad.from_number(153)).transact()
+print(f"CDP Dai balance after withdrawal:  {mcd.vat.dai(our_address)}")
+
+# Repay (and burn) our Dai
+assert mcd.dai_adapter.join(our_address, Wad.from_number(153)).transact()
+print(f"CDP Dai balance after repayment:   {mcd.vat.dai(our_address)}")
+
+# Withdraw our collateral
+mcd.vat.frob(ilk, our_address, dink=Wad(0), dart=Wad.from_number(-153)).transact()
+mcd.vat.frob(ilk, our_address, dink=Wad.from_number(-3), dart=Wad(0)).transact()
+collateral.adapter.exit(our_address, Wad.from_number(3)).transact()
+print(f"CDP Dai balance w/o collateral:    {mcd.vat.dai(our_address)}")
+```
+
 ### Asynchronous invocation of Ethereum transactions
 
 This snippet demonstrates how multiple token transfers can be executed asynchronously:
@@ -285,7 +344,13 @@ print(bump_result.transaction_hash)
 
 ## Testing
 
-This project uses [pytest](https://docs.pytest.org/en/latest/) for unit testing.
+Prerequisites:
+* [docker and docker-compose](https://www.docker.com/get-started)
+* [ganache-cli](https://github.com/trufflesuite/ganache-cli) 6.2.5  
+  (using npm, `sudo npm install -g ganache-cli@6.2.5`)
+
+This project uses [pytest](https://docs.pytest.org/en/latest/) for unit testing.  Testing of Multi-collateral Dai is 
+performed on a Dockerized local testchain included in `tests\config`.
 
 In order to be able to run tests, please install development dependencies first by executing:
 ```

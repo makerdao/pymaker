@@ -52,7 +52,11 @@ class TestTransact:
         # given
         transact = self.token.transfer(self.second_address, Wad(2000000))  # more than we minted
         # and
-        transact.transact()
+        try:
+            transact.transact()
+        # CAUTION: Note ganache 6.5+ causes a ValueError while older versions fail without exception
+        except ValueError:
+            pass
 
         # expect
         with pytest.raises(Exception):
@@ -74,7 +78,10 @@ class TestTransact:
         assert transact.status == TransactStatus.NEW
 
         # when
-        transact.transact()
+        try:
+            transact.transact()
+        except ValueError:
+            pass
         # then
         assert transact.status == TransactStatus.FINISHED
 
@@ -261,7 +268,11 @@ class TestTransactReplace:
 
         # when
         transact_1 = self.token.transfer(self.second_address, Wad(2000000))  # more than we minted
-        receipt_1 = transact_1.transact()
+        receipt_1 = None
+        try:
+            receipt_1 = transact_1.transact()
+        except ValueError:
+            pass
         # then
         assert transact_1.status == TransactStatus.FINISHED
         assert receipt_1 is None
@@ -275,7 +286,7 @@ class TestTransactReplace:
 
         self.web3.eth.sendTransaction = MagicMock(side_effect=second_send_transaction)
         # when
-        transact_2 = self.token.transfer(self.second_address, Wad(500))  # more than we minted
+        transact_2 = self.token.transfer(self.second_address, Wad(500))
         receipt_2 = transact_2.transact(replace=transact_1)
         # then
         assert transact_2.status == TransactStatus.FINISHED

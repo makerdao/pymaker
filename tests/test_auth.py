@@ -19,7 +19,7 @@ import pytest
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address
-from pymaker.auth import DSGuard
+from pymaker.auth import DSGuard, DSAuth
 from pymaker.util import hexstring_to_bytes
 
 
@@ -71,3 +71,21 @@ class TestDSGuard:
         assert not self.can_call(src='0x1111111111222222222211111111112222222222',
                                  dst='0x3333333333444444444433333333334444444444',
                                  sig='0xab121fd8')  # different sig
+
+
+class TestDSAuth:
+    def setup_method(self):
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
+        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
+        self.our_address = Address(self.web3.eth.defaultAccount)
+
+        self.ds_auth = DSAuth.deploy(self.web3)
+
+    @pytest.mark.skip(reason="calls to ABI/BIN are not working on ganache")
+    def test_owner(self):
+        owner = self.ds_auth.get_owner()
+        assert isinstance(owner, Address)
+        assert owner == self.web3.eth.accounts[0]
+
+        assert self.ds_auth.set_owner(self.web3.eth.accounts[1])
+        assert self.ds_auth.get_owner() == self.web3.eth.accounts[1]

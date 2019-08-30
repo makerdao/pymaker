@@ -76,3 +76,37 @@ class DSGuard(Contract):
 
     def __repr__(self):
         return f"DSGuard('{self.address}')"
+
+
+# TODO: Complete implementation and unit test
+class DSAuth(Contract):
+
+    abi = Contract._load_abi(__name__, 'abi/DSAuth.abi')
+    bin = Contract._load_bin(__name__, 'abi/DSAuth.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert (isinstance(web3, Web3))
+        assert (isinstance(address, Address))
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+
+    @staticmethod
+    def deploy(web3: Web3):
+        return DSAuth(web3=web3, address=Contract._deploy(web3, DSAuth.abi, DSAuth.bin, []))
+
+    def get_owner(self) -> Address:
+        return Address(self._contract.call().owner())
+
+    def set_owner(self, owner: Address) -> Transact:
+        assert isinstance(owner, Address)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        "setOwner", [owner.address])
+
+    def set_authority(self, ds_authority: Address):
+        assert isinstance(ds_authority, Address)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        "setAuthority", [ds_authority.address])
