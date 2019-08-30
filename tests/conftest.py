@@ -40,10 +40,6 @@ def deployment(new_deployment: Deployment) -> Deployment:
 
 @pytest.fixture(scope="session")
 def web3() -> Web3:
-    # for ganache
-    # web3 = Web3(HTTPProvider("http://localhost:8555"))
-    # web3.eth.defaultAccount = web3.eth.accounts[0]
-
     # for local dockerized parity testchain
     web3 = Web3(HTTPProvider("http://0.0.0.0:8545"))
     web3.eth.defaultAccount = "0x50FF810797f75f6bfbf2227442e0c961a8562F4C"
