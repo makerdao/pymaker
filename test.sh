@@ -11,7 +11,7 @@ fi
 
 # Start ganache; record the PID so it can be cleanly stopped after testing
 ./ganache.sh &>/dev/null &
-ganache_pid=$(pgrep -f node)
+GANACHE_PID=$!
 echo Started ganache as pid $ganache_pid
 
 # Start the docker image and wait for parity to initialize
@@ -20,8 +20,11 @@ sleep 2
 
 # Run the tests
 py.test --cov=pymaker --cov-report=term --cov-append tests/
+TEST_RESULT=$?
 
 # Cleanup
-kill $ganache_pid
+pkill -P $GANACHE_PID
 echo Stopping container
 docker-compose down
+
+exit $TEST_RESULT
