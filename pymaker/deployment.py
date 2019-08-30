@@ -269,7 +269,8 @@ class DssDeployment:
         assert isinstance(web3, Web3)
         assert isinstance(network, str)
 
-        addresses_path = os.path.join("config", f"{network}-addresses.json")
+        cwd = os.path.dirname(os.path.realpath(__file__))
+        addresses_path = os.path.join(cwd, "../config", f"{network}-addresses.json")
         if not os.path.isfile(addresses_path):
             raise FileNotFoundError("Network is not yet supported")
 
