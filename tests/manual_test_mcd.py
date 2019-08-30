@@ -31,7 +31,7 @@ web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000a
 register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
 
 
-mcd = DssDeployment.from_json(web3=web3, conf=open("tests/config/kovan-addresses.json", "r").read())
+mcd = DssDeployment.from_json(web3=web3, conf=open("config/kovan-addresses.json", "r").read())
 our_address = Address(web3.eth.defaultAccount)
 
 # Choose the desired collateral; in this case we'll wrap some Eth

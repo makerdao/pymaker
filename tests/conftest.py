@@ -44,14 +44,6 @@ def web3() -> Web3:
     # web3 = Web3(HTTPProvider("http://localhost:8555"))
     # web3.eth.defaultAccount = web3.eth.accounts[0]
 
-    # for Kovan
-    # web3 = Web3(HTTPProvider(endpoint_uri="https://parity0.kovan.makerfoundation.com:8545",
-    #                          request_kwargs={"timeout": 10}))
-    # web3.eth.defaultAccount = "0xC140ce1be1c0edA2f06319d984c404251C59494e"
-    # register_keys(web3,
-    #               ["key_file=/home/ed/Projects/member-account.json,pass_file=/home/ed/Projects/member-account.pass",
-    #                "key_file=/home/ed/Projects/kovan-account2.json,pass_file=/home/ed/Projects/kovan-account2.pass"])
-
     # for local dockerized parity testchain
     web3 = Web3(HTTPProvider("http://0.0.0.0:8545"))
     web3.eth.defaultAccount = "0x50FF810797f75f6bfbf2227442e0c961a8562F4C"
@@ -90,8 +82,12 @@ def deployment_address(web3) -> Address:
 @pytest.fixture(scope="session")
 def mcd(web3) -> DssDeployment:
     # for local dockerized parity testchain
-    deployment = DssDeployment.from_json(web3=web3, conf=open("tests/config/testnet-addresses.json", "r").read())
+    deployment = DssDeployment.from_json(web3=web3, conf=open("config/testnet-addresses.json", "r").read())
+    validate_contracts_loaded(deployment)
+    return deployment
 
+
+def validate_contracts_loaded(deployment: DssDeployment):
     assert isinstance(deployment.vat, Vat)
     assert deployment.vat.address is not None
     assert isinstance(deployment.vow, Vow)
@@ -104,5 +100,3 @@ def mcd(web3) -> DssDeployment:
     assert deployment.flapper.address is not None
     assert isinstance(deployment.flopper, Flopper)
     assert deployment.flopper.address is not None
-
-    return deployment
