@@ -27,6 +27,7 @@ from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemJoin, DaiJoin, Collater
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray, Rad
 from pymaker.token import DSToken, DSEthToken
+from tests.conftest import validate_contracts_loaded
 
 
 @pytest.fixture
@@ -242,6 +243,13 @@ class TestConfig:
         assert "MCD_GOV" in dict
         assert "MCD_DAI" in dict
         assert len(dict) > 20
+
+    def test_from_network(self, web3: Web3):
+        mcd_testnet = DssDeployment.from_network(web3, "testnet")
+        validate_contracts_loaded(mcd_testnet)
+
+        with pytest.raises(Exception):
+            DssDeployment.from_network(web3, "bogus")
 
     def test_account_transfers(self, web3: Web3, mcd, our_address, other_address):
         print(mcd.collaterals)

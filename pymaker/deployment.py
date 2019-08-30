@@ -17,6 +17,7 @@
 
 import eth_utils
 import json
+import os
 import re
 from typing import Dict, List, Optional
 
@@ -262,6 +263,18 @@ class DssDeployment:
 
     def to_json(self) -> str:
         return self.config.to_json()
+
+    @staticmethod
+    def from_network(web3: Web3, network: str):
+        assert isinstance(web3, Web3)
+        assert isinstance(network, str)
+
+        cwd = os.path.dirname(os.path.realpath(__file__))
+        addresses_path = os.path.join(cwd, "../config", f"{network}-addresses.json")
+        if not os.path.isfile(addresses_path):
+            raise FileNotFoundError("Network is not yet supported")
+
+        return DssDeployment.from_json(web3=web3, conf=open(addresses_path, "r").read())
 
     def approve_dai(self, usr: Address):
         """
