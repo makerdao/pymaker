@@ -437,6 +437,7 @@ class TestVat:
         assert collateral.gem == collateral.adapter.gem()
         collateral.gem.approve(collateral.adapter.address)
         assert collateral.adapter.join(other_address, Wad(3)).transact(from_address=other_address)
+        self.simulate_frob(mcd, collateral, other_address, Wad(3), Wad(10))
         assert mcd.vat.frob(collateral.ilk, other_address, Wad(3), Wad(10)).transact(from_address=other_address)
 
         # then
