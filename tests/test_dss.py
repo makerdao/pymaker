@@ -523,6 +523,7 @@ class TestVow:
         assert isinstance(mcd.vow.sin(), Rad)
         assert isinstance(mcd.vow.sin_of(0), Rad)
         assert isinstance(mcd.vow.ash(), Rad)
+        assert isinstance(mcd.vow.woe(), Rad)
         assert isinstance(mcd.vow.wait(), int)
         assert isinstance(mcd.vow.sump(), Rad)
         assert isinstance(mcd.vow.bump(), Rad)

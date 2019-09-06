@@ -526,6 +526,7 @@ class Vow(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
+        self.vat = Vat(web3, Address(self._contract.call().vat()))
 
     def rely(self, guy: Address) -> Transact:
         assert isinstance(guy, Address)
@@ -547,9 +548,6 @@ class Vow(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'file(bytes32,uint256)', [Web3.toBytes(text="sump"), amount.value])
 
-    def vat(self) -> Address:
-        return Address(self._contract.call().vat())
-
     def flapper(self) -> Address:
         return Address(self._contract.call().flapper())
 
@@ -564,6 +562,9 @@ class Vow(Contract):
 
     def ash(self) -> Rad:
         return Rad(self._contract.call().Ash())
+
+    def woe(self) -> Rad:
+        return (self.vat.sin(self.address) - self.sin()) - self.ash()
 
     def wait(self) -> int:
         return int(self._contract.call().wait())

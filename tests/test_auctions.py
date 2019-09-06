@@ -363,10 +363,9 @@ class TestFlopper:
             assert mcd.vow.sin_of(era_bite) == Rad(0)
         # Cancel out surplus and debt
         dai_vow = mcd.vat.dai(mcd.vow.address)
-        woe = (mcd.vat.sin(mcd.vow.address) - mcd.vow.sin()) - mcd.vow.ash()
-        assert dai_vow <= woe
+        assert dai_vow <= mcd.vow.woe()
         assert mcd.vow.heal(dai_vow).transact()
-        assert woe >= mcd.vow.sump()
+        assert mcd.vow.woe() >= mcd.vow.sump()
 
     def test_scenario(self, web3, mcd, flopper, our_address, other_address, deployment_address):
         self.create_debt(web3, mcd, our_address, deployment_address)
