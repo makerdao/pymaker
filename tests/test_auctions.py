@@ -78,7 +78,7 @@ class TestFlipper:
 
     def test_getters(self, mcd, flipper):
         assert flipper.vat() == mcd.vat.address
-        assert flipper.beg() == Ray.from_number(1.05)
+        assert flipper.beg() > Ray.from_number(1)
         assert flipper.ttl() > 0
         assert flipper.tau() > flipper.ttl()
         assert flipper.kicks() >= 0
@@ -224,7 +224,7 @@ class TestFlapper:
 
     def test_getters(self, mcd, flapper):
         assert flapper.vat() == mcd.vat.address
-        assert flapper.beg() == Ray.from_number(1.05)
+        assert flapper.beg() > Ray.from_number(1)
         assert flapper.ttl() > 0
         assert flapper.tau() > flapper.ttl()
         assert flapper.kicks() >= 0
@@ -309,12 +309,12 @@ class TestFlopper:
 
     def test_getters(self, mcd, flopper):
         assert flopper.vat() == mcd.vat.address
-        assert flopper.beg() == Ray.from_number(1.05)
+        assert flopper.beg() > Ray.from_number(1)
         assert flopper.ttl() > 0
         assert flopper.tau() > flopper.ttl()
         assert flopper.kicks() >= 0
 
-    def test_scenario(self, web3, mcd, flopper, our_address, other_address, deployment_address):
+    def create_debt(self, web3, mcd, our_address, deployment_address):
         # Create a CDP
         collateral = mcd.collaterals['ETH-A']
         ilk = collateral.ilk
@@ -366,11 +366,14 @@ class TestFlopper:
         woe = (mcd.vat.sin(mcd.vow.address) - mcd.vow.sin()) - mcd.vow.ash()
         assert dai_vow <= woe
         assert mcd.vow.heal(dai_vow).transact()
+        assert woe >= mcd.vow.sump()
+
+    def test_scenario(self, web3, mcd, flopper, our_address, other_address, deployment_address):
+        self.create_debt(web3, mcd, our_address, deployment_address)
 
         # Kick off the flop auction
         assert flopper.kicks() == 0
         assert len(flopper.active_auctions()) == 0
-        assert woe >= mcd.vow.sump()
         assert mcd.vat.dai(mcd.vow.address) == Rad(0)
         # TODO: Get bid_id return value from transaction rather than guessing bid_id==1
         assert mcd.vow.flop().transact()
@@ -379,12 +382,18 @@ class TestFlopper:
         assert len(flopper.active_auctions()) == 1
         current_bid = flopper.bids(kick)
 
+        # Allow the auction to expire, and then resurrect it
+        wait(mcd, our_address, flopper.tau()+1)
+        assert flopper.tick(kick).transact()
+
+        # Bid on the resurrected auction
         flopper.approve(mcd.vat.address, hope_directly())
         assert mcd.vat.can(our_address, flopper.address)
         TestFlopper.dent(flopper, kick, our_address, Wad.from_number(0.5), current_bid.bid)
         current_bid = flopper.bids(kick)
         assert current_bid.guy == our_address
 
+        # Confirm victory
         wait(mcd, our_address, flopper.ttl()+1)
         assert flopper.live()
         now = int(datetime.now().timestamp())
