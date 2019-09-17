@@ -2,12 +2,8 @@
 
 # set -e
 
-# If the docker image doesn't already exist, pull it from docker hub
-result=$( docker images -q makerdao/testchain-pymaker:unit-testing )
-if [[ "$result" == "" ]]; then
-    echo Docker image not found\; pulling from docker hub
-    docker pull makerdao/testchain-pymaker:unit-testing
-fi
+# Pull the docker image
+docker pull makerdao/testchain-pymaker:unit-testing
 
 # Start ganache; record the PID so it can be cleanly stopped after testing
 ./ganache.sh &>/dev/null &

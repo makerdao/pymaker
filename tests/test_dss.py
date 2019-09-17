@@ -506,8 +506,8 @@ class TestVat:
 class TestCat:
     def test_getters(self, mcd):
         assert isinstance(mcd.cat.live(), bool)
-        assert mcd.cat.vat() == mcd.vat.address
-        assert mcd.cat.vow() == mcd.vow.address
+        assert isinstance(mcd.cat.vat, Vat)
+        assert isinstance(mcd.cat.vow, Vow)
 
         collateral = mcd.collaterals['ETH-C']
         assert mcd.cat.flipper(collateral.ilk) == collateral.flipper.address
@@ -517,12 +517,14 @@ class TestCat:
 
 class TestVow:
     def test_getters(self, mcd):
+        assert isinstance(mcd.vow.vat, Vat)
         assert isinstance(mcd.vow.live(), bool)
         assert isinstance(mcd.vow.flopper(), Address)
         assert isinstance(mcd.vow.flopper(), Address)
         assert isinstance(mcd.vow.sin(), Rad)
         assert isinstance(mcd.vow.sin_of(0), Rad)
         assert isinstance(mcd.vow.ash(), Rad)
+        assert isinstance(mcd.vow.woe(), Rad)
         assert isinstance(mcd.vow.wait(), int)
         assert isinstance(mcd.vow.sump(), Rad)
         assert isinstance(mcd.vow.bump(), Rad)
@@ -541,8 +543,8 @@ class TestVow:
 class TestJug:
     def test_getters(self, mcd):
         c = mcd.collaterals['ETH-A']
-        assert isinstance(mcd.jug.vow(), Address)
-        assert isinstance(mcd.jug.vat(), Address)
+        assert isinstance(mcd.jug.vat, Vat)
+        assert isinstance(mcd.jug.vow, Vow)
         assert isinstance(mcd.jug.base(), Wad)
         assert isinstance(mcd.jug.duty(c.ilk), Ray)
         assert isinstance(mcd.jug.rho(c.ilk), int)

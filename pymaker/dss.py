@@ -526,6 +526,7 @@ class Vow(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
+        self.vat = Vat(web3, Address(self._contract.call().vat()))
 
     def rely(self, guy: Address) -> Transact:
         assert isinstance(guy, Address)
@@ -547,9 +548,6 @@ class Vow(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'file(bytes32,uint256)', [Web3.toBytes(text="sump"), amount.value])
 
-    def vat(self) -> Address:
-        return Address(self._contract.call().vat())
-
     def flapper(self) -> Address:
         return Address(self._contract.call().flapper())
 
@@ -564,6 +562,9 @@ class Vow(Contract):
 
     def ash(self) -> Rad:
         return Rad(self._contract.call().Ash())
+
+    def woe(self) -> Rad:
+        return (self.vat.sin(self.address) - self.sin()) - self.ash()
 
     def wait(self) -> int:
         return int(self._contract.call().wait())
@@ -584,6 +585,7 @@ class Vow(Contract):
 
     def heal(self, rad: Rad) -> Transact:
         assert isinstance(rad, Rad)
+        logger.info(f"Healing joy={self.vat.dai(self.address)} woe={self.woe()}")
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'heal', [rad.value])
 
@@ -594,13 +596,13 @@ class Vow(Contract):
 
     def flop(self) -> Transact:
         """Initiate a debt auction"""
-        logger.info("Initiating a flop auction")
+        logger.info(f"Initiating a flop auction with woe={self.woe()}")
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'flop', [])
 
     def flap(self) -> Transact:
         """Initiate a surplus auction"""
-        logger.info("Initiating a flap auction")
+        logger.info(f"Initiating a flap auction with joy={self.vat.dai(self.address)}")
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'flap', [])
 
@@ -624,6 +626,8 @@ class Jug(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
+        self.vat = Vat(web3, Address(self._contract.call().vat()))
+        self.vow = Vow(web3, Address(self._contract.call().vow()))
 
     def init(self, ilk: Ilk) -> Transact:
         assert isinstance(ilk, Ilk)
@@ -651,12 +655,6 @@ class Jug(Contract):
         assert isinstance(ilk, Ilk)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [ilk.toBytes()])
-
-    def vat(self) -> Address:
-        return Address(self._contract.call().vat())
-
-    def vow(self) -> Address:
-        return Address(self._contract.call().vow())
 
     def base(self) -> Wad:
         return Wad(self._contract.call().base())
@@ -726,6 +724,8 @@ class Cat(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
+        self.vat = Vat(web3, Address(self._contract.call().vat()))
+        self.vow = Vow(web3, Address(self._contract.call().vow()))
 
     def live(self) -> bool:
         return self._contract.call().live() > 0
@@ -740,7 +740,11 @@ class Cat(Contract):
         assert isinstance(ilk, Ilk)
         assert isinstance(urn, Urn)
 
-        logger.info(f"biting {ilk.name} urn {urn.address.address}")
+        ilk = self.vat.ilk(ilk.name)
+        urn = self.vat.urn(ilk, urn.address)
+        rate = self.vat.ilk(ilk.name).rate
+        logger.info(f'Biting {ilk.name} CDP {urn.address.address} with ink={urn.ink} spot={ilk.spot} '
+                    f'art={urn.art} rate={rate}')
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'bite', [ilk.toBytes(), urn.address.address])
@@ -790,12 +794,6 @@ class Cat(Contract):
 
         (flip, chop, lump) = self._contract.call().ilks(ilk.toBytes())
         return Address(flip)
-
-    def vat(self) -> Address:
-        return Address(self._contract.call().vat())
-
-    def vow(self) -> Address:
-        return Address(self._contract.call().vow())
 
     def past_bite(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogBite]:
         """Synchronously retrieve past LogBite events.
