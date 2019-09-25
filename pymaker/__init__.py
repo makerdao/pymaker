@@ -31,8 +31,8 @@ import pkg_resources
 from hexbytes import HexBytes
 
 from web3 import Web3
-from web3.utils.contracts import get_function_info, encode_abi
-from web3.utils.events import get_event_data
+from web3._utils.contracts import get_function_info, encode_abi
+from web3._utils.events import get_event_data
 
 from pymaker.gas import DefaultGasPrice, GasPrice
 from pymaker.numeric import Wad
@@ -373,7 +373,7 @@ class Transact:
     def _is_parity(self) -> bool:
         global node_is_parity
         if node_is_parity is None:
-            node_is_parity = "parity" in self.web3.version.node.lower()
+            node_is_parity = "parity" in self.web3.clientVersion.lower()
 
         return node_is_parity
 

@@ -27,7 +27,7 @@ import requests
 from eth_abi import encode_single, encode_abi, decode_single
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.utils.events import get_event_data
+from web3._utils.events import get_event_data
 
 from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
