@@ -156,8 +156,8 @@ from pymaker.sai import Tub, Tap
 
 web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
 
-tub = Tub(web3=web3, address=Address('0xb7ae5ccabd002b5eebafe6a8fad5499394f67980'))
-tap = Tap(web3=web3, address=Address('0xb9e0a196d2150a6393713e09bd79a0d39293ec13'))
+tub = Tub(web3=web3, address=Address('0x448a5065aebb8e423f0896e6c5d525c040f59af3'))
+tap = Tap(web3=web3, address=Address('0xbda109309f9fafa6dd6a9cb9f1df4085b27ee8ef'))
 sai = ERC20Token(web3=web3, address=tub.sai())
 skr = ERC20Token(web3=web3, address=tub.skr())
 gem = ERC20Token(web3=web3, address=tub.gem())
@@ -267,7 +267,7 @@ from pymaker.token import ERC20Token
 
 web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
 
-tub = Tub(web3=web3, address=Address('0xb7ae5ccabd002b5eebafe6a8fad5499394f67980'))
+tub = Tub(web3=web3, address=Address('0x448a5065aebb8e423f0896e6c5d525c040f59af3'))
 sai = ERC20Token(web3=web3, address=tub.sai())
 skr = ERC20Token(web3=web3, address=tub.skr())
 
@@ -294,7 +294,7 @@ from pymaker.transactional import TxManager
 
 web3 = Web3(HTTPProvider(endpoint_uri="http://localhost:8545"))
 
-tub = Tub(web3=web3, address=Address('0xb7ae5ccabd002b5eebafe6a8fad5499394f67980'))
+tub = Tub(web3=web3, address=Address('0x448a5065aebb8e423f0896e6c5d525c040f59af3'))
 sai = ERC20Token(web3=web3, address=tub.sai())
 skr = ERC20Token(web3=web3, address=tub.skr())
 
