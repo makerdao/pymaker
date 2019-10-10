@@ -31,7 +31,7 @@ class TestDSGuard:
         self.ds_guard = DSGuard.deploy(self.web3)
 
     def can_call(self, src: str, dst: str, sig: str) -> bool:
-        return self.ds_guard._contract.call().canCall(src, dst, hexstring_to_bytes(sig))
+        return self.ds_guard._contract.functions.canCall(src, dst, hexstring_to_bytes(sig)).call()
 
     def test_fail_when_no_contract_under_that_address(self):
         # expect

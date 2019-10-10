@@ -41,7 +41,10 @@ class TestZrx:
         self.zrx_token = ERC20Token(web3=self.web3, address=deploy_contract(self.web3, 'ZRXToken'))
         self.token_transfer_proxy_address = deploy_contract(self.web3, 'TokenTransferProxy')
         self.exchange = ZrxExchange.deploy(self.web3, self.zrx_token.address, self.token_transfer_proxy_address)
-        self.web3.eth.contract(abi=json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/TokenTransferProxy.abi')))(address=self.token_transfer_proxy_address.address).transact().addAuthorizedAddress(self.exchange.address.address)
+        token_proxy_abi = json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/TokenTransferProxy.abi'))
+        self.web3.eth.contract(abi=token_proxy_abi)\
+            (address=self.token_transfer_proxy_address.address).functions.addAuthorizedAddress(
+            self.exchange.address.address).transact()
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1.mint(Wad.from_number(100)).transact()
         self.token2 = DSToken.deploy(self.web3, 'BBB')

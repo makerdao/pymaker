@@ -337,7 +337,7 @@ class ZrxExchangeV2(Contract):
         Returns:
             The asset data of the `ZRX` token.
         """
-        return str(bytes_to_hexstring(self._contract.call().ZRX_ASSET_DATA()))
+        return str(bytes_to_hexstring(self._contract.functions.ZRX_ASSET_DATA().call()))
 
     def zrx_token(self) -> Address:
         """Get the address of the ZRX token contract associated with this `ExchangeV2` contract.
@@ -355,7 +355,7 @@ class ZrxExchangeV2(Contract):
         """
         assert(isinstance(proxy_id, str))
 
-        return Address(self._contract.call().getAssetProxy(hexstring_to_bytes(proxy_id)))
+        return Address(self._contract.functions.getAssetProxy(hexstring_to_bytes(proxy_id)).call())
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         """Approve the 0x ERC20Proxy contract to fully access balances of specified tokens.

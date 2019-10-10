@@ -1,4 +1,4 @@
-attrs == 19.1.0
+pipattrs == 19.1.0
 codecov == 2.0.9
 mock == 2.0.0
 pytest == 3.3.0

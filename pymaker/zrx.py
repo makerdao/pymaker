@@ -25,7 +25,7 @@ from typing import List, Optional
 import requests
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.utils.events import get_event_data
+from web3._utils.events import get_event_data
 
 from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
@@ -296,7 +296,7 @@ class ZrxExchange(Contract):
         Returns:
             The address of the `ZRX` token.
         """
-        return Address(self._contract.call().ZRX_TOKEN_CONTRACT())
+        return Address(self._contract.functions.ZRX_TOKEN_CONTRACT().call())
 
     def token_transfer_proxy(self) -> Address:
         """Get the address of the `TokenTransferProxy` contract associated with this `Exchange` contract.
@@ -304,7 +304,7 @@ class ZrxExchange(Contract):
         Returns:
             The address of the `TokenTransferProxy` token.
         """
-        return Address(self._contract.call().TOKEN_TRANSFER_PROXY_CONTRACT())
+        return Address(self._contract.functions.TOKEN_TRANSFER_PROXY_CONTRACT().call())
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         """Approve the 0x Exchange TokenTransferProxy contract to fully access balances of specified tokens.
@@ -420,7 +420,7 @@ class ZrxExchange(Contract):
         # the hash depends on the exchange contract address as well
         assert(order.exchange_contract_address == self.address)
 
-        result = self._contract.call().getOrderHash(self._order_addresses(order), self._order_values(order))
+        result = self._contract.functions.getOrderHash(self._order_addresses(order), self._order_values(order)).call()
         return bytes_to_hexstring(result)
 
     def get_unavailable_buy_amount(self, order: Order) -> Wad:
@@ -435,7 +435,8 @@ class ZrxExchange(Contract):
         """
         assert(isinstance(order, Order))
 
-        return Wad(self._contract.call().getUnavailableTakerTokenAmount(hexstring_to_bytes(self.get_order_hash(order))))
+        return Wad(self._contract.functions.getUnavailableTakerTokenAmount(
+            hexstring_to_bytes(self.get_order_hash(order))).call())
 
     def sign_order(self, order: Order) -> Order:
         """Signs an order so it can be submitted to the relayer.

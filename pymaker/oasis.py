@@ -20,7 +20,7 @@ from typing import Optional, List, Iterable, Iterator
 
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.utils.events import get_event_data
+from web3._utils.events import get_event_data
 
 from pymaker import Contract, Address, Transact, Receipt
 from pymaker.numeric import Wad

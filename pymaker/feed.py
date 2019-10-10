@@ -66,7 +66,7 @@ class DSValue(DSAuth):
         Returns:
             `True` if this instance contains a value, which can be read. `False` otherwise.
         """
-        return self._contract.call().peek()[1]
+        return self._contract.functions.peek().call()[1]
 
     def read(self) -> bytes:
         """Reads the current value from this instance as a byte array.
@@ -76,7 +76,7 @@ class DSValue(DSAuth):
         Returns:
             A 32-byte array with the current value of this instance.
         """
-        return self._contract.call().read()
+        return self._contract.functions.read().call()
 
     def read_as_hex(self) -> str:
         """Reads the current value from this instance and converts it to a hex string.

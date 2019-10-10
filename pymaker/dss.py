@@ -23,7 +23,7 @@ from typing import Optional, List
 from hexbytes import HexBytes
 from web3 import Web3
 
-from web3.utils.events import get_event_data
+from web3._utils.events import get_event_data
 
 from pymaker import Address, Contract, Transact
 from pymaker.approval import directly, hope_directly
@@ -198,7 +198,7 @@ class DaiJoin(Join):
         self._token = self.dai()
 
     def dai(self) -> DSToken:
-        address = Address(self._contract.call().dai())
+        address = Address(self._contract.functions.dai().call())
         return DSToken(self.web3, address)
 
 
@@ -216,10 +216,10 @@ class GemJoin(Join):
         self._token = self.gem()
 
     def ilk(self):
-        return Ilk.fromBytes(self._contract.call().ilk())
+        return Ilk.fromBytes(self._contract.functions.ilk().call())
 
     def gem(self) -> DSToken:
-        address = Address(self._contract.call().gem())
+        address = Address(self._contract.functions.gem().call())
         return DSToken(self.web3, address)
 
 
@@ -258,12 +258,12 @@ class Vat(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'init', [ilk.toBytes()])
 
     def live(self) -> bool:
-        return self._contract.call().live() > 0
+        return self._contract.functions.live().call() > 0
 
     def wards(self, address: Address):
         assert isinstance(address, Address)
 
-        return bool(self._contract.call().wards(address.address))
+        return bool(self._contract.functions.wards(address.address).call())
 
     def hope(self, address: Address):
         assert isinstance(address, Address)
@@ -274,7 +274,7 @@ class Vat(Contract):
         assert isinstance(sender, Address)
         assert isinstance(usr, Address)
 
-        return bool(self._contract.call().can(sender.address, usr.address))
+        return bool(self._contract.functions.can(sender.address, usr.address).call())
 
     def file_line(self, ilk: Ilk, amount: Wad) -> Transact:
         assert isinstance(amount, Wad)
@@ -286,7 +286,7 @@ class Vat(Contract):
         assert isinstance(name, str)
 
         b32_ilk = Ilk(name).toBytes()
-        (art, rate, spot, line, dust) = self._contract.call().ilks(b32_ilk)
+        (art, rate, spot, line, dust) = self._contract.functions.ilks(b32_ilk).call()
 
         # We could get "ink" from the urn, but caller must provide an address.
         return Ilk(name, rate=Ray(rate), ink=Wad(0), art=Wad(art), spot=Ray(spot), line=Rad(line), dust=Rad(dust))
@@ -295,23 +295,23 @@ class Vat(Contract):
         assert isinstance(ilk, Ilk)
         assert isinstance(urn, Address)
 
-        return Wad(self._contract.call().gem(ilk.toBytes(), urn.address))
+        return Wad(self._contract.functions.gem(ilk.toBytes(), urn.address).call())
 
     def dai(self, urn: Address) -> Rad:
         assert isinstance(urn, Address)
 
-        return Rad(self._contract.call().dai(urn.address))
+        return Rad(self._contract.functions.dai(urn.address).call())
 
     def sin(self, urn: Address) -> Rad:
         assert isinstance(urn, Address)
 
-        return Rad(self._contract.call().sin(urn.address))
+        return Rad(self._contract.functions.sin(urn.address).call())
 
     def urn(self, ilk: Ilk, address: Address) -> Urn:
         assert isinstance(ilk, Ilk)
         assert isinstance(address, Address)
 
-        (ink, art) = self._contract.call().urns(ilk.toBytes(), address.address)
+        (ink, art) = self._contract.functions.urns(ilk.toBytes(), address.address).call()
         return Urn(address, ilk, Wad(ink), Wad(art))
 
     def urns(self, ilk=None, from_block=0) -> dict:
@@ -339,14 +339,14 @@ class Vat(Contract):
         return urns
 
     def debt(self) -> Rad:
-        return Rad(self._contract.call().debt())
+        return Rad(self._contract.functions.debt().call())
 
     def vice(self) -> Rad:
-        return Rad(self._contract.call().vice())
+        return Rad(self._contract.functions.vice().call())
 
     def line(self) -> Rad:
         """ Total debt ceiling """
-        return Rad(self._contract.call().Line())
+        return Rad(self._contract.functions.Line().call())
 
     def frob(self, ilk: Ilk, urn_address: Address, dink: Wad, dart: Wad, collateral_owner=None, dai_recipient=None):
         """Adjust amount of collateral and reserved amount of Dai for the CDP
@@ -500,10 +500,10 @@ class Spotter(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'poke', [ilk.toBytes()])
 
     def vat(self) -> Address:
-        return Address(self._contract.call().vat())
+        return Address(self._contract.functions.vat()).call()
 
     def par(self) -> Ray:
-        return Ray(self._contract.call().par())
+        return Ray(self._contract.functions.par()).call()
 
     def __repr__(self):
         return f"Spotter('{self.address}')"
@@ -526,7 +526,7 @@ class Vow(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
-        self.vat = Vat(web3, Address(self._contract.call().vat()))
+        self.vat = Vat(web3, Address(self._contract.functions.vat().call()))
 
     def rely(self, guy: Address) -> Transact:
         assert isinstance(guy, Address)
@@ -534,7 +534,7 @@ class Vow(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'rely', [guy.address])
 
     def live(self) -> bool:
-        return self._contract.call().live() > 0
+        return self._contract.functions.live().call() > 0
 
     def file_bump(self, amount: Wad) -> Transact:
         assert isinstance(amount, Wad)
@@ -549,34 +549,34 @@ class Vow(Contract):
                         'file(bytes32,uint256)', [Web3.toBytes(text="sump"), amount.value])
 
     def flapper(self) -> Address:
-        return Address(self._contract.call().flapper())
+        return Address(self._contract.functions.flapper().call())
 
     def flopper(self) -> Address:
-        return Address(self._contract.call().flopper())
+        return Address(self._contract.functions.flopper().call())
 
     def sin(self) -> Rad:
-        return Rad(self._contract.call().Sin())
+        return Rad(self._contract.functions.Sin().call())
 
     def sin_of(self, era: int) -> Rad:
-        return Rad(self._contract.call().sin(era))
+        return Rad(self._contract.functions.sin(era).call())
 
     def ash(self) -> Rad:
-        return Rad(self._contract.call().Ash())
+        return Rad(self._contract.functions.Ash().call())
 
     def woe(self) -> Rad:
         return (self.vat.sin(self.address) - self.sin()) - self.ash()
 
     def wait(self) -> int:
-        return int(self._contract.call().wait())
+        return int(self._contract.functions.wait().call())
 
     def sump(self) -> Rad:
-        return Rad(self._contract.call().sump())
+        return Rad(self._contract.functions.sump().call())
 
     def bump(self) -> Rad:
-        return Rad(self._contract.call().bump())
+        return Rad(self._contract.functions.bump().call())
 
     def hump(self) -> Rad:
-        return Rad(self._contract.call().hump())
+        return Rad(self._contract.functions.hump().call())
 
     def flog(self, era: int) -> Transact:
         assert isinstance(era, int)
@@ -626,8 +626,8 @@ class Jug(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
-        self.vat = Vat(web3, Address(self._contract.call().vat()))
-        self.vow = Vow(web3, Address(self._contract.call().vow()))
+        self.vat = Vat(web3, Address(self._contract.functions.vat().call()))
+        self.vow = Vow(web3, Address(self._contract.functions.vow().call()))
 
     def init(self, ilk: Ilk) -> Transact:
         assert isinstance(ilk, Ilk)
@@ -637,7 +637,7 @@ class Jug(Contract):
     def wards(self, address: Address):
         assert isinstance(address, Address)
 
-        return bool(self._contract.call().wards(address.address))
+        return bool(self._contract.functions.wards(address.address).call())
 
     def file_base(self, amount: Wad) -> Transact:
         assert isinstance(amount, Wad)
@@ -657,17 +657,17 @@ class Jug(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [ilk.toBytes()])
 
     def base(self) -> Wad:
-        return Wad(self._contract.call().base())
+        return Wad(self._contract.functions.base().call())
 
     def duty(self, ilk: Ilk) -> Ray:
         assert isinstance(ilk, Ilk)
 
-        return Ray(self._contract.call().ilks(ilk.toBytes())[0])
+        return Ray(self._contract.functions.ilks(ilk.toBytes()).call()[0])
 
     def rho(self, ilk: Ilk) -> int:
         assert isinstance(ilk, Ilk)
 
-        return Web3.toInt(self._contract.call().ilks(ilk.toBytes())[1])
+        return Web3.toInt(self._contract.functions.ilks(ilk.toBytes()).call()[1])
 
     def __repr__(self):
         return f"Jug('{self.address}')"
@@ -724,11 +724,11 @@ class Cat(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
-        self.vat = Vat(web3, Address(self._contract.call().vat()))
-        self.vow = Vow(web3, Address(self._contract.call().vow()))
+        self.vat = Vat(web3, Address(self._contract.functions.vat().call()))
+        self.vow = Vow(web3, Address(self._contract.functions.vow().call()))
 
     def live(self) -> bool:
-        return self._contract.call().live() > 0
+        return self._contract.functions.live().call() > 0
 
     def bite(self, ilk: Ilk, urn: Urn) -> Transact:
         """ Initiate liquidation of a CDP, kicking off a flip auction
@@ -752,13 +752,13 @@ class Cat(Contract):
     def lump(self, ilk: Ilk) -> Wad:
         assert isinstance(ilk, Ilk)
 
-        (flip, chop, lump) = self._contract.call().ilks(ilk.toBytes())
+        (flip, chop, lump) = self._contract.functions.ilks(ilk.toBytes()).call()
         return Wad(lump)
 
     def chop(self, ilk: Ilk) -> Ray:
         assert isinstance(ilk, Ilk)
 
-        (flip, chop, lump) = self._contract.call().ilks(ilk.toBytes())
+        (flip, chop, lump) = self._contract.functions.ilks(ilk.toBytes()).call()
         return Ray(chop)
 
     def file_vow(self, vow: Vow) -> Transact:
@@ -792,7 +792,7 @@ class Cat(Contract):
     def flipper(self, ilk: Ilk) -> Address:
         assert isinstance(ilk, Ilk)
 
-        (flip, chop, lump) = self._contract.call().ilks(ilk.toBytes())
+        (flip, chop, lump) = self._contract.functions.ilks(ilk.toBytes()).call()
         return Address(flip)
 
     def past_bite(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogBite]:
