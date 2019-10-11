@@ -60,7 +60,7 @@ class DSVault(Contract):
         Returns:
             The address of the current `authority`.
         """
-        return Address(self._contract.call().authority())
+        return Address(self._contract.functions.authority().call())
 
     def set_authority(self, address: Address) -> Transact:
         """Set the `authority` of a `DSAuth`-ed contract.

@@ -101,7 +101,7 @@ class Lifecycle:
     def __exit__(self, exc_type, exc_val, exc_tb):
         # Initialization phase
         if self.web3:
-            self.logger.info(f"Keeper connected to {self.web3.providers[0]}")
+            self.logger.info(f"Keeper connected to {self.web3.provider}")
             if self.web3.eth.defaultAccount and self.web3.eth.defaultAccount != "0x0000000000000000000000000000000000000000":
                 self.logger.info(f"Keeper operating as {self.web3.eth.defaultAccount}")
                 self._check_account_unlocked()
@@ -190,7 +190,7 @@ class Lifecycle:
     def _wait_for_init(self):
         # In unit-tests waiting for the node to sync does not work correctly.
         # So we skip it.
-        if 'TestRPC' in self.web3.version.node:
+        if 'TestRPC' in self.web3.clientVersion:
             return
 
         # wait for the client to have at least one peer

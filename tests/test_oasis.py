@@ -31,7 +31,6 @@ from tests.helpers import wait_until_mock_called, is_hashable
 PAST_BLOCKS = 100
 
 
-@pytest.mark.skip("takes too long")
 class GeneralMarketTest:
     def setup_method(self):
         self.web3 = Web3(HTTPProvider("http://localhost:8555"))
@@ -355,7 +354,6 @@ class GeneralMarketTest:
         assert past_kill[0].raw['blockNumber'] > 0
 
 
-@pytest.mark.skip("takes too long")
 class TestSimpleMarket(GeneralMarketTest):
     def setup_method(self):
         GeneralMarketTest.setup_method(self)
@@ -370,7 +368,6 @@ class TestSimpleMarket(GeneralMarketTest):
         assert repr(self.otc) == f"SimpleMarket('{self.otc.address}')"
 
 
-@pytest.mark.skip("takes too long")
 class TestExpiringMarket(GeneralMarketTest):
     def setup_method(self):
         GeneralMarketTest.setup_method(self)
@@ -389,7 +386,7 @@ class TestExpiringMarket(GeneralMarketTest):
         assert self.otc.is_closed() is False
 
         # when
-        self.otc._contract.transact().stop()
+        self.otc._contract.functions.stop().transact()
 
         # then
         assert self.otc.is_closed() is True
@@ -398,7 +395,6 @@ class TestExpiringMarket(GeneralMarketTest):
         assert repr(self.otc) == f"ExpiringMarket('{self.otc.address}')"
 
 
-@pytest.mark.skip("takes too long")
 class TestMatchingMarket(GeneralMarketTest):
     def setup_method(self):
         GeneralMarketTest.setup_method(self)
@@ -470,7 +466,6 @@ class TestMatchingMarket(GeneralMarketTest):
         assert repr(self.otc) == f"MatchingMarket('{self.otc.address}')"
 
 
-@pytest.mark.skip("takes too long")
 class TestMatchingMarketWithSupportContract(TestMatchingMarket):
     def setup_method(self):
         GeneralMarketTest.setup_method(self)
@@ -492,7 +487,6 @@ class TestMatchingMarketWithSupportContract(TestMatchingMarket):
                            support_address=Address('0xdeadadd1e5500000000000000000000000000000'))
 
 
-@pytest.mark.skip("takes too long")
 class TestMatchingMarketPosition:
     def setup_method(self):
         self.web3 = Web3(HTTPProvider("http://localhost:8555"))

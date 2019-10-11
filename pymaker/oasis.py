@@ -306,7 +306,7 @@ class SimpleMarket(Contract):
         Returns:
             The id of the last order. Returns `0` if no orders have been created at all.
         """
-        return self._contract.call().last_offer_id()
+        return self._contract.functions.last_offer_id().call()
 
     def get_order(self, order_id: int) -> Optional[Order]:
         """Get order details.
@@ -320,7 +320,7 @@ class SimpleMarket(Contract):
         """
         assert(isinstance(order_id, int))
 
-        array = self._contract.call().offers(order_id)
+        array = self._contract.functions.offers(order_id).call()
         if array[5] == 0:
             return None
         else:
@@ -503,7 +503,7 @@ class ExpiringMarket(SimpleMarket):
         Returns:
             `True` if the market is closed. `False` otherwise.
         """
-        return self._contract.call().isClosed()
+        return self._contract.functions.isClosed().call()
 
     def __repr__(self):
         return f"ExpiringMarket('{self.address}')"
@@ -556,7 +556,7 @@ class MatchingMarket(ExpiringMarket):
         Returns:
             `True` if direct buy is enabled, `False` otherwise.
         """
-        return self._contract.call().buyEnabled()
+        return self._contract.functions.buyEnabled().call()
 
     def set_buy_enabled(self, buy_enabled: bool) -> Transact:
         """Enables or disables direct buy.
@@ -577,7 +577,7 @@ class MatchingMarket(ExpiringMarket):
         Returns:
             `True` if order matching is enabled, `False` otherwise.
         """
-        return self._contract.call().matchingEnabled()
+        return self._contract.functions.matchingEnabled().call()
 
     def set_matching_enabled(self, matching_enabled: bool) -> Transact:
         """Enables or disables order matching.
@@ -636,7 +636,7 @@ class MatchingMarket(ExpiringMarket):
             orders = []
 
             if self._support_contract:
-                result = self._support_contract.call().getOffers(self.address.address, pay_token.address, buy_token.address)
+                result = self._support_contract.functions.getOffers(self.address.address, pay_token.address, buy_token.address).call()
 
                 while True:
                     count = 0
@@ -655,19 +655,19 @@ class MatchingMarket(ExpiringMarket):
 
                     if count == 100:
                         next_order_id = self._contract.call().getWorseOffer(orders[-1].order_id)
-                        result = self._support_contract.call().getOffers(self.address.address, next_order_id)
+                        result = self._support_contract.functions.getOffers(self.address.address, next_order_id).call()
 
                     else:
                         break
 
             else:
-                order_id = self._contract.call().getBestOffer(pay_token.address, buy_token.address)
+                order_id = self._contract.functions.getBestOffer(pay_token.address, buy_token.address).call()
                 while order_id != 0:
                     order = self.get_order(order_id)
                     if order is not None:
                         orders.append(order)
 
-                    order_id = self._contract.call().getWorseOffer(order_id)
+                    order_id = self._contract.functions.getWorseOffer(order_id).call()
 
             return sorted(orders, key=lambda order: order.order_id)
         else:

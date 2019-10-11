@@ -449,7 +449,7 @@ class Tub(Contract):
             Class encapsulating cup details.
         """
         assert isinstance(cup_id, int)
-        array = self._contract.call().cups(int_to_bytes32(cup_id))
+        array = self._contract.functions.cups(int_to_bytes32(cup_id)).call()
         return Cup(cup_id, Address(array[0]), Wad(array[1]), Wad(array[2]))
 
     def tab(self, cup_id: int) -> Wad:
@@ -462,7 +462,7 @@ class Tub(Contract):
             Amount of debt in the cup, in SAI.
         """
         assert isinstance(cup_id, int)
-        return Wad(self._contract.call().tab(int_to_bytes32(cup_id)))
+        return Wad(self._contract.functions.tab(int_to_bytes32(cup_id)).call())
 
     def ink(self, cup_id: int) -> Wad:
         """Get the amount of SKR collateral locked in a cup.
@@ -474,7 +474,7 @@ class Tub(Contract):
             Amount of SKR collateral locked in the cup, in SKR.
         """
         assert isinstance(cup_id, int)
-        return Wad(self._contract.call().ink(int_to_bytes32(cup_id)))
+        return Wad(self._contract.functions.ink(int_to_bytes32(cup_id)).call())
 
     def lad(self, cup_id: int) -> Address:
         """Get the owner of a cup.
@@ -486,7 +486,7 @@ class Tub(Contract):
             Address of the owner of the cup.
         """
         assert isinstance(cup_id, int)
-        return Address(self._contract.call().lad(int_to_bytes32(cup_id)))
+        return Address(self._contract.functions.lad(int_to_bytes32(cup_id)).call())
 
     def safe(self, cup_id: int) -> bool:
         """Determine if a cup is safe.
@@ -498,7 +498,7 @@ class Tub(Contract):
             `True` if the cup is safe. `False` otherwise.
         """
         assert isinstance(cup_id, int)
-        return self._contract.call().safe(int_to_bytes32(cup_id))
+        return self._contract.functions.safe(int_to_bytes32(cup_id)).call()
 
     def join(self, amount_in_skr: Wad) -> Transact:
         """Buy SKR for GEMs.
