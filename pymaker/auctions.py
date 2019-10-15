@@ -86,34 +86,13 @@ class AuctionContract(Contract):
             index += 1
         return active_auctions
 
-    def file_beg(self, beg: Ray) -> Transact:
-        assert isinstance(beg, Ray)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint256)',
-                        [Web3.toBytes(text="beg"), beg.value])
-
-    def file_ttl(self, ttl: int) -> Transact:
-        assert isinstance(ttl, int)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint256)',
-                        [Web3.toBytes(text="ttl"), ttl])
-
-    def file_tau(self, tau: int) -> Transact:
-        assert isinstance(tau, int)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint256)',
-                        [Web3.toBytes(text="tau"), tau])
-
-    def beg(self) -> Ray:
+    def beg(self) -> Wad:
         """Returns the percentage minimum bid increase.
 
         Returns:
             The percentage minimum bid increase.
         """
-        return Ray(self._contract.call().beg())
+        return Wad(self._contract.call().beg())
 
     def ttl(self) -> int:
         """Returns the bid lifetime.
@@ -308,6 +287,12 @@ class Flapper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tend', [id, lot.value, bid.value])
 
+    def tick(self, id: int) -> Transact:
+        """Resurrect an auction which expired without any bids."""
+        assert (isinstance(id, int))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'tick', [id])
+
     def __repr__(self):
         return f"Flapper('{self.address}')"
 
@@ -352,6 +337,11 @@ class Flopper(AuctionContract):
     def live(self) -> bool:
         return self._contract.call().live() > 0
 
+    def pad(self) -> Wad:
+        """Returns the lot increase applied after an auction has been `tick`ed."""
+
+        return Wad(self._contract.call().pad())
+
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
 
@@ -388,6 +378,7 @@ class Flopper(AuctionContract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'dent', [id, lot.value, bid.value])
 
     def tick(self, id: int) -> Transact:
+        """Resurrect an auction which expired without any bids."""
         assert (isinstance(id, int))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tick', [id])
