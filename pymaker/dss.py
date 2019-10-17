@@ -791,19 +791,7 @@ class Pot(Contract):
     def drip(self) -> Transact:
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [])
 
-    # def join(self, value: Wad) -> Transact:
-    #     """This can only be called from a proxy contract, by design."""
-    #     assert isinstance(value, Wad)
-    #
-    #     return Transact(self, self.web3, self.abi, self.address, self._contract,
-    #                     'join', [value.value])
-    #
-    # def exit(self, value: Wad) -> Transact:
-    #     """This is only commented out because join is unavailable outside a proxy contract."""
-    #     assert isinstance(value, Wad)
-    #
-    #     return Transact(self, self.web3, self.abi, self.address, self._contract,
-    #                     'exit', [value.value])
+    """Note that join requires use of proxy contract, so join/exit are not provided here."""
 
     def __repr__(self):
         return f"Pot('{self.address}')"

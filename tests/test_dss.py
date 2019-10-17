@@ -572,36 +572,6 @@ class TestPot:
     def test_drip(self, mcd):
         assert mcd.pot.drip().transact()
 
-    @pytest.mark.skip(reason="cannot join without a proxy contract")
-    def test_scenario(self, mcd, our_address):
-        collateral = mcd.collaterals['ETH-B']
-        TestVat.ensure_clean_urn(mcd, collateral, our_address)
-        collateral_amount = Wad.from_number(9)
-        wrap_eth(mcd, our_address, collateral_amount)
-        start_time = datetime.utcnow()
-
-        # Add collateral and generate some Dai
-        collateral.approve(our_address)
-        assert collateral.adapter.join(our_address, collateral_amount).transact()
-        frob(mcd, collateral, our_address, dink=collateral_amount, dart=Wad.from_number(333))
-        balance_before = mcd.vat.dai(our_address)
-        assert balance_before > Rad(0)
-
-        # Join our Dai to the pot, wait, and drip
-        mcd.approve_dai(our_address)
-        mcd.pot.approve(mcd.vat.address, approval_function=hope_directly(from_address=our_address))
-        assert mcd.pot.join(Wad(1)).transact()
-        assert mcd.vat.dai(our_address) == Rad(0)
-        assert mcd.pot.pie_of(our_address) == balance_before
-        wait(mcd, our_address, 3)
-        assert mcd.pot.drip().transact()
-        assert start_time < mcd.pot.rho() < datetime.utcnow()
-        assert mcd.pot.pie_of(our_address) > balance_before
-
-        # Exit our Dai and ensure we earned the DSR
-        assert mcd.pot.exit(mcd.pot_of(our_address))
-        assert mcd.vat.dai(our_address) > balance_before
-
 
 class TestMcd:
     def test_healthy_cdp(self, web3, mcd, our_address):
