@@ -72,13 +72,13 @@ class TestFlipper:
         assert bid == current_bid.bid
         assert bid == current_bid.tab
         assert lot < current_bid.lot
-        assert (flipper.beg() * Ray(lot)) <= Ray(current_bid.lot)
+        assert flipper.beg() * lot <= current_bid.lot
 
         assert flipper.dent(id, lot, bid).transact(from_address=address)
 
     def test_getters(self, mcd, flipper):
         assert flipper.vat() == mcd.vat.address
-        assert flipper.beg() > Ray.from_number(1)
+        assert flipper.beg() > Wad.from_number(1)
         assert flipper.ttl() > 0
         assert flipper.tau() > flipper.ttl()
         assert flipper.kicks() >= 0
@@ -169,7 +169,7 @@ class TestFlipper:
         flipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=our_address))
         frob(mcd, collateral, our_address, dink=eth_required, dart=Wad(current_bid.tab) + Wad(1))
         lot = current_bid.lot - Wad.from_number(0.2)
-        assert flipper.beg() * Ray(lot) <= Ray(current_bid.lot)
+        assert flipper.beg() * lot <= current_bid.lot
         assert mcd.vat.can(our_address, flipper.address)
         TestFlipper.dent(flipper, kick, our_address, lot, current_bid.tab)
         current_bid = flipper.bids(kick)
@@ -218,13 +218,13 @@ class TestFlapper:
 
         assert lot == current_bid.lot
         assert bid > current_bid.bid
-        assert (bid >= Wad(flapper.beg()) * current_bid.bid)
+        assert bid >= flapper.beg() * current_bid.bid
 
         assert flapper.tend(id, lot, bid).transact(from_address=address)
 
     def test_getters(self, mcd, flapper):
         assert flapper.vat() == mcd.vat.address
-        assert flapper.beg() > Ray.from_number(1)
+        assert flapper.beg() > Wad.from_number(1)
         assert flapper.ttl() > 0
         assert flapper.tau() > flapper.ttl()
         assert flapper.kicks() >= 0
@@ -256,7 +256,11 @@ class TestFlapper:
         current_bid = flapper.bids(1)
         assert current_bid.lot > Rad(0)
 
-        # Bid on the surplus
+        # Allow the auction to expire, and then resurrect it
+        wait(mcd, our_address, flapper.tau()+1)
+        assert flapper.tick(kick).transact()
+
+        # Bid on the resurrected auction
         mint_mkr(mcd.mkr, deployment_address, our_address, Wad.from_number(10))
         flapper.approve(mcd.mkr.address, directly(from_address=our_address))
         bid = Wad.from_number(0.001)
@@ -302,14 +306,14 @@ class TestFlopper:
         assert current_bid.end > datetime.now().timestamp()
 
         assert bid == current_bid.bid
-        assert lot < current_bid.lot
-        assert (Wad(flopper.beg()) * lot) <= current_bid.lot
+        assert Wad(0) < lot < current_bid.lot
+        assert flopper.beg() * lot <= current_bid.lot
 
         assert flopper.dent(id, lot, bid).transact(from_address=address)
 
     def test_getters(self, mcd, flopper):
         assert flopper.vat() == mcd.vat.address
-        assert flopper.beg() > Ray.from_number(1)
+        assert flopper.beg() > Wad.from_number(1)
         assert flopper.ttl() > 0
         assert flopper.tau() > flopper.ttl()
         assert flopper.kicks() >= 0
@@ -384,11 +388,13 @@ class TestFlopper:
         # Allow the auction to expire, and then resurrect it
         wait(mcd, our_address, flopper.tau()+1)
         assert flopper.tick(kick).transact()
+        assert flopper.bids(kick).lot == current_bid.lot * flopper.pad()
 
         # Bid on the resurrected auction
+        bid = Wad.from_number(0.000005)
         flopper.approve(mcd.vat.address, hope_directly())
         assert mcd.vat.can(our_address, flopper.address)
-        TestFlopper.dent(flopper, kick, our_address, Wad.from_number(0.5), current_bid.bid)
+        TestFlopper.dent(flopper, kick, our_address, bid, current_bid.bid)
         current_bid = flopper.bids(kick)
         assert current_bid.guy == our_address
 

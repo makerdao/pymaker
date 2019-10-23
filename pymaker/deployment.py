@@ -29,7 +29,7 @@ from pymaker import Address
 from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
-from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemJoin
+from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemJoin, Pot
 from pymaker.feed import DSValue
 from pymaker.governance import DSPause
 from pymaker.numeric import Wad, Ray
@@ -153,7 +153,7 @@ class DssDeployment:
 
     class Config:
         def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flapper: Flapper,
-                     flopper: Flopper, dai: DSToken, dai_join: DaiJoin, mkr: DSToken, spotter: Spotter,
+                     flopper: Flopper, pot: Pot, dai: DSToken, dai_join: DaiJoin, mkr: DSToken, spotter: Spotter,
                      collaterals: Optional[Dict[str, Collateral]] = None):
             self.pause = pause
             self.vat = vat
@@ -162,6 +162,7 @@ class DssDeployment:
             self.cat = cat
             self.flapper = flapper
             self.flopper = flopper
+            self.pot = pot
             self.dai = dai
             self.dai_join = dai_join
             self.mkr = mkr
@@ -180,6 +181,7 @@ class DssDeployment:
             dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']))
             flapper = Flapper(web3, Address(conf['MCD_FLAP']))
             flopper = Flopper(web3, Address(conf['MCD_FLOP']))
+            pot = Pot(web3, Address(conf['MCD_POT']))
             mkr = DSToken(web3, Address(conf['MCD_GOV']))
             spotter = Spotter(web3, Address(conf['MCD_SPOT']))
 
@@ -198,7 +200,7 @@ class DssDeployment:
                                         pip=DSValue(web3, Address(conf[f'PIP_{name[1]}'])))
                 collaterals[ilk.name] = collateral
 
-            return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper,
+            return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper, pot,
                                         dai, dai_adapter, mkr, spotter, collaterals)
 
         @staticmethod
@@ -219,6 +221,7 @@ class DssDeployment:
                 'MCD_CAT': self.cat.address.address,
                 'MCD_FLAP': self.flapper.address.address,
                 'MCD_FLOP': self.flopper.address.address,
+                'MCD_POT': self.pot.address.address,
                 'MCD_DAI': self.dai.address.address,
                 'MCD_JOIN_DAI': self.dai_join.address.address,
                 'MCD_GOV': self.mkr.address.address,
@@ -251,6 +254,7 @@ class DssDeployment:
         self.cat = config.cat
         self.flapper = config.flapper
         self.flopper = config.flopper
+        self.pot = config.pot
         self.dai = config.dai
         self.dai_adapter = config.dai_join
         self.mkr = config.mkr

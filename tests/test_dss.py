@@ -18,6 +18,7 @@
 import json
 import pytest
 import time
+from datetime import datetime
 from web3 import Web3
 
 from pymaker import Address
@@ -526,6 +527,7 @@ class TestVow:
         assert isinstance(mcd.vow.ash(), Rad)
         assert isinstance(mcd.vow.woe(), Rad)
         assert isinstance(mcd.vow.wait(), int)
+        assert isinstance(mcd.vow.dump(), Wad)
         assert isinstance(mcd.vow.sump(), Rad)
         assert isinstance(mcd.vow.bump(), Rad)
         assert isinstance(mcd.vow.hump(), Rad)
@@ -555,6 +557,20 @@ class TestJug:
 
         # then
         assert mcd.jug.drip(c.ilk).transact()
+
+
+class TestPot:
+    def test_getters(self, mcd):
+        assert isinstance(mcd.pot.pie(), Wad)
+        assert isinstance(mcd.pot.dsr(), Ray)
+        assert isinstance(mcd.pot.rho(), datetime)
+
+        assert mcd.pot.pie() >= Wad(0)
+        assert mcd.pot.dsr() > Ray(0)
+        assert datetime.fromtimestamp(0) < mcd.pot.rho() < datetime.utcnow()
+
+    def test_drip(self, mcd):
+        assert mcd.pot.drip().transact()
 
 
 class TestMcd:

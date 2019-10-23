@@ -17,6 +17,7 @@
 
 import logging
 from collections import defaultdict
+from datetime import datetime
 from pprint import pformat
 from typing import Optional, List
 
@@ -276,12 +277,6 @@ class Vat(Contract):
 
         return bool(self._contract.call().can(sender.address, usr.address))
 
-    def file_line(self, ilk: Ilk, amount: Wad) -> Transact:
-        assert isinstance(amount, Wad)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,bytes32,uint256)', [ilk.toBytes(), Web3.toBytes(text="line"), amount.value])
-
     def ilk(self, name: str) -> Ilk:
         assert isinstance(name, str)
 
@@ -474,26 +469,6 @@ class Spotter(Contract):
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
 
-    def file_pip(self, ilk: Ilk, pip: Address) -> Transact:
-        assert isinstance(ilk, Ilk)
-        assert isinstance(pip, Address)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'file(bytes32,address)',
-                        [ilk.toBytes(), pip.address])
-
-    def file_par(self, par: Ray) -> Transact:
-        assert isinstance(par, Ray)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'file(bytes32,uint256)',
-                        [Web3.toBytes(text="par"), par.value])
-
-    def file_mat(self, ilk: Ilk, mat: Ray) -> Transact:
-        assert isinstance(ilk, Ilk)
-        assert isinstance(mat, Ray)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'file(bytes32,bytes32,uint256)',
-                        [ilk.toBytes(), Web3.toBytes(text="mat"), mat.value])
-
     def poke(self, ilk: Ilk) -> Transact:
         assert isinstance(ilk, Ilk)
 
@@ -536,18 +511,6 @@ class Vow(Contract):
     def live(self) -> bool:
         return self._contract.call().live() > 0
 
-    def file_bump(self, amount: Wad) -> Transact:
-        assert isinstance(amount, Wad)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint256)', [Web3.toBytes(text="bump"), amount.value])
-
-    def file_sump(self, amount: Wad) -> Transact:
-        assert isinstance(amount, Wad)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint256)', [Web3.toBytes(text="sump"), amount.value])
-
     def flapper(self) -> Address:
         return Address(self._contract.call().flapper())
 
@@ -568,6 +531,9 @@ class Vow(Contract):
 
     def wait(self) -> int:
         return int(self._contract.call().wait())
+
+    def dump(self) -> Wad:
+        return Wad(self._contract.call().dump())
 
     def sump(self) -> Rad:
         return Rad(self._contract.call().sump())
@@ -638,18 +604,6 @@ class Jug(Contract):
         assert isinstance(address, Address)
 
         return bool(self._contract.call().wards(address.address))
-
-    def file_base(self, amount: Wad) -> Transact:
-        assert isinstance(amount, Wad)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint256)', [Web3.toBytes(text="base"), amount.value])
-
-    def file_duty(self, ilk: Ilk, amount: Ray) -> Transact:
-        assert isinstance(amount, Ray)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,bytes32,uint256)', [ilk.toBytes(), Web3.toBytes(text="duty"), amount.value])
 
     def drip(self, ilk: Ilk) -> Transact:
         assert isinstance(ilk, Ilk)
@@ -767,28 +721,6 @@ class Cat(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'file(bytes32,address)', [Web3.toBytes(text="vow"), vow.address.address])
 
-    def file_flip(self, ilk: Ilk, flipper: Flipper) -> Transact:
-        assert isinstance(ilk, Ilk)
-        assert isinstance(flipper, Flipper)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,bytes32,address)',
-                        [ilk.toBytes(), Web3.toBytes(text="flip"), flipper.address.address])
-
-    def file_lump(self, ilk: Ilk, lump: Wad) -> Transact:
-        assert isinstance(ilk, Ilk)
-        assert isinstance(lump, Wad)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,bytes32,uint256)', [ilk.toBytes(), Web3.toBytes(text="lump"), lump.value])
-
-    def file_chop(self, ilk: Ilk, chop: Ray) -> Transact:
-        assert isinstance(ilk, Ilk)
-        assert isinstance(chop, Ray)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,bytes32,uint256)', [ilk.toBytes(), Web3.toBytes(text="chop"), chop.value])
-
     def flipper(self, ilk: Ilk) -> Address:
         assert isinstance(ilk, Ilk)
 
@@ -814,3 +746,52 @@ class Cat(Contract):
 
     def __repr__(self):
         return f"Cat('{self.address}')"
+
+
+class Pot(Contract):
+    """A client for the `Pot` contract, which implements the DSR.
+
+    Ref. <https://github.com/makerdao/dss/blob/master/src/pot.sol>
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/Pot.abi')
+    bin = Contract._load_bin(__name__, 'abi/Pot.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+
+    def approve(self, source: Address, approval_function, **kwargs):
+        """Approve the pot to access Dai from our Urns"""
+        assert isinstance(source, Address)
+        assert(callable(approval_function))
+
+        approval_function(ERC20Token(web3=self.web3, address=source), self.address, self.__class__.__name__, **kwargs)
+
+    def pie_of(self, address: Address) -> Wad:
+        assert isinstance(address, Address)
+        return Wad(self._contract.call().pie(address.address))
+
+    def pie(self) -> Wad:
+        pie = self._contract.call().Pie()
+        return Wad(pie)
+
+    def dsr(self) -> Ray:
+        dsr = self._contract.call().dsr()
+        return Ray(dsr)
+
+    def rho(self) -> datetime:
+        rho = self._contract.call().rho()
+        return datetime.fromtimestamp(rho)
+
+    def drip(self) -> Transact:
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [])
+
+    """Note that join requires use of proxy contract, so join/exit are not provided here."""
+
+    def __repr__(self):
+        return f"Pot('{self.address}')"
