@@ -37,6 +37,7 @@ from pymaker.oasis import MatchingMarket
 from pymaker.sai import Tub, Tap, Top, Vox
 from pymaker.token import DSToken, DSEthToken
 from pymaker.vault import DSVault
+from pymaker.governance import DSChief
 
 
 def deploy_contract(web3: Web3, contract_name: str, args: Optional[list] = None) -> Address:
@@ -154,7 +155,7 @@ class DssDeployment:
     class Config:
         def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flapper: Flapper,
                      flopper: Flopper, dai: DSToken, dai_join: DaiJoin, mkr: DSToken, spotter: Spotter,
-                     collaterals: Optional[Dict[str, Collateral]] = None):
+                     ds_chief: DSChief, collaterals: Optional[Dict[str, Collateral]] = None):
             self.pause = pause
             self.vat = vat
             self.vow = vow
@@ -166,6 +167,7 @@ class DssDeployment:
             self.dai_join = dai_join
             self.mkr = mkr
             self.spotter = spotter
+            self.ds_chief = ds_chief
             self.collaterals = collaterals or {}
 
         @staticmethod
@@ -182,6 +184,7 @@ class DssDeployment:
             flopper = Flopper(web3, Address(conf['MCD_FLOP']))
             mkr = DSToken(web3, Address(conf['MCD_GOV']))
             spotter = Spotter(web3, Address(conf['MCD_SPOT']))
+            ds_chief = DSChief(web3, Address(conf['MCD_ADM']))
 
             collaterals = {}
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
@@ -199,7 +202,7 @@ class DssDeployment:
                 collaterals[ilk.name] = collateral
 
             return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper,
-                                        dai, dai_adapter, mkr, spotter, collaterals)
+                                        dai, dai_adapter, mkr, spotter, ds_chief, collaterals)
 
         @staticmethod
         def _infer_collaterals_from_addresses(keys: []) -> List:
@@ -222,7 +225,8 @@ class DssDeployment:
                 'MCD_DAI': self.dai.address.address,
                 'MCD_JOIN_DAI': self.dai_join.address.address,
                 'MCD_GOV': self.mkr.address.address,
-                'MCD_SPOT': self.spotter.address.address
+                'MCD_SPOT': self.spotter.address.address,
+                'MCD_ADM': self.ds_chief.address.address
             }
 
             for collateral in self.collaterals.values():
@@ -256,6 +260,7 @@ class DssDeployment:
         self.mkr = config.mkr
         self.collaterals = config.collaterals
         self.spotter = config.spotter
+        self.ds_chief = config.ds_chief
 
     @staticmethod
     def from_json(web3: Web3, conf: str):
