@@ -156,7 +156,13 @@ class Contract:
         return web3.eth.contract(abi=abi)(address=address.address)
 
     def _past_events(self, contract, event, cls, number_of_past_blocks, event_filter) -> list:
-        assert(isinstance(number_of_past_blocks, int))
+        block_number = contract.web3.eth.blockNumber
+        return self._past_events_in_block_range(contract, event, cls, max(block_number-number_of_past_blocks, 0),
+                                                block_number, event_filter)
+
+    def _past_events_in_block_range(self, contract, event, cls, from_block, to_block, event_filter) -> list:
+        assert(isinstance(from_block, int))
+        assert(isinstance(to_block, int))
         assert(isinstance(event_filter, dict) or (event_filter is None))
 
         def _event_callback(cls, past):
@@ -171,9 +177,7 @@ class Contract:
 
             return callback
 
-        block_number = contract.web3.eth.blockNumber
-        result = contract.events[event].createFilter(fromBlock=max(block_number-number_of_past_blocks, 0),
-                                                     toBlock=block_number,
+        result = contract.events[event].createFilter(fromBlock=from_block, toBlock=to_block,
                                                      argument_filters=event_filter).get_all_entries()
 
         return list(map(_event_callback(cls, True), result))
