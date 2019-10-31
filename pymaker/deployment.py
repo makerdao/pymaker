@@ -201,11 +201,17 @@ class DssDeployment:
                 else:
                     gem = DSToken(web3, Address(conf[name[1]]))
 
-                # TODO: If problematic, skip pip for deployments which use a medianizer.
+                # PIP contract may be a DSValue, medianizer, or bogus address.
+                pip_address = Address(conf[f'PIP_{name[1]}'])
+                try:
+                    pip = DSValue(web3, pip_address)
+                except Exception:
+                    pip = None
+
                 collateral = Collateral(ilk=ilk, gem=gem,
                                         adapter=GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}'])),
                                         flipper=Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}'])),
-                                        pip=DSValue(web3, Address(conf[f'PIP_{name[1]}'])))
+                                        pip=pip)
                 collaterals[ilk.name] = collateral
 
             return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper, pot,
@@ -215,9 +221,14 @@ class DssDeployment:
         def _infer_collaterals_from_addresses(keys: []) -> List:
             collaterals = []
             for key in keys:
-                match = re.search(r'MCD_FLIP_((\w+)_\w+)', key)
+                match = re.search(r'MCD_FLIP_((\w+)_\w)', key)
                 if match:
                     collaterals.append((match.group(1), match.group(2)))
+                    continue
+                match = re.search(r'MCD_FLIP_(\w+)', key)
+                if match:
+                    collaterals.append((match.group(1), match.group(1)))
+
             return collaterals
 
         def to_dict(self) -> dict:
@@ -240,10 +251,11 @@ class DssDeployment:
             }
 
             for collateral in self.collaterals.values():
-                match = re.search(r'(\w+)-\w+', collateral.ilk.name)
+                match = re.search(r'(\w+)(?:-\w+)?', collateral.ilk.name)
                 name = (collateral.ilk.name.replace('-', '_'), match.group(1))
                 conf_dict[name[1]] = collateral.gem.address.address
-                conf_dict[f'PIP_{name[1]}'] = collateral.pip.address.address
+                if collateral.pip:
+                    conf_dict[f'PIP_{name[1]}'] = collateral.pip.address.address
                 conf_dict[f'MCD_JOIN_{name[0]}'] = collateral.adapter.address.address
                 conf_dict[f'MCD_FLIP_{name[0]}'] = collateral.flipper.address.address
 
