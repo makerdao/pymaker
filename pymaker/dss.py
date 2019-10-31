@@ -334,13 +334,15 @@ class Vat(Contract):
         return urns
 
     def debt(self) -> Rad:
+        """Total quantity of Dai issued"""
         return Rad(self._contract.call().debt())
 
     def vice(self) -> Rad:
+        """Total quantity of system debt"""
         return Rad(self._contract.call().vice())
 
     def line(self) -> Rad:
-        """ Total debt ceiling """
+        """Total debt ceiling"""
         return Rad(self._contract.call().Line())
 
     def frob(self, ilk: Ilk, urn_address: Address, dink: Wad, dart: Wad, collateral_owner=None, dai_recipient=None):

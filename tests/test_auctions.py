@@ -261,7 +261,7 @@ class TestFlapper:
         assert flapper.tick(kick).transact()
 
         # Bid on the resurrected auction
-        mint_mkr(mcd.mkr, deployment_address, our_address, Wad.from_number(10))
+        mint_mkr(mcd.mkr, our_address, Wad.from_number(10))
         flapper.approve(mcd.mkr.address, directly(from_address=our_address))
         bid = Wad.from_number(0.001)
         assert mcd.mkr.balance_of(our_address) > bid
