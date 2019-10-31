@@ -293,6 +293,12 @@ class Flapper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tick', [id])
 
+    def yank(self, id: int) -> Transact:
+        """While `cage`d, refund current bid to the bidder"""
+        assert (isinstance(id, int))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'yank', [id])
+
     def __repr__(self):
         return f"Flapper('{self.address}')"
 
@@ -382,6 +388,12 @@ class Flopper(AuctionContract):
         assert (isinstance(id, int))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tick', [id])
+
+    def yank(self, id: int) -> Transact:
+        """While `cage`d, refund current bid to the bidder"""
+        assert (isinstance(id, int))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'yank', [id])
 
     def __repr__(self):
         return f"Flopper('{self.address}')"

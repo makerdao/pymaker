@@ -20,11 +20,13 @@ import pytest
 from datetime import datetime, timedelta
 
 from pymaker import Address
+from pymaker.approval import directly, hope_directly
 from pymaker.deployment import DssDeployment
 from pymaker.dss import Collateral
 from pymaker.numeric import Wad, Ray, Rad
 from pymaker.shutdown import ShutdownModule, End
 
+from tests.test_auctions import create_surplus
 from tests.test_dss import mint_mkr, wrap_eth, frob
 
 
@@ -38,21 +40,48 @@ def open_cdp(mcd: DssDeployment, collateral: Collateral, address: Address):
     assert collateral.adapter.join(address, Wad.from_number(10)).transact(from_address=address)
     frob(mcd, collateral, address, Wad.from_number(10), Wad.from_number(15))
 
-    # assert mcd.vat.debt() >= Rad(Wad.from_number(15))
-    # assert mcd.vat.vice() == Rad(0)
-    # assert mcd.vat.dai(address) >= Rad.from_number(10)
+    assert mcd.vat.debt() >= Rad(Wad.from_number(15))
+    assert mcd.vat.dai(address) >= Rad.from_number(10)
+
+
+def create_flap_auction(mcd: DssDeployment, deployment_address: Address, our_address: Address):
+    assert isinstance(mcd, DssDeployment)
+    assert isinstance(deployment_address, Address)
+    assert isinstance(our_address, Address)
+
+    flapper = mcd.flapper
+    create_surplus(mcd, flapper, deployment_address)
+    joy = mcd.vat.dai(mcd.vow.address)
+    assert joy > mcd.vat.sin(mcd.vow.address) + mcd.vow.bump() + mcd.vow.hump()
+    assert (mcd.vat.sin(mcd.vow.address) - mcd.vow.sin()) - mcd.vow.ash() == Rad(0)
+    assert mcd.vow.flap().transact()
+
+    mint_mkr(mcd.mkr, our_address, Wad.from_number(10))
+    flapper.approve(mcd.mkr.address, directly(from_address=our_address))
+    bid = Wad.from_number(0.001)
+    assert mcd.mkr.balance_of(our_address) > bid
+    assert flapper.tend(flapper.kicks(), mcd.vow.bump(), bid).transact(from_address=our_address)
+
+
+nobody = Address("0x0000000000000000000000000000000000000000")
 
 
 class TestShutdownModule:
     """This test must be run after other MCD tests because it will leave the testchain `cage`d."""
 
-    def test_init(self, mcd):
+    def test_init(self, mcd, deployment_address, our_address):
         assert mcd.esm is not None
         assert isinstance(mcd.esm, ShutdownModule)
         assert isinstance(mcd.esm.address, Address)
         assert mcd.esm.sum() == Wad(0)
         assert mcd.esm.min() > Wad(0)
         assert not mcd.esm.fired()
+
+        joy = mcd.vat.dai(mcd.vow.address)
+        awe = mcd.vat.sin(mcd.vow.address)
+        # If `test_shutdown.py` is run in isolation, create a flap auction to exercise `yank`
+        if joy == Rad(0) and awe == Rad(0):
+            create_flap_auction(mcd, deployment_address, our_address)
 
     def test_join(self, mcd, our_address):
         assert mcd.mkr.approve(mcd.esm.address).transact()
@@ -110,6 +139,23 @@ class TestEnd:
         assert mcd.end.cage(ilk).transact()
         assert mcd.end.art(ilk) > Wad(0)
         assert mcd.end.tag(ilk) > Ray(0)
+
+    def test_yank(self, mcd):
+        last_flap = mcd.flapper.bids(mcd.flapper.kicks())
+        last_flop = mcd.flopper.bids(mcd.flopper.kicks())
+        if last_flap.end > 0 and last_flap.guy is not nobody:
+            auction = mcd.flapper
+        elif last_flop.end > 0 and last_flop.guy is not nobody:
+            auction = mcd.flopper
+        else:
+            auction = None
+
+        if auction:
+            print(f"active {auction} auction: {auction.bids(auction.kicks())}")
+            assert not auction.live()
+            kick = auction.kicks()
+            assert auction.yank(kick).transact()
+            assert auction.bids(kick).guy == nobody
 
     def test_skim(self, mcd, our_address):
         ilk = mcd.collaterals['ETH-A'].ilk

@@ -201,7 +201,7 @@ class DssDeployment:
                 else:
                     gem = DSToken(web3, Address(conf[name[1]]))
 
-                # PIP contract may be a DSValue, medianizer, or bogus address.
+                # PIP contract may be a DSValue, OSM, or bogus address.
                 pip_address = Address(conf[f'PIP_{name[1]}'])
                 try:
                     pip = DSValue(web3, pip_address)
@@ -221,7 +221,7 @@ class DssDeployment:
         def _infer_collaterals_from_addresses(keys: []) -> List:
             collaterals = []
             for key in keys:
-                match = re.search(r'MCD_FLIP_((\w+)_\w)', key)
+                match = re.search(r'MCD_FLIP_((\w+)_\w+)', key)
                 if match:
                     collaterals.append((match.group(1), match.group(2)))
                     continue
