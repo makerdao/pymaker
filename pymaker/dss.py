@@ -323,7 +323,7 @@ class Vat(Contract):
         urns = defaultdict(dict)
 
         number_of_past_blocks = self._contract.web3.eth.blockNumber - from_block
-        logfrobs = self.past_frob(number_of_past_blocks, ilk)
+        logfrobs = self.past_frobs(number_of_past_blocks, ilk)
         for frob in logfrobs:
             urn_keys.add((frob.ilk, frob.urn))
         for urn_key in urn_keys:
@@ -379,7 +379,7 @@ class Vat(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'frob', [ilk.toBytes(), urn_address.address, v.address, w.address, dink.value, dart.value])
 
-    def past_frob(self, number_of_past_blocks: int, ilk=None) -> List[LogFrob]:
+    def past_frobs(self, number_of_past_blocks: int, ilk=None) -> List[LogFrob]:
         """Synchronously retrieve a list showing which ilks and urns have been frobbed.
          Args:
             number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
@@ -729,7 +729,7 @@ class Cat(Contract):
         (flip, chop, lump) = self._contract.call().ilks(ilk.toBytes())
         return Address(flip)
 
-    def past_bite(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogBite]:
+    def past_bites(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogBite]:
         """Synchronously retrieve past LogBite events.
 
         `LogBite` events are emitted every time someone bites a CDP.

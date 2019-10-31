@@ -22,7 +22,7 @@ from web3 import Web3
 
 from pymaker import Address
 from pymaker.approval import directly, hope_directly
-from pymaker.auctions import Flipper, Flapper, Flopper
+from pymaker.auctions import AuctionContract, Flipper, Flapper, Flopper
 from pymaker.deployment import DssDeployment
 from pymaker.dss import Collateral, Urn
 from pymaker.numeric import Wad, Ray, Rad
@@ -98,7 +98,7 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
     assert collateral.flipper.deal(flip_kick).transact()
 
     # Raise debt from the queue (note that vow.wait is 0 on our testchain)
-    bites = mcd.cat.past_bite(100)
+    bites = mcd.cat.past_bites(100)
     for bite in bites:
         era_bite = bite.era(web3)
         assert era_bite > int(datetime.now().timestamp()) - 120
@@ -110,6 +110,14 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
     assert dai_vow <= mcd.vow.woe()
     assert mcd.vow.heal(dai_vow).transact()
     assert mcd.vow.woe() >= mcd.vow.sump()
+
+
+def check_active_auctions(auction: AuctionContract):
+    for bid in auction.active_auctions():
+        assert bid.id > 0
+        assert auction.kicks() >= bid.id
+        assert isinstance(bid.guy, Address)
+        assert bid.guy != Address("0x0000000000000000000000000000000000000000")
 
 
 class TestFlipper:
@@ -213,7 +221,7 @@ class TestFlipper:
         assert urn.art == dart - art
         assert mcd.vat.vice() > Rad(0)
         assert mcd.vow.sin() == Rad(tab)
-        bites = mcd.cat.past_bite(10)
+        bites = mcd.cat.past_bites(10)
         assert len(bites) == 1
         last_bite = bites[0]
         assert last_bite.tab > Rad(0)
@@ -247,6 +255,8 @@ class TestFlipper:
         current_bid = flipper.bids(kick)
         assert current_bid.guy == other_address
         assert current_bid.bid == current_bid.tab
+        assert len(flipper.active_auctions()) == 1
+        check_active_auctions(flipper)
 
         # Test the _dent_ phase of the auction
         flipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=our_address))
@@ -275,8 +285,6 @@ class TestFlipper:
 
         # Cleanup
         set_collateral_price(mcd, collateral, Wad.from_number(230))
-        # TODO: Determine why frobbing the art away fails
-        # cleanup_urn(mcd, collateral, our_address)
         cleanup_urn(mcd, collateral, other_address)
 
 
@@ -323,6 +331,7 @@ class TestFlapper:
         kick = flapper.kicks()
         assert kick == 1
         assert len(flapper.active_auctions()) == 1
+        check_active_auctions(flapper)
         current_bid = flapper.bids(1)
         assert current_bid.lot > Rad(0)
 
@@ -399,6 +408,7 @@ class TestFlopper:
         kick = flopper.kicks()
         assert kick == 1
         assert len(flopper.active_auctions()) == 1
+        check_active_auctions(flopper)
         current_bid = flopper.bids(kick)
 
         # Allow the auction to expire, and then resurrect it

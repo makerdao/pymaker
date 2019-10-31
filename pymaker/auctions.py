@@ -139,7 +139,9 @@ class Flipper(AuctionContract):
     bin = Contract._load_bin(__name__, 'abi/Flipper.bin')
 
     class Bid:
-        def __init__(self, bid: Rad, lot: Wad, guy: Address, tic: int, end: int, usr: Address, gal: Address, tab: Rad):
+        def __init__(self, id: int, bid: Rad, lot: Wad, guy: Address, tic: int, end: int,
+                     usr: Address, gal: Address, tab: Rad):
+            assert(isinstance(id, int))
             assert(isinstance(bid, Rad))
             assert(isinstance(lot, Wad))
             assert(isinstance(guy, Address))
@@ -149,6 +151,7 @@ class Flipper(AuctionContract):
             assert(isinstance(gal, Address))
             assert(isinstance(tab, Rad))
 
+            self.id = id
             self.bid = bid
             self.lot = lot
             self.guy = guy
@@ -177,7 +180,8 @@ class Flipper(AuctionContract):
 
         array = self._contract.call().bids(id)
 
-        return Flipper.Bid(bid=Rad(array[0]),
+        return Flipper.Bid(id=id,
+                           bid=Rad(array[0]),
                            lot=Wad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),
@@ -232,13 +236,15 @@ class Flapper(AuctionContract):
     bin = Contract._load_bin(__name__, 'abi/Flapper.bin')
 
     class Bid:
-        def __init__(self, bid: Wad, lot: Rad, guy: Address, tic: int, end: int):
+        def __init__(self, id: int, bid: Wad, lot: Rad, guy: Address, tic: int, end: int):
+            assert(isinstance(id, int))
             assert(isinstance(bid, Wad))        # MKR
             assert(isinstance(lot, Rad))        # DAI
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
             assert(isinstance(end, int))
 
+            self.id = id
             self.bid = bid
             self.lot = lot
             self.guy = guy
@@ -267,7 +273,8 @@ class Flapper(AuctionContract):
 
         array = self._contract.call().bids(id)
 
-        return Flapper.Bid(bid=Wad(array[0]),
+        return Flapper.Bid(id=id,
+                           bid=Wad(array[0]),
                            lot=Rad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),
@@ -318,13 +325,15 @@ class Flopper(AuctionContract):
     bin = Contract._load_bin(__name__, 'abi/Flopper.bin')
 
     class Bid:
-        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int):
+        def __init__(self, id: int, bid: Wad, lot: Wad, guy: Address, tic: int, end: int):
+            assert(isinstance(id, int))
             assert(isinstance(bid, Rad))
             assert(isinstance(lot, Wad))
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
             assert(isinstance(end, int))
 
+            self.id = id
             self.bid = bid
             self.lot = lot
             self.guy = guy
@@ -361,7 +370,8 @@ class Flopper(AuctionContract):
 
         array = self._contract.call().bids(id)
 
-        return Flopper.Bid(bid=Rad(array[0]),
+        return Flopper.Bid(id=id,
+                           bid=Rad(array[0]),
                            lot=Wad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),

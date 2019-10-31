@@ -227,7 +227,7 @@ def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
 def bite_event(web3: Web3, mcd: DssDeployment, our_address: Address):
     bite(web3, mcd, our_address)
     # Return the corresponding event
-    return mcd.cat.past_bite(1)[0]
+    return mcd.cat.past_bites(1)[0]
 
 
 class TestConfig:
@@ -472,7 +472,7 @@ class TestVat:
             from_address=other_address)
 
         # then
-        frobs = mcd.vat.past_frob(10)
+        frobs = mcd.vat.past_frobs(10)
         assert len(frobs) == 3
         assert frobs[0].ilk == ilk0.name
         assert frobs[0].urn == our_address
@@ -482,9 +482,9 @@ class TestVat:
         assert frobs[2].urn == our_address
         assert frobs[2].collateral_owner == other_address
 
-        assert len(mcd.vat.past_frob(6, ilk0)) == 1
-        assert len(mcd.vat.past_frob(6, ilk1)) == 2
-        assert len(mcd.vat.past_frob(6, mcd.collaterals['REP-A'].ilk)) == 0
+        assert len(mcd.vat.past_frobs(6, ilk0)) == 1
+        assert len(mcd.vat.past_frobs(6, ilk1)) == 2
+        assert len(mcd.vat.past_frobs(6, mcd.collaterals['REP-A'].ilk)) == 0
 
         urns0 = mcd.vat.urns(ilk=ilk0)
         assert len(urns0[ilk0.name]) == 1
