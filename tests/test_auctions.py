@@ -1,6 +1,6 @@
 # This file is part of Maker Keeper Framework.
 #
-# Copyright (C) 2018 reverendus, bargst
+# Copyright (C) 2018-2019 reverendus, bargst, EdNoepel
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -22,11 +22,102 @@ from web3 import Web3
 
 from pymaker import Address
 from pymaker.approval import directly, hope_directly
-from pymaker.auctions import Flipper, Flapper, Flopper
+from pymaker.auctions import AuctionContract, Flipper, Flapper, Flopper
 from pymaker.deployment import DssDeployment
 from pymaker.dss import Collateral, Urn
 from pymaker.numeric import Wad, Ray, Rad
 from tests.test_dss import wrap_eth, mint_mkr, set_collateral_price, wait, frob, cleanup_urn, max_dart, simulate_bite
+
+
+def create_surplus(mcd: DssDeployment, flapper: Flapper, deployment_address: Address):
+    assert isinstance(mcd, DssDeployment)
+    assert isinstance(flapper, Flapper)
+    assert isinstance(deployment_address, Address)
+
+    joy = mcd.vat.dai(mcd.vow.address)
+
+    if joy < mcd.vow.hump() + mcd.vow.bump():
+        # Create a CDP with surplus
+        print('Creating a CDP with surplus')
+        collateral = mcd.collaterals['ETH-B']
+        assert flapper.kicks() == 0
+        wrap_eth(mcd, deployment_address, Wad.from_number(0.1))
+        collateral.approve(deployment_address)
+        assert collateral.adapter.join(deployment_address, Wad.from_number(0.1)).transact(
+            from_address=deployment_address)
+        frob(mcd, collateral, deployment_address, dink=Wad.from_number(0.1), dart=Wad.from_number(10))
+        assert mcd.jug.drip(collateral.ilk).transact(from_address=deployment_address)
+        joy = mcd.vat.dai(mcd.vow.address)
+        assert joy >= mcd.vow.hump() + mcd.vow.bump()
+    else:
+        print(f'Surplus of {joy} already exists; skipping CDP creation')
+
+
+def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment_address: Address):
+    assert isinstance(web3, Web3)
+    assert isinstance(mcd, DssDeployment)
+    assert isinstance(our_address, Address)
+    assert isinstance(deployment_address, Address)
+
+    # Create a CDP
+    collateral = mcd.collaterals['ETH-A']
+    ilk = collateral.ilk
+    wrap_eth(mcd, deployment_address, Wad.from_number(1))
+    collateral.approve(deployment_address)
+    assert collateral.adapter.join(deployment_address, Wad.from_number(1)).transact(
+        from_address=deployment_address)
+    frob(mcd, collateral, deployment_address, dink=Wad.from_number(1), dart=Wad(0))
+    dart = max_dart(mcd, collateral, deployment_address) - Wad(1)
+    frob(mcd, collateral, deployment_address, dink=Wad(0), dart=dart)
+
+    # Undercollateralize and bite the CDP
+    to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
+    set_collateral_price(mcd, collateral, to_price)
+    urn = mcd.vat.urn(collateral.ilk, deployment_address)
+    ilk = mcd.vat.ilk(ilk.name)
+    safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * ilk.spot
+    assert not safe
+    simulate_bite(mcd, collateral, deployment_address)
+    assert mcd.cat.bite(collateral.ilk, Urn(deployment_address)).transact()
+    flip_kick = collateral.flipper.kicks()
+
+    # Generate some Dai, bid on and win the flip auction without covering all the debt
+    wrap_eth(mcd, our_address, Wad.from_number(10))
+    collateral.approve(our_address)
+    assert collateral.adapter.join(our_address, Wad.from_number(10)).transact(from_address=our_address)
+    web3.eth.defaultAccount = our_address.address
+    frob(mcd, collateral, our_address, dink=Wad.from_number(10), dart=Wad.from_number(200))
+    collateral.flipper.approve(mcd.vat.address, approval_function=hope_directly())
+    current_bid = collateral.flipper.bids(flip_kick)
+    urn = mcd.vat.urn(collateral.ilk, our_address)
+    assert Rad(urn.art) > current_bid.tab
+    bid = Rad.from_number(6)
+    TestFlipper.tend(collateral.flipper, flip_kick, our_address, current_bid.lot, bid)
+    mcd.vat.can(our_address, collateral.flipper.address)
+    wait(mcd, our_address, collateral.flipper.ttl()+1)
+    assert collateral.flipper.deal(flip_kick).transact()
+
+    # Raise debt from the queue (note that vow.wait is 0 on our testchain)
+    bites = mcd.cat.past_bites(100)
+    for bite in bites:
+        era_bite = bite.era(web3)
+        assert era_bite > int(datetime.now().timestamp()) - 120
+        assert mcd.vow.sin_of(era_bite) > Rad(0)
+        assert mcd.vow.flog(era_bite).transact()
+        assert mcd.vow.sin_of(era_bite) == Rad(0)
+    # Cancel out surplus and debt
+    dai_vow = mcd.vat.dai(mcd.vow.address)
+    assert dai_vow <= mcd.vow.woe()
+    assert mcd.vow.heal(dai_vow).transact()
+    assert mcd.vow.woe() >= mcd.vow.sump()
+
+
+def check_active_auctions(auction: AuctionContract):
+    for bid in auction.active_auctions():
+        assert bid.id > 0
+        assert auction.kicks() >= bid.id
+        assert isinstance(bid.guy, Address)
+        assert bid.guy != Address("0x0000000000000000000000000000000000000000")
 
 
 class TestFlipper:
@@ -130,7 +221,7 @@ class TestFlipper:
         assert urn.art == dart - art
         assert mcd.vat.vice() > Rad(0)
         assert mcd.vow.sin() == Rad(tab)
-        bites = mcd.cat.past_bite(10)
+        bites = mcd.cat.past_bites(10)
         assert len(bites) == 1
         last_bite = bites[0]
         assert last_bite.tab > Rad(0)
@@ -164,6 +255,8 @@ class TestFlipper:
         current_bid = flipper.bids(kick)
         assert current_bid.guy == other_address
         assert current_bid.bid == current_bid.tab
+        assert len(flipper.active_auctions()) == 1
+        check_active_auctions(flipper)
 
         # Test the _dent_ phase of the auction
         flipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=our_address))
@@ -192,8 +285,6 @@ class TestFlipper:
 
         # Cleanup
         set_collateral_price(mcd, collateral, Wad.from_number(230))
-        # TODO: Determine why frobbing the art away fails
-        # cleanup_urn(mcd, collateral, our_address)
         cleanup_urn(mcd, collateral, other_address)
 
 
@@ -230,21 +321,8 @@ class TestFlapper:
         assert flapper.kicks() >= 0
 
     def test_scenario(self, web3, mcd, flapper, our_address, other_address, deployment_address):
-        joy = mcd.vat.dai(mcd.vow.address)
+        create_surplus(mcd, flapper, deployment_address)
 
-        if joy == Rad(0):
-            # Create a CDP with surplus
-            print('Creating a CDP with surplus')
-            collateral = mcd.collaterals['ETH-B']
-            assert flapper.kicks() == 0
-            wrap_eth(mcd, deployment_address, Wad.from_number(0.1))
-            collateral.approve(deployment_address)
-            assert collateral.adapter.join(deployment_address, Wad.from_number(0.1)).transact(
-                from_address=deployment_address)
-            frob(mcd, collateral, deployment_address, dink=Wad.from_number(0.1), dart=Wad.from_number(10))
-            assert mcd.jug.drip(collateral.ilk).transact(from_address=deployment_address)
-        else:
-            print('Surplus already exists; skipping CDP creation')
         joy_before = mcd.vat.dai(mcd.vow.address)
         # total surplus > total debt + surplus auction lot size + surplus buffer
         assert joy_before > mcd.vat.sin(mcd.vow.address) + mcd.vow.bump() + mcd.vow.hump()
@@ -253,6 +331,7 @@ class TestFlapper:
         kick = flapper.kicks()
         assert kick == 1
         assert len(flapper.active_auctions()) == 1
+        check_active_auctions(flapper)
         current_bid = flapper.bids(1)
         assert current_bid.lot > Rad(0)
 
@@ -261,7 +340,7 @@ class TestFlapper:
         assert flapper.tick(kick).transact()
 
         # Bid on the resurrected auction
-        mint_mkr(mcd.mkr, deployment_address, our_address, Wad.from_number(10))
+        mint_mkr(mcd.mkr, our_address, Wad.from_number(10))
         flapper.approve(mcd.mkr.address, directly(from_address=our_address))
         bid = Wad.from_number(0.001)
         assert mcd.mkr.balance_of(our_address) > bid
@@ -318,71 +397,18 @@ class TestFlopper:
         assert flopper.tau() > flopper.ttl()
         assert flopper.kicks() >= 0
 
-    def create_debt(self, web3, mcd, our_address, deployment_address):
-        # Create a CDP
-        collateral = mcd.collaterals['ETH-A']
-        ilk = collateral.ilk
-        wrap_eth(mcd, deployment_address, Wad.from_number(1))
-        collateral.approve(deployment_address)
-        assert collateral.adapter.join(deployment_address, Wad.from_number(1)).transact(
-            from_address=deployment_address)
-        frob(mcd, collateral, deployment_address, dink=Wad.from_number(1), dart=Wad(0))
-        dart = max_dart(mcd, collateral, deployment_address) - Wad(1)
-        frob(mcd, collateral, deployment_address, dink=Wad(0), dart=dart)
-
-        # Undercollateralize and bite the CDP
-        to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
-        set_collateral_price(mcd, collateral, to_price)
-        urn = mcd.vat.urn(collateral.ilk, deployment_address)
-        ilk = mcd.vat.ilk(ilk.name)
-        safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * ilk.spot
-        assert not safe
-        simulate_bite(mcd, collateral, deployment_address)
-        assert mcd.cat.bite(collateral.ilk, Urn(deployment_address)).transact()
-        flip_kick = collateral.flipper.kicks()
-
-        # Generate some Dai, bid on and win the flip auction without covering all the debt
-        wrap_eth(mcd, our_address, Wad.from_number(10))
-        collateral.approve(our_address)
-        assert collateral.adapter.join(our_address, Wad.from_number(10)).transact(from_address=our_address)
-        web3.eth.defaultAccount = our_address.address
-        frob(mcd, collateral, our_address, dink=Wad.from_number(10), dart=Wad.from_number(200))
-        collateral.flipper.approve(mcd.vat.address, approval_function=hope_directly())
-        current_bid = collateral.flipper.bids(flip_kick)
-        urn = mcd.vat.urn(collateral.ilk, our_address)
-        assert Rad(urn.art) > current_bid.tab
-        bid = Rad.from_number(6)
-        TestFlipper.tend(collateral.flipper, flip_kick, our_address, current_bid.lot, bid)
-        mcd.vat.can(our_address, collateral.flipper.address)
-        wait(mcd, our_address, collateral.flipper.ttl()+1)
-        assert collateral.flipper.deal(flip_kick).transact()
-
-        # Raise debt from the queue (note that vow.wait is 0 on our testchain)
-        bites = mcd.cat.past_bite(100)
-        for bite in bites:
-            era_bite = bite.era(web3)
-            assert era_bite > int(datetime.now().timestamp()) - 120
-            assert mcd.vow.sin_of(era_bite) > Rad(0)
-            assert mcd.vow.flog(era_bite).transact()
-            assert mcd.vow.sin_of(era_bite) == Rad(0)
-        # Cancel out surplus and debt
-        dai_vow = mcd.vat.dai(mcd.vow.address)
-        assert dai_vow <= mcd.vow.woe()
-        assert mcd.vow.heal(dai_vow).transact()
-        assert mcd.vow.woe() >= mcd.vow.sump()
-
     def test_scenario(self, web3, mcd, flopper, our_address, other_address, deployment_address):
-        self.create_debt(web3, mcd, our_address, deployment_address)
+        create_debt(web3, mcd, our_address, deployment_address)
 
         # Kick off the flop auction
         assert flopper.kicks() == 0
         assert len(flopper.active_auctions()) == 0
         assert mcd.vat.dai(mcd.vow.address) == Rad(0)
-        # TODO: Get bid_id return value from transaction rather than guessing bid_id==1
         assert mcd.vow.flop().transact()
         kick = flopper.kicks()
         assert kick == 1
         assert len(flopper.active_auctions()) == 1
+        check_active_auctions(flopper)
         current_bid = flopper.bids(kick)
 
         # Allow the auction to expire, and then resurrect it

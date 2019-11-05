@@ -35,7 +35,7 @@ from pymaker.governance import DSPause, DSChief
 from pymaker.numeric import Wad, Ray
 from pymaker.oasis import MatchingMarket
 from pymaker.sai import Tub, Tap, Top, Vox
-from pymaker.shutdown import ShutdownModule
+from pymaker.shutdown import ShutdownModule, End
 from pymaker.token import DSToken, DSEthToken
 from pymaker.vault import DSVault
 
@@ -154,8 +154,9 @@ class DssDeployment:
 
     class Config:
         def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flapper: Flapper,
-                     flopper: Flopper, pot: Pot, dai: DSToken, dai_join: DaiJoin, mkr: DSToken, spotter: Spotter,
-                     ds_chief: DSChief, esm: ShutdownModule, collaterals: Optional[Dict[str, Collateral]] = None):
+                     flopper: Flopper, pot: Pot, dai: DSToken, dai_join: DaiJoin, mkr: DSToken,
+                     spotter: Spotter, ds_chief: DSChief, esm: ShutdownModule, end: End,
+                     collaterals: Optional[Dict[str, Collateral]] = None):
             self.pause = pause
             self.vat = vat
             self.vow = vow
@@ -170,6 +171,7 @@ class DssDeployment:
             self.spotter = spotter
             self.ds_chief = ds_chief
             self.esm = esm
+            self.end = end
             self.collaterals = collaterals or {}
 
         @staticmethod
@@ -189,6 +191,7 @@ class DssDeployment:
             spotter = Spotter(web3, Address(conf['MCD_SPOT']))
             ds_chief = DSChief(web3, Address(conf['MCD_ADM']))
             esm = ShutdownModule(web3, Address(conf['MCD_ESM']))
+            end = End(web3, Address(conf['MCD_END']))
 
             collaterals = {}
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
@@ -198,15 +201,21 @@ class DssDeployment:
                 else:
                     gem = DSToken(web3, Address(conf[name[1]]))
 
-                # TODO: If problematic, skip pip for deployments which use a medianizer.
+                # PIP contract may be a DSValue, OSM, or bogus address.
+                pip_address = Address(conf[f'PIP_{name[1]}'])
+                try:
+                    pip = DSValue(web3, pip_address)
+                except Exception:
+                    pip = None
+
                 collateral = Collateral(ilk=ilk, gem=gem,
                                         adapter=GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}'])),
                                         flipper=Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}'])),
-                                        pip=DSValue(web3, Address(conf[f'PIP_{name[1]}'])))
+                                        pip=pip)
                 collaterals[ilk.name] = collateral
 
             return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper, pot,
-                                        dai, dai_adapter, mkr, spotter, ds_chief, esm, collaterals)
+                                        dai, dai_adapter, mkr, spotter, ds_chief, esm, end, collaterals)
 
         @staticmethod
         def _infer_collaterals_from_addresses(keys: []) -> List:
@@ -215,6 +224,11 @@ class DssDeployment:
                 match = re.search(r'MCD_FLIP_((\w+)_\w+)', key)
                 if match:
                     collaterals.append((match.group(1), match.group(2)))
+                    continue
+                match = re.search(r'MCD_FLIP_(\w+)', key)
+                if match:
+                    collaterals.append((match.group(1), match.group(1)))
+
             return collaterals
 
         def to_dict(self) -> dict:
@@ -232,14 +246,16 @@ class DssDeployment:
                 'MCD_GOV': self.mkr.address.address,
                 'MCD_SPOT': self.spotter.address.address,
                 'MCD_ADM': self.ds_chief.address.address,
-                'MCD_ESM': self.esm.address.address
+                'MCD_ESM': self.esm.address.address,
+                'MCD_END': self.end.address.address
             }
 
             for collateral in self.collaterals.values():
-                match = re.search(r'(\w+)-\w+', collateral.ilk.name)
+                match = re.search(r'(\w+)(?:-\w+)?', collateral.ilk.name)
                 name = (collateral.ilk.name.replace('-', '_'), match.group(1))
                 conf_dict[name[1]] = collateral.gem.address.address
-                conf_dict[f'PIP_{name[1]}'] = collateral.pip.address.address
+                if collateral.pip:
+                    conf_dict[f'PIP_{name[1]}'] = collateral.pip.address.address
                 conf_dict[f'MCD_JOIN_{name[0]}'] = collateral.adapter.address.address
                 conf_dict[f'MCD_FLIP_{name[0]}'] = collateral.flipper.address.address
 
@@ -269,6 +285,7 @@ class DssDeployment:
         self.spotter = config.spotter
         self.ds_chief = config.ds_chief
         self.esm = config.esm
+        self.end = config.end
 
     @staticmethod
     def from_json(web3: Web3, conf: str):

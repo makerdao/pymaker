@@ -48,13 +48,13 @@ def wrap_eth(mcd: DssDeployment, address: Address, amount: Wad):
     assert collateral.gem.deposit(amount).transact(from_address=address)
 
 
-def mint_mkr(mkr: DSToken, deployment_address: Address, recipient_address: Address, amount: Wad):
+def mint_mkr(mkr: DSToken, recipient_address: Address, amount: Wad):
     assert isinstance(mkr, DSToken)
-    assert isinstance(deployment_address, Address)
     assert isinstance(recipient_address, Address)
     assert isinstance(amount, Wad)
     assert amount > Wad(0)
 
+    deployment_address = Address("0x00a329c0648769A73afAc7F9381E08FB43dBEA72")
     assert mkr.mint(amount).transact(from_address=deployment_address)
     assert mkr.balance_of(deployment_address) > Wad(0)
     assert mkr.approve(recipient_address).transact(from_address=deployment_address)
@@ -227,7 +227,7 @@ def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
 def bite_event(web3: Web3, mcd: DssDeployment, our_address: Address):
     bite(web3, mcd, our_address)
     # Return the corresponding event
-    return mcd.cat.past_bite(1)[0]
+    return mcd.cat.past_bites(1)[0]
 
 
 class TestConfig:
@@ -472,7 +472,7 @@ class TestVat:
             from_address=other_address)
 
         # then
-        frobs = mcd.vat.past_frob(10)
+        frobs = mcd.vat.past_frobs(10)
         assert len(frobs) == 3
         assert frobs[0].ilk == ilk0.name
         assert frobs[0].urn == our_address
@@ -482,9 +482,9 @@ class TestVat:
         assert frobs[2].urn == our_address
         assert frobs[2].collateral_owner == other_address
 
-        assert len(mcd.vat.past_frob(6, ilk0)) == 1
-        assert len(mcd.vat.past_frob(6, ilk1)) == 2
-        assert len(mcd.vat.past_frob(6, mcd.collaterals['REP-A'].ilk)) == 0
+        assert len(mcd.vat.past_frobs(6, ilk0)) == 1
+        assert len(mcd.vat.past_frobs(6, ilk1)) == 2
+        assert len(mcd.vat.past_frobs(6, mcd.collaterals['REP-A'].ilk)) == 0
 
         urns0 = mcd.vat.urns(ilk=ilk0)
         assert len(urns0[ilk0.name]) == 1
