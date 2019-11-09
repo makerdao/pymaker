@@ -174,7 +174,6 @@ class TestEnd:
         assert mcd.vat.debt() > Rad(0)
         assert mcd.vat.vice() > Rad(0)
 
-    @pytest.mark.skip(reason="unable to determine redemption price")
     def test_close_cdp(self, mcd, our_address):
         collateral = mcd.collaterals['ETH-A']
         ilk = collateral.ilk
@@ -187,7 +186,6 @@ class TestEnd:
         assert mcd.end.wait() == 0
         assert mcd.end.thaw().transact()
         assert mcd.end.flow(ilk).transact()
-        # FIXME: `flow` should determine redemption price for the collateral
         assert mcd.end.fix(ilk) > Ray(0)
 
     @pytest.mark.skip(reason="unable to add dai to the `bag`")
