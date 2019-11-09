@@ -180,7 +180,7 @@ class End(Contract):
     def flow(self, ilk: Ilk) -> Transact:
         """Calculate the `fix`, the cash price for a given collateral"""
         assert isinstance(ilk, Ilk)
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'free', [ilk.toBytes()])
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'flow', [ilk.toBytes()])
 
     def pack(self, dai: Wad) -> Transact:
         """Deposit Dai into the `bag`, from which it cannot be withdrawn"""
