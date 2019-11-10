@@ -26,6 +26,7 @@ from pymaker.dss import Collateral
 from pymaker.numeric import Wad, Ray, Rad
 from pymaker.shutdown import ShutdownModule, End
 
+from tests.helpers import time_travel_by
 from tests.test_auctions import create_surplus
 from tests.test_dss import mint_mkr, wrap_eth, frob
 
@@ -174,7 +175,7 @@ class TestEnd:
         assert mcd.vat.debt() > Rad(0)
         assert mcd.vat.vice() > Rad(0)
 
-    def test_close_cdp(self, mcd, our_address):
+    def test_close_cdp(self, web3, mcd, our_address):
         collateral = mcd.collaterals['ETH-A']
         ilk = collateral.ilk
 
@@ -183,7 +184,8 @@ class TestEnd:
         assert mcd.vat.gem(ilk, our_address) > Wad(0)
         assert collateral.adapter.exit(our_address, mcd.vat.gem(ilk, our_address)).transact()
 
-        assert mcd.end.wait() == 0
+        assert mcd.end.wait() == 5
+        time_travel_by(web3, 5)
         assert mcd.end.thaw().transact()
         assert mcd.end.flow(ilk).transact()
         assert mcd.end.fix(ilk) > Ray(0)
