@@ -233,8 +233,8 @@ def bite_event(web3: Web3, mcd: DssDeployment, our_address: Address):
 class TestConfig:
     def test_from_json(self, web3: Web3, mcd: DssDeployment):
         # fixture calls DssDeployment.from_json
-        assert len(mcd.config.collaterals) > 1
-        assert len(mcd.collaterals) > 5
+        assert len(mcd.config.collaterals) >= 3
+        assert len(mcd.collaterals) >= 3
         assert len(mcd.config.to_dict()) > 10
         assert len(mcd.collaterals) == len(mcd.config.collaterals)
 
@@ -484,7 +484,7 @@ class TestVat:
 
         assert len(mcd.vat.past_frobs(6, ilk0)) == 1
         assert len(mcd.vat.past_frobs(6, ilk1)) == 2
-        assert len(mcd.vat.past_frobs(6, mcd.collaterals['REP-A'].ilk)) == 0
+        assert len(mcd.vat.past_frobs(6, mcd.collaterals['ZRX-A'].ilk)) == 0
 
         urns0 = mcd.vat.urns(ilk=ilk0)
         assert len(urns0[ilk0.name]) == 1
