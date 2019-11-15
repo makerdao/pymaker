@@ -257,6 +257,12 @@ class TestFlipper:
         assert current_bid.bid == current_bid.tab
         assert len(flipper.active_auctions()) == 1
         check_active_auctions(flipper)
+        log = flipper.past_logs(1)[0]
+        assert isinstance(log, Flipper.TendLog)
+        assert log.guy == current_bid.guy
+        assert log.id == current_bid.id
+        assert log.lot == current_bid.lot
+        assert log.bid == current_bid.bid
 
         # Test the _dent_ phase of the auction
         flipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=our_address))
@@ -269,6 +275,12 @@ class TestFlipper:
         assert current_bid.guy == our_address
         assert current_bid.bid == current_bid.tab
         assert current_bid.lot == lot
+        log = flipper.past_logs(1)[0]
+        assert isinstance(log, Flipper.DentLog)
+        assert log.guy == current_bid.guy
+        assert log.id == current_bid.id
+        assert log.lot == current_bid.lot
+        assert log.bid == current_bid.bid
 
         # Exercise _deal_ after bid has expired
         wait(mcd, our_address, flipper.ttl()+1)
@@ -276,6 +288,9 @@ class TestFlipper:
         assert 0 < current_bid.tic < now or current_bid.end < now
         assert flipper.deal(kick).transact(from_address=our_address)
         assert len(flipper.active_auctions()) == 0
+        log = flipper.past_logs(1)[0]
+        assert isinstance(log, Flipper.DealLog)
+        assert log.usr == our_address
 
         # Grab our collateral
         collateral_before = collateral.gem.balance_of(our_address)
@@ -312,6 +327,12 @@ class TestFlapper:
         assert bid >= flapper.beg() * current_bid.bid
 
         assert flapper.tend(id, lot, bid).transact(from_address=address)
+        log = flapper.past_logs(1)[0]
+        assert isinstance(log, Flapper.TendLog)
+        assert log.guy == address
+        assert log.id == id
+        assert log.lot == lot
+        assert log.bid == bid
 
     def test_getters(self, mcd, flapper):
         assert flapper.vat() == mcd.vat.address
@@ -357,6 +378,10 @@ class TestFlapper:
         joy_after = mcd.vat.dai(mcd.vow.address)
         print(f'joy_before={str(joy_before)}, joy_after={str(joy_after)}')
         assert joy_before - joy_after == mcd.vow.bump()
+        log = flapper.past_logs(1)[0]
+        assert isinstance(log, Flapper.DealLog)
+        assert log.usr == our_address
+        assert log.id == kick
 
         # Grab our dai
         mcd.approve_dai(our_address)
@@ -389,6 +414,12 @@ class TestFlopper:
         assert flopper.beg() * lot <= current_bid.lot
 
         assert flopper.dent(id, lot, bid).transact(from_address=address)
+        log = flopper.past_logs(1)[0]
+        assert isinstance(log, Flopper.DentLog)
+        assert log.guy == address
+        assert log.id == id
+        assert log.lot == lot
+        assert log.bid == bid
 
     def test_getters(self, mcd, flopper):
         assert flopper.vat() == mcd.vat.address
@@ -433,3 +464,7 @@ class TestFlopper:
         assert flopper.deal(kick).transact(from_address=our_address)
         mkr_after = mcd.mkr.balance_of(our_address)
         assert mkr_after > mkr_before
+        log = flopper.past_logs(1)[0]
+        assert isinstance(log, Flopper.DealLog)
+        assert log.usr == our_address
+        assert log.id == kick
