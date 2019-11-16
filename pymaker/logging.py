@@ -32,24 +32,19 @@ class LogNote:
         self.arg3 = args['arg3'] if 'arg3' in args else None  # Special variant used for vat.frob
         self.block = log['blockNumber']
         self._data = args['data']
-        # self._raw = log
 
     @classmethod
     def from_event(cls, event: dict, contract_abi: list):
         assert isinstance(event, dict)
         assert isinstance(contract_abi, list)
 
-        topics = event.get('topics')
-        if topics:
-            log_note_abi = [abi for abi in contract_abi if abi.get('name') == 'LogNote'][0]
-            try:
-                event_data = get_event_data(log_note_abi, event)
-                return LogNote(event_data)
-            except ValueError:
-                # event is not a LogNote
-                return None
-        else:
-            logging.warning(f'[from_event] Invalid topic in {event}')
+        log_note_abi = [abi for abi in contract_abi if abi.get('name') == 'LogNote'][0]
+        try:
+            event_data = get_event_data(log_note_abi, event)
+            return LogNote(event_data)
+        except ValueError:
+            # event is not a LogNote
+            return None
 
     def get_bytes_at_index(self, index: int):
         assert isinstance(index, int)

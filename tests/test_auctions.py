@@ -363,6 +363,11 @@ class TestFlapper:
         check_active_auctions(flapper)
         current_bid = flapper.bids(1)
         assert current_bid.lot > Rad(0)
+        log = flapper.past_logs(1)[0]
+        assert isinstance(log, Flapper.KickLog)
+        assert log.id == kick
+        assert log.lot == current_bid.lot
+        assert log.bid == current_bid.bid
 
         # Allow the auction to expire, and then resurrect it
         wait(mcd, our_address, flapper.tau()+1)
@@ -449,6 +454,12 @@ class TestFlopper:
         assert len(flopper.active_auctions()) == 1
         check_active_auctions(flopper)
         current_bid = flopper.bids(kick)
+        log = flopper.past_logs(1)[0]
+        assert isinstance(log, Flopper.KickLog)
+        assert log.id == kick
+        assert log.lot == current_bid.lot
+        assert log.bid == current_bid.bid
+        assert log.gal == mcd.vow.address
 
         # Allow the auction to expire, and then resurrect it
         wait(mcd, our_address, flopper.tau()+1)

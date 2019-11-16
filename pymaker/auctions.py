@@ -160,14 +160,7 @@ class AuctionContract(Contract):
         return list(filter(lambda l: l is not None, events))
 
     def parse_event(self, event):
-        print("warning; calling base class")
-
-        try:
-            event_data = get_event_data(self.log_note_abi, event)
-            return LogNote(event_data)
-        except ValueError:
-            # event is not a LogNote
-            return None
+        raise NotImplemented()
 
 
 class Flipper(AuctionContract):
@@ -180,10 +173,11 @@ class Flipper(AuctionContract):
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `Flipper` contract.
 
-    Log event signatures:
+    Event signatures:
         0x65fae35e: (deployment-related)
         0x9c52a7f1: (deployment-related)
         0x29ae8114: file
+        0xc84ce3a1172f0dec3173f04caaa6005151a4bfe40d4c9f3ea28dba5f719b2a7a: kick
         0x4b43ed12: tend
         0x5ff3a382: dent
         0xc959c42b: deal
@@ -326,17 +320,13 @@ class Flipper(AuctionContract):
         return history
 
     def parse_event(self, event):
-        try:
-            event_data = get_event_data(self.log_note_abi, event)
-            return LogNote(event_data)
-        except ValueError:
-            pass
-        try:
+        signature = Web3.toHex(event['topics'][0])
+        if signature == "0xc84ce3a1172f0dec3173f04caaa6005151a4bfe40d4c9f3ea28dba5f719b2a7a":
             event_data = get_event_data(self.kick_abi, event)
             return Flipper.KickLog(event_data)
-        except ValueError:
-            pass
-        return None
+        else:
+            event_data = get_event_data(self.log_note_abi, event)
+            return LogNote(event_data)
 
     def __repr__(self):
         return f"Flipper('{self.address}')"
@@ -352,9 +342,10 @@ class Flapper(AuctionContract):
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `Flapper` contract.
 
-    Log event signatures:
+    Event signatures:
         0x65fae35e: (deployment-related)
         0x9c52a7f1: (deployment-related)
+        0xe6dde59cbc017becba89714a037778d234a84ce7f0a137487142a007e580d609: kick
         0x29ae8114: file
         0x4b43ed12: tend
         0xc959c42b: deal
@@ -381,6 +372,17 @@ class Flapper(AuctionContract):
 
         def __repr__(self):
             return f"Flapper.Bid({pformat(vars(self))})"
+
+    class KickLog:
+        def __init__(self, log):
+            args = log['args']
+            self.id = args['id']
+            self.lot = Rad(args['lot'])
+            self.bid = Wad(args['bid'])
+            self.block = log['blockNumber']
+
+        def __repr__(self):
+            return f"Flapper.KickLog({pformat(vars(self))})"
 
     class TendLog:
         def __init__(self, lognote: LogNote):
@@ -447,17 +449,28 @@ class Flapper(AuctionContract):
 
     def past_logs(self, number_of_past_blocks: int):
         assert isinstance(number_of_past_blocks, int)
-        lognotes = super().get_past_lognotes(number_of_past_blocks, Flapper.abi)
+        logs = super().get_past_lognotes(number_of_past_blocks, Flapper.abi)
 
         history = []
-        for lognote in lognotes:
-            if lognote is None:
+        for log in logs:
+            if log is None:
                 continue
-            elif lognote.sig == '0x4b43ed12':
-                history.append(Flapper.TendLog(lognote))
-            elif lognote.sig == '0xc959c42b':
-                history.append(AuctionContract.DealLog(lognote))
+            elif isinstance(log, Flapper.KickLog):
+                history.append(log)
+            elif log.sig == '0x4b43ed12':
+                history.append(Flapper.TendLog(log))
+            elif log.sig == '0xc959c42b':
+                history.append(AuctionContract.DealLog(log))
         return history
+
+    def parse_event(self, event):
+        signature = Web3.toHex(event['topics'][0])
+        if signature == "0xe6dde59cbc017becba89714a037778d234a84ce7f0a137487142a007e580d609":
+            event_data = get_event_data(self.kick_abi, event)
+            return Flapper.KickLog(event_data)
+        else:
+            event_data = get_event_data(self.log_note_abi, event)
+            return LogNote(event_data)
 
     def __repr__(self):
         return f"Flapper('{self.address}')"
@@ -473,10 +486,11 @@ class Flopper(AuctionContract):
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `Flopper` contract.
 
-    Log event signatures:
+    Event signatures:
         0x65fae35e: (deployment-related)
         0x9c52a7f1: (deployment-related)
         0x29ae8114: file
+        0x7e8881001566f9f89aedb9c5dc3d856a2b81e5235a8196413ed484be91cc0df6: kick
         0x5ff3a382: dent
         0xc959c42b: deal
     """
@@ -502,6 +516,18 @@ class Flopper(AuctionContract):
 
         def __repr__(self):
             return f"Flopper.Bid({pformat(vars(self))})"
+
+    class KickLog:
+        def __init__(self, log):
+            args = log['args']
+            self.id = args['id']
+            self.lot = Wad(args['lot'])
+            self.bid = Rad(args['bid'])
+            self.gal = Address(args['gal'])
+            self.block = log['blockNumber']
+
+        def __repr__(self):
+            return f"Flopper.KickLog({pformat(vars(self))})"
 
     class DentLog:
         def __init__(self, lognote: LogNote):
@@ -578,17 +604,28 @@ class Flopper(AuctionContract):
 
     def past_logs(self, number_of_past_blocks: int):
         assert isinstance(number_of_past_blocks, int)
-        lognotes = super().get_past_lognotes(number_of_past_blocks, Flopper.abi)
+        logs = super().get_past_lognotes(number_of_past_blocks, Flopper.abi)
 
         history = []
-        for lognote in lognotes:
-            if lognote is None:
+        for log in logs:
+            if log is None:
                 continue
-            elif lognote.sig == '0x5ff3a382':
-                history.append(Flopper.DentLog(lognote))
-            elif lognote.sig == '0xc959c42b':
-                history.append(AuctionContract.DealLog(lognote))
+            elif isinstance(log, Flopper.KickLog):
+                history.append(log)
+            elif log.sig == '0x5ff3a382':
+                history.append(Flopper.DentLog(log))
+            elif log.sig == '0xc959c42b':
+                history.append(AuctionContract.DealLog(log))
         return history
+
+    def parse_event(self, event):
+        signature = Web3.toHex(event['topics'][0])
+        if signature == "0x7e8881001566f9f89aedb9c5dc3d856a2b81e5235a8196413ed484be91cc0df6":
+            event_data = get_event_data(self.kick_abi, event)
+            return Flopper.KickLog(event_data)
+        else:
+            event_data = get_event_data(self.log_note_abi, event)
+            return LogNote(event_data)
 
     def __repr__(self):
         return f"Flopper('{self.address}')"
