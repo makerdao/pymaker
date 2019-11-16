@@ -482,6 +482,12 @@ class Spotter(Contract):
     def par(self) -> Ray:
         return Ray(self._contract.call().par())
 
+    def mat(self, ilk: Ilk) -> Ray:
+        assert isinstance(ilk, Ilk)
+        (pip, mat) = self._contract.call().ilks(ilk.toBytes())
+
+        return Ray(mat)
+
     def __repr__(self):
         return f"Spotter('{self.address}')"
 

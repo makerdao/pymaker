@@ -197,8 +197,8 @@ def simulate_bite(mcd: DssDeployment, collateral: Collateral, our_address: Addre
 
     assert -int(lot) < 0 and -int(art) < 0
     assert tab > Ray(0)
-        
-        
+
+
 @pytest.fixture(scope="session")
 def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
     collateral = mcd.collaterals['ETH-A']
@@ -514,6 +514,16 @@ class TestCat:
         assert mcd.cat.flipper(collateral.ilk) == collateral.flipper.address
         assert isinstance(mcd.cat.lump(collateral.ilk), Wad)
         assert isinstance(mcd.cat.chop(collateral.ilk), Ray)
+
+class TestSpotter:
+    def test_mat(self, mcd):
+        val = Ray(mcd.collaterals['ETH-A'].pip.read_as_int())
+
+        ilk = mcd.vat.ilk('ETH-A')
+        par = mcd.spotter.par()
+        mat = mcd.spotter.mat(ilk)
+
+        assert mat == (Ray(val * 10 ** 9) / par) / (ilk.spot)
 
 
 class TestVow:
