@@ -19,6 +19,7 @@ from datetime import datetime
 from pprint import pformat
 from typing import List
 from web3 import Web3
+from web3.utils.events import get_event_data
 
 from pymaker import Contract, Address, Transact
 from pymaker.logging import LogNote
@@ -56,6 +57,14 @@ class AuctionContract(Contract):
         self.abi = abi
         self._contract = self._get_contract(web3, abi, address)
         self._bids = bids
+
+        self.log_note_abi = None
+        self.kick_abi = None
+        for member in abi:
+            if not self.log_note_abi and member.get('name') == 'LogNote':
+                self.log_note_abi = member
+            elif not self.kick_abi and member.get('name') == 'Kick':
+                self.kick_abi = member
 
     def wards(self, address: Address) -> bool:
         assert isinstance(address, Address)
@@ -147,8 +156,18 @@ class AuctionContract(Contract):
         }
 
         logs = self.web3.eth.getLogs(filter_params)
-        lognotes = list(map(lambda l: LogNote.from_event(l, abi), logs))
-        return list(filter(lambda l: l is not None, lognotes))
+        events = list(map(lambda l: self.parse_event(l), logs))
+        return list(filter(lambda l: l is not None, events))
+
+    def parse_event(self, event):
+        print("warning; calling base class")
+
+        try:
+            event_data = get_event_data(self.log_note_abi, event)
+            return LogNote(event_data)
+        except ValueError:
+            # event is not a LogNote
+            return None
 
 
 class Flipper(AuctionContract):
@@ -198,6 +217,20 @@ class Flipper(AuctionContract):
 
         def __repr__(self):
             return f"Flipper.Bid({pformat(vars(self))})"
+
+    class KickLog:
+        def __init__(self, log):
+            args = log['args']
+            self.id = args['id']
+            self.lot = Wad(args['lot'])
+            self.bid = Rad(args['bid'])
+            self.tab = Rad(args['tab'])
+            self.usr = Address(args['usr'])
+            self.gal = Address(args['gal'])
+            self.block = log['blockNumber']
+
+        def __repr__(self):
+            return f"Flipper.KickLog({pformat(vars(self))})"
 
     class TendLog:
         def __init__(self, lognote: LogNote):
@@ -276,19 +309,34 @@ class Flipper(AuctionContract):
 
     def past_logs(self, number_of_past_blocks: int):
         assert isinstance(number_of_past_blocks, int)
-        lognotes = super().get_past_lognotes(number_of_past_blocks, Flipper.abi)
+        logs = super().get_past_lognotes(number_of_past_blocks, Flipper.abi)
 
         history = []
-        for lognote in lognotes:
-            if lognote is None:
+        for log in logs:
+            if log is None:
                 continue
-            elif lognote.sig == '0x4b43ed12':
-                history.append(Flipper.TendLog(lognote))
-            elif lognote.sig == '0x5ff3a382':
-                history.append(Flipper.DentLog(lognote))
-            elif lognote.sig == '0xc959c42b':
-                history.append(AuctionContract.DealLog(lognote))
+            elif isinstance(log, Flipper.KickLog):
+                history.append(log)
+            elif log.sig == '0x4b43ed12':
+                history.append(Flipper.TendLog(log))
+            elif log.sig == '0x5ff3a382':
+                history.append(Flipper.DentLog(log))
+            elif log.sig == '0xc959c42b':
+                history.append(AuctionContract.DealLog(log))
         return history
+
+    def parse_event(self, event):
+        try:
+            event_data = get_event_data(self.log_note_abi, event)
+            return LogNote(event_data)
+        except ValueError:
+            pass
+        try:
+            event_data = get_event_data(self.kick_abi, event)
+            return Flipper.KickLog(event_data)
+        except ValueError:
+            pass
+        return None
 
     def __repr__(self):
         return f"Flipper('{self.address}')"

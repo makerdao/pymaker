@@ -221,7 +221,7 @@ class TestFlipper:
         assert urn.art == dart - art
         assert mcd.vat.vice() > Rad(0)
         assert mcd.vow.sin() == Rad(tab)
-        bites = mcd.cat.past_bites(10)
+        bites = mcd.cat.past_bites(1)
         assert len(bites) == 1
         last_bite = bites[0]
         assert last_bite.tab > Rad(0)
@@ -234,6 +234,14 @@ class TestFlipper:
         # Cat doesn't incorporate the liquidation penalty (chop), but the kicker includes it.
         # Awaiting word from @dc why this is so.
         #assert last_bite.tab == current_bid.tab
+        log = flipper.past_logs(1)[0]
+        assert isinstance(log, Flipper.KickLog)
+        assert log.id == kick
+        assert log.lot == current_bid.lot
+        assert log.bid == current_bid.bid
+        assert log.tab == current_bid.tab
+        assert log.usr == deployment_address
+        assert log.gal == mcd.vow.address
 
         # Wrap some eth and handle approvals before bidding
         eth_required = Wad(current_bid.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
