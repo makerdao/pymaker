@@ -1,12 +1,3 @@
-# This file is part of Maker Keeper Framework.
-#
-# Copyright (C) 2019 Liquidity Providers LLC.  All rights reserved.
-#
-# This is proprietary (closed source) software. Unauthorized copying,
-# distributing, downloading, sharing, conveying, modifying, or use, via any
-# medium or in any manner whatsoever are strictly prohibited.  No license or
-# any other rights are provided with this file.
-
 from pprint import pformat
 from typing import Optional, List
 
