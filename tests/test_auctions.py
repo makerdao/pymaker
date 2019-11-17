@@ -221,7 +221,7 @@ class TestFlipper:
         assert urn.art == dart - art
         assert mcd.vat.vice() > Rad(0)
         assert mcd.vow.sin() == Rad(tab)
-        bites = mcd.cat.past_bites(10)
+        bites = mcd.cat.past_bites(1)
         assert len(bites) == 1
         last_bite = bites[0]
         assert last_bite.tab > Rad(0)
@@ -234,6 +234,14 @@ class TestFlipper:
         # Cat doesn't incorporate the liquidation penalty (chop), but the kicker includes it.
         # Awaiting word from @dc why this is so.
         #assert last_bite.tab == current_bid.tab
+        log = flipper.past_logs(1)[0]
+        assert isinstance(log, Flipper.KickLog)
+        assert log.id == kick
+        assert log.lot == current_bid.lot
+        assert log.bid == current_bid.bid
+        assert log.tab == current_bid.tab
+        assert log.usr == deployment_address
+        assert log.gal == mcd.vow.address
 
         # Wrap some eth and handle approvals before bidding
         eth_required = Wad(current_bid.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
@@ -257,6 +265,12 @@ class TestFlipper:
         assert current_bid.bid == current_bid.tab
         assert len(flipper.active_auctions()) == 1
         check_active_auctions(flipper)
+        log = flipper.past_logs(1)[0]
+        assert isinstance(log, Flipper.TendLog)
+        assert log.guy == current_bid.guy
+        assert log.id == current_bid.id
+        assert log.lot == current_bid.lot
+        assert log.bid == current_bid.bid
 
         # Test the _dent_ phase of the auction
         flipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=our_address))
@@ -269,6 +283,12 @@ class TestFlipper:
         assert current_bid.guy == our_address
         assert current_bid.bid == current_bid.tab
         assert current_bid.lot == lot
+        log = flipper.past_logs(1)[0]
+        assert isinstance(log, Flipper.DentLog)
+        assert log.guy == current_bid.guy
+        assert log.id == current_bid.id
+        assert log.lot == current_bid.lot
+        assert log.bid == current_bid.bid
 
         # Exercise _deal_ after bid has expired
         wait(mcd, our_address, flipper.ttl()+1)
@@ -276,6 +296,9 @@ class TestFlipper:
         assert 0 < current_bid.tic < now or current_bid.end < now
         assert flipper.deal(kick).transact(from_address=our_address)
         assert len(flipper.active_auctions()) == 0
+        log = flipper.past_logs(1)[0]
+        assert isinstance(log, Flipper.DealLog)
+        assert log.usr == our_address
 
         # Grab our collateral
         collateral_before = collateral.gem.balance_of(our_address)
@@ -312,6 +335,12 @@ class TestFlapper:
         assert bid >= flapper.beg() * current_bid.bid
 
         assert flapper.tend(id, lot, bid).transact(from_address=address)
+        log = flapper.past_logs(1)[0]
+        assert isinstance(log, Flapper.TendLog)
+        assert log.guy == address
+        assert log.id == id
+        assert log.lot == lot
+        assert log.bid == bid
 
     def test_getters(self, mcd, flapper):
         assert flapper.vat() == mcd.vat.address
@@ -334,6 +363,11 @@ class TestFlapper:
         check_active_auctions(flapper)
         current_bid = flapper.bids(1)
         assert current_bid.lot > Rad(0)
+        log = flapper.past_logs(1)[0]
+        assert isinstance(log, Flapper.KickLog)
+        assert log.id == kick
+        assert log.lot == current_bid.lot
+        assert log.bid == current_bid.bid
 
         # Allow the auction to expire, and then resurrect it
         wait(mcd, our_address, flapper.tau()+1)
@@ -357,6 +391,10 @@ class TestFlapper:
         joy_after = mcd.vat.dai(mcd.vow.address)
         print(f'joy_before={str(joy_before)}, joy_after={str(joy_after)}')
         assert joy_before - joy_after == mcd.vow.bump()
+        log = flapper.past_logs(1)[0]
+        assert isinstance(log, Flapper.DealLog)
+        assert log.usr == our_address
+        assert log.id == kick
 
         # Grab our dai
         mcd.approve_dai(our_address)
@@ -389,6 +427,12 @@ class TestFlopper:
         assert flopper.beg() * lot <= current_bid.lot
 
         assert flopper.dent(id, lot, bid).transact(from_address=address)
+        log = flopper.past_logs(1)[0]
+        assert isinstance(log, Flopper.DentLog)
+        assert log.guy == address
+        assert log.id == id
+        assert log.lot == lot
+        assert log.bid == bid
 
     def test_getters(self, mcd, flopper):
         assert flopper.vat() == mcd.vat.address
@@ -410,6 +454,12 @@ class TestFlopper:
         assert len(flopper.active_auctions()) == 1
         check_active_auctions(flopper)
         current_bid = flopper.bids(kick)
+        log = flopper.past_logs(1)[0]
+        assert isinstance(log, Flopper.KickLog)
+        assert log.id == kick
+        assert log.lot == current_bid.lot
+        assert log.bid == current_bid.bid
+        assert log.gal == mcd.vow.address
 
         # Allow the auction to expire, and then resurrect it
         wait(mcd, our_address, flopper.tau()+1)
@@ -433,3 +483,7 @@ class TestFlopper:
         assert flopper.deal(kick).transact(from_address=our_address)
         mkr_after = mcd.mkr.balance_of(our_address)
         assert mkr_after > mkr_before
+        log = flopper.past_logs(1)[0]
+        assert isinstance(log, Flopper.DealLog)
+        assert log.usr == our_address
+        assert log.id == kick
