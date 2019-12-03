@@ -31,6 +31,7 @@ class LogNote:
         self.arg2 = args['arg2'] if 'arg2' in args else None
         self.arg3 = args['arg3'] if 'arg3' in args else None  # Special variant used for vat.frob
         self.block = log['blockNumber']
+        self.tx_hash = log['transactionHash'].hex()
         self._data = args['data']
 
     @classmethod
