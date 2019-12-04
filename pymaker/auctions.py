@@ -41,6 +41,7 @@ class AuctionContract(Contract):
             self.usr = Address(lognote.usr)
             self.id = Web3.toInt(lognote.arg1)
             self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
 
         def __repr__(self):
             return f"AuctionContract.DealLog({pformat(vars(self))})"
@@ -222,6 +223,7 @@ class Flipper(AuctionContract):
             self.usr = Address(args['usr'])
             self.gal = Address(args['gal'])
             self.block = log['blockNumber']
+            self.tx_hash = log['transactionHash'].hex()
 
         def __repr__(self):
             return f"Flipper.KickLog({pformat(vars(self))})"
@@ -233,6 +235,7 @@ class Flipper(AuctionContract):
             self.lot = Wad(Web3.toInt(lognote.arg2))
             self.bid = Rad(Web3.toInt(lognote.get_bytes_at_index(2)))
             self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
 
         def __repr__(self):
             return f"Flipper.TendLog({pformat(vars(self))})"
@@ -244,6 +247,7 @@ class Flipper(AuctionContract):
             self.lot = Wad(Web3.toInt(lognote.arg2))
             self.bid = Rad(Web3.toInt(lognote.get_bytes_at_index(2)))
             self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
 
         def __repr__(self):
             return f"Flipper.DentLog({pformat(vars(self))})"
@@ -380,6 +384,7 @@ class Flapper(AuctionContract):
             self.lot = Rad(args['lot'])
             self.bid = Wad(args['bid'])
             self.block = log['blockNumber']
+            self.tx_hash = log['transactionHash'].hex()
 
         def __repr__(self):
             return f"Flapper.KickLog({pformat(vars(self))})"
@@ -391,6 +396,7 @@ class Flapper(AuctionContract):
             self.lot = Rad(Web3.toInt(lognote.arg2))
             self.bid = Wad(Web3.toInt(lognote.get_bytes_at_index(2)))
             self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
 
         def __repr__(self):
             return f"Flapper.TendLog({pformat(vars(self))})"
@@ -525,6 +531,7 @@ class Flopper(AuctionContract):
             self.bid = Rad(args['bid'])
             self.gal = Address(args['gal'])
             self.block = log['blockNumber']
+            self.tx_hash = log['transactionHash'].hex()
 
         def __repr__(self):
             return f"Flopper.KickLog({pformat(vars(self))})"
@@ -536,6 +543,7 @@ class Flopper(AuctionContract):
             self.lot = Wad(Web3.toInt(lognote.arg2))
             self.bid = Rad(Web3.toInt(lognote.get_bytes_at_index(2)))
             self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
 
         def __repr__(self):
             return f"Flopper.DentLog({pformat(vars(self))})"
