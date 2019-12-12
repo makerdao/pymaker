@@ -19,6 +19,7 @@ import eth_utils
 import json
 import os
 import re
+import warnings
 from typing import Dict, List, Optional
 
 import pkg_resources
@@ -151,6 +152,11 @@ class DssDeployment:
     Static method `from_json()` should be used to instantiate all the objet of
     a deployment from a json description of all the system addresses.
     """
+
+    NETWORKS = {
+        "1": "mainnet",
+        "42": "kovan"
+    }
 
     class Config:
         def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flapper: Flapper,
@@ -295,9 +301,10 @@ class DssDeployment:
         return self.config.to_json()
 
     @staticmethod
-    def from_network(web3: Web3, network: str):
+    def init(web3: Web3):
         assert isinstance(web3, Web3)
-        assert isinstance(network, str)
+
+        network = DssDeployment.NETWORKS.get(web3.net.version, "testnet")
 
         cwd = os.path.dirname(os.path.realpath(__file__))
         addresses_path = os.path.join(cwd, "../config", f"{network}-addresses.json")
@@ -305,6 +312,17 @@ class DssDeployment:
             raise FileNotFoundError("Network is not yet supported")
 
         return DssDeployment.from_json(web3=web3, conf=open(addresses_path, "r").read())
+
+    @staticmethod
+    def from_network(web3: Web3, network: str):
+        warnings.warn(
+            "this method will be removed, use DssDeployment.init(web3) instead",
+            DeprecationWarning
+        )
+        assert isinstance(web3, Web3)
+        assert isinstance(network, str)
+
+        return DssDeployment.init(web3=web3)
 
     def approve_dai(self, usr: Address):
         """
