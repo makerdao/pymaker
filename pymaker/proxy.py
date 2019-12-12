@@ -259,3 +259,51 @@ class DSProxyFactory(Contract):
 
     def __repr__(self):
         return f"DSProxyFactory('{self.address}')"
+
+
+class ProxyRegistry(Contract):
+    """A client for the `ProxyRegistry` contract.
+
+    Ref. <https://github.com/makerdao/proxy-registry/blob/master/src/ProxyRegistry.sol>
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/ProxyRegistry.abi')
+    bin = Contract._load_bin(__name__, 'abi/ProxyRegistry.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+
+    def build(self, owner: Address) -> Transact:
+        assert isinstance(owner, Address)
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'build(address)', [owner.address])
+
+    def proxies(self, owner: Address) -> Address:
+        assert isinstance(owner, Address)
+        return Address(self._contract.call().proxies(owner.address))
+
+    def __repr__(self):
+        return f"ProxyRegistry('{self.address}')"
+
+
+class DssProxyActionsDsr(Contract):
+    """A client for the `DssProxyActionsDsr` contract.
+
+    Ref. <https://github.com/makerdao/dss-proxy-actions/blob/master/src/DssProxyActions.sol>
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/DssProxyActionsDsr.abi')
+    bin = Contract._load_bin(__name__, 'abi/DssProxyActionsDsr.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+

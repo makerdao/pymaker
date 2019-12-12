@@ -792,6 +792,10 @@ class Pot(Contract):
         dsr = self._contract.call().dsr()
         return Ray(dsr)
 
+    def chi(self) -> Ray:
+        chi = self._contract.call().chi()
+        return Ray(chi)
+
     def rho(self) -> datetime:
         rho = self._contract.call().rho()
         return datetime.fromtimestamp(rho)
