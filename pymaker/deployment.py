@@ -301,7 +301,7 @@ class DssDeployment:
         return self.config.to_json()
 
     @staticmethod
-    def init(web3: Web3):
+    def from_node(web3: Web3):
         assert isinstance(web3, Web3)
 
         network = DssDeployment.NETWORKS.get(web3.net.version, "testnet")
@@ -322,7 +322,7 @@ class DssDeployment:
         assert isinstance(web3, Web3)
         assert isinstance(network, str)
 
-        return DssDeployment.init(web3=web3)
+        return DssDeployment.from_node(web3=web3)
 
     def approve_dai(self, usr: Address):
         """
