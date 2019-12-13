@@ -30,6 +30,7 @@ from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
 from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemJoin, Pot
+from pymaker.proxy import ProxyRegistry, DssProxyActionsDsr
 from pymaker.feed import DSValue
 from pymaker.governance import DSPause, DSChief
 from pymaker.numeric import Wad, Ray
@@ -156,6 +157,7 @@ class DssDeployment:
         def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flapper: Flapper,
                      flopper: Flopper, pot: Pot, dai: DSToken, dai_join: DaiJoin, mkr: DSToken,
                      spotter: Spotter, ds_chief: DSChief, esm: ShutdownModule, end: End,
+                     proxy_registry: ProxyRegistry, dss_proxy_actions: DssProxyActionsDsr,
                      collaterals: Optional[Dict[str, Collateral]] = None):
             self.pause = pause
             self.vat = vat
@@ -172,6 +174,8 @@ class DssDeployment:
             self.ds_chief = ds_chief
             self.esm = esm
             self.end = end
+            self.proxy_registry = proxy_registry
+            self.dss_proxy_actions = dss_proxy_actions
             self.collaterals = collaterals or {}
 
         @staticmethod
@@ -192,6 +196,8 @@ class DssDeployment:
             ds_chief = DSChief(web3, Address(conf['MCD_ADM']))
             esm = ShutdownModule(web3, Address(conf['MCD_ESM']))
             end = End(web3, Address(conf['MCD_END']))
+            proxy_registry = ProxyRegistry(web3, Address(conf['PROXY_REGISTRY']))
+            dss_proxy_actions = DssProxyActionsDsr(web3, Address(conf['PROXY_ACTIONS_DSR']))
 
             collaterals = {}
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
@@ -215,7 +221,8 @@ class DssDeployment:
                 collaterals[ilk.name] = collateral
 
             return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper, pot,
-                                        dai, dai_adapter, mkr, spotter, ds_chief, esm, end, collaterals)
+                                        dai, dai_adapter, mkr, spotter, ds_chief, esm, end,
+                                        proxy_registry, dss_proxy_actions, collaterals)
 
         @staticmethod
         def _infer_collaterals_from_addresses(keys: []) -> List:
@@ -247,7 +254,9 @@ class DssDeployment:
                 'MCD_SPOT': self.spotter.address.address,
                 'MCD_ADM': self.ds_chief.address.address,
                 'MCD_ESM': self.esm.address.address,
-                'MCD_END': self.end.address.address
+                'MCD_END': self.end.address.address,
+                'PROXY_REGISTRY': self.proxy_registry.address.address,
+                'PROXY_ACTIONS_DSR': self.dss_proxy_actions.address.address
             }
 
             for collateral in self.collaterals.values():
@@ -286,6 +295,8 @@ class DssDeployment:
         self.ds_chief = config.ds_chief
         self.esm = config.esm
         self.end = config.end
+        self.proxy_registry = config.proxy_registry
+        self.dss_proxy_actions = config.dss_proxy_actions
 
     @staticmethod
     def from_json(web3: Web3, conf: str):
