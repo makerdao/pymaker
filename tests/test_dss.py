@@ -245,12 +245,9 @@ class TestConfig:
         assert "MCD_DAI" in dict
         assert len(dict) > 20
 
-    def test_from_network(self, web3: Web3):
-        mcd_testnet = DssDeployment.from_network(web3, "testnet")
+    def test_from_node(self, web3: Web3):
+        mcd_testnet = DssDeployment.from_node(web3)
         validate_contracts_loaded(mcd_testnet)
-
-        with pytest.raises(Exception):
-            DssDeployment.from_network(web3, "bogus")
 
     def test_account_transfers(self, web3: Web3, mcd, our_address, other_address):
         print(mcd.collaterals)

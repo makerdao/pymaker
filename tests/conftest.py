@@ -78,7 +78,7 @@ def deployment_address(web3) -> Address:
 @pytest.fixture(scope="session")
 def mcd(web3) -> DssDeployment:
     # for local dockerized parity testchain
-    deployment = DssDeployment.from_json(web3=web3, conf=open("config/testnet-addresses.json", "r").read())
+    deployment = DssDeployment.from_node(web3=web3)
     validate_contracts_loaded(deployment)
     return deployment
 
