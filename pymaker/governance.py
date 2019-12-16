@@ -190,6 +190,36 @@ class DSChief(Contract):
     def get_max_yays(self) -> int:
         return self._contract.call().MAX_YAYS()
 
+    def lock(self, amount: Wad) -> Transact:
+        assert isinstance(amount, Wad)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'lock', [amount.value])
+
+    def free(self, amount: Wad) -> Transact:
+        assert isinstance(amount, Wad)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'free', [amount.value])
+
+    def etch(self, yays: List) -> Transact:
+        assert isinstance(yays, List)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'etch(address[])', [yays])
+
+    def vote_yays(self, yays: List) -> Transact:
+        assert isinstance(yays, List)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'vote(address[])', [yays])
+
+    def vote_etch(self, etch: Etch) -> Transact:
+        assert isinstance(etch, Etch)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'vote(bytes32)', [etch.slate])
+
+    def lift(self, whom: Address) -> Transact:
+        assert isinstance(whom, Address)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'lift', [whom.address])
+
     def past_etch(self, number_of_past_blocks: int, event_filter: dict = None) -> List[Etch]:
         """Synchronously retrieve past Etch events.
 

@@ -20,8 +20,12 @@ from web3 import Web3, HTTPProvider
 
 from pymaker import Address
 from pymaker.auth import DSAuth
-from pymaker.governance import DSPause
+from pymaker.governance import DSPause, DSChief
+from pymaker.numeric import Wad
+from pymaker.deployment import DssDeployment
 from datetime import datetime, timedelta
+
+from tests.test_dss import mint_mkr
 
 
 @pytest.mark.skip(reason="not fully implemented")
@@ -45,3 +49,26 @@ class TestDSPause:
     def test_exec(self):
         # assert self.ds_pause.plot(self.plan).transact()
         assert self.ds_pause.exec(self.plan).transact()
+
+class TestDSChief:
+    def test_scenario(self, mcd: DssDeployment, our_address: Address, other_address: Address):
+        isinstance(mcd, DssDeployment)
+        isinstance(our_address, Address)
+
+        amount = Wad.from_number(1000)
+        mint_mkr(mcd.mkr, our_address, amount)
+        assert mcd.mkr.balance_of(our_address) == amount
+
+        assert mcd.mkr.approve(mcd.ds_chief.address).transact(from_address=our_address)
+        assert mcd.ds_chief.lock(amount).transact(from_address=our_address)
+
+        assert mcd.ds_chief.vote_yays([our_address.address]).transact(from_address=our_address)
+        assert mcd.ds_chief.etch([other_address.address]).transact(from_address=our_address)
+        etches = mcd.ds_chief.past_etch(3)
+        assert etches[0].slate !=  etches[-1].slate
+
+        assert mcd.ds_chief.get_approvals(our_address.address) == amount
+
+        assert mcd.ds_chief.get_hat() != our_address
+        assert mcd.ds_chief.lift(our_address).transact(from_address=our_address)
+        assert mcd.ds_chief.get_hat() == our_address
