@@ -78,5 +78,5 @@ def test_join_and_exit(dsr):
 
     # exit remaining DAI from DSR
     dsr.exit_all(proxy).transact(from_address=dsr.owner)
-    assert mcd.dai.balance_of(dsr.owner) > intial_dai_balance
+    assert round(mcd.dai.balance_of(dsr.owner)) == round(intial_dai_balance)
     assert dsr.get_balance(proxy.address) == Wad.from_number(0)
