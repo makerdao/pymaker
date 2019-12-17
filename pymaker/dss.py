@@ -238,6 +238,11 @@ class Vat(Contract):
             self.ilk = str(Web3.toText(lognote.arg1)).replace('\x00', '')
             self.urn = Address(Web3.toHex(lognote.arg2)[26:])
             self.collateral_owner = Address(Web3.toHex(lognote.arg3)[26:])
+            self.dai_recipient = Address(Web3.toHex(lognote.get_bytes_at_index(3))[26:])
+            self.dink = Wad(int.from_bytes(lognote.get_bytes_at_index(4), byteorder="big", signed=True))
+            self.dart = Wad(int.from_bytes(lognote.get_bytes_at_index(5), byteorder="big", signed=True))
+            self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
 
         def __repr__(self):
             return f"LogFrob({pformat(vars(self))})"
