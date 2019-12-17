@@ -55,14 +55,15 @@ class TestDSChief:
         isinstance(mcd, DssDeployment)
         isinstance(our_address, Address)
 
+        prevBalance = mcd.mkr.balance_of(our_address)
         amount = Wad.from_number(1000)
         mint_mkr(mcd.mkr, our_address, amount)
-        assert mcd.mkr.balance_of(our_address) == amount
+        assert mcd.mkr.balance_of(our_address) == amount + prevBalance
 
         # Lock MKR in DS-Chief
         assert mcd.mkr.approve(mcd.ds_chief.address).transact(from_address=our_address)
         assert mcd.ds_chief.lock(amount).transact(from_address=our_address)
-        assert mcd.mkr.balance_of(our_address) == Wad(0)
+        assert mcd.mkr.balance_of(our_address) == prevBalance
 
         # Vote for our address
         assert mcd.ds_chief.vote_yays([our_address.address]).transact(from_address=our_address)
