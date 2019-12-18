@@ -47,7 +47,7 @@ class LogNote:
             # event is not a LogNote
             return None
 
-    def get_bytes_at_index(self, index: int):
+    def get_bytes_at_index(self, index: int) -> bytes:
         assert isinstance(index, int)
         if index > 5:
             raise ValueError("Only six words of calldata are provided")

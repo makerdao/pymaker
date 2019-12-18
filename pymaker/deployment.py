@@ -345,7 +345,7 @@ class DssDeployment:
         assert isinstance(usr, Address)
 
         self.dai_adapter.approve(approval_function=hope_directly(from_address=usr), source=self.vat.address)
-        self.dai.approve(self.dai_adapter.address).transact()
+        self.dai.approve(self.dai_adapter.address).transact(from_address=usr)
 
     def active_auctions(self) -> dict:
         flips = {}

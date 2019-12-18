@@ -460,27 +460,36 @@ class TestVat:
         assert mcd.vat.frob(ilk0, our_address, Wad(3), Wad(0)).transact()
 
         collateral1.approve(other_address)
-        assert collateral1.adapter.join(other_address, Wad(3)).transact(from_address=other_address)
-        assert mcd.vat.frob(ilk1, other_address, Wad(3), Wad(0)).transact(from_address=other_address)
-
         assert collateral1.adapter.join(other_address, Wad(9)).transact(from_address=other_address)
-        assert mcd.vat.frob(ilk1, our_address, Wad(6), Wad(0),
+        assert mcd.vat.frob(ilk1, other_address, Wad(9), Wad(0)).transact(from_address=other_address)
+        assert mcd.vat.frob(ilk1, other_address, Wad(-3), Wad(0)).transact(from_address=other_address)
+
+        assert mcd.vat.frob(ilk1, our_address, Wad(3), Wad(0),
                             collateral_owner=other_address, dai_recipient=other_address).transact(
             from_address=other_address)
 
         # then
         frobs = mcd.vat.past_frobs(10)
-        assert len(frobs) == 3
+        assert len(frobs) == 4
         assert frobs[0].ilk == ilk0.name
         assert frobs[0].urn == our_address
+        assert frobs[0].dink == Wad(3)
+        assert frobs[0].dart == Wad(0)
         assert frobs[1].ilk == ilk1.name
         assert frobs[1].urn == other_address
+        assert frobs[1].dink == Wad(9)
+        assert frobs[1].dart == Wad(0)
         assert frobs[2].ilk == ilk1.name
-        assert frobs[2].urn == our_address
-        assert frobs[2].collateral_owner == other_address
+        assert frobs[2].urn == other_address
+        assert frobs[2].dink == Wad(-3)
+        assert frobs[2].dart == Wad(0)
+        assert frobs[3].urn == our_address
+        assert frobs[3].collateral_owner == other_address
+        assert frobs[3].dink == Wad(3)
+        assert frobs[3].dart == Wad(0)
 
         assert len(mcd.vat.past_frobs(6, ilk0)) == 1
-        assert len(mcd.vat.past_frobs(6, ilk1)) == 2
+        assert len(mcd.vat.past_frobs(6, ilk1)) == 3
         assert len(mcd.vat.past_frobs(6, mcd.collaterals['ZRX-A'].ilk)) == 0
 
         urns0 = mcd.vat.urns(ilk=ilk0)
