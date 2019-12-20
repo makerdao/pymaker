@@ -105,7 +105,7 @@ def frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad
     # when
     ink_before = mcd.vat.urn(ilk, address).ink
     art_before = mcd.vat.urn(ilk, address).art
-    TestVat.simulate_frob(mcd, collateral, address, dink, dart)
+    mcd.vat.simulate_frob(collateral, address, dink, dart)
 
     # then
     assert mcd.vat.frob(ilk=ilk, urn_address=address, dink=dink, dart=dart).transact(from_address=address)
@@ -277,51 +277,6 @@ class TestConfig:
 
 class TestVat:
     @staticmethod
-    def simulate_frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad, dart: Wad):
-        assert isinstance(mcd, DssDeployment)
-        assert isinstance(collateral, Collateral)
-        assert isinstance(address, Address)
-        assert isinstance(dink, Wad)
-        assert isinstance(dart, Wad)
-
-        urn = mcd.vat.urn(collateral.ilk, address)
-        ilk = mcd.vat.ilk(collateral.ilk.name)
-
-        print(f"urn.ink={urn.ink}, urn.art={urn.art}, ilk.art={ilk.art}, dink={dink}, dart={dart}")
-        ink = urn.ink + dink
-        art = urn.art + dart
-        ilk_art = ilk.art + dart
-        rate = ilk.rate
-
-        gem = mcd.vat.gem(collateral.ilk, urn.address) - dink
-        dai = mcd.vat.dai(urn.address) + Rad(rate * dart)
-        debt = mcd.vat.debt() + Rad(rate * dart)
-
-        # stablecoin debt does not increase
-        cool = dart <= Wad(0)
-        # collateral balance does not decrease
-        firm = dink >= Wad(0)
-        nice = cool and firm
-
-        # CDP remains under both collateral and total debt ceilings
-        under_collateral_debt_ceiling = Rad(ilk_art * rate) <= ilk.line
-        if not under_collateral_debt_ceiling:
-            print(f"CDP would exceed collateral debt ceiling of {ilk.line}")
-        under_total_debt_ceiling = debt < mcd.vat.line()
-        if not under_total_debt_ceiling:
-            print(f"CDP would exceed total debt ceiling of {mcd.vat.line()}")
-        calm = under_collateral_debt_ceiling and under_total_debt_ceiling
-
-        safe = (urn.art * rate) <= ink * ilk.spot
-
-        assert calm or cool
-        assert nice or safe
-
-        assert Rad(ilk_art * rate) >= ilk.dust or (art == Wad(0))
-        assert rate != Ray(0)
-        assert mcd.vat.live()
-
-    @staticmethod
     def ensure_clean_urn(mcd: DssDeployment, collateral: Collateral, address: Address):
         assert isinstance(mcd, DssDeployment)
         assert isinstance(collateral, Collateral)
@@ -435,7 +390,7 @@ class TestVat:
         assert collateral.gem == collateral.adapter.gem()
         collateral.gem.approve(collateral.adapter.address)
         assert collateral.adapter.join(other_address, Wad(3)).transact(from_address=other_address)
-        self.simulate_frob(mcd, collateral, other_address, Wad(3), Wad(10))
+        mcd.vat.simulate_frob(collateral, other_address, Wad(3), Wad(10))
         assert mcd.vat.frob(collateral.ilk, other_address, Wad(3), Wad(10)).transact(from_address=other_address)
 
         # then
