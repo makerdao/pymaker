@@ -405,6 +405,8 @@ class Vat(Contract):
         assert isinstance(v, Address)
         assert isinstance(w, Address)
 
+        self.validate_frob(ilk, urn_address, dink, dart)
+
         if v == urn_address and w == urn_address:
             logger.info(f"frobbing {ilk.name} urn {urn_address.address} with dink={dink}, dart={dart}")
         else:
@@ -415,15 +417,15 @@ class Vat(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'frob', [ilk.toBytes(), urn_address.address, v.address, w.address, dink.value, dart.value])
 
-    def simulate_frob(self, collateral: Collateral, address: Address, dink: Wad, dart: Wad):
+    def validate_frob(self, ilk: Ilk, address: Address, dink: Wad, dart: Wad):
         """Helps diagnose `frob` transaction failures by asserting on `require` conditions in the contract"""
-        assert isinstance(collateral, Collateral)
+        assert isinstance(ilk, Ilk)
         assert isinstance(address, Address)
         assert isinstance(dink, Wad)
         assert isinstance(dart, Wad)
 
-        urn = self.urn(collateral.ilk, address)
-        ilk = self.ilk(collateral.ilk.name)
+        urn = self.urn(ilk, address)
+        ilk = self.ilk(ilk.name)
 
         logger.debug(f"urn.ink={urn.ink}, urn.art={urn.art}, dink={dink}, dart={dart}, "
                      f"ilk.rate={ilk.rate}, debt={str(self.debt())}")
@@ -432,7 +434,7 @@ class Vat(Contract):
         ilk_art = ilk.art + dart
         rate = ilk.rate
 
-        gem = self.gem(collateral.ilk, urn.address) - dink
+        gem = self.gem(ilk, urn.address) - dink
         dai = self.dai(urn.address) + Rad(rate * dart)
         debt = self.debt() + Rad(rate * dart)
 

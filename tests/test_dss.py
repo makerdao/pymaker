@@ -105,7 +105,6 @@ def frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad
     # when
     ink_before = mcd.vat.urn(ilk, address).ink
     art_before = mcd.vat.urn(ilk, address).art
-    mcd.vat.simulate_frob(collateral, address, dink, dart)
 
     # then
     assert mcd.vat.frob(ilk=ilk, urn_address=address, dink=dink, dart=dart).transact(from_address=address)
@@ -390,7 +389,6 @@ class TestVat:
         assert collateral.gem == collateral.adapter.gem()
         collateral.gem.approve(collateral.adapter.address)
         assert collateral.adapter.join(other_address, Wad(3)).transact(from_address=other_address)
-        mcd.vat.simulate_frob(collateral, other_address, Wad(3), Wad(10))
         assert mcd.vat.frob(collateral.ilk, other_address, Wad(3), Wad(10)).transact(from_address=other_address)
 
         # then
