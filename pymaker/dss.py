@@ -224,6 +224,37 @@ class GemJoin(Join):
         return DSToken(self.web3, address)
 
 
+class Collateral:
+    """The `Collateral` object wraps accounting information in the Ilk with token-wide artifacts shared across
+    multiple collateral types for the same token.  For example, ETH-A and ETH-B are represented by different Ilks,
+    but will share the same gem (WETH token), GemJoin instance, and Flipper contract.
+    """
+
+    def __init__(self, ilk: Ilk, gem: ERC20Token, adapter: GemJoin, flipper: Flipper, pip):
+        assert isinstance(ilk, Ilk)
+        assert isinstance(gem, ERC20Token)
+        assert isinstance(adapter, GemJoin)
+        assert isinstance(flipper, Flipper)
+
+        self.ilk = ilk
+        self.gem = gem
+        self.adapter = adapter
+        self.flipper = flipper
+        # Points to `median` for official deployments, `DSValue` for testing purposes.
+        # Users generally have no need to interact with the pip.
+        self.pip = pip
+
+    def approve(self, usr: Address):
+        """
+        Allows the user to move this collateral into and out of their CDP.
+
+        Args
+            usr: User making transactions with this collateral
+        """
+        self.adapter.approve(hope_directly(from_address=usr), self.flipper.vat())
+        self.adapter.approve_token(directly(from_address=usr))
+
+
 class Vat(Contract):
     """A client for the `Vat` contract, which manages accounting for all Urns (CDPs).
 
@@ -374,6 +405,8 @@ class Vat(Contract):
         assert isinstance(v, Address)
         assert isinstance(w, Address)
 
+        self.validate_frob(ilk, urn_address, dink, dart)
+
         if v == urn_address and w == urn_address:
             logger.info(f"frobbing {ilk.name} urn {urn_address.address} with dink={dink}, dart={dart}")
         else:
@@ -383,6 +416,51 @@ class Vat(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'frob', [ilk.toBytes(), urn_address.address, v.address, w.address, dink.value, dart.value])
+
+    def validate_frob(self, ilk: Ilk, address: Address, dink: Wad, dart: Wad):
+        """Helps diagnose `frob` transaction failures by asserting on `require` conditions in the contract"""
+        assert isinstance(ilk, Ilk)
+        assert isinstance(address, Address)
+        assert isinstance(dink, Wad)
+        assert isinstance(dart, Wad)
+
+        urn = self.urn(ilk, address)
+        ilk = self.ilk(ilk.name)
+
+        logger.debug(f"urn.ink={urn.ink}, urn.art={urn.art}, dink={dink}, dart={dart}, "
+                     f"ilk.rate={ilk.rate}, debt={str(self.debt())}")
+        ink = urn.ink + dink
+        art = urn.art + dart
+        ilk_art = ilk.art + dart
+        rate = ilk.rate
+
+        gem = self.gem(ilk, urn.address) - dink
+        dai = self.dai(urn.address) + Rad(rate * dart)
+        debt = self.debt() + Rad(rate * dart)
+
+        # stablecoin debt does not increase
+        cool = dart <= Wad(0)
+        # collateral balance does not decrease
+        firm = dink >= Wad(0)
+        nice = cool and firm
+
+        # Vault remains under both collateral and total debt ceilings
+        under_collateral_debt_ceiling = Rad(ilk_art * rate) <= ilk.line
+        if not under_collateral_debt_ceiling:
+            logger.warning(f"Vault would exceed collateral debt ceiling of {ilk.line}")
+        under_total_debt_ceiling = debt < self.line()
+        if not under_total_debt_ceiling:
+            logger.warning(f"Vault would exceed total debt ceiling of {self.line()}")
+        calm = under_collateral_debt_ceiling and under_total_debt_ceiling
+
+        safe = (urn.art * rate) <= ink * ilk.spot
+
+        assert calm or cool
+        assert nice or safe
+
+        assert Rad(ilk_art * rate) >= ilk.dust or (art == Wad(0))
+        assert rate != Ray(0)
+        assert self.live()
 
     def past_frobs(self, number_of_past_blocks: int, ilk=None) -> List[LogFrob]:
         """Synchronously retrieve a list showing which ilks and urns have been frobbed.
@@ -425,37 +503,6 @@ class Vat(Contract):
 
     def __repr__(self):
         return f"Vat('{self.address}')"
-
-
-class Collateral:
-    """The `Collateral` object wraps accounting information in the Ilk with token-wide artifacts shared across
-    multiple collateral types for the same token.  For example, ETH-A and ETH-B are represented by different Ilks,
-    but will share the same gem (WETH token), GemJoin instance, and Flipper contract.
-    """
-
-    def __init__(self, ilk: Ilk, gem: ERC20Token, adapter: GemJoin, flipper: Flipper, pip):
-        assert isinstance(ilk, Ilk)
-        assert isinstance(gem, ERC20Token)
-        assert isinstance(adapter, GemJoin)
-        assert isinstance(flipper, Flipper)
-
-        self.ilk = ilk
-        self.gem = gem
-        self.adapter = adapter
-        self.flipper = flipper
-        # Points to `median` for official deployments, `DSValue` for testing purposes.
-        # Users generally have no need to interact with the pip.
-        self.pip = pip
-
-    def approve(self, usr: Address):
-        """
-        Allows the user to move this collateral into and out of their CDP.
-
-        Args
-            usr: User making transactions with this collateral
-        """
-        self.adapter.approve(hope_directly(from_address=usr), self.flipper.vat())
-        self.adapter.approve_token(directly(from_address=usr))
 
 
 class Spotter(Contract):
