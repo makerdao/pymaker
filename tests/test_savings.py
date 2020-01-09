@@ -69,12 +69,12 @@ def test_join_and_exit(dsr):
     # join 100 DAI in DSR
     dsr.join(Wad.from_number(100), proxy).transact(from_address=dsr.owner)
     assert mcd.dai.balance_of(dsr.owner) == intial_dai_balance - Wad.from_number(100)
-    assert dsr.get_balance(proxy.address) > Wad.from_number(100)
+    assert round(dsr.get_balance(proxy.address)) == Wad.from_number(100)
 
     # exit 33 DAI from DSR
     dsr.exit(Wad.from_number(33), proxy).transact(from_address=dsr.owner)
     assert round(mcd.dai.balance_of(dsr.owner)) == round(intial_dai_balance) - Wad.from_number(100) + Wad.from_number(33)
-    assert dsr.get_balance(proxy.address) > Wad.from_number(67)
+    assert round(dsr.get_balance(proxy.address)) == Wad.from_number(67)
 
     # exit remaining DAI from DSR
     dsr.exit_all(proxy).transact(from_address=dsr.owner)

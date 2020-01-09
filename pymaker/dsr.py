@@ -69,7 +69,7 @@ class Dsr:
         portion = slice / total_pie
         dai_in_pot = self.mcd.vat.dai(self.mcd.pot.address)
 
-        return Wad((dai_in_pot * portion) * self.chi())
+        return Wad(dai_in_pot * portion)
 
     def join(self, amount: Wad, proxy: DSProxy) -> Transact:
         assert (isinstance(amount, Wad))
