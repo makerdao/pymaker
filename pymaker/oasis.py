@@ -610,7 +610,7 @@ class MatchingMarket(ExpiringMarket):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'addTokenPairWhitelist', [base_token.address, quote_token.address])
 
-    def get_orders(self, pay_token: Address = None, p_token: Token = None,  buy_token: Address = None, b_token: Token = None) -> List[Order]:
+    def get_orders(self, p_token: Token = None,  b_token: Token = None) -> List[Order]:
         """Get all active orders.
 
         If both `pay_token` and `buy_token` are specified, orders will be filtered by these.
@@ -630,8 +630,15 @@ class MatchingMarket(ExpiringMarket):
             A list of `Order` objects representing all active orders on Oasis.
         """
     
-        assert((isinstance(pay_token, Address) and isinstance(p_token, Token) and isinstance(buy_token, Address) and isinstance(b_token, Token))
-               or ((pay_token is None) and (p_token is None) and (buy_token is None) and (b_token is None)))
+        assert((isinstance(p_token, Token) and isinstance(b_token, Token))
+               or ((p_token is None) and (b_token is None)))
+
+        if (p_token is None) or (b_token is None):
+            pay_token = None
+            buy_token = None
+        else:
+            pay_token = p_token.address
+            buy_token = b_token.address
 
         if pay_token is not None and buy_token is not None:
             orders = []
@@ -674,7 +681,7 @@ class MatchingMarket(ExpiringMarket):
         else:
             return super(ExpiringMarket, self).get_orders(pay_token, buy_token)
 
-    def make(self, pay_token: Address, p_token: Token, pay_amount: Wad, buy_token: Address, b_token: Token, buy_amount: Wad, pos: int = None) -> Transact:
+    def make(self, p_token: Token, pay_amount: Wad, b_token: Token, buy_amount: Wad, pos: int = None) -> Transact:
         """Create a new order.
 
         The `have_amount` of `have_token` token will be taken from you on order creation and deposited
@@ -703,19 +710,21 @@ class MatchingMarket(ExpiringMarket):
         Returns:
             A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
         """
-        assert(isinstance(pay_token, Address))
+        assert(isinstance(p_token, Token))
         assert(isinstance(pay_amount, Wad))
-        assert(isinstance(buy_token, Address))
+        assert(isinstance(b_token, Token))
         assert(isinstance(buy_amount, Wad))
         assert(isinstance(pos, int) or (pos is None))
         assert(pay_amount > Wad(0))
         assert(buy_amount > Wad(0))
 
+        pay_token = p_token.address
+        buy_token = b_token.address
+
+
         if pos is None:
-            pos = self.position(pay_token=pay_token,
-                                pay_amount=pay_amount,
+            pos = self.position(pay_amount=pay_amount,
                                 p_token=p_token,
-                                buy_token=buy_token,
                                 b_token=b_token,
                                 buy_amount=buy_amount)
         else:
@@ -726,7 +735,7 @@ class MatchingMarket(ExpiringMarket):
                         [pay_amount.value, pay_token.address, buy_amount.value, buy_token.address, pos], None,
                         self._make_order_id_result_function)
 
-    def position(self, pay_token: Address, p_token: Token, pay_amount: Wad, buy_token: Address, b_token: Token, buy_amount: Wad) -> int:
+    def position(self, p_token: Token, pay_amount: Wad, b_token: Token, buy_amount: Wad) -> int:
         """Calculate the position (`pos`) new order should be inserted at to minimize gas costs.
 
         The `MatchingMarket` contract maintains an internal ordered linked list of orders, which allows the contract
@@ -750,15 +759,18 @@ class MatchingMarket(ExpiringMarket):
         Returns:
             The position (`pos`) new order should be inserted at.
         """
-        assert(isinstance(pay_token, Address))
+        assert(isinstance(p_token, Token))
         assert(isinstance(pay_amount, Wad))
-        assert(isinstance(buy_token, Address))
+        assert(isinstance(b_token, Token))
         assert(isinstance(buy_amount, Wad))
+
+        pay_token = p_token.address
+        buy_token = b_token.address
 
         self.logger.debug("Enumerating orders for position calculation...")
 
         orders = filter(lambda order: order.pay_amount / order.buy_amount >= p_token.normalize_amount(pay_amount) / b_token.normalize_amount(buy_amount),
-                        self.get_orders(pay_token, p_token, buy_token, b_token))
+                        self.get_orders(p_token, b_token))
 
         self.logger.debug("Enumerating orders for position calculation finished")
 
