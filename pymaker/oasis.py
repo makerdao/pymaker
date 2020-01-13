@@ -613,7 +613,7 @@ class MatchingMarket(ExpiringMarket):
     def get_orders(self, p_token: Token = None,  b_token: Token = None) -> List[Order]:
         """Get all active orders.
 
-        If both `pay_token` and `buy_token` are specified, orders will be filtered by these.
+        If both `p_token` and `b_token` are specified, orders will be filtered by these.
         In case of the _MatchingMarket_ implementation, order enumeration will be much efficient
         if these two parameters are supplied, as then orders can be fetched using `getBestOffer`
         and a series of `getWorseOffer` calls. This approach will result in much lower number of calls
@@ -623,13 +623,13 @@ class MatchingMarket(ExpiringMarket):
         Either none or both of these parameters have to be specified.
 
         Args:
-            `pay_token`: Address of the `pay_token` to filter the orders by.
-            `buy_token`: Address of the `buy_token` to filter the orders by.
+            `p_token`: Token object (see `model.py`) of the `pay_token` to filter the orders by.
+            `b_token`: Token object (see `model.py`) of the `buy_token` to filter the orders by.
 
         Returns:
             A list of `Order` objects representing all active orders on Oasis.
         """
-    
+
         assert((isinstance(p_token, Token) and isinstance(b_token, Token))
                or ((p_token is None) and (b_token is None)))
 
@@ -700,9 +700,9 @@ class MatchingMarket(ExpiringMarket):
         When complete, `receipt.result` will contain order_id of the new order.
 
         Args:
-            pay_token: Address of the ERC20 token you want to put on sale.
+            p_token: Token object (see `model.py`) of the ERC20 token you want to put on sale.
             pay_amount: Amount of the `pay_token` token you want to put on sale.
-            buy_token: Address of the ERC20 token you want to be paid with.
+            b_token: Token object (see `model.py`) of the ERC20 token you want to be paid with.
             buy_amount: Amount of the `buy_token` you want to receive.
             pos: The position to insert the order at in the sorted list.
                 If `None`, the optimal position will automatically get calculated.
@@ -751,9 +751,9 @@ class MatchingMarket(ExpiringMarket):
         by `make` when `pos` argument is omitted (or is `None`).
 
         Args:
-            pay_token: Address of the ERC20 token you want to put on sale.
+            p_token: Token object (see `model.py`) of the token you want to put on sale.
             pay_amount: Amount of the `pay_token` token you want to put on sale.
-            buy_token: Address of the ERC20 token you want to be paid with.
+            b_token: Token object (see `model.py`) of the token you want to be paid with.
             buy_amount: Amount of the `buy_token` you want to receive.
 
         Returns:
