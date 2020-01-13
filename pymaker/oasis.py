@@ -624,7 +624,7 @@ class MatchingMarket(ExpiringMarket):
 
         Args:
             `p_token`: Token object (see `model.py`) of the `pay_token` to filter the orders by.
-            `b_token`: Token object (see `model.py`) of the `buyy_token` to filter the orders by.
+            `b_token`: Token object (see `model.py`) of the `buy_token` to filter the orders by.
 
         Returns:
             A list of `Order` objects representing all active orders on Oasis.
