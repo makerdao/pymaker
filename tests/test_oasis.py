@@ -625,11 +625,11 @@ class TestMatchingMarketDecimal:
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
         self.token1 = DSToken.deploy(self.web3, 'AAA')
-        self.token1.mint(Wad.from_number(10000)).transact()
         self.token1_tokenclass = Token('AAA', self.token1.address, 18)
+        self.token1.mint(Wad.from_number(10000)).transact()
         self.token2 = DSToken.deploy(self.web3, 'BBB')
-        self.token2.mint(Wad.from_number(10000)).transact()
         self.token2_tokenclass = Token('BBB', self.token2.address, 6)
+        self.token2.mint(Wad.from_number(10000)).transact()
 
         support_abi = Contract._load_abi(__name__, '../pymaker/abi/MakerOtcSupportMethods.abi')
         support_bin = Contract._load_bin(__name__, '../pymaker/abi/MakerOtcSupportMethods.bin')
@@ -640,16 +640,22 @@ class TestMatchingMarketDecimal:
         self.otc.approve([self.token1, self.token2], directly())
 
     def test_get_orders(self):
-        # given
-        self.otc.make(p_token=self.token1_tokenclass, pay_amount=Wad.from_number(1),
-                      b_token=self.token2_tokenclass, buy_amount=self.token2_tokenclass.unnormalize_amount(Wad.from_number(2))).transact()
+        buy_amount_order1 = Wad.from_number(5.124988526145090209)
+        pay_amount_order1 = Wad.from_number(5.024999999999999500)
 
-        self.otc.make(p_token=self.token2_tokenclass, pay_amount=self.token2_tokenclass.unnormalize_amount(Wad.from_number(2)),
-                      b_token=self.token1_tokenclass, buy_amount=Wad.from_number(1)).transact()
+        buy_amount_order2 = Wad.from_number(5.102550000000000000)
+        pay_amount_order2 = Wad.from_number(5.000000000000000000)
+
+        # given
+        self.otc.make(p_token=self.token2_tokenclass, pay_amount=self.token2_tokenclass.unnormalize_amount(pay_amount_order1),
+                      b_token=self.token1_tokenclass, buy_amount=buy_amount_order1).transact()
+
+        self.otc.make(p_token=self.token1_tokenclass, pay_amount=pay_amount_order2,
+                      b_token=self.token2_tokenclass, buy_amount=self.token2_tokenclass.unnormalize_amount(buy_amount_order2)).transact()
 
         # then
-        assert self.otc.get_orders(self.token1_tokenclass, self.token2_tokenclass)[0].buy_amount == Wad.from_number(2)
-        assert self.otc.get_orders(self.token1_tokenclass, self.token2_tokenclass)[1].pay_amount == Wad.from_number(2)
+        assert self.otc.get_orders(self.token1_tokenclass, self.token2_tokenclass)[0].buy_amount == buy_amount_order2
+        assert self.token2_tokenclass.unnormalize_amount(self.otc.get_orders(self.token2_tokenclass, self.token1_tokenclass)[0].pay_amount) == self.token2_tokenclass.unnormalize_amount(pay_amount_order1)
 
 class TestMatchingMarketPosition:
     def setup_method(self):
