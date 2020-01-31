@@ -18,6 +18,7 @@
 from web3 import Web3
 
 from pymaker import Contract, Address, Transact
+from pymaker.numeric import Wad
 
 
 # TODO: Complete implementation and unit test
@@ -46,7 +47,11 @@ class OSM(Contract):
     def poke(self) -> Transact:
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'poke', [])
 
+    def peek(self) -> Wad:
+        return Wad(Web3.toInt(self.web3.eth.getStorageAt(self.address.address, 3)[16:]))
+
+    def peep(self) -> Wad:
+        return Wad(Web3.toInt(self.web3.eth.getStorageAt(self.address.address, 4)[16:]))
+
     def __repr__(self):
         return f"OSM('{self.address}')"
-
-
