@@ -48,10 +48,14 @@ class OSM(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'poke', [])
 
     def peek(self) -> Wad:
-        return Wad(Web3.toInt(self.web3.eth.getStorageAt(self.address.address, 3)[16:]))
+        return Wad(self._extract_price(3))
 
     def peep(self) -> Wad:
-        return Wad(Web3.toInt(self.web3.eth.getStorageAt(self.address.address, 4)[16:]))
+        return Wad(self._extract_price(4))
+
+    def _extract_price(self, storage_slot: int) -> int:
+        assert isinstance(storage_slot, int)
+        return Web3.toInt(self.web3.eth.getStorageAt(self.address.address, storage_slot)[16:])
 
     def __repr__(self):
         return f"OSM('{self.address}')"
