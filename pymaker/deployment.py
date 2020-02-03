@@ -36,6 +36,7 @@ from pymaker.feed import DSValue
 from pymaker.governance import DSPause, DSChief
 from pymaker.numeric import Wad, Ray
 from pymaker.oasis import MatchingMarket
+from pymaker.oracles import OSM
 from pymaker.sai import Tub, Tap, Top, Vox
 from pymaker.shutdown import ShutdownModule, End
 from pymaker.token import DSToken, DSEthToken
@@ -215,10 +216,11 @@ class DssDeployment:
 
                 # PIP contract may be a DSValue, OSM, or bogus address.
                 pip_address = Address(conf[f'PIP_{name[1]}'])
-                try:
+                network = DssDeployment.NETWORKS.get(web3.net.version, "testnet")
+                if network == "testnet":
                     pip = DSValue(web3, pip_address)
-                except Exception:
-                    pip = None
+                else:
+                    pip = OSM(web3, pip_address)
 
                 collateral = Collateral(ilk=ilk, gem=gem,
                                         adapter=GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}'])),
@@ -327,7 +329,7 @@ class DssDeployment:
     @staticmethod
     def from_network(web3: Web3, network: str):
         warnings.warn(
-            "this method will be removed, use DssDeployment.init(web3) instead",
+            "this method will be removed, use DssDeployment.from_node(web3) instead",
             DeprecationWarning
         )
         assert isinstance(web3, Web3)
