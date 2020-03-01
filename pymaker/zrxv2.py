@@ -459,7 +459,7 @@ class ZrxExchangeV2(Contract):
     def _get_order_info(self, order):
         assert(isinstance(order, Order))
 
-        method_signature = self.web3.sha3(text=f"getOrderInfo({self.ORDER_INFO_TYPE})")[0:4]
+        method_signature = self.web3.keccak(text=f"getOrderInfo({self.ORDER_INFO_TYPE})")[0:4]
         method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", [self._order_tuple(order)])
 
         request = bytes_to_hexstring(method_signature + method_parameters)
@@ -545,7 +545,7 @@ class ZrxExchangeV2(Contract):
         assert(isinstance(order, Order))
         assert(isinstance(fill_buy_amount, Wad))
 
-        method_signature = self.web3.sha3(text=f"fillOrder({self.ORDER_INFO_TYPE},uint256,bytes)")[0:4]
+        method_signature = self.web3.keccak(text=f"fillOrder({self.ORDER_INFO_TYPE},uint256,bytes)")[0:4]
         method_parameters = encode_single(f"({self.ORDER_INFO_TYPE},uint256,bytes)", [self._order_tuple(order),
                                                                                       fill_buy_amount.value,
                                                                                       hexstring_to_bytes(order.signature)])
@@ -566,7 +566,7 @@ class ZrxExchangeV2(Contract):
         """
         assert(isinstance(order, Order))
 
-        method_signature = self.web3.sha3(text=f"cancelOrder({self.ORDER_INFO_TYPE})")[0:4]
+        method_signature = self.web3.keccak(text=f"cancelOrder({self.ORDER_INFO_TYPE})")[0:4]
         method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", [self._order_tuple(order)])
 
         request = bytes_to_hexstring(method_signature + method_parameters)

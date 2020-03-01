@@ -17,9 +17,12 @@
 
 import datetime
 from web3 import Web3
+from typing import List
+from pprint import pformat
 
-from pymaker import Contract, Address, Transact
+from pymaker import Contract, Address, Transact, Wad
 from pymaker.auth import DSAuth
+from pymaker.token import DSToken
 
 
 # TODO: Complete implementation and unit test
@@ -134,3 +137,121 @@ class DSRoles(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         "setUserRole", [who.address, role, enabled])
 
+
+class Etch:
+    def __init__(self, log):
+        self.slate = log['args']['slate']
+        self.address = log['address']
+        self.block_number = log['blockNumber']
+        self.log_index = log['logIndex']
+        self.tx_hash = log['transactionHash']
+
+    def __repr__(self):
+        return pformat(vars(self))
+
+
+class DSChief(Contract):
+    """A client for the `DSChief` contract, which manages lists of user roles and capabilities.
+
+    You can find the source code of the `DSChief` contract here:
+    <https://github.com/dapphub/ds-chief>.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `DSChief` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/DSChief.abi')
+    bin = Contract._load_bin(__name__, 'abi/DSChief.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert (isinstance(web3, Web3))
+        assert (isinstance(address, Address))
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+
+    def get_votes(self, address):
+        return self._contract.call().votes(address)
+
+    def get_yay(self, slate, position) -> str:
+        return self._contract.call().slates(slate, position)
+
+    def get_deposits(self, address) -> Wad:
+        return Wad(self._contract.call().deposits(address))
+
+    def get_approvals(self, address) -> Wad:
+        return Wad(self._contract.call().approvals(address))
+
+    def get_hat(self) -> Address:
+        return Address(self._contract.call().hat())
+
+    def get_max_yays(self) -> int:
+        return self._contract.call().MAX_YAYS()
+
+    def lock(self, amount: Wad) -> Transact:
+        assert isinstance(amount, Wad)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'lock', [amount.value])
+
+    def free(self, amount: Wad) -> Transact:
+        assert isinstance(amount, Wad)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'free', [amount.value])
+
+    def etch(self, yays: List) -> Transact:
+        assert isinstance(yays, List)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'etch(address[])', [yays])
+
+    def vote_yays(self, yays: List) -> Transact:
+        assert isinstance(yays, List)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'vote(address[])', [yays])
+
+    def vote_etch(self, etch: Etch) -> Transact:
+        assert isinstance(etch, Etch)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'vote(bytes32)', [etch.slate])
+
+    def lift(self, whom: Address) -> Transact:
+        assert isinstance(whom, Address)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'lift', [whom.address])
+
+    def past_etch(self, number_of_past_blocks: int, event_filter: dict = None) -> List[Etch]:
+        """Synchronously retrieve past Etch events.
+
+        `Etch` events are emitted by the ds-chief contract every time someone places a vote.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+            event_filter: Filter which will be applied to returned events.
+
+        Returns:
+            List of past `Etch` events represented as :py:class:`pymaker.governance.Etch` class.
+        """
+        assert(isinstance(number_of_past_blocks, int))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
+
+        return self._past_events(self._contract, 'Etch', Etch, number_of_past_blocks, event_filter)
+
+    def past_etch_in_range(self, from_block: int, to_block: int, event_filter: dict = None) -> List[Etch]:
+        """Synchronously retrieve past Etch events.
+
+        `Etch` events are emitted by the ds-chief contract every time someone places a vote.
+
+        Args:
+            from_block: Starting block to retrieve the events from.
+            to_block: Last block to retrieve the events to.
+            event_filter: Filter which will be applied to returned events.
+
+        Returns:
+            List of past `Etch` events represented as :py:class:`pymaker.governance.Etch` class.
+        """
+        assert(isinstance(from_block, int))
+        assert(isinstance(to_block, int))
+        assert(isinstance(event_filter, dict) or (event_filter is None))
+
+        return self._past_events_in_block_range(self._contract, 'Etch', Etch, from_block, to_block, event_filter)

@@ -1,4 +1,4 @@
-pipattrs == 19.1.0
+attrs == 19.1.0
 codecov == 2.0.9
 mock == 2.0.0
 pytest == 3.3.0
@@ -8,4 +8,3 @@ pytest-mock == 1.6.3
 pytest-timeout == 1.2.1
 asynctest == 0.11.1
 Sphinx == 1.6.2
-

@@ -24,26 +24,36 @@ from web3._utils.events import get_event_data
 # Shared between DSNote and many MCD contracts
 class LogNote:
     def __init__(self, log):
-        self.sig = Web3.toHex(log['args']['sig'])
-        self.arg1 = log['args']['arg1']
-        self.arg2 = log['args']['arg2']
-        self.arg3 = log['args']['arg3']
-        self._data = log['args']['data']
-        self._raw = log
+        args = log['args']
+        self.sig = Web3.toHex(args['sig'])
+        self.usr = args['usr'] if 'usr' in args else None     # vat.frob doesn't offer `usr`
+        self.arg1 = args['arg1'] if 'arg1' in args else None
+        self.arg2 = args['arg2'] if 'arg2' in args else None
+        self.arg3 = args['arg3'] if 'arg3' in args else None  # Special variant used for vat.frob
+        self.block = log['blockNumber']
+        self.tx_hash = log['transactionHash'].hex()
+        self._data = args['data']
 
     @classmethod
     def from_event(cls, event: dict, contract_abi: list):
         assert isinstance(event, dict)
         assert isinstance(contract_abi, list)
 
-        topics = event.get('topics')
-        if topics:
-            log_note_abi = [abi for abi in contract_abi if abi.get('name') == 'LogNote'][0]
+        log_note_abi = [abi for abi in contract_abi if abi.get('name') == 'LogNote'][0]
+        try:
             event_data = get_event_data(log_note_abi, event)
-
             return LogNote(event_data)
-        else:
-            logging.warning(f'[from_event] Invalid topic in {event}')
+        except ValueError:
+            # event is not a LogNote
+            return None
+
+    def get_bytes_at_index(self, index: int) -> bytes:
+        assert isinstance(index, int)
+        if index > 5:
+            raise ValueError("Only six words of calldata are provided")
+
+        start_index = len(self._data) - ((6-index) * 32) - 28
+        return self._data[start_index:start_index+32]
 
     def __eq__(self, other):
         assert isinstance(other, LogNote)

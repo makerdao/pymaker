@@ -18,6 +18,7 @@
 import json
 import pytest
 import time
+from datetime import datetime
 from web3 import Web3
 
 from pymaker import Address
@@ -26,6 +27,7 @@ from pymaker.deployment import DssDeployment
 from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemJoin, DaiJoin, Collateral
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray, Rad
+from pymaker.oracles import OSM
 from pymaker.token import DSToken, DSEthToken
 from tests.conftest import validate_contracts_loaded
 
@@ -47,13 +49,13 @@ def wrap_eth(mcd: DssDeployment, address: Address, amount: Wad):
     assert collateral.gem.deposit(amount).transact(from_address=address)
 
 
-def mint_mkr(mkr: DSToken, deployment_address: Address, recipient_address: Address, amount: Wad):
+def mint_mkr(mkr: DSToken, recipient_address: Address, amount: Wad):
     assert isinstance(mkr, DSToken)
-    assert isinstance(deployment_address, Address)
     assert isinstance(recipient_address, Address)
     assert isinstance(amount, Wad)
     assert amount > Wad(0)
 
+    deployment_address = Address("0x00a329c0648769A73afAc7F9381E08FB43dBEA72")
     assert mkr.mint(amount).transact(from_address=deployment_address)
     assert mkr.balance_of(deployment_address) > Wad(0)
     assert mkr.approve(recipient_address).transact(from_address=deployment_address)
@@ -104,7 +106,6 @@ def frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad
     # when
     ink_before = mcd.vat.urn(ilk, address).ink
     art_before = mcd.vat.urn(ilk, address).art
-    TestVat.simulate_frob(mcd, collateral, address, dink, dart)
 
     # then
     assert mcd.vat.frob(ilk=ilk, urn_address=address, dink=dink, dart=dart).transact(from_address=address)
@@ -196,8 +197,8 @@ def simulate_bite(mcd: DssDeployment, collateral: Collateral, our_address: Addre
 
     assert -int(lot) < 0 and -int(art) < 0
     assert tab > Ray(0)
-        
-        
+
+
 @pytest.fixture(scope="session")
 def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
     collateral = mcd.collaterals['ETH-A']
@@ -226,14 +227,14 @@ def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
 def bite_event(web3: Web3, mcd: DssDeployment, our_address: Address):
     bite(web3, mcd, our_address)
     # Return the corresponding event
-    return mcd.cat.past_bite(1)[0]
+    return mcd.cat.past_bites(1)[0]
 
 
 class TestConfig:
     def test_from_json(self, web3: Web3, mcd: DssDeployment):
         # fixture calls DssDeployment.from_json
-        assert len(mcd.config.collaterals) > 1
-        assert len(mcd.collaterals) > 5
+        assert len(mcd.config.collaterals) >= 3
+        assert len(mcd.collaterals) >= 3
         assert len(mcd.config.to_dict()) > 10
         assert len(mcd.collaterals) == len(mcd.config.collaterals)
 
@@ -244,12 +245,9 @@ class TestConfig:
         assert "MCD_DAI" in dict
         assert len(dict) > 20
 
-    def test_from_network(self, web3: Web3):
-        mcd_testnet = DssDeployment.from_network(web3, "testnet")
+    def test_from_node(self, web3: Web3):
+        mcd_testnet = DssDeployment.from_node(web3)
         validate_contracts_loaded(mcd_testnet)
-
-        with pytest.raises(Exception):
-            DssDeployment.from_network(web3, "bogus")
 
     def test_account_transfers(self, web3: Web3, mcd, our_address, other_address):
         print(mcd.collaterals)
@@ -278,51 +276,6 @@ class TestConfig:
 
 
 class TestVat:
-    @staticmethod
-    def simulate_frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad, dart: Wad):
-        assert isinstance(mcd, DssDeployment)
-        assert isinstance(collateral, Collateral)
-        assert isinstance(address, Address)
-        assert isinstance(dink, Wad)
-        assert isinstance(dart, Wad)
-
-        urn = mcd.vat.urn(collateral.ilk, address)
-        ilk = mcd.vat.ilk(collateral.ilk.name)
-
-        print(f"urn.ink={urn.ink}, urn.art={urn.art}, ilk.art={ilk.art}, dink={dink}, dart={dart}")
-        ink = urn.ink + dink
-        art = urn.art + dart
-        ilk_art = ilk.art + dart
-        rate = ilk.rate
-
-        gem = mcd.vat.gem(collateral.ilk, urn.address) - dink
-        dai = mcd.vat.dai(urn.address) + Rad(rate * dart)
-        debt = mcd.vat.debt() + Rad(rate * dart)
-
-        # stablecoin debt does not increase
-        cool = dart <= Wad(0)
-        # collateral balance does not decrease
-        firm = dink >= Wad(0)
-        nice = cool and firm
-
-        # CDP remains under both collateral and total debt ceilings
-        under_collateral_debt_ceiling = Rad(ilk_art * rate) <= ilk.line
-        if not under_collateral_debt_ceiling:
-            print(f"CDP would exceed collateral debt ceiling of {ilk.line}")
-        under_total_debt_ceiling = debt < mcd.vat.line()
-        if not under_total_debt_ceiling:
-            print(f"CDP would exceed total debt ceiling of {mcd.vat.line()}")
-        calm = under_collateral_debt_ceiling and under_total_debt_ceiling
-
-        safe = (urn.art * rate) <= ink * ilk.spot
-
-        assert calm or cool
-        assert nice or safe
-
-        assert Rad(ilk_art * rate) >= ilk.dust or (art == Wad(0))
-        assert rate != Ray(0)
-        assert mcd.vat.live()
-
     @staticmethod
     def ensure_clean_urn(mcd: DssDeployment, collateral: Collateral, address: Address):
         assert isinstance(mcd, DssDeployment)
@@ -437,7 +390,6 @@ class TestVat:
         assert collateral.gem == collateral.adapter.gem()
         collateral.gem.approve(collateral.adapter.address)
         assert collateral.adapter.join(other_address, Wad(3)).transact(from_address=other_address)
-        self.simulate_frob(mcd, collateral, other_address, Wad(3), Wad(10))
         assert mcd.vat.frob(collateral.ilk, other_address, Wad(3), Wad(10)).transact(from_address=other_address)
 
         # then
@@ -462,28 +414,37 @@ class TestVat:
         assert mcd.vat.frob(ilk0, our_address, Wad(3), Wad(0)).transact()
 
         collateral1.approve(other_address)
-        assert collateral1.adapter.join(other_address, Wad(3)).transact(from_address=other_address)
-        assert mcd.vat.frob(ilk1, other_address, Wad(3), Wad(0)).transact(from_address=other_address)
-
         assert collateral1.adapter.join(other_address, Wad(9)).transact(from_address=other_address)
-        assert mcd.vat.frob(ilk1, our_address, Wad(6), Wad(0),
+        assert mcd.vat.frob(ilk1, other_address, Wad(9), Wad(0)).transact(from_address=other_address)
+        assert mcd.vat.frob(ilk1, other_address, Wad(-3), Wad(0)).transact(from_address=other_address)
+
+        assert mcd.vat.frob(ilk1, our_address, Wad(3), Wad(0),
                             collateral_owner=other_address, dai_recipient=other_address).transact(
             from_address=other_address)
 
         # then
-        frobs = mcd.vat.past_frob(10)
-        assert len(frobs) == 3
+        frobs = mcd.vat.past_frobs(10)
+        assert len(frobs) == 4
         assert frobs[0].ilk == ilk0.name
         assert frobs[0].urn == our_address
+        assert frobs[0].dink == Wad(3)
+        assert frobs[0].dart == Wad(0)
         assert frobs[1].ilk == ilk1.name
         assert frobs[1].urn == other_address
+        assert frobs[1].dink == Wad(9)
+        assert frobs[1].dart == Wad(0)
         assert frobs[2].ilk == ilk1.name
-        assert frobs[2].urn == our_address
-        assert frobs[2].collateral_owner == other_address
+        assert frobs[2].urn == other_address
+        assert frobs[2].dink == Wad(-3)
+        assert frobs[2].dart == Wad(0)
+        assert frobs[3].urn == our_address
+        assert frobs[3].collateral_owner == other_address
+        assert frobs[3].dink == Wad(3)
+        assert frobs[3].dart == Wad(0)
 
-        assert len(mcd.vat.past_frob(6, ilk0)) == 1
-        assert len(mcd.vat.past_frob(6, ilk1)) == 2
-        assert len(mcd.vat.past_frob(6, mcd.collaterals['REP-A'].ilk)) == 0
+        assert len(mcd.vat.past_frobs(6, ilk0)) == 1
+        assert len(mcd.vat.past_frobs(6, ilk1)) == 3
+        assert len(mcd.vat.past_frobs(6, mcd.collaterals['ZRX-A'].ilk)) == 0
 
         urns0 = mcd.vat.urns(ilk=ilk0)
         assert len(urns0[ilk0.name]) == 1
@@ -514,6 +475,16 @@ class TestCat:
         assert isinstance(mcd.cat.lump(collateral.ilk), Wad)
         assert isinstance(mcd.cat.chop(collateral.ilk), Ray)
 
+class TestSpotter:
+    def test_mat(self, mcd):
+        val = Ray(mcd.collaterals['ETH-A'].pip.read_as_int())
+
+        ilk = mcd.vat.ilk('ETH-A')
+        par = mcd.spotter.par()
+        mat = mcd.spotter.mat(ilk)
+
+        assert mat == (Ray(val * 10 ** 9) / par) / (ilk.spot)
+
 
 class TestVow:
     def test_getters(self, mcd):
@@ -526,6 +497,7 @@ class TestVow:
         assert isinstance(mcd.vow.ash(), Rad)
         assert isinstance(mcd.vow.woe(), Rad)
         assert isinstance(mcd.vow.wait(), int)
+        assert isinstance(mcd.vow.dump(), Wad)
         assert isinstance(mcd.vow.sump(), Rad)
         assert isinstance(mcd.vow.bump(), Rad)
         assert isinstance(mcd.vow.hump(), Rad)
@@ -555,6 +527,30 @@ class TestJug:
 
         # then
         assert mcd.jug.drip(c.ilk).transact()
+
+
+class TestPot:
+    def test_getters(self, mcd):
+        assert isinstance(mcd.pot.pie(), Wad)
+        assert isinstance(mcd.pot.dsr(), Ray)
+        assert isinstance(mcd.pot.rho(), datetime)
+
+        assert mcd.pot.pie() >= Wad(0)
+        assert mcd.pot.dsr() > Ray(0)
+        assert datetime.fromtimestamp(0) < mcd.pot.rho() < datetime.utcnow()
+
+    def test_drip(self, mcd):
+        assert mcd.pot.drip().transact()
+
+
+class TestOsm:
+    def test_price(self, web3, mcd):
+        collateral = mcd.collaterals['ETH-B']
+        # Note this isn't actually an OSM, but we can still read storage slots
+        osm = OSM(web3, collateral.pip.address)
+        raw_price = osm._extract_price(2)
+        assert isinstance(raw_price, int)
+        assert Wad.from_number(200) == Wad(raw_price)
 
 
 class TestMcd:

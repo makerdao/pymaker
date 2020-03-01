@@ -19,6 +19,7 @@ import eth_utils
 import json
 import os
 import re
+import warnings
 from typing import Dict, List, Optional
 
 import pkg_resources
@@ -29,12 +30,15 @@ from pymaker import Address
 from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
-from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemJoin
+from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemJoin, Pot
+from pymaker.proxy import ProxyRegistry, DssProxyActionsDsr
 from pymaker.feed import DSValue
-from pymaker.governance import DSPause
+from pymaker.governance import DSPause, DSChief
 from pymaker.numeric import Wad, Ray
 from pymaker.oasis import MatchingMarket
+from pymaker.oracles import OSM
 from pymaker.sai import Tub, Tap, Top, Vox
+from pymaker.shutdown import ShutdownModule, End
 from pymaker.token import DSToken, DSEthToken
 from pymaker.vault import DSVault
 
@@ -151,9 +155,16 @@ class DssDeployment:
     a deployment from a json description of all the system addresses.
     """
 
+    NETWORKS = {
+        "1": "mainnet",
+        "42": "kovan"
+    }
+
     class Config:
         def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flapper: Flapper,
-                     flopper: Flopper, dai: DSToken, dai_join: DaiJoin, mkr: DSToken, spotter: Spotter,
+                     flopper: Flopper, pot: Pot, dai: DSToken, dai_join: DaiJoin, mkr: DSToken,
+                     spotter: Spotter, ds_chief: DSChief, esm: ShutdownModule, end: End,
+                     proxy_registry: ProxyRegistry, dss_proxy_actions: DssProxyActionsDsr,
                      collaterals: Optional[Dict[str, Collateral]] = None):
             self.pause = pause
             self.vat = vat
@@ -162,10 +173,16 @@ class DssDeployment:
             self.cat = cat
             self.flapper = flapper
             self.flopper = flopper
+            self.pot = pot
             self.dai = dai
             self.dai_join = dai_join
             self.mkr = mkr
             self.spotter = spotter
+            self.ds_chief = ds_chief
+            self.esm = esm
+            self.end = end
+            self.proxy_registry = proxy_registry
+            self.dss_proxy_actions = dss_proxy_actions
             self.collaterals = collaterals or {}
 
         @staticmethod
@@ -180,8 +197,14 @@ class DssDeployment:
             dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']))
             flapper = Flapper(web3, Address(conf['MCD_FLAP']))
             flopper = Flopper(web3, Address(conf['MCD_FLOP']))
+            pot = Pot(web3, Address(conf['MCD_POT']))
             mkr = DSToken(web3, Address(conf['MCD_GOV']))
             spotter = Spotter(web3, Address(conf['MCD_SPOT']))
+            ds_chief = DSChief(web3, Address(conf['MCD_ADM']))
+            esm = ShutdownModule(web3, Address(conf['MCD_ESM']))
+            end = End(web3, Address(conf['MCD_END']))
+            proxy_registry = ProxyRegistry(web3, Address(conf['PROXY_REGISTRY']))
+            dss_proxy_actions = DssProxyActionsDsr(web3, Address(conf['PROXY_ACTIONS_DSR']))
 
             collaterals = {}
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
@@ -191,15 +214,23 @@ class DssDeployment:
                 else:
                     gem = DSToken(web3, Address(conf[name[1]]))
 
-                # TODO: If problematic, skip pip for deployments which use a medianizer.
+                # PIP contract may be a DSValue, OSM, or bogus address.
+                pip_address = Address(conf[f'PIP_{name[1]}'])
+                network = DssDeployment.NETWORKS.get(web3.net.version, "testnet")
+                if network == "testnet":
+                    pip = DSValue(web3, pip_address)
+                else:
+                    pip = OSM(web3, pip_address)
+
                 collateral = Collateral(ilk=ilk, gem=gem,
                                         adapter=GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}'])),
                                         flipper=Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}'])),
-                                        pip=DSValue(web3, Address(conf[f'PIP_{name[1]}'])))
+                                        pip=pip)
                 collaterals[ilk.name] = collateral
 
-            return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper,
-                                        dai, dai_adapter, mkr, spotter, collaterals)
+            return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper, pot,
+                                        dai, dai_adapter, mkr, spotter, ds_chief, esm, end,
+                                        proxy_registry, dss_proxy_actions, collaterals)
 
         @staticmethod
         def _infer_collaterals_from_addresses(keys: []) -> List:
@@ -208,6 +239,11 @@ class DssDeployment:
                 match = re.search(r'MCD_FLIP_((\w+)_\w+)', key)
                 if match:
                     collaterals.append((match.group(1), match.group(2)))
+                    continue
+                match = re.search(r'MCD_FLIP_(\w+)', key)
+                if match:
+                    collaterals.append((match.group(1), match.group(1)))
+
             return collaterals
 
         def to_dict(self) -> dict:
@@ -219,17 +255,24 @@ class DssDeployment:
                 'MCD_CAT': self.cat.address.address,
                 'MCD_FLAP': self.flapper.address.address,
                 'MCD_FLOP': self.flopper.address.address,
+                'MCD_POT': self.pot.address.address,
                 'MCD_DAI': self.dai.address.address,
                 'MCD_JOIN_DAI': self.dai_join.address.address,
                 'MCD_GOV': self.mkr.address.address,
-                'MCD_SPOT': self.spotter.address.address
+                'MCD_SPOT': self.spotter.address.address,
+                'MCD_ADM': self.ds_chief.address.address,
+                'MCD_ESM': self.esm.address.address,
+                'MCD_END': self.end.address.address,
+                'PROXY_REGISTRY': self.proxy_registry.address.address,
+                'PROXY_ACTIONS_DSR': self.dss_proxy_actions.address.address
             }
 
             for collateral in self.collaterals.values():
-                match = re.search(r'(\w+)-\w+', collateral.ilk.name)
+                match = re.search(r'(\w+)(?:-\w+)?', collateral.ilk.name)
                 name = (collateral.ilk.name.replace('-', '_'), match.group(1))
                 conf_dict[name[1]] = collateral.gem.address.address
-                conf_dict[f'PIP_{name[1]}'] = collateral.pip.address.address
+                if collateral.pip:
+                    conf_dict[f'PIP_{name[1]}'] = collateral.pip.address.address
                 conf_dict[f'MCD_JOIN_{name[0]}'] = collateral.adapter.address.address
                 conf_dict[f'MCD_FLIP_{name[0]}'] = collateral.flipper.address.address
 
@@ -251,11 +294,17 @@ class DssDeployment:
         self.cat = config.cat
         self.flapper = config.flapper
         self.flopper = config.flopper
+        self.pot = config.pot
         self.dai = config.dai
         self.dai_adapter = config.dai_join
         self.mkr = config.mkr
         self.collaterals = config.collaterals
         self.spotter = config.spotter
+        self.ds_chief = config.ds_chief
+        self.esm = config.esm
+        self.end = config.end
+        self.proxy_registry = config.proxy_registry
+        self.dss_proxy_actions = config.dss_proxy_actions
 
     @staticmethod
     def from_json(web3: Web3, conf: str):
@@ -265,9 +314,10 @@ class DssDeployment:
         return self.config.to_json()
 
     @staticmethod
-    def from_network(web3: Web3, network: str):
+    def from_node(web3: Web3):
         assert isinstance(web3, Web3)
-        assert isinstance(network, str)
+
+        network = DssDeployment.NETWORKS.get(web3.net.version, "testnet")
 
         cwd = os.path.dirname(os.path.realpath(__file__))
         addresses_path = os.path.join(cwd, "../config", f"{network}-addresses.json")
@@ -275,6 +325,17 @@ class DssDeployment:
             raise FileNotFoundError("Network is not yet supported")
 
         return DssDeployment.from_json(web3=web3, conf=open(addresses_path, "r").read())
+
+    @staticmethod
+    def from_network(web3: Web3, network: str):
+        warnings.warn(
+            "this method will be removed, use DssDeployment.from_node(web3) instead",
+            DeprecationWarning
+        )
+        assert isinstance(web3, Web3)
+        assert isinstance(network, str)
+
+        return DssDeployment.from_node(web3=web3)
 
     def approve_dai(self, usr: Address):
         """
@@ -286,7 +347,7 @@ class DssDeployment:
         assert isinstance(usr, Address)
 
         self.dai_adapter.approve(approval_function=hope_directly(from_address=usr), source=self.vat.address)
-        self.dai.approve(self.dai_adapter.address).transact()
+        self.dai.approve(self.dai_adapter.address).transact(from_address=usr)
 
     def active_auctions(self) -> dict:
         flips = {}

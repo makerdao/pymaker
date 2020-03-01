@@ -17,11 +17,14 @@
 
 from datetime import datetime
 from pprint import pformat
-from pymaker.numeric import Ray
+from typing import List
 from web3 import Web3
 
+from web3._utils.events import get_event_data
+
 from pymaker import Contract, Address, Transact
-from pymaker.numeric import Wad, Rad
+from pymaker.logging import LogNote
+from pymaker.numeric import Wad, Rad, Ray
 from pymaker.token import ERC20Token
 
 
@@ -32,6 +35,18 @@ def toBytes(string: str):
 
 class AuctionContract(Contract):
     """Abstract baseclass shared across all three auction contracts."""
+
+    class DealLog:
+        def __init__(self, lognote: LogNote):
+            # This is whoever called `deal`, which could differ from the `guy` who won the auction
+            self.usr = Address(lognote.usr)
+            self.id = Web3.toInt(lognote.arg1)
+            self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
+
+        def __repr__(self):
+            return f"AuctionContract.DealLog({pformat(vars(self))})"
+
     def __init__(self, web3: Web3, address: Address, abi: list, bids: callable):
         if self.__class__ == AuctionContract:
             raise NotImplemented('Abstract class; please call Flipper, Flapper, or Flopper ctor')
@@ -44,6 +59,14 @@ class AuctionContract(Contract):
         self.abi = abi
         self._contract = self._get_contract(web3, abi, address)
         self._bids = bids
+
+        self.log_note_abi = None
+        self.kick_abi = None
+        for member in abi:
+            if not self.log_note_abi and member.get('name') == 'LogNote':
+                self.log_note_abi = member
+            elif not self.kick_abi and member.get('name') == 'Kick':
+                self.kick_abi = member
 
     def wards(self, address: Address) -> bool:
         assert isinstance(address, Address)
@@ -86,28 +109,7 @@ class AuctionContract(Contract):
             index += 1
         return active_auctions
 
-    def file_beg(self, beg: Ray) -> Transact:
-        assert isinstance(beg, Ray)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint256)',
-                        [Web3.toBytes(text="beg"), beg.value])
-
-    def file_ttl(self, ttl: int) -> Transact:
-        assert isinstance(ttl, int)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint256)',
-                        [Web3.toBytes(text="ttl"), ttl])
-
-    def file_tau(self, tau: int) -> Transact:
-        assert isinstance(tau, int)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,uint256)',
-                        [Web3.toBytes(text="tau"), tau])
-
-    def beg(self) -> Ray:
+    def beg(self) -> Wad:
         """Returns the percentage minimum bid increase.
 
         Returns:
@@ -144,6 +146,24 @@ class AuctionContract(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
 
+    def get_past_lognotes(self, number_of_past_blocks: int, abi: list) -> List[LogNote]:
+        assert isinstance(number_of_past_blocks, int)
+        assert isinstance(abi, list)
+
+        block_number = self._contract.web3.eth.blockNumber
+        filter_params = {
+            'address': self.address.address,
+            'fromBlock': max(block_number - number_of_past_blocks, 0),
+            'toBlock': block_number
+        }
+
+        logs = self.web3.eth.getLogs(filter_params)
+        events = list(map(lambda l: self.parse_event(l), logs))
+        return list(filter(lambda l: l is not None, events))
+
+    def parse_event(self, event):
+        raise NotImplemented()
+
 
 class Flipper(AuctionContract):
     """A client for the `Flipper` contract, used to interact with collateral auctions.
@@ -154,13 +174,24 @@ class Flipper(AuctionContract):
     Attributes:
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `Flipper` contract.
+
+    Event signatures:
+        0x65fae35e: (deployment-related)
+        0x9c52a7f1: (deployment-related)
+        0x29ae8114: file
+        0xc84ce3a1172f0dec3173f04caaa6005151a4bfe40d4c9f3ea28dba5f719b2a7a: kick
+        0x4b43ed12: tend
+        0x5ff3a382: dent
+        0xc959c42b: deal
     """
 
     abi = Contract._load_abi(__name__, 'abi/Flipper.abi')
     bin = Contract._load_bin(__name__, 'abi/Flipper.bin')
 
     class Bid:
-        def __init__(self, bid: Rad, lot: Wad, guy: Address, tic: int, end: int, usr: Address, gal: Address, tab: Rad):
+        def __init__(self, id: int, bid: Rad, lot: Wad, guy: Address, tic: int, end: int,
+                     usr: Address, gal: Address, tab: Rad):
+            assert(isinstance(id, int))
             assert(isinstance(bid, Rad))
             assert(isinstance(lot, Wad))
             assert(isinstance(guy, Address))
@@ -170,6 +201,7 @@ class Flipper(AuctionContract):
             assert(isinstance(gal, Address))
             assert(isinstance(tab, Rad))
 
+            self.id = id
             self.bid = bid
             self.lot = lot
             self.guy = guy
@@ -181,6 +213,45 @@ class Flipper(AuctionContract):
 
         def __repr__(self):
             return f"Flipper.Bid({pformat(vars(self))})"
+
+    class KickLog:
+        def __init__(self, log):
+            args = log['args']
+            self.id = args['id']
+            self.lot = Wad(args['lot'])
+            self.bid = Rad(args['bid'])
+            self.tab = Rad(args['tab'])
+            self.usr = Address(args['usr'])
+            self.gal = Address(args['gal'])
+            self.block = log['blockNumber']
+            self.tx_hash = log['transactionHash'].hex()
+
+        def __repr__(self):
+            return f"Flipper.KickLog({pformat(vars(self))})"
+
+    class TendLog:
+        def __init__(self, lognote: LogNote):
+            self.guy = Address(lognote.usr)
+            self.id = Web3.toInt(lognote.arg1)
+            self.lot = Wad(Web3.toInt(lognote.arg2))
+            self.bid = Rad(Web3.toInt(lognote.get_bytes_at_index(2)))
+            self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
+
+        def __repr__(self):
+            return f"Flipper.TendLog({pformat(vars(self))})"
+
+    class DentLog:
+        def __init__(self, lognote: LogNote):
+            self.guy = Address(lognote.usr)
+            self.id = Web3.toInt(lognote.arg1)
+            self.lot = Wad(Web3.toInt(lognote.arg2))
+            self.bid = Rad(Web3.toInt(lognote.get_bytes_at_index(2)))
+            self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
+
+        def __repr__(self):
+            return f"Flipper.DentLog({pformat(vars(self))})"
 
     def __init__(self, web3: Web3, address: Address):
         super(Flipper, self).__init__(web3, address, Flipper.abi, self.bids)
@@ -198,7 +269,8 @@ class Flipper(AuctionContract):
 
         array = self._contract.functions.bids(id).call()
 
-        return Flipper.Bid(bid=Rad(array[0]),
+        return Flipper.Bid(id=id,
+                           bid=Rad(array[0]),
                            lot=Wad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),
@@ -234,6 +306,33 @@ class Flipper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'dent', [id, lot.value, bid.value])
 
+    def past_logs(self, number_of_past_blocks: int):
+        assert isinstance(number_of_past_blocks, int)
+        logs = super().get_past_lognotes(number_of_past_blocks, Flipper.abi)
+
+        history = []
+        for log in logs:
+            if log is None:
+                continue
+            elif isinstance(log, Flipper.KickLog):
+                history.append(log)
+            elif log.sig == '0x4b43ed12':
+                history.append(Flipper.TendLog(log))
+            elif log.sig == '0x5ff3a382':
+                history.append(Flipper.DentLog(log))
+            elif log.sig == '0xc959c42b':
+                history.append(AuctionContract.DealLog(log))
+        return history
+
+    def parse_event(self, event):
+        signature = Web3.toHex(event['topics'][0])
+        if signature == "0xc84ce3a1172f0dec3173f04caaa6005151a4bfe40d4c9f3ea28dba5f719b2a7a":
+            event_data = get_event_data(self.kick_abi, event)
+            return Flipper.KickLog(event_data)
+        else:
+            event_data = get_event_data(self.log_note_abi, event)
+            return LogNote(event_data)
+
     def __repr__(self):
         return f"Flipper('{self.address}')"
 
@@ -247,19 +346,29 @@ class Flapper(AuctionContract):
     Attributes:
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `Flapper` contract.
+
+    Event signatures:
+        0x65fae35e: (deployment-related)
+        0x9c52a7f1: (deployment-related)
+        0xe6dde59cbc017becba89714a037778d234a84ce7f0a137487142a007e580d609: kick
+        0x29ae8114: file
+        0x4b43ed12: tend
+        0xc959c42b: deal
     """
 
     abi = Contract._load_abi(__name__, 'abi/Flapper.abi')
     bin = Contract._load_bin(__name__, 'abi/Flapper.bin')
 
     class Bid:
-        def __init__(self, bid: Wad, lot: Rad, guy: Address, tic: int, end: int):
+        def __init__(self, id: int, bid: Wad, lot: Rad, guy: Address, tic: int, end: int):
+            assert(isinstance(id, int))
             assert(isinstance(bid, Wad))        # MKR
             assert(isinstance(lot, Rad))        # DAI
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
             assert(isinstance(end, int))
 
+            self.id = id
             self.bid = bid
             self.lot = lot
             self.guy = guy
@@ -268,6 +377,30 @@ class Flapper(AuctionContract):
 
         def __repr__(self):
             return f"Flapper.Bid({pformat(vars(self))})"
+
+    class KickLog:
+        def __init__(self, log):
+            args = log['args']
+            self.id = args['id']
+            self.lot = Rad(args['lot'])
+            self.bid = Wad(args['bid'])
+            self.block = log['blockNumber']
+            self.tx_hash = log['transactionHash'].hex()
+
+        def __repr__(self):
+            return f"Flapper.KickLog({pformat(vars(self))})"
+
+    class TendLog:
+        def __init__(self, lognote: LogNote):
+            self.guy = Address(lognote.usr)
+            self.id = Web3.toInt(lognote.arg1)
+            self.lot = Rad(Web3.toInt(lognote.arg2))
+            self.bid = Wad(Web3.toInt(lognote.get_bytes_at_index(2)))
+            self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
+
+        def __repr__(self):
+            return f"Flapper.TendLog({pformat(vars(self))})"
 
     def __init__(self, web3: Web3, address: Address):
         super(Flapper, self).__init__(web3, address, Flapper.abi, self.bids)
@@ -288,7 +421,8 @@ class Flapper(AuctionContract):
 
         array = self._contract.functions.bids(id).call()
 
-        return Flapper.Bid(bid=Wad(array[0]),
+        return Flapper.Bid(id=id,
+                           bid=Wad(array[0]),
                            lot=Rad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),
@@ -308,6 +442,43 @@ class Flapper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tend', [id, lot.value, bid.value])
 
+    def tick(self, id: int) -> Transact:
+        """Resurrect an auction which expired without any bids."""
+        assert (isinstance(id, int))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'tick', [id])
+
+    def yank(self, id: int) -> Transact:
+        """While `cage`d, refund current bid to the bidder"""
+        assert (isinstance(id, int))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'yank', [id])
+
+    def past_logs(self, number_of_past_blocks: int):
+        assert isinstance(number_of_past_blocks, int)
+        logs = super().get_past_lognotes(number_of_past_blocks, Flapper.abi)
+
+        history = []
+        for log in logs:
+            if log is None:
+                continue
+            elif isinstance(log, Flapper.KickLog):
+                history.append(log)
+            elif log.sig == '0x4b43ed12':
+                history.append(Flapper.TendLog(log))
+            elif log.sig == '0xc959c42b':
+                history.append(AuctionContract.DealLog(log))
+        return history
+
+    def parse_event(self, event):
+        signature = Web3.toHex(event['topics'][0])
+        if signature == "0xe6dde59cbc017becba89714a037778d234a84ce7f0a137487142a007e580d609":
+            event_data = get_event_data(self.kick_abi, event)
+            return Flapper.KickLog(event_data)
+        else:
+            event_data = get_event_data(self.log_note_abi, event)
+            return LogNote(event_data)
+
     def __repr__(self):
         return f"Flapper('{self.address}')"
 
@@ -321,19 +492,29 @@ class Flopper(AuctionContract):
     Attributes:
         web3: An instance of `Web` from `web3.py`.
         address: Ethereum address of the `Flopper` contract.
+
+    Event signatures:
+        0x65fae35e: (deployment-related)
+        0x9c52a7f1: (deployment-related)
+        0x29ae8114: file
+        0x7e8881001566f9f89aedb9c5dc3d856a2b81e5235a8196413ed484be91cc0df6: kick
+        0x5ff3a382: dent
+        0xc959c42b: deal
     """
 
     abi = Contract._load_abi(__name__, 'abi/Flopper.abi')
     bin = Contract._load_bin(__name__, 'abi/Flopper.bin')
 
     class Bid:
-        def __init__(self, bid: Wad, lot: Wad, guy: Address, tic: int, end: int):
+        def __init__(self, id: int, bid: Rad, lot: Wad, guy: Address, tic: int, end: int):
+            assert(isinstance(id, int))
             assert(isinstance(bid, Rad))
             assert(isinstance(lot, Wad))
             assert(isinstance(guy, Address))
             assert(isinstance(tic, int))
             assert(isinstance(end, int))
 
+            self.id = id
             self.bid = bid
             self.lot = lot
             self.guy = guy
@@ -343,6 +524,31 @@ class Flopper(AuctionContract):
         def __repr__(self):
             return f"Flopper.Bid({pformat(vars(self))})"
 
+    class KickLog:
+        def __init__(self, log):
+            args = log['args']
+            self.id = args['id']
+            self.lot = Wad(args['lot'])
+            self.bid = Rad(args['bid'])
+            self.gal = Address(args['gal'])
+            self.block = log['blockNumber']
+            self.tx_hash = log['transactionHash'].hex()
+
+        def __repr__(self):
+            return f"Flopper.KickLog({pformat(vars(self))})"
+
+    class DentLog:
+        def __init__(self, lognote: LogNote):
+            self.guy = Address(lognote.usr)
+            self.id = Web3.toInt(lognote.arg1)
+            self.lot = Wad(Web3.toInt(lognote.arg2))
+            self.bid = Rad(Web3.toInt(lognote.get_bytes_at_index(2)))
+            self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
+
+        def __repr__(self):
+            return f"Flopper.DentLog({pformat(vars(self))})"
+
     def __init__(self, web3: Web3, address: Address):
         assert isinstance(web3, Web3)
         assert isinstance(address, Address)
@@ -351,6 +557,11 @@ class Flopper(AuctionContract):
 
     def live(self) -> bool:
         return self._contract.functions.live().call() > 0
+
+    def pad(self) -> Wad:
+        """Returns the lot increase applied after an auction has been `tick`ed."""
+
+        return Wad(self._contract.call().pad())
 
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
@@ -365,7 +576,8 @@ class Flopper(AuctionContract):
 
         array = self._contract.functions.bids(id).call()
 
-        return Flopper.Bid(bid=Rad(array[0]),
+        return Flopper.Bid(id=id,
+                           bid=Rad(array[0]),
                            lot=Wad(array[1]),
                            guy=Address(array[2]),
                            tic=int(array[3]),
@@ -388,9 +600,41 @@ class Flopper(AuctionContract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'dent', [id, lot.value, bid.value])
 
     def tick(self, id: int) -> Transact:
+        """Resurrect an auction which expired without any bids."""
         assert (isinstance(id, int))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tick', [id])
+
+    def yank(self, id: int) -> Transact:
+        """While `cage`d, refund current bid to the bidder"""
+        assert (isinstance(id, int))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'yank', [id])
+
+    def past_logs(self, number_of_past_blocks: int):
+        assert isinstance(number_of_past_blocks, int)
+        logs = super().get_past_lognotes(number_of_past_blocks, Flopper.abi)
+
+        history = []
+        for log in logs:
+            if log is None:
+                continue
+            elif isinstance(log, Flopper.KickLog):
+                history.append(log)
+            elif log.sig == '0x5ff3a382':
+                history.append(Flopper.DentLog(log))
+            elif log.sig == '0xc959c42b':
+                history.append(AuctionContract.DealLog(log))
+        return history
+
+    def parse_event(self, event):
+        signature = Web3.toHex(event['topics'][0])
+        if signature == "0x7e8881001566f9f89aedb9c5dc3d856a2b81e5235a8196413ed484be91cc0df6":
+            event_data = get_event_data(self.kick_abi, event)
+            return Flopper.KickLog(event_data)
+        else:
+            event_data = get_event_data(self.log_note_abi, event)
+            return LogNote(event_data)
 
     def __repr__(self):
         return f"Flopper('{self.address}')"

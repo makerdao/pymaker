@@ -23,7 +23,7 @@ from web3 import Web3, HTTPProvider
 from pymaker import Address
 from pymaker.auctions import Flipper, Flapper, Flopper
 from pymaker.deployment import Deployment, DssDeployment
-from pymaker.dss import Vat, Vow, Cat, Jug
+from pymaker.dss import Vat, Vow, Cat, Jug, Pot
 from pymaker.keys import register_keys
 
 
@@ -78,7 +78,7 @@ def deployment_address(web3) -> Address:
 @pytest.fixture(scope="session")
 def mcd(web3) -> DssDeployment:
     # for local dockerized parity testchain
-    deployment = DssDeployment.from_json(web3=web3, conf=open("config/testnet-addresses.json", "r").read())
+    deployment = DssDeployment.from_node(web3=web3)
     validate_contracts_loaded(deployment)
     return deployment
 
@@ -96,3 +96,5 @@ def validate_contracts_loaded(deployment: DssDeployment):
     assert deployment.flapper.address is not None
     assert isinstance(deployment.flopper, Flopper)
     assert deployment.flopper.address is not None
+    assert isinstance(deployment.pot, Pot)
+    assert deployment.pot.address is not None
