@@ -546,6 +546,7 @@ class TestPot:
 class TestOsm:
     def test_price(self, web3, mcd):
         collateral = mcd.collaterals['ETH-B']
+        set_collateral_price(mcd, collateral, Wad.from_number(200))
         # Note this isn't actually an OSM, but we can still read storage slots
         osm = OSM(web3, collateral.pip.address)
         raw_price = osm._extract_price(2)
