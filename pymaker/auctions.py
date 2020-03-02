@@ -561,7 +561,7 @@ class Flopper(AuctionContract):
     def pad(self) -> Wad:
         """Returns the lot increase applied after an auction has been `tick`ed."""
 
-        return Wad(self._contract.call().pad())
+        return Wad(self._contract.functions.pad().call())
 
     def bids(self, id: int) -> Bid:
         """Returns the auction details.

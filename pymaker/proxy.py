@@ -284,7 +284,7 @@ class ProxyRegistry(Contract):
 
     def proxies(self, owner: Address) -> Address:
         assert isinstance(owner, Address)
-        return Address(self._contract.call().proxies(owner.address))
+        return Address(self._contract.functions.proxies(owner.address).call())
 
     def __repr__(self):
         return f"ProxyRegistry('{self.address}')"

@@ -114,7 +114,7 @@ class DSRoles(Contract):
     def is_root_user(self, who: Address) -> bool:
         assert isinstance(who, Address)
 
-        return bool(self._contract.call().isUserRoot(who.address))
+        return bool(self._contract.functions.isUserRoot(who.address).call())
 
     def set_root_user(self, who: Address, enabled=True) -> Transact:
         assert isinstance(who, Address)
@@ -127,7 +127,7 @@ class DSRoles(Contract):
         assert isinstance(role, int)
         assert 0 <= role <= int('0xFFFFFFFF')
 
-        return bool(self._contract.call().hasUserRole(who.address, role))
+        return bool(self._contract.functions.hasUserRole(who.address, role).call())
 
     def set_user_role(self, who: Address, role: int, enabled=True) -> Transact:
         assert isinstance(who, Address)
@@ -173,22 +173,22 @@ class DSChief(Contract):
         self._contract = self._get_contract(web3, self.abi, address)
 
     def get_votes(self, address):
-        return self._contract.call().votes(address)
+        return self._contract.functions.votes(address).call()
 
     def get_yay(self, slate, position) -> str:
-        return self._contract.call().slates(slate, position)
+        return self._contract.functions.slates(slate, position).call()
 
     def get_deposits(self, address) -> Wad:
-        return Wad(self._contract.call().deposits(address))
+        return Wad(self._contract.functions.deposits(address).call())
 
     def get_approvals(self, address) -> Wad:
-        return Wad(self._contract.call().approvals(address))
+        return Wad(self._contract.functions.approvals(address).call())
 
     def get_hat(self) -> Address:
-        return Address(self._contract.call().hat())
+        return Address(self._contract.functions.hat().call())
 
     def get_max_yays(self) -> int:
-        return self._contract.call().MAX_YAYS()
+        return self._contract.functions.MAX_YAYS().call()
 
     def lock(self, amount: Wad) -> Transact:
         assert isinstance(amount, Wad)

@@ -56,21 +56,21 @@ class ShutdownModule(Contract):
 
     def sum(self) -> Wad:
         """Total balance of MKR `join`ed to this contract"""
-        return Wad(self._contract.call().Sum())
+        return Wad(self._contract.functions.Sum().call())
 
     def sum_of(self, address: Address) -> Wad:
         """MKR `join`ed to this contract by a specific account"""
         assert isinstance(address, Address)
 
-        return Wad(self._contract.call().sum(address.address))
+        return Wad(self._contract.functions.sum(address.address).call())
 
     def min(self) -> Wad:
         """Minimum amount of MKR required to call `fire`"""
-        return Wad(self._contract.call().min())
+        return Wad(self._contract.functions.min().call())
 
     def fired(self) -> bool:
         """True if `fire` has been called"""
-        return bool(self._contract.call().fired())
+        return bool(self._contract.functions.fired().call())
 
     def join(self, value: Wad) -> Transact:
         """Before `fire` can be called, sufficient MKR must be `join`ed to this contract"""
@@ -105,50 +105,50 @@ class End(Contract):
 
     def live(self) -> bool:
         """False when caged, true when uncaged"""
-        return self._contract.call().live() > 0
+        return self._contract.functions.live().call() > 0
 
     def when(self) -> datetime:
         """Time of cage"""
-        timestamp = self._contract.call().when()
+        timestamp = self._contract.functions.when().call()
         return datetime.utcfromtimestamp(timestamp)
 
     def wait(self) -> int:
         """Processing cooldown length, in seconds"""
-        return int(self._contract.call().wait())
+        return int(self._contract.functions.wait().call())
 
     def debt(self) -> Rad:
         """total outstanding dai following processing"""
-        return Rad(self._contract.call().debt())
+        return Rad(self._contract.functions.debt().call())
 
     def tag(self, ilk: Ilk) -> Ray:
         """Cage price for the collateral"""
         assert isinstance(ilk, Ilk)
-        return Ray(self._contract.call().tag(ilk.toBytes()))
+        return Ray(self._contract.functions.tag(ilk.toBytes()).call())
 
     def gap(self, ilk: Ilk) -> Wad:
         """Collateral shortfall (difference of debt and collateral"""
         assert isinstance(ilk, Ilk)
-        return Wad(self._contract.call().gap(ilk.toBytes()))
+        return Wad(self._contract.functions.gap(ilk.toBytes()).call())
 
     def art(self, ilk: Ilk) -> Wad:
         """Total debt for the collateral"""
         assert isinstance(ilk, Ilk)
-        return Wad(self._contract.call().Art(ilk.toBytes()))
+        return Wad(self._contract.functions.Art(ilk.toBytes()).call())
 
     def fix(self, ilk: Ilk) -> Ray:
         """Final cash price for the collateral"""
         assert isinstance(ilk, Ilk)
-        return Ray(self._contract.call().fix(ilk.toBytes()))
+        return Ray(self._contract.functions.fix(ilk.toBytes()).call())
 
     def bag(self, address: Address) -> Wad:
         """Amount of Dai `pack`ed for retrieving collateral in return"""
         assert isinstance(address, Address)
-        return Wad(self._contract.call().bag(address.address))
+        return Wad(self._contract.functions.bag(address.address).call())
 
     def out(self, ilk: Ilk, address: Address) -> Wad:
         assert isinstance(ilk, Ilk)
         assert isinstance(address, Address)
-        return Wad(self._contract.call().out(ilk.toBytes(), address.address))
+        return Wad(self._contract.functions.out(ilk.toBytes(), address.address).call())
 
     def cage(self, ilk: Ilk) -> Transact:
         """Set the `cage` price for the collateral"""

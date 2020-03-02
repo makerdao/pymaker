@@ -662,7 +662,7 @@ class MatchingMarket(ExpiringMarket):
                                                 timestamp=result[4][i]))
 
                     if count == 100:
-                        next_order_id = self._contract.call().getWorseOffer(orders[-1].order_id)
+                        next_order_id = self._contract.functions.getWorseOffer(orders[-1].order_id).call()
                         result = self._support_contract.functions.getOffers(self.address.address, next_order_id).call()
 
                     else:

@@ -527,14 +527,14 @@ class Spotter(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'poke', [ilk.toBytes()])
 
     def vat(self) -> Address:
-        return Address(self._contract.functions.vat()).call()
+        return Address(self._contract.functions.vat().call())
 
     def par(self) -> Ray:
-        return Ray(self._contract.functions.par()).call()
+        return Ray(self._contract.functions.par().call())
 
     def mat(self, ilk: Ilk) -> Ray:
         assert isinstance(ilk, Ilk)
-        (pip, mat) = self._contract.call().ilks(ilk.toBytes())
+        (pip, mat) = self._contract.functions.ilks(ilk.toBytes()).call()
 
         return Ray(mat)
 
@@ -591,7 +591,7 @@ class Vow(Contract):
         return int(self._contract.functions.wait().call())
 
     def dump(self) -> Wad:
-        return Wad(self._contract.call().dump())
+        return Wad(self._contract.functions.dump().call())
 
     def sump(self) -> Rad:
         return Rad(self._contract.functions.sump().call())
@@ -832,22 +832,22 @@ class Pot(Contract):
 
     def pie_of(self, address: Address) -> Wad:
         assert isinstance(address, Address)
-        return Wad(self._contract.call().pie(address.address))
+        return Wad(self._contract.functions.pie(address.address).call())
 
     def pie(self) -> Wad:
-        pie = self._contract.call().Pie()
+        pie = self._contract.functions.Pie().call()
         return Wad(pie)
 
     def dsr(self) -> Ray:
-        dsr = self._contract.call().dsr()
+        dsr = self._contract.functions.dsr().call()
         return Ray(dsr)
 
     def chi(self) -> Ray:
-        chi = self._contract.call().chi()
+        chi = self._contract.functions.chi().call()
         return Ray(chi)
 
     def rho(self) -> datetime:
-        rho = self._contract.call().rho()
+        rho = self._contract.functions.rho().call()
         return datetime.fromtimestamp(rho)
 
     def drip(self) -> Transact:
