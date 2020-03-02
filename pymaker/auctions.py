@@ -115,7 +115,7 @@ class AuctionContract(Contract):
         Returns:
             The percentage minimum bid increase.
         """
-        return Ray(self._contract.functions.beg().call())
+        return Wad(self._contract.functions.beg().call())
 
     def ttl(self) -> int:
         """Returns the bid lifetime.
