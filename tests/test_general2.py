@@ -20,7 +20,7 @@ import pytest
 from mock import MagicMock
 from web3 import Web3, HTTPProvider
 
-from pymaker import Address, eth_transfer, TransactStatus, Calldata
+from pymaker import Address, eth_transfer, TransactStatus, Calldata, Receipt
 from pymaker.gas import FixedGasPrice
 from pymaker.numeric import Wad
 from pymaker.proxy import DSProxy, DSProxyCache
@@ -255,7 +255,7 @@ class TestTransactReplace:
         # and
         assert transact_2.status == TransactStatus.FINISHED
         assert future_receipt_2.done()
-        assert future_receipt_2.result() is not None
+        assert isinstance(future_receipt_2.result(), Receipt)
         assert future_receipt_2.result().successful is True
         # and
         assert self.token.balance_of(self.second_address) == Wad(0)

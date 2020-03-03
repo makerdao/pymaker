@@ -33,6 +33,7 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.contracts import get_function_info, encode_abi
 from web3._utils.events import get_event_data
+from web3.exceptions import TransactionNotFound
 
 from pymaker.gas import DefaultGasPrice, GasPrice
 from pymaker.numeric import Wad
@@ -382,15 +383,17 @@ class Transact:
         return node_is_parity
 
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
-        raw_receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
-        if raw_receipt is not None and raw_receipt['blockNumber'] is not None:
-            receipt = Receipt(raw_receipt)
-            receipt.result = self.result_function(receipt) if self.result_function is not None else None
+        try:
+            raw_receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
 
-            return receipt
+            if raw_receipt is not None and raw_receipt['blockNumber'] is not None:
+                receipt = Receipt(raw_receipt)
+                receipt.result = self.result_function(receipt) if self.result_function is not None else None
 
-        else:
-            return None
+                return receipt
+        except TransactionNotFound:
+            self.logger.warning(f"Transaction failed, with hash {transaction_hash}")
+        return None
 
     def _as_dict(self, dict_or_none) -> dict:
         if dict_or_none is None:
