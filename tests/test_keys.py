@@ -22,7 +22,6 @@ from pymaker import Address, Wad, eth_transfer
 from pymaker.keys import register_key_file, register_key
 from pymaker.token import DSToken
 
-
 def test_local_accounts():
     # given
     # [that address is not recognized by ganache, this way we can be sure it's the local account being used for signing]
@@ -48,7 +47,6 @@ def test_local_accounts():
     # [these operations were successful]
     assert token.balance_of(Address(web3.eth.defaultAccount)) == Wad.from_number(150000)
 
-
 def test_local_accounts_register_key():
     # given
     # [that address is not recognized by ganache, this way we can be sure it's the local account being used for signing]
@@ -73,7 +71,6 @@ def test_local_accounts_register_key():
     # then
     # [these operations were successful]
     assert token.balance_of(Address(web3.eth.defaultAccount)) == Wad.from_number(150000)
-
 
 def test_multiple_local_accounts():
     # given

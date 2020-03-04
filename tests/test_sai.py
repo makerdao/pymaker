@@ -34,6 +34,7 @@ class TestTub:
     def test_tap(self, deployment: Deployment):
         assert deployment.tub.tap() == deployment.tap.address
 
+    @pytest.mark.skip(reason="flaky test failures due to underlying node issue with evm_mine")
     def test_era(self, deployment: Deployment):
         # when
         era = deployment.tub.era()
@@ -543,6 +544,7 @@ class TestVox:
         assert deployment.vox == Vox(web3=deployment.web3, address=deployment.vox.address)
         assert deployment.vox != Vox(web3=deployment.web3, address=deployment.top.address)
 
+    @pytest.mark.skip(reason="flaky test failures due to underlying node issue with evm_mine")
     def test_era(self, deployment: Deployment):
         # when
         era = deployment.vox.era()
