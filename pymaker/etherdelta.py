@@ -232,7 +232,7 @@ class EtherDelta(Contract):
         Returns:
             The address of the admin account.
         """
-        return Address(self._contract.call().admin())
+        return Address(self._contract.functions.admin().call())
 
     def fee_account(self) -> Address:
         """Returns the address of the fee account i.e. the account that receives all fees collected.
@@ -240,7 +240,7 @@ class EtherDelta(Contract):
         Returns:
             The address of the fee account.
         """
-        return Address(self._contract.call().feeAccount())
+        return Address(self._contract.functions.feeAccount().call())
 
     def account_levels_addr(self) -> Address:
         """Returns the address of the AccountLevels contract.
@@ -248,7 +248,7 @@ class EtherDelta(Contract):
         Returns:
             The address of the AccountLevels contract.
         """
-        return Address(self._contract.call().accountLevelsAddr())
+        return Address(self._contract.functions.accountLevelsAddr().call())
 
     def fee_make(self) -> Wad:
         """Returns the maker fee configured in the contract.
@@ -256,7 +256,7 @@ class EtherDelta(Contract):
         Returns:
             The maker fee.
         """
-        return Wad(self._contract.call().feeMake())
+        return Wad(self._contract.functions.feeMake().call())
 
     def fee_take(self) -> Wad:
         """Returns the taker fee configured in the contract.
@@ -264,7 +264,7 @@ class EtherDelta(Contract):
         Returns:
             The taker fee.
         """
-        return Wad(self._contract.call().feeTake())
+        return Wad(self._contract.functions.feeTake().call())
 
     def fee_rebate(self) -> Wad:
         """Returns the rebate fee configured in the contract.
@@ -274,7 +274,7 @@ class EtherDelta(Contract):
         Returns:
             The rebate fee.
         """
-        return Wad(self._contract.call().feeRebate())
+        return Wad(self._contract.functions.feeRebate().call())
 
     def past_trade(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogTrade]:
         """Synchronously retrieve past LogTrade events.
@@ -329,7 +329,7 @@ class EtherDelta(Contract):
             The raw ETH balance kept in the EtherDelta contract by the specified user.
         """
         assert(isinstance(user, Address))
-        return Wad(self._contract.call().balanceOf('0x0000000000000000000000000000000000000000', user.address))
+        return Wad(self._contract.functions.balanceOf('0x0000000000000000000000000000000000000000', user.address).call())
 
     def deposit_token(self, token: Address, amount: Wad) -> Transact:
         """Deposits `amount` of ERC20 token `token` to EtherDelta.
@@ -379,7 +379,7 @@ class EtherDelta(Contract):
         """
         assert(isinstance(token, Address))
         assert(isinstance(user, Address))
-        return Wad(self._contract.call().balanceOf(token.address, user.address))
+        return Wad(self._contract.functions.balanceOf(token.address, user.address).call())
 
     def create_order(self,
                      pay_token: Address,
@@ -444,7 +444,7 @@ class EtherDelta(Contract):
         """
         assert(isinstance(order, Order))
 
-        return Wad(self._contract.call().availableVolume(order.buy_token.address,
+        return Wad(self._contract.functions.availableVolume(order.buy_token.address,
                                                          order.buy_amount.value,
                                                          order.pay_token.address,
                                                          order.pay_amount.value,
@@ -453,7 +453,7 @@ class EtherDelta(Contract):
                                                          order.maker.address,
                                                          order.v if hasattr(order, 'v') else 0,
                                                          order.r if hasattr(order, 'r') else bytes(),
-                                                         order.s if hasattr(order, 's') else bytes()))
+                                                         order.s if hasattr(order, 's') else bytes()).call())
 
     def amount_filled(self, order: Order) -> Wad:
         """Returns the amount that has been already filled for an order.
@@ -472,7 +472,7 @@ class EtherDelta(Contract):
         """
         assert(isinstance(order, Order))
 
-        return Wad(self._contract.call().amountFilled(order.buy_token.address,
+        return Wad(self._contract.functions.amountFilled(order.buy_token.address,
                                                       order.buy_amount.value,
                                                       order.pay_token.address,
                                                       order.pay_amount.value,
@@ -481,7 +481,7 @@ class EtherDelta(Contract):
                                                       order.maker.address,
                                                       order.v if hasattr(order, 'v') else 0,
                                                       order.r if hasattr(order, 'r') else bytes(),
-                                                      order.s if hasattr(order, 's') else bytes()))
+                                                      order.s if hasattr(order, 's') else bytes()).call())
 
     def trade(self, order: Order, amount: Wad) -> Transact:
         """Takes (buys) an order.
@@ -532,7 +532,7 @@ class EtherDelta(Contract):
         assert(isinstance(order, Order))
         assert(isinstance(amount, Wad))
 
-        return self._contract.call().testTrade(order.buy_token.address,
+        return self._contract.functions.testTrade(order.buy_token.address,
                                                order.buy_amount.value,
                                                order.pay_token.address,
                                                order.pay_amount.value,
@@ -543,7 +543,7 @@ class EtherDelta(Contract):
                                                order.r if hasattr(order, 'r') else bytes(),
                                                order.s if hasattr(order, 's') else bytes(),
                                                amount.value,
-                                               self.web3.eth.defaultAccount)
+                                               self.web3.eth.defaultAccount).call()
 
     def cancel_order(self, order: Order) -> Transact:
         """Cancels an existing order.

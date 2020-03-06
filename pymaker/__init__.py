@@ -31,8 +31,12 @@ import pkg_resources
 from hexbytes import HexBytes
 
 from web3 import Web3
-from web3.utils.contracts import get_function_info, encode_abi
-from web3.utils.events import get_event_data
+from web3._utils.contracts import get_function_info, encode_abi
+from web3._utils.events import get_event_data
+from web3.exceptions import TransactionNotFound
+
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
 
 from pymaker.gas import DefaultGasPrice, GasPrice
 from pymaker.numeric import Wad
@@ -209,12 +213,11 @@ class Calldata:
             raise Exception(f"Unable to create calldata from '{value}'")
 
     @classmethod
-    def from_signature(cls, fn_sign: str, fn_args: list):
+    def from_signature(cls, web3: Web3, fn_sign: str, fn_args: list):
         """ Allow to create a `Calldata` from a function signature and a list of arguments.
 
         :param fn_sign: the function signature ie. "function(uint256,address)"
         :param fn_args: arguments to the function ie. [123, "0x00...00"]
-        :return:
         """
         assert isinstance(fn_sign, str)
         assert isinstance(fn_args, list)
@@ -224,9 +227,9 @@ class Calldata:
         fn_args_type = [{"type": type} for type in fn_split[1:] if type]
 
         fn_abi = {"type": "function", "name": fn_name, "inputs": fn_args_type}
-        fn_abi, fn_selector, fn_arguments = get_function_info("test", fn_abi=fn_abi, args=fn_args)
+        fn_abi, fn_selector, fn_arguments = get_function_info("test", abi_codec=web3.codec, fn_abi=fn_abi, args=fn_args)
 
-        calldata = encode_abi(Web3, fn_abi, fn_arguments, fn_selector)
+        calldata = encode_abi(web3, fn_abi, fn_arguments, fn_selector)
 
         return cls(calldata)
 
@@ -295,7 +298,8 @@ class Receipt:
                     if receipt_log['topics'][0] == HexBytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'):
                         from pymaker.token import ERC20Token
                         transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
-                        event_data = get_event_data(transfer_abi, receipt_log)
+                        codec = ABICodec(default_registry)
+                        event_data = get_event_data(codec, transfer_abi, receipt_log)
                         self.transfers.append(Transfer(token_address=Address(event_data['address']),
                                                        from_address=Address(event_data['args']['from']),
                                                        to_address=Address(event_data['args']['to']),
@@ -306,7 +310,8 @@ class Receipt:
                     if receipt_log['topics'][0] == HexBytes('0x0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885'):
                         from pymaker.token import DSToken
                         transfer_abi = [abi for abi in DSToken.abi if abi.get('name') == 'Mint'][0]
-                        event_data = get_event_data(transfer_abi, receipt_log)
+                        codec = ABICodec(default_registry)
+                        event_data = get_event_data(codec, transfer_abi, receipt_log)
                         self.transfers.append(Transfer(token_address=Address(event_data['address']),
                                                        from_address=Address('0x0000000000000000000000000000000000000000'),
                                                        to_address=Address(event_data['args']['guy']),
@@ -317,7 +322,8 @@ class Receipt:
                     if receipt_log['topics'][0] == HexBytes('0xcc16f5dbb4873280815c1ee09dbd06736cffcc184412cf7a71a0fdb75d397ca5'):
                         from pymaker.token import DSToken
                         transfer_abi = [abi for abi in DSToken.abi if abi.get('name') == 'Burn'][0]
-                        event_data = get_event_data(transfer_abi, receipt_log)
+                        codec = ABICodec(default_registry)
+                        event_data = get_event_data(codec, transfer_abi, receipt_log)
                         self.transfers.append(Transfer(token_address=Address(event_data['address']),
                                                        from_address=Address(event_data['args']['guy']),
                                                        to_address=Address('0x0000000000000000000000000000000000000000'),
@@ -377,20 +383,22 @@ class Transact:
     def _is_parity(self) -> bool:
         global node_is_parity
         if node_is_parity is None:
-            node_is_parity = "parity" in self.web3.version.node.lower()
+            node_is_parity = "parity" in self.web3.clientVersion.lower()
 
         return node_is_parity
 
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
-        raw_receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
-        if raw_receipt is not None and raw_receipt['blockNumber'] is not None:
-            receipt = Receipt(raw_receipt)
-            receipt.result = self.result_function(receipt) if self.result_function is not None else None
+        try:
+            raw_receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
 
-            return receipt
+            if raw_receipt is not None and raw_receipt['blockNumber'] is not None:
+                receipt = Receipt(raw_receipt)
+                receipt.result = self.result_function(receipt) if self.result_function is not None else None
 
-        else:
-            return None
+                return receipt
+        except TransactionNotFound:
+            self.logger.warning(f"Transaction failed, with hash {transaction_hash}")
+        return None
 
     def _as_dict(self, dict_or_none) -> dict:
         if dict_or_none is None:

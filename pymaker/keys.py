@@ -66,4 +66,4 @@ def register_private_key(web3: Web3, private_key):
     account = Account.privateKeyToAccount(private_key)
 
     _registered_accounts[(web3, Address(account.address))] = account
-    web3.middleware_stack.add(construct_sign_and_send_raw_middleware(account))
+    web3.middleware_onion.add(construct_sign_and_send_raw_middleware(account))

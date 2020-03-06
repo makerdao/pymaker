@@ -94,7 +94,7 @@ class Deployment:
         tap = Tap.deploy(web3, tub.address)
         top = Top.deploy(web3, tub.address, tap.address)
 
-        tub._contract.transact().turn(tap.address.address)
+        tub._contract.functions.turn(tap.address.address).transact()
 
         otc = MatchingMarket.deploy(web3, 2600000000)
         etherdelta = EtherDelta.deploy(web3,

@@ -47,7 +47,7 @@ class GemMock(Contract):
                                                                                             ilk.toBytes(),
                                                                                             gem.address]))
     def ilk(self):
-        return Ilk.fromBytes(self._contract.call().ilk())
+        return Ilk.fromBytes(self._contract.functions.ilk().call())
 
     def join(self, urn: Urn, value: Wad) -> Transact:
         assert(isinstance(urn, Urn))

@@ -13,7 +13,7 @@ services:
     working_dir: /home/parity
 
   ganache:
-    image: trufflesuite/ganache-cli:v6.2.5
+    image: trufflesuite/ganache-cli:v6.9.1
     container_name: ganache
     ports:
       - "8555:8555"

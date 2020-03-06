@@ -20,7 +20,10 @@ from typing import Optional, List, Iterable, Iterator
 
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.utils.events import get_event_data
+from web3._utils.events import get_event_data
+
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
 
 from pymaker import Contract, Address, Transact, Receipt
 from pymaker.numeric import Wad
@@ -110,7 +113,8 @@ class LogMake:
             for log in receipt.logs:
                 if len(log['topics']) > 0 and log['topics'][0] == HexBytes('0x773ff502687307abfa024ac9f62f9752a0d210dac2ffd9a29e38e12e2ea82c82'):
                     log_make_abi = [abi for abi in SimpleMarket.abi if abi.get('name') == 'LogMake'][0]
-                    event_data = get_event_data(log_make_abi, log)
+                    codec = ABICodec(default_registry)
+                    event_data = get_event_data(codec, log_make_abi, log)
 
                     yield LogMake(event_data)
 
@@ -152,7 +156,8 @@ class LogTake:
         topics = event.get('topics')
         if topics and topics[0] == HexBytes('0x3383e3357c77fd2e3a4b30deea81179bc70a795d053d14d5b7f2f01d0fd4596f'):
             log_take_abi = [abi for abi in SimpleMarket.abi if abi.get('name') == 'LogTake'][0]
-            event_data = get_event_data(log_take_abi, event)
+            codec = ABICodec(default_registry)
+            event_data = get_event_data(codec, log_take_abi, event)
 
             return LogTake(event_data)
 
@@ -306,7 +311,7 @@ class SimpleMarket(Contract):
         Returns:
             The id of the last order. Returns `0` if no orders have been created at all.
         """
-        return self._contract.call().last_offer_id()
+        return self._contract.functions.last_offer_id().call()
 
     def get_order(self, order_id: int) -> Optional[Order]:
         """Get order details.
@@ -320,7 +325,7 @@ class SimpleMarket(Contract):
         """
         assert(isinstance(order_id, int))
 
-        array = self._contract.call().offers(order_id)
+        array = self._contract.functions.offers(order_id).call()
         if array[5] == 0:
             return None
         else:
@@ -503,7 +508,7 @@ class ExpiringMarket(SimpleMarket):
         Returns:
             `True` if the market is closed. `False` otherwise.
         """
-        return self._contract.call().isClosed()
+        return self._contract.functions.isClosed().call()
 
     def __repr__(self):
         return f"ExpiringMarket('{self.address}')"
@@ -556,7 +561,7 @@ class MatchingMarket(ExpiringMarket):
         Returns:
             `True` if direct buy is enabled, `False` otherwise.
         """
-        return self._contract.call().buyEnabled()
+        return self._contract.functions.buyEnabled().call()
 
     def set_buy_enabled(self, buy_enabled: bool) -> Transact:
         """Enables or disables direct buy.
@@ -577,7 +582,7 @@ class MatchingMarket(ExpiringMarket):
         Returns:
             `True` if order matching is enabled, `False` otherwise.
         """
-        return self._contract.call().matchingEnabled()
+        return self._contract.functions.matchingEnabled().call()
 
     def set_matching_enabled(self, matching_enabled: bool) -> Transact:
         """Enables or disables order matching.
@@ -644,7 +649,7 @@ class MatchingMarket(ExpiringMarket):
             orders = []
 
             if self._support_contract:
-                result = self._support_contract.call().getOffers(self.address.address, pay_token.address, buy_token.address)
+                result = self._support_contract.functions.getOffers(self.address.address, pay_token.address, buy_token.address).call()
 
                 while True:
                     count = 0
@@ -662,20 +667,20 @@ class MatchingMarket(ExpiringMarket):
                                                 timestamp=result[4][i]))
 
                     if count == 100:
-                        next_order_id = self._contract.call().getWorseOffer(orders[-1].order_id)
-                        result = self._support_contract.call().getOffers(self.address.address, next_order_id)
+                        next_order_id = self._contract.functions.getWorseOffer(orders[-1].order_id).call()
+                        result = self._support_contract.functions.getOffers(self.address.address, next_order_id).call()
 
                     else:
                         break
 
             else:
-                order_id = self._contract.call().getBestOffer(pay_token.address, buy_token.address)
+                order_id = self._contract.functions.getBestOffer(pay_token.address, buy_token.address).call()
                 while order_id != 0:
                     order = self.get_order(order_id)
                     if order is not None:
                         orders.append(order)
 
-                    order_id = self._contract.call().getWorseOffer(order_id)
+                    order_id = self._contract.functions.getWorseOffer(order_id).call()
 
             return sorted(orders, key=lambda order: order.order_id)
         else:

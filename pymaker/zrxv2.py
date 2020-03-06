@@ -27,7 +27,10 @@ import requests
 from eth_abi import encode_single, encode_abi, decode_single
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.utils.events import get_event_data
+from web3._utils.events import get_event_data
+
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
 
 from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
@@ -279,7 +282,8 @@ class LogFill:
         topics = event.get('topics')
         if topics and topics[0] == HexBytes('0x0bcc4c97732e47d9946f229edb95f5b6323f601300e4690de719993f3c371129'):
             log_fill_abi = [abi for abi in ZrxExchangeV2.abi if abi.get('name') == 'Fill'][0]
-            event_data = get_event_data(log_fill_abi, event)
+            codec = ABICodec(default_registry)
+            event_data = get_event_data(codec, log_fill_abi, event)
 
             return LogFill(event_data)
 
@@ -337,7 +341,7 @@ class ZrxExchangeV2(Contract):
         Returns:
             The asset data of the `ZRX` token.
         """
-        return str(bytes_to_hexstring(self._contract.call().ZRX_ASSET_DATA()))
+        return str(bytes_to_hexstring(self._contract.functions.ZRX_ASSET_DATA().call()))
 
     def zrx_token(self) -> Address:
         """Get the address of the ZRX token contract associated with this `ExchangeV2` contract.
@@ -355,7 +359,7 @@ class ZrxExchangeV2(Contract):
         """
         assert(isinstance(proxy_id, str))
 
-        return Address(self._contract.call().getAssetProxy(hexstring_to_bytes(proxy_id)))
+        return Address(self._contract.functions.getAssetProxy(hexstring_to_bytes(proxy_id)).call())
 
     def approve(self, tokens: List[ERC20Token], approval_function):
         """Approve the 0x ERC20Proxy contract to fully access balances of specified tokens.
@@ -459,7 +463,7 @@ class ZrxExchangeV2(Contract):
     def _get_order_info(self, order):
         assert(isinstance(order, Order))
 
-        method_signature = self.web3.sha3(text=f"getOrderInfo({self.ORDER_INFO_TYPE})")[0:4]
+        method_signature = self.web3.keccak(text=f"getOrderInfo({self.ORDER_INFO_TYPE})")[0:4]
         method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", [self._order_tuple(order)])
 
         request = bytes_to_hexstring(method_signature + method_parameters)
@@ -545,7 +549,7 @@ class ZrxExchangeV2(Contract):
         assert(isinstance(order, Order))
         assert(isinstance(fill_buy_amount, Wad))
 
-        method_signature = self.web3.sha3(text=f"fillOrder({self.ORDER_INFO_TYPE},uint256,bytes)")[0:4]
+        method_signature = self.web3.keccak(text=f"fillOrder({self.ORDER_INFO_TYPE},uint256,bytes)")[0:4]
         method_parameters = encode_single(f"({self.ORDER_INFO_TYPE},uint256,bytes)", [self._order_tuple(order),
                                                                                       fill_buy_amount.value,
                                                                                       hexstring_to_bytes(order.signature)])
@@ -566,7 +570,7 @@ class ZrxExchangeV2(Contract):
         """
         assert(isinstance(order, Order))
 
-        method_signature = self.web3.sha3(text=f"cancelOrder({self.ORDER_INFO_TYPE})")[0:4]
+        method_signature = self.web3.keccak(text=f"cancelOrder({self.ORDER_INFO_TYPE})")[0:4]
         method_parameters = encode_single(f"({self.ORDER_INFO_TYPE})", [self._order_tuple(order)])
 
         request = bytes_to_hexstring(method_signature + method_parameters)

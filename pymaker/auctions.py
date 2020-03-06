@@ -19,7 +19,11 @@ from datetime import datetime
 from pprint import pformat
 from typing import List
 from web3 import Web3
-from web3.utils.events import get_event_data
+
+from web3._utils.events import get_event_data
+
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
 
 from pymaker import Contract, Address, Transact
 from pymaker.logging import LogNote
@@ -70,14 +74,14 @@ class AuctionContract(Contract):
     def wards(self, address: Address) -> bool:
         assert isinstance(address, Address)
 
-        return bool(self._contract.call().wards(address.address))
+        return bool(self._contract.functions.wards(address.address).call())
 
     def vat(self) -> Address:
         """Returns the `vat` address.
          Returns:
             The address of the `vat` contract.
         """
-        return Address(self._contract.call().vat())
+        return Address(self._contract.functions.vat().call())
 
     def approve(self, source: Address, approval_function, **kwargs):
         """Approve the auction to access our collateral, Dai, or MKR so we can participate in auctions.
@@ -114,7 +118,7 @@ class AuctionContract(Contract):
         Returns:
             The percentage minimum bid increase.
         """
-        return Wad(self._contract.call().beg())
+        return Wad(self._contract.functions.beg().call())
 
     def ttl(self) -> int:
         """Returns the bid lifetime.
@@ -122,7 +126,7 @@ class AuctionContract(Contract):
         Returns:
             The bid lifetime (in seconds).
         """
-        return int(self._contract.call().ttl())
+        return int(self._contract.functions.ttl().call())
 
     def tau(self) -> int:
         """Returns the total auction length.
@@ -130,7 +134,7 @@ class AuctionContract(Contract):
         Returns:
             The total auction length (in seconds).
         """
-        return int(self._contract.call().tau())
+        return int(self._contract.functions.tau().call())
 
     def kicks(self) -> int:
         """Returns the number of auctions started so far.
@@ -138,7 +142,7 @@ class AuctionContract(Contract):
         Returns:
             The number of auctions started so far.
         """
-        return int(self._contract.call().kicks())
+        return int(self._contract.functions.kicks().call())
 
     def deal(self, id: int) -> Transact:
         assert(isinstance(id, int))
@@ -266,7 +270,7 @@ class Flipper(AuctionContract):
         """
         assert(isinstance(id, int))
 
-        array = self._contract.call().bids(id)
+        array = self._contract.functions.bids(id).call()
 
         return Flipper.Bid(id=id,
                            bid=Rad(array[0]),
@@ -325,11 +329,12 @@ class Flipper(AuctionContract):
 
     def parse_event(self, event):
         signature = Web3.toHex(event['topics'][0])
+        codec = ABICodec(default_registry)
         if signature == "0xc84ce3a1172f0dec3173f04caaa6005151a4bfe40d4c9f3ea28dba5f719b2a7a":
-            event_data = get_event_data(self.kick_abi, event)
+            event_data = get_event_data(codec, self.kick_abi, event)
             return Flipper.KickLog(event_data)
         else:
-            event_data = get_event_data(self.log_note_abi, event)
+            event_data = get_event_data(codec, self.log_note_abi, event)
             return LogNote(event_data)
 
     def __repr__(self):
@@ -405,7 +410,7 @@ class Flapper(AuctionContract):
         super(Flapper, self).__init__(web3, address, Flapper.abi, self.bids)
 
     def live(self) -> bool:
-        return self._contract.call().live() > 0
+        return self._contract.functions.live().call() > 0
 
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
@@ -418,7 +423,7 @@ class Flapper(AuctionContract):
         """
         assert(isinstance(id, int))
 
-        array = self._contract.call().bids(id)
+        array = self._contract.functions.bids(id).call()
 
         return Flapper.Bid(id=id,
                            bid=Wad(array[0]),
@@ -471,11 +476,12 @@ class Flapper(AuctionContract):
 
     def parse_event(self, event):
         signature = Web3.toHex(event['topics'][0])
+        codec = ABICodec(default_registry)
         if signature == "0xe6dde59cbc017becba89714a037778d234a84ce7f0a137487142a007e580d609":
-            event_data = get_event_data(self.kick_abi, event)
+            event_data = get_event_data(codec, self.kick_abi, event)
             return Flapper.KickLog(event_data)
         else:
-            event_data = get_event_data(self.log_note_abi, event)
+            event_data = get_event_data(codec, self.log_note_abi, event)
             return LogNote(event_data)
 
     def __repr__(self):
@@ -555,12 +561,12 @@ class Flopper(AuctionContract):
         super(Flopper, self).__init__(web3, address, Flopper.abi, self.bids)
 
     def live(self) -> bool:
-        return self._contract.call().live() > 0
+        return self._contract.functions.live().call() > 0
 
     def pad(self) -> Wad:
         """Returns the lot increase applied after an auction has been `tick`ed."""
 
-        return Wad(self._contract.call().pad())
+        return Wad(self._contract.functions.pad().call())
 
     def bids(self, id: int) -> Bid:
         """Returns the auction details.
@@ -573,7 +579,7 @@ class Flopper(AuctionContract):
         """
         assert(isinstance(id, int))
 
-        array = self._contract.call().bids(id)
+        array = self._contract.functions.bids(id).call()
 
         return Flopper.Bid(id=id,
                            bid=Rad(array[0]),
@@ -628,11 +634,12 @@ class Flopper(AuctionContract):
 
     def parse_event(self, event):
         signature = Web3.toHex(event['topics'][0])
+        codec = ABICodec(default_registry)
         if signature == "0x7e8881001566f9f89aedb9c5dc3d856a2b81e5235a8196413ed484be91cc0df6":
-            event_data = get_event_data(self.kick_abi, event)
+            event_data = get_event_data(codec, self.kick_abi, event)
             return Flopper.KickLog(event_data)
         else:
-            event_data = get_event_data(self.log_note_abi, event)
+            event_data = get_event_data(codec, self.log_note_abi, event)
             return LogNote(event_data)
 
     def __repr__(self):

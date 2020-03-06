@@ -133,12 +133,13 @@ class TestCalldata:
         assert calldata1a != calldata2
         assert calldata1b != calldata2
 
-    def test_from_signature(self):
+    def test_from_signature(self, web3):
         # given
         calldata1a = Calldata('0xa9059cbb'  # function 4byte signature
                               '00000000000000000000000011223344556600000000000000000000000000ff'
                               '000000000000000000000000000000000000000000000000000000000000007b')
-        calldata1b = Calldata.from_signature('transfer(address,uint256)',
+        calldata1b = Calldata.from_signature(web3,
+                                             'transfer(address,uint256)',
                                              ['0x11223344556600000000000000000000000000ff', 123])
 
         # expect
@@ -151,7 +152,8 @@ class TestCalldata:
                               '0000000000000000000000000000000000000000000000000000000000000002'
                               '000000000000000000000000000000000000000000000000000000000000007b'
                               '00000000000000000000000000000000000000000000000000000000000001c8')
-        calldata2b = Calldata.from_signature('transfer(address,uint256[])',
+        calldata2b = Calldata.from_signature(web3,
+                                             'transfer(address,uint256[])',
                                              ['0x11223344556600000000000000000000000000ff', [123, 456]])
 
         # expect

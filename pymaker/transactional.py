@@ -78,7 +78,7 @@ class TxManager(Contract):
             approval_function(token, self.address, 'TxManager')
 
     def owner(self) -> Address:
-        return Address(self._contract.call().owner())
+        return Address(self._contract.functions.owner().call())
 
     def execute(self, tokens: List[Address], invocations: List[Invocation]) -> Transact:
         """Executes multiple contract methods in one Ethereum transaction.
