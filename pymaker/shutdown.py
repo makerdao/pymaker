@@ -21,12 +21,9 @@ from typing import Optional, List
 
 from web3 import Web3
 
-from web3._utils.events import get_event_data
-
 from pymaker import Address, Contract, Transact
 from pymaker.approval import directly, hope_directly
 from pymaker.dss import Ilk
-from pymaker.logging import LogNote
 from pymaker.numeric import Wad, Ray, Rad
 from pymaker.token import DSToken, ERC20Token
 

@@ -29,6 +29,9 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.events import get_event_data
 
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
+
 from pymaker import Contract, Address, Transact
 from pymaker.numeric import Wad
 from pymaker.sign import eth_sign, to_vrs
@@ -279,7 +282,8 @@ class LogFill:
         topics = event.get('topics')
         if topics and topics[0] == HexBytes('0x0bcc4c97732e47d9946f229edb95f5b6323f601300e4690de719993f3c371129'):
             log_fill_abi = [abi for abi in ZrxExchangeV2.abi if abi.get('name') == 'Fill'][0]
-            event_data = get_event_data(log_fill_abi, event)
+            codec = ABICodec(default_registry)
+            event_data = get_event_data(codec, log_fill_abi, event)
 
             return LogFill(event_data)
 

@@ -123,7 +123,7 @@ class TestProxy:
     """ `DSProxy` class testing"""
 
     def test_execute(self, proxy: DSProxy):
-        assert proxy.execute(DSProxyFactory.bin, Calldata.from_signature("build()", [])).transact()
+        assert proxy.execute(DSProxyFactory.bin, Calldata.from_signature(proxy.web3, "build()", [])).transact()
 
     def test_execute_at(self, proxy: DSProxy):
         # given
@@ -133,7 +133,7 @@ class TestProxy:
         assert new_factory_addr
 
         # when
-        receipt = proxy.execute_at(new_factory_addr, Calldata.from_signature("build(address)",
+        receipt = proxy.execute_at(new_factory_addr, Calldata.from_signature(proxy.web3, "build(address)",
                                                                              [proxy.address.address])).transact()
         assert receipt
         build_event = DSProxyFactory.log_created(receipt)[0]
@@ -143,7 +143,7 @@ class TestProxy:
 
     def test_call(self, proxy: DSProxy):
         # when
-        calldata = Calldata.from_signature("isProxy(address)", [Address(40*'0').address])
+        calldata = Calldata.from_signature(proxy.web3, "isProxy(address)", [Address(40*'0').address])
         target, response = proxy.call(DSProxyFactory.bin, calldata)
 
         # then
@@ -155,12 +155,13 @@ class TestProxy:
         proxy_cache = DSProxyCache(proxy.web3, proxy.cache())
         proxy_cache.write(DSProxyFactory.bin).transact()
         new_factory_addr = proxy_cache.read(DSProxyFactory.bin)
-        receipt = proxy.execute_at(new_factory_addr, Calldata.from_signature("build(address)",
+        receipt = proxy.execute_at(new_factory_addr, Calldata.from_signature(proxy.web3,
+                                                                             "build(address)",
                                                                              [proxy.address.address])).transact()
         log_created: LogCreated = DSProxyFactory.log_created(receipt)[0]
 
         # when
-        calldata = Calldata.from_signature("isProxy(address)", [log_created.proxy.address])
+        calldata = Calldata.from_signature(proxy.web3, "isProxy(address)", [log_created.proxy.address])
         response = proxy.call_at(new_factory_addr, calldata)
 
         # then

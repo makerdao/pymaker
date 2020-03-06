@@ -20,6 +20,8 @@ from pprint import pformat
 from web3 import Web3
 from web3._utils.events import get_event_data
 
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
 
 # Shared between DSNote and many MCD contracts
 class LogNote:
@@ -41,7 +43,8 @@ class LogNote:
 
         log_note_abi = [abi for abi in contract_abi if abi.get('name') == 'LogNote'][0]
         try:
-            event_data = get_event_data(log_note_abi, event)
+            codec = ABICodec(default_registry)
+            event_data = get_event_data(codec, log_note_abi, event)
             return LogNote(event_data)
         except ValueError:
             # event is not a LogNote

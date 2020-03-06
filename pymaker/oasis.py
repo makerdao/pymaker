@@ -22,6 +22,9 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.events import get_event_data
 
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
+
 from pymaker import Contract, Address, Transact, Receipt
 from pymaker.numeric import Wad
 from pymaker.token import ERC20Token
@@ -110,7 +113,8 @@ class LogMake:
             for log in receipt.logs:
                 if len(log['topics']) > 0 and log['topics'][0] == HexBytes('0x773ff502687307abfa024ac9f62f9752a0d210dac2ffd9a29e38e12e2ea82c82'):
                     log_make_abi = [abi for abi in SimpleMarket.abi if abi.get('name') == 'LogMake'][0]
-                    event_data = get_event_data(log_make_abi, log)
+                    codec = ABICodec(default_registry)
+                    event_data = get_event_data(codec, log_make_abi, log)
 
                     yield LogMake(event_data)
 
@@ -152,7 +156,8 @@ class LogTake:
         topics = event.get('topics')
         if topics and topics[0] == HexBytes('0x3383e3357c77fd2e3a4b30deea81179bc70a795d053d14d5b7f2f01d0fd4596f'):
             log_take_abi = [abi for abi in SimpleMarket.abi if abi.get('name') == 'LogTake'][0]
-            event_data = get_event_data(log_take_abi, event)
+            codec = ABICodec(default_registry)
+            event_data = get_event_data(codec, log_take_abi, event)
 
             return LogTake(event_data)
 

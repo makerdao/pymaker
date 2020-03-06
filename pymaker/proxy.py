@@ -20,6 +20,9 @@ from hexbytes import HexBytes
 from web3 import Web3
 from web3._utils.events import get_event_data
 
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
+
 from pymaker import Address, Contract, Transact, Receipt, Calldata
 from pymaker.util import hexstring_to_bytes
 
@@ -179,7 +182,8 @@ class LogCreated:
         topics = event.get('topics')
         if topics and topics[0] == HexBytes('0x259b30ca39885c6d801a0b5dbc988640f3c25e2f37531fe138c5c5af8955d41b'):
             log_created_abi = [abi for abi in DSProxyFactory.abi if abi.get('name') == 'Created'][0]
-            event_data = get_event_data(log_created_abi, event)
+            codec = ABICodec(default_registry)
+            event_data = get_event_data(codec, log_created_abi, event)
 
             return LogCreated(event_data)
         else:

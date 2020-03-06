@@ -26,6 +26,9 @@ from web3 import Web3
 
 from web3._utils.events import get_event_data
 
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
+
 from pymaker import Address, Contract, Transact
 from pymaker.approval import directly, hope_directly
 from pymaker.auctions import Flapper, Flipper, Flopper
@@ -710,7 +713,8 @@ class Cat(Contract):
             topics = event.get('topics')
             if topics and topics[0] == HexBytes('0x99b5620489b6ef926d4518936cfec15d305452712b88bd59da2d9c10fb0953e8'):
                 log_bite_abi = [abi for abi in Cat.abi if abi.get('name') == 'Bite'][0]
-                event_data = get_event_data(log_bite_abi, event)
+                codec = ABICodec(default_registry)
+                event_data = get_event_data(codec, log_bite_abi, event)
 
                 return Cat.LogBite(event_data)
             else:

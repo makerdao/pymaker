@@ -22,6 +22,9 @@ from web3 import Web3
 
 from web3._utils.events import get_event_data
 
+from eth_abi.codec import ABICodec
+from eth_abi.registry import registry as default_registry
+
 from pymaker import Contract, Address, Transact
 from pymaker.logging import LogNote
 from pymaker.numeric import Wad, Rad, Ray
@@ -326,11 +329,12 @@ class Flipper(AuctionContract):
 
     def parse_event(self, event):
         signature = Web3.toHex(event['topics'][0])
+        codec = ABICodec(default_registry)
         if signature == "0xc84ce3a1172f0dec3173f04caaa6005151a4bfe40d4c9f3ea28dba5f719b2a7a":
-            event_data = get_event_data(self.kick_abi, event)
+            event_data = get_event_data(codec, self.kick_abi, event)
             return Flipper.KickLog(event_data)
         else:
-            event_data = get_event_data(self.log_note_abi, event)
+            event_data = get_event_data(codec, self.log_note_abi, event)
             return LogNote(event_data)
 
     def __repr__(self):
@@ -472,11 +476,12 @@ class Flapper(AuctionContract):
 
     def parse_event(self, event):
         signature = Web3.toHex(event['topics'][0])
+        codec = ABICodec(default_registry)
         if signature == "0xe6dde59cbc017becba89714a037778d234a84ce7f0a137487142a007e580d609":
-            event_data = get_event_data(self.kick_abi, event)
+            event_data = get_event_data(codec, self.kick_abi, event)
             return Flapper.KickLog(event_data)
         else:
-            event_data = get_event_data(self.log_note_abi, event)
+            event_data = get_event_data(codec, self.log_note_abi, event)
             return LogNote(event_data)
 
     def __repr__(self):
@@ -629,11 +634,12 @@ class Flopper(AuctionContract):
 
     def parse_event(self, event):
         signature = Web3.toHex(event['topics'][0])
+        codec = ABICodec(default_registry)
         if signature == "0x7e8881001566f9f89aedb9c5dc3d856a2b81e5235a8196413ed484be91cc0df6":
-            event_data = get_event_data(self.kick_abi, event)
+            event_data = get_event_data(codec, self.kick_abi, event)
             return Flopper.KickLog(event_data)
         else:
-            event_data = get_event_data(self.log_note_abi, event)
+            event_data = get_event_data(codec, self.log_note_abi, event)
             return LogNote(event_data)
 
     def __repr__(self):
