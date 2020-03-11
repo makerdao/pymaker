@@ -28,7 +28,7 @@ from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemJoin, DaiJoin, Collater
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray, Rad
 from pymaker.oracles import OSM
-from pymaker.token import DSToken, DSEthToken
+from pymaker.token import DSToken, DSEthToken, ERC20Token
 from tests.conftest import validate_contracts_loaded
 
 
@@ -248,6 +248,13 @@ class TestConfig:
     def test_from_node(self, web3: Web3):
         mcd_testnet = DssDeployment.from_node(web3)
         validate_contracts_loaded(mcd_testnet)
+
+    def test_collaterals(self, mcd):
+        for collateral in mcd.collaterals.values():
+            assert isinstance(collateral.gem, ERC20Token)
+            assert len(collateral.ilk.name) > 0
+            assert len(collateral.gem.name()) > 0
+            assert len(collateral.gem.symbol()) > 0
 
     def test_account_transfers(self, web3: Web3, mcd, our_address, other_address):
         print(mcd.collaterals)
