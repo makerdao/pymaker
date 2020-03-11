@@ -251,10 +251,14 @@ class TestConfig:
 
     def test_collaterals(self, mcd):
         for collateral in mcd.collaterals.values():
+            assert isinstance(collateral.ilk, Ilk)
             assert isinstance(collateral.gem, ERC20Token)
             assert len(collateral.ilk.name) > 0
             assert len(collateral.gem.name()) > 0
             assert len(collateral.gem.symbol()) > 0
+            assert collateral.adapter is not None
+            assert collateral.flipper is not None
+            assert collateral.pip is not None
 
     def test_account_transfers(self, web3: Web3, mcd, our_address, other_address):
         print(mcd.collaterals)

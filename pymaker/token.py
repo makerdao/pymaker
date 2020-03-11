@@ -50,9 +50,9 @@ class ERC20Token(Contract):
         contract_with_bytes32 = self._get_contract(self.web3, abi_with_bytes32, self.address)
 
         try:
-            return contract_with_string.name().call()
+            return contract_with_string.functions.name().call()
         except:
-            return str(contract_with_bytes32.name().call(), "utf-8").strip('\x00')
+            return str(contract_with_bytes32.functions.name().call(), "utf-8").strip('\x00')
 
     def symbol(self) -> str:
         abi_with_string = json.loads("""[{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"}]""")
@@ -62,7 +62,7 @@ class ERC20Token(Contract):
         contract_with_bytes32 = self._get_contract(self.web3, abi_with_bytes32, self.address)
 
         try:
-            return contract_with_string.symbol().call()
+            return contract_with_string.functions.symbol().call()
         except:
             return str(contract_with_bytes32.functions.symbol().call(), "utf-8").strip('\x00')
 
