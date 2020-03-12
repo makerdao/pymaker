@@ -319,23 +319,17 @@ class DssDeployment:
 
         network = DssDeployment.NETWORKS.get(web3.net.version, "testnet")
 
-        cwd = os.path.dirname(os.path.realpath(__file__))
-        addresses_path = os.path.join(cwd, "../config", f"{network}-addresses.json")
-        if not os.path.isfile(addresses_path):
-            raise FileNotFoundError("Network is not yet supported")
-
-        return DssDeployment.from_json(web3=web3, conf=open(addresses_path, "r").read())
+        return DssDeployment.from_network(web3=web3, network=network)
 
     @staticmethod
     def from_network(web3: Web3, network: str):
-        warnings.warn(
-            "this method will be removed, use DssDeployment.from_node(web3) instead",
-            DeprecationWarning
-        )
         assert isinstance(web3, Web3)
         assert isinstance(network, str)
 
-        return DssDeployment.from_node(web3=web3)
+        cwd = os.path.dirname(os.path.realpath(__file__))
+        addresses_path = os.path.join(cwd, "../config", f"{network}-addresses.json")
+
+        return DssDeployment.from_json(web3=web3, conf=open(addresses_path, "r").read())
 
     def approve_dai(self, usr: Address):
         """
