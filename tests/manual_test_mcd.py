@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+import os
 import sys
 from pprint import pprint
 from web3 import Web3, HTTPProvider
@@ -26,40 +26,44 @@ from pymaker.deployment import DssDeployment
 from pymaker.keys import register_keys
 from pymaker.numeric import Wad
 
-
-web3 = Web3(HTTPProvider(endpoint_uri="http://0.0.0.0:8545",
-                         request_kwargs={"timeout": 10}))
+endpoint_uri = f"{os.environ['SERVER_ETH_RPC_HOST']}:{os.environ['SERVER_ETH_RPC_PORT']}"
+web3 = Web3(HTTPProvider(endpoint_uri=endpoint_uri, request_kwargs={"timeout": 10}))
 web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
 register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
 
-mcd = DssDeployment.from_network(web3, "kovan")
+mcd = DssDeployment.from_node(web3)
 our_address = Address(web3.eth.defaultAccount)
 
 # Choose the desired collateral; in this case we'll wrap some Eth
 collateral = mcd.collaterals['ETH-A']
 ilk = collateral.ilk
-collateral_amount = Wad.from_number(0.03)
-collateral.gem.deposit(collateral_amount).transact()
 
-# Add collateral and allocate the desired amount of Dai
-collateral.approve(our_address)
-assert collateral.adapter.join(our_address, collateral_amount).transact()
-dai_amount = Wad.from_number(0.153)
-mcd.vat.frob(ilk, our_address, dink=collateral_amount, dart=Wad(0)).transact()
-mcd.vat.frob(ilk, our_address, dink=Wad(0), dart=dai_amount).transact()
-print(f"CDP Dai balance before withdrawal: {mcd.vat.dai(our_address)}")
+# This is a safe amount of collateral (as of 2020.03.11) to draw 20 Dai
+collateral_amount = Wad.from_number(0.2)
+if collateral.gem.balance_of(our_address) > collateral_amount:
+    collateral.gem.deposit(collateral_amount).transact()
 
-# Mint and withdraw our Dai
-mcd.approve_dai(our_address)
-mcd.dai_adapter.exit(our_address, dai_amount).transact()
-print(f"CDP Dai balance after withdrawal:  {mcd.vat.dai(our_address)}")
+    # Add collateral and allocate the desired amount of Dai
+    collateral.approve(our_address)
+    assert collateral.adapter.join(our_address, collateral_amount).transact()
+    dai_amount = Wad.from_number(0.153)
+    mcd.vat.frob(ilk, our_address, dink=collateral_amount, dart=Wad(0)).transact()
+    mcd.vat.frob(ilk, our_address, dink=Wad(0), dart=dai_amount).transact()
+    print(f"Dai balance before withdrawal: {mcd.vat.dai(our_address)}")
 
-# Repay (and burn) our Dai
-assert mcd.dai_adapter.join(our_address, dai_amount).transact()
-print(f"CDP Dai balance after repayment:   {mcd.vat.dai(our_address)}")
+    # Mint and withdraw our Dai
+    mcd.approve_dai(our_address)
+    mcd.dai_adapter.exit(our_address, dai_amount).transact()
+    print(f"Dai balance after withdrawal:  {mcd.vat.dai(our_address)}")
 
-# Withdraw our collateral
-mcd.vat.frob(ilk, our_address, dink=Wad(0), dart=dai_amount*-1).transact()
-mcd.vat.frob(ilk, our_address, dink=collateral_amount*-1, dart=Wad(0)).transact()
-collateral.adapter.exit(our_address, collateral_amount).transact()
-print(f"CDP Dai balance w/o collateral:    {mcd.vat.dai(our_address)}")
+    # Repay (and burn) our Dai
+    assert mcd.dai_adapter.join(our_address, dai_amount).transact()
+    print(f"Dai balance after repayment:   {mcd.vat.dai(our_address)}")
+
+    # Withdraw our collateral
+    mcd.vat.frob(ilk, our_address, dink=Wad(0), dart=dai_amount*-1).transact()
+    mcd.vat.frob(ilk, our_address, dink=collateral_amount*-1, dart=Wad(0)).transact()
+    collateral.adapter.exit(our_address, collateral_amount).transact()
+    print(f"Dai balance w/o collateral:    {mcd.vat.dai(our_address)}")
+
+print(f"Collateral balance: {mcd.vat.gem(ilk, our_address)}")

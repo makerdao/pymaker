@@ -62,7 +62,7 @@ def all_filter_threads_alive() -> bool:
 def filter_thread_alive(filter_thread) -> bool:
     # it's a wicked way of detecting whether a web3.py filter is still working
     # but unfortunately I wasn't able to find any other one
-    return hasattr(filter_thread, '_args') and hasattr(filter_thread, '_kwargs') or not filter_thread.running
+    return hasattr(filter_thread, '_args') and hasattr(filter_thread, '_kwargs') or not filter_thread.is_alive()
 
 
 def stop_all_filter_threads():
