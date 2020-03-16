@@ -218,6 +218,7 @@ class Calldata:
 
         :param fn_sign: the function signature ie. "function(uint256,address)"
         :param fn_args: arguments to the function ie. [123, "0x00...00"]
+        :return:        
         """
         assert isinstance(fn_sign, str)
         assert isinstance(fn_args, list)
