@@ -83,7 +83,7 @@ class AuctionContract(Contract):
         """
         return Address(self._contract.functions.vat().call())
 
-    def approve(self, source: Address, approval_function, **kwargs):
+    def approve(self, source: Address, approval_function):
         """Approve the auction to access our collateral, Dai, or MKR so we can participate in auctions.
 
         For available approval functions (i.e. approval modes) see `directly` and `hope_directly`
@@ -98,7 +98,7 @@ class AuctionContract(Contract):
         assert(callable(approval_function))
 
         approval_function(token=ERC20Token(web3=self.web3, address=source),
-                          spender_address=self.address, spender_name=self.__class__.__name__, **kwargs)
+                          spender_address=self.address, spender_name=self.__class__.__name__)
 
     def active_auctions(self) -> list:
         active_auctions = []

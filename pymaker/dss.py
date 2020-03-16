@@ -32,6 +32,7 @@ from eth_abi.registry import registry as default_registry
 from pymaker import Address, Contract, Transact
 from pymaker.approval import directly, hope_directly
 from pymaker.auctions import Flapper, Flipper, Flopper
+from pymaker.gas import DefaultGasPrice
 from pymaker.logging import LogNote
 from pymaker.token import DSToken, ERC20Token
 from pymaker.numeric import Wad, Ray, Rad
@@ -164,11 +165,11 @@ class Join(Contract):
         self._contract = self._get_contract(web3, self.abi, address)
         self._token: DSToken = None
 
-    def approve(self, approval_function, source: Address, **kwargs):
+    def approve(self, approval_function, source: Address):
         assert(callable(approval_function))
         assert isinstance(source, Address)
 
-        approval_function(ERC20Token(web3=self.web3, address=source), self.address, self.__class__.__name__, **kwargs)
+        approval_function(ERC20Token(web3=self.web3, address=source), self.address, self.__class__.__name__)
 
     def approve_token(self, approval_function, **kwargs):
         return self.approve(approval_function, self._token.address, **kwargs)
@@ -247,15 +248,16 @@ class Collateral:
         # Users generally have no need to interact with the pip.
         self.pip = pip
 
-    def approve(self, usr: Address):
+    def approve(self, usr: Address, **kwargs):
         """
         Allows the user to move this collateral into and out of their CDP.
 
         Args
             usr: User making transactions with this collateral
         """
-        self.adapter.approve(hope_directly(from_address=usr), self.flipper.vat())
-        self.adapter.approve_token(directly(from_address=usr))
+        gas_price = kwargs['gas_price'] if 'gas_price' in kwargs else DefaultGasPrice()
+        self.adapter.approve(hope_directly(from_address=usr, gas_price=gas_price), self.flipper.vat())
+        self.adapter.approve_token(directly(from_address=usr, gas_price=gas_price))
 
 
 class Vat(Contract):

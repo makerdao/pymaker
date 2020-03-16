@@ -33,6 +33,7 @@ from pymaker.etherdelta import EtherDelta
 from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemJoin, Pot
 from pymaker.proxy import ProxyRegistry, DssProxyActionsDsr
 from pymaker.feed import DSValue
+from pymaker.gas import DefaultGasPrice
 from pymaker.governance import DSPause, DSChief
 from pymaker.numeric import Wad, Ray
 from pymaker.oasis import MatchingMarket
@@ -331,7 +332,7 @@ class DssDeployment:
 
         return DssDeployment.from_json(web3=web3, conf=open(addresses_path, "r").read())
 
-    def approve_dai(self, usr: Address):
+    def approve_dai(self, usr: Address, **kwargs):
         """
         Allows the user to draw Dai from and repay Dai to their CDPs.
 
@@ -340,8 +341,10 @@ class DssDeployment:
         """
         assert isinstance(usr, Address)
 
-        self.dai_adapter.approve(approval_function=hope_directly(from_address=usr), source=self.vat.address)
-        self.dai.approve(self.dai_adapter.address).transact(from_address=usr)
+        gas_price = kwargs['gas_price'] if 'gas_price' in kwargs else DefaultGasPrice()
+        self.dai_adapter.approve(approval_function=hope_directly(from_address=usr, gas_price=gas_price),
+                                 source=self.vat.address)
+        self.dai.approve(self.dai_adapter.address).transact(from_address=usr, gas_price=gas_price)
 
     def active_auctions(self) -> dict:
         flips = {}
