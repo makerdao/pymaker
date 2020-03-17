@@ -18,6 +18,7 @@
 import logging
 
 from pymaker import Address, Contract
+from pymaker import Transact
 from pymaker.numeric import Wad
 from pymaker.token import ERC20Token
 from pymaker.transactional import TxManager
@@ -80,13 +81,15 @@ def hope_directly(**kwargs):
         address_to_check = kwargs['from_address'] if 'from_address' in kwargs else Address(
             token.web3.eth.defaultAccount)
 
-        transact_args = {'from': address_to_check.address}
-
         move_contract = Contract._get_contract(web3=token.web3, abi=move_abi, address=token.address)
         if move_contract.functions.can(address_to_check.address, spender_address.address).call() is False:
             logger = logging.getLogger()
             logger.info(f"Approving {spender_name} ({spender_address}) to move our {token.address} directly")
-            if not move_contract.functions.hope(spender_address.address).transact(transact_args):
+
+            hope = Transact(move_contract, move_contract.web3, move_contract.abi, Address(move_contract.address),
+                            move_contract, 'hope', [spender_address.address])
+
+            if not hope.transact(**kwargs):
                 raise RuntimeError("Approval failed!")
 
     return approval_function
