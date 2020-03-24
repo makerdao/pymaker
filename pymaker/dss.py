@@ -384,6 +384,57 @@ class Vat(Contract):
         """ Total debt ceiling """
         return Rad(self._contract.functions.Line().call())
 
+    def flux(self, ilk: Ilk, src: Address, dst: Address, wad: Wad) -> Transact:
+        """Move Ilk balance in Vat from source address to destiny address
+
+        Args:
+            ilk: Identifies the type of collateral.
+            src: Source of the collateral (address of the source).
+            dst: Destiny of the collateral (address of the recipient).
+            wad: Amount of collateral to move.
+        """
+        assert isinstance(ilk, Ilk)
+        assert isinstance(src, Address)
+        assert isinstance(dst, Address)
+        assert isinstance(wad, Wad)
+
+        flux_args = [ilk.toBytes(), src.address, dst.address, wad.value]
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'flux', flux_args)
+
+    def move(self, src: Address, dst: Address, wad: Wad) -> Transact:
+        """Move Dai balance in Vat from source address to destiny address
+
+        Args:
+            src: Source of the dai (address of the source).
+            dst: Destiny of the dai (address of the recipient).
+            wad: Amount of dai to move.
+        """
+        assert isinstance(src, Address)
+        assert isinstance(dst, Address)
+        assert isinstance(wad, Wad)
+
+        move_args = [src.address, dst.address, wad.value]
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'move', move_args)
+
+    def fork(self, ilk: Ilk, src: Address, dst: Address, dink: Wad, dart: Wad) -> Transact:
+        """Split a Vault - binary approval or splitting/merging Vault's
+
+        Args:
+            ilk: Identifies the type of collateral.
+            src: Address of the source Urn.
+            dst: Address of the destiny Urn.
+            dink: Amount of collateral to exchange.
+            dart: Amount of stable coin debt to exchange.
+        """
+        assert isinstance(ilk, Ilk)
+        assert isinstance(src, Address)
+        assert isinstance(dst, Address)
+        assert isinstance(dink, Wad)
+        assert isinstance(dart, Wad)
+
+        fork_args = [ilk.toBytes(), src.address, dst.address, dink.value, dart.value]
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'fork', fork_args)
+
     def frob(self, ilk: Ilk, urn_address: Address, dink: Wad, dart: Wad, collateral_owner=None, dai_recipient=None):
         """Adjust amount of collateral and reserved amount of Dai for the CDP
 
