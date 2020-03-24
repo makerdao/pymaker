@@ -401,19 +401,19 @@ class Vat(Contract):
         flux_args = [ilk.toBytes(), src.address, dst.address, wad.value]
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'flux', flux_args)
 
-    def move(self, src: Address, dst: Address, wad: Wad) -> Transact:
+    def move(self, src: Address, dst: Address, rad: Rad) -> Transact:
         """Move Dai balance in Vat from source address to destiny address
 
         Args:
             src: Source of the dai (address of the source).
             dst: Destiny of the dai (address of the recipient).
-            wad: Amount of dai to move.
+            rad: Amount of dai to move.
         """
         assert isinstance(src, Address)
         assert isinstance(dst, Address)
-        assert isinstance(wad, Wad)
+        assert isinstance(rad, Rad)
 
-        move_args = [src.address, dst.address, wad.value]
+        move_args = [src.address, dst.address, rad.value]
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'move', move_args)
 
     def fork(self, ilk: Ilk, src: Address, dst: Address, dink: Wad, dart: Wad) -> Transact:
