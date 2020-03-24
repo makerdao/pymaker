@@ -474,6 +474,68 @@ class TestVat:
     def test_heal(self, mcd):
         assert mcd.vat.heal(Rad(0)).transact()
 
+    def test_flux(self, mcd, our_address, other_address):
+        # given
+        collateral = mcd.collaterals['ETH-A']
+        collateral.approve(our_address)
+        other_balance_before = mcd.vat.gem(collateral.ilk, other_address)
+        amount = Wad(3)
+        wrap_eth(mcd, our_address, amount)
+        assert collateral.adapter.join(our_address, amount).transact()
+
+        # when
+        assert mcd.vat.flux(collateral.ilk, our_address, other_address, amount).transact()
+
+        # then
+        other_balance_after = mcd.vat.gem(collateral.ilk, other_address)
+        assert Wad(other_balance_before) + amount == Wad(other_balance_after)
+
+        # teardown
+        cleanup_urn(mcd, collateral, our_address)
+
+    def test_move(self, mcd, our_address, other_address):
+        # given
+        collateral = mcd.collaterals['ETH-A']
+        collateral.approve(our_address)
+        our_urn = mcd.vat.urn(collateral.ilk, our_address)
+        wrap_eth(mcd, our_address, Wad(10))
+        assert collateral.adapter.join(our_address, Wad(3)).transact()
+        assert mcd.vat.frob(collateral.ilk, our_address, Wad(3), Wad(10)).transact()
+        other_balance_before = mcd.vat.dai(other_address)
+
+        # when
+        assert mcd.vat.move(our_address, other_address, Rad(Wad(10))).transact()
+
+        # then
+        other_balance_after = mcd.vat.dai(other_address)
+        assert other_balance_before + Rad(Wad(10)) == other_balance_after
+
+        # rollback
+        cleanup_urn(mcd, collateral, our_address)
+
+    def test_fork(self, mcd, our_address, other_address):
+        # given
+        collateral = mcd.collaterals['ETH-A']
+        mcd.vat.hope(our_address).transact(from_address=other_address)
+        mcd.vat.hope(other_address).transact(from_address=our_address)
+
+        our_urn = mcd.vat.urn(collateral.ilk, our_address)
+        wrap_eth(mcd, our_address, Wad(6))
+        assert collateral.adapter.join(our_address, Wad(6)).transact()
+        assert mcd.vat.frob(collateral.ilk, our_address, Wad(6), Wad(20)).transact()
+        urn_before = mcd.vat.urn(collateral.ilk, other_address)
+
+        # when
+        assert mcd.vat.fork(collateral.ilk, our_address, other_address, Wad(3), Wad(10)).transact()
+
+        # then
+        urn_after = mcd.vat.urn(collateral.ilk, other_address)
+        assert urn_before.ink + Wad(3) == urn_after.ink
+        assert urn_before.art + Wad(10) == urn_after.art
+
+        # rollback
+        cleanup_urn(mcd, collateral, our_address)
+
 
 class TestCat:
     def test_getters(self, mcd):
@@ -485,6 +547,7 @@ class TestCat:
         assert mcd.cat.flipper(collateral.ilk) == collateral.flipper.address
         assert isinstance(mcd.cat.lump(collateral.ilk), Wad)
         assert isinstance(mcd.cat.chop(collateral.ilk), Ray)
+
 
 class TestSpotter:
     def test_mat(self, mcd):
