@@ -43,6 +43,7 @@ def http_response_summary(response) -> str:
     return f"{response.status_code} {response.reason} ({text})"
 
 
+# CAUTION: Used by Transact class, this breaks applications running their own asyncio event loop.
 def synchronize(futures) -> list:
     if len(futures) > 0:
         loop = asyncio.new_event_loop()
