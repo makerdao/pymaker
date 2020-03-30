@@ -18,7 +18,7 @@
 
 
 from web3 import Web3
-from pymaker import Address, Contract
+from pymaker import Address, Contract, Transact
 from pymaker.dss import Ilk, Vat
 from pymaker.numeric import Wad
 
@@ -40,6 +40,13 @@ class CdpManager(Contract):
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
         self.vat = Vat(self.web3, Address(self._contract.functions.vat().call()))
+
+    def open(self, ilk: Ilk, address: Address) -> Transact:
+        assert isinstance(ilk, Ilk)
+        assert isinstance(address, Address)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'open',
+                        [ilk.toBytes(), address.address])
 
     def urn(self, cdpid):
         '''Returns Urn for respective CDP ID'''
@@ -95,8 +102,3 @@ class CdpManager(Contract):
 
     def __repr__(self):
         return f"CdpManager('{self.address}')"
-
-
-
-
-
