@@ -39,7 +39,7 @@ class TestCdpManager:
         assert isinstance(self.cdpmanager.urn(1), Address)
 
     def test_one(self, our_address):
-        assert self.cdpmanager.first(our_address) == 0
+        assert self.cdpmanager.first(our_address) == 1
         assert self.cdpmanager.last(our_address) == 1
         assert self.cdpmanager.count(our_address) == 1
 
