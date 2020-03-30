@@ -20,6 +20,7 @@ import logging
 import sys
 import threading
 import time
+
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address
@@ -35,7 +36,7 @@ logging.getLogger("web3").setLevel(logging.INFO)
 logging.getLogger("asyncio").setLevel(logging.INFO)
 logging.getLogger("requests").setLevel(logging.INFO)
 
-endpoint_uri = f"https://parity0.kovan.makerfoundation.com:8545"
+endpoint_uri = f"https://localhost:8545"
 web3 = Web3(HTTPProvider(endpoint_uri=endpoint_uri, request_kwargs={"timeout": 60}))
 web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
 register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
@@ -55,6 +56,10 @@ class TestApp:
         self.wrap_amount = Wad(10)
 
     def main(self):
+        # tx_hash = '0x0e77dba683f10aee57114f6a753c33b7df5a2a99e63d7a1805e9e81f5694a917'
+        # encoded = Web3.toBytes(hexstr=tx_hash)
+        # assert len(encoded) == 32
+        # print(encoded)
         self.startup()
         self.test_replacement()
         self.shutdown()
@@ -67,15 +72,14 @@ class TestApp:
         first_tx = collateral.adapter.join(our_address, Wad(4))
         logging.info(f"Submitting first TX with gas price deliberately too low")
         self._run_future(first_tx.transact_async(gas_price=FixedGasPrice(1000)))
-        time.sleep(0.3)
+        time.sleep(2)
 
         second_tx = collateral.adapter.join(our_address, Wad(6))
         logging.info(f"Replacing first TX with legitimate gas price")
-        self._run_future(second_tx.transact_async(replace=first_tx, gas_price=FixedGasPrice(2*GWEI)))
-        time.sleep(0.3)
+        second_tx.transact(replace=first_tx, gas_price=FixedGasPrice(2*GWEI))
+        # time.sleep(6)
 
     def shutdown(self):
-        time.sleep(6)
         logging.info(f"Exiting {ilk.name} from our urn")
         # balance = mcd.vat.gem(ilk, our_address)
         # assert collateral.adapter.exit(our_address, balance).transact()
