@@ -418,12 +418,6 @@ class Transact:
         else:
             return gas_estimate + 100000
 
-    def _gas_replacement_bump(self) -> float:
-        if self._is_parity():
-            return 1.125
-        else:
-            return 1.1
-
     def _func(self, from_account: str, gas: int, gas_price: Optional[int], nonce: Optional[int]):
         gas_price_dict = {'gasPrice': gas_price} if gas_price is not None else {}
         nonce_dict = {'nonce': nonce} if nonce is not None else {}
@@ -623,7 +617,7 @@ class Transact:
             # - the requested gas price has changed enough since the last transaction has been sent
             gas_price_value = gas_price.get_gas_price(seconds_elapsed)
             if len(tx_hashes) == 0 or ((gas_price_value is not None) and (gas_price_last is not None) and
-                                           (gas_price_value > gas_price_last * self._gas_replacement_bump())):
+                                           (gas_price_value > gas_price_last * 1.125)):
                 gas_price_last = gas_price_value
 
                 try:
