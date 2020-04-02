@@ -48,7 +48,7 @@ class CdpManager(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'open',
                         [ilk.toBytes(), address.address])
 
-    def urn(self, cdpid) -> Urn:
+    def urn(self, cdpid: int) -> Urn:
         '''Returns Urn for respective CDP ID'''
         assert isinstance(cdpid, int)
 
@@ -58,14 +58,14 @@ class CdpManager(Contract):
 
         return urn
 
-    def owns(self, cdpid) -> Address:
+    def owns(self, cdpid: int) -> Address:
         '''Returns owner Address of respective CDP ID'''
         assert isinstance(cdpid, int)
 
         owner = Address(self._contract.functions.owns(cdpid).call())
         return owner
 
-    def ilk(self, cdpid) -> Ilk:
+    def ilk(self, cdpid: int) -> Ilk:
         '''Returns Ilk for respective CDP ID'''
         assert isinstance(cdpid, int)
 
