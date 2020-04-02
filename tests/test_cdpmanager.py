@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pymaker import Address
-from pymaker.cdpmanager import CdpManager
+from pymaker.cdpmanager import CdpManager, Urn
 from tests.conftest import mcd, web3
 
 
@@ -36,16 +36,9 @@ class TestCdpManager:
         assert self.cdpmanager.last(our_address) == 1
         assert self.cdpmanager.ilk(1).name == self.ilk.name
         assert self.cdpmanager.owns(1) == our_address
-        assert isinstance(self.cdpmanager.urn(1), Address)
+        assert isinstance(self.cdpmanager.urn(1), Urn)
 
     def test_one(self, our_address):
         assert self.cdpmanager.first(our_address) == 1
         assert self.cdpmanager.last(our_address) == 1
         assert self.cdpmanager.count(our_address) == 1
-
-    def test_list(self):
-        vault_list = self.cdpmanager.list(0)
-        assert isinstance(vault_list, list)
-        assert len(vault_list) == 2
-        assert vault_list[0] == 0
-        assert vault_list[0] == 1

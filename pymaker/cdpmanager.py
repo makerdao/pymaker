@@ -19,7 +19,7 @@
 
 from web3 import Web3
 from pymaker import Address, Contract, Transact
-from pymaker.dss import Ilk, Vat
+from pymaker.dss import Ilk, Urn, Vat
 from pymaker.numeric import Wad
 
 
@@ -29,8 +29,8 @@ class CdpManager(Contract):
     Ref. <https://github.com/makerdao/dss-cdp-manager/blob/master/src/DssCdpManager.sol>
     """
 
-    abi = Contract._load_abi(__name__, 'abi/DSCdpManager.abi')
-    bin = Contract._load_bin(__name__, 'abi/DSCdpManager.bin')
+    abi = Contract._load_abi(__name__, 'abi/DssCdpManager.abi')
+    bin = Contract._load_bin(__name__, 'abi/DssCdpManager.bin')
 
     def __init__(self, web3: Web3, address: Address):
         assert isinstance(web3, Web3)
@@ -48,7 +48,7 @@ class CdpManager(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'open',
                         [ilk.toBytes(), address.address])
 
-    def urn(self, cdpid):
+    def urn(self, cdpid) -> Urn:
         '''Returns Urn for respective CDP ID'''
         assert isinstance(cdpid, int)
 
@@ -57,13 +57,6 @@ class CdpManager(Contract):
         urn = self.vat.urn(ilk, Address(urn_address))
 
         return urn
-
-    def list(self, cdpid) -> list:
-        '''Returns previous and next CDP Ids as a list'''
-        assert isinstance(cdpid, int)
-
-        cdpid_list = self._contract.functions.list(cdpid).call()
-        return cdpid_list
 
     def owns(self, cdpid) -> Address:
         '''Returns owner Address of respective CDP ID'''
@@ -79,25 +72,25 @@ class CdpManager(Contract):
         ilk = Ilk.fromBytes(self._contract.functions.ilks(cdpid).call())
         return ilk
 
-    def first(self, address: Address):
+    def first(self, address: Address) -> int:
         '''Returns first CDP Id created by owner address'''
         assert isinstance(address, Address)
 
         cdpid = int(self._contract.functions.first(address.address).call())
         return cdpid
 
-    def last(self, address: Address):
+    def last(self, address: Address) -> int:
         '''Returns last CDP Id created by owner address'''
         assert isinstance(address, Address)
 
         cdpid = self._contract.functions.last(address.address).call()
         return int(cdpid)
 
-    def count(self, address: Address) -> Wad:
+    def count(self, address: Address) -> int:
         '''Returns number of CDP's created using the DS-Cdp-Manager contract specifically'''
         assert isinstance(address, Address)
 
-        count = Wad.from_number(self._contract.functions.count(address.address).call())
+        count = int(self._contract.functions.count(address.address).call())
         return count
 
     def __repr__(self):
