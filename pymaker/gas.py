@@ -160,7 +160,7 @@ class GeometricGasPrice(GasPrice):
         assert (isinstance(max_price, int) or max_price is None)
         assert (initial_price > 0)
         assert (every_secs > 0)
-        assert (coefficient > 0)
+        assert (coefficient > 1)
         if max_price is not None:
             assert(max_price > 0)
 
