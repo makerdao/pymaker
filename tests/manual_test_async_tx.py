@@ -74,6 +74,8 @@ class TestApp:
         logging.info(f"Replacing first TX with legitimate gas price")
         second_tx.transact(replace=first_tx, gas_price=FixedGasPrice(2*GWEI))
 
+        assert first_tx.replaced
+
     def shutdown(self):
         logging.info(f"Exiting {ilk.name} from our urn")
         # balance = mcd.vat.gem(ilk, our_address)
