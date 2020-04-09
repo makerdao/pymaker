@@ -34,7 +34,8 @@ setup(
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
     version='1.0.4',  # Required
-    description='Python API for Maker contracts',  # Optional
+    description='Python API for Maker contracts',
+    license='COPYING',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/makerdao/pymaker',
