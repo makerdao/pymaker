@@ -36,7 +36,7 @@ setup(
     url='https://github.com/makerdao/pymaker',
     author='MakerDAO',
     packages=find_packages(include=['pymaker', 'pymaker.*', 'tests', 'tests.*']),  # Required
-    package_data={'pymaker': ['pymaker/abi/*']},
+    package_data={'pymaker': ['abi/*']},
     include_package_data=True,
     python_requires='~=3.6',
 
