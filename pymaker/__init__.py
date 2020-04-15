@@ -379,6 +379,7 @@ class Transact:
         self.result_function = result_function
         self.status = TransactStatus.NEW
         self.nonce = None
+        self.replaced = False
 
     def _is_parity(self) -> bool:
         global node_is_parity
@@ -570,6 +571,7 @@ class Transact:
             while replaced_tx.nonce is None and replaced_tx.status != TransactStatus.FINISHED:
                 await asyncio.sleep(0.25)
 
+            replaced_tx.replaced = True
             self.nonce = replaced_tx.nonce
 
         # Initialize variables which will be used in the main loop.
@@ -584,6 +586,10 @@ class Transact:
                 # Check if any transaction sent so far has been mined (has a receipt).
                 # If it has, we return either the receipt (if if was successful) or `None`.
                 for attempt in range(1, 11):
+                    if self.replaced:
+                        self.logger.debug(f"Transaction with nonce={self.nonce} was replaced with a newer transaction")
+                        return None
+
                     for tx_hash in tx_hashes:
                         receipt = self._get_receipt(tx_hash)
                         if receipt:
@@ -608,10 +614,10 @@ class Transact:
 
             # Send a transaction if:
             # - no transaction has been sent yet, or
-            # - the gas price requested has changed since the last transaction has been sent
+            # - the requested gas price has changed enough since the last transaction has been sent
             gas_price_value = gas_price.get_gas_price(seconds_elapsed)
             if len(tx_hashes) == 0 or ((gas_price_value is not None) and (gas_price_last is not None) and
-                                           (gas_price_value > gas_price_last * 1.1)):
+                                           (gas_price_value > gas_price_last * 1.125)):
                 gas_price_last = gas_price_value
 
                 try:
