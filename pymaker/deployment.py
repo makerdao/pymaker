@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import eth_utils
 import json
 import os
 import re
-import warnings
 from typing import Dict, List, Optional
 
 import pkg_resources
@@ -30,7 +28,7 @@ from pymaker import Address
 from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
-from pymaker.dss import Vat, Spotter, Vow, Jug, Cat, Collateral, DaiJoin, Ilk, GemJoin, Pot
+from pymaker.dss import Cat, Collateral, DaiJoin, GemJoin, GemJoin5, Ilk, Jug, Pot, Spotter, Vat, Vow
 from pymaker.proxy import ProxyRegistry, DssProxyActionsDsr
 from pymaker.feed import DSValue
 from pymaker.gas import DefaultGasPrice
@@ -218,6 +216,11 @@ class DssDeployment:
                 else:
                     gem = DSToken(web3, Address(conf[name[1]]))
 
+                if name[1] in ['USDC', 'WBTC']:
+                    adapter = GemJoin5(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
+                else:
+                    adapter = GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
+
                 # PIP contract may be a DSValue, OSM, or bogus address.
                 pip_address = Address(conf[f'PIP_{name[1]}'])
                 network = DssDeployment.NETWORKS.get(web3.net.version, "testnet")
@@ -226,8 +229,7 @@ class DssDeployment:
                 else:
                     pip = OSM(web3, pip_address)
 
-                collateral = Collateral(ilk=ilk, gem=gem,
-                                        adapter=GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}'])),
+                collateral = Collateral(ilk=ilk, gem=gem, adapter=adapter,
                                         flipper=Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}'])),
                                         pip=pip)
                 collaterals[ilk.name] = collateral
