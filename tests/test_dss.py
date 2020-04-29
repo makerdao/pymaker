@@ -22,9 +22,9 @@ from datetime import datetime
 from web3 import Web3
 
 from pymaker import Address
-from pymaker.approval import directly, hope_directly
+from pymaker.approval import hope_directly
 from pymaker.deployment import DssDeployment
-from pymaker.dss import Vat, Vow, Cat, Ilk, Urn, Jug, GemJoin, DaiJoin, Collateral
+from pymaker.dss import Collateral, DaiJoin, GemJoin, GemJoin5, Ilk, Urn, Vat, Vow
 from pymaker.feed import DSValue
 from pymaker.numeric import Wad, Ray, Rad
 from pymaker.oracles import OSM
@@ -330,6 +330,15 @@ class TestVat:
         assert after_join - before_join == amount_to_join
         assert after_exit == before_join
 
+    def test_gem_join(self, mcd: DssDeployment):
+        collateral_bat = mcd.collaterals['BAT-A']
+        assert isinstance(collateral_bat.adapter, GemJoin)
+        assert collateral_bat.adapter.dec() == 18
+
+        collateral_usdc = mcd.collaterals['USDC-A']
+        assert isinstance(collateral_usdc.adapter, GemJoin5)
+        assert collateral_usdc.adapter.dec() == 6
+
     def test_dai(self, mcd, urn):
         dai = mcd.vat.dai(urn.address)
         assert dai >= Rad(0)
@@ -455,7 +464,7 @@ class TestVat:
 
         assert len(mcd.vat.past_frobs(6, ilk0)) == 1
         assert len(mcd.vat.past_frobs(6, ilk1)) == 3
-        assert len(mcd.vat.past_frobs(6, mcd.collaterals['ZRX-A'].ilk)) == 0
+        assert len(mcd.vat.past_frobs(6, mcd.collaterals['USDC-A'].ilk)) == 0
 
         urns0 = mcd.vat.urns(ilk=ilk0)
         assert len(urns0[ilk0.name]) == 1

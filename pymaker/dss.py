@@ -208,7 +208,7 @@ class DaiJoin(Join):
 
 
 class GemJoin(Join):
-    """A client for the `GemJoin` contract, which allows the user to deposit collateral into a new or existing CDP.
+    """A client for the `GemJoin` contract, which allows the user to deposit collateral into a new or existing vault.
 
     Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol>
     """
@@ -226,6 +226,25 @@ class GemJoin(Join):
     def gem(self) -> DSToken:
         address = Address(self._contract.functions.gem().call())
         return DSToken(self.web3, address)
+
+    def dec(self) -> int:
+        return 18
+
+
+class GemJoin5(GemJoin):
+    """A client for the `GemJoin5` contract, which allows the user to deposit collateral into a new or existing vault.
+
+    Ref. <https://github.com/makerdao/dss-deploy/blob/master/src/join.sol#L274>
+    """
+    abi = Contract._load_abi(__name__, 'abi/GemJoin5.abi')
+    bin = Contract._load_bin(__name__, 'abi/GemJoin5.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        super(GemJoin5, self).__init__(web3, address)
+        self._token = self.gem()
+
+    def dec(self) -> int:
+        return int(self._contract.functions.dec().call())
 
 
 class Collateral:
