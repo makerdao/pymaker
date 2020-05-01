@@ -32,6 +32,8 @@ class Token:
         self.address = address
         self.decimals = decimals
 
+        self.min_amount = Wad.from_number(10 ** -self.decimals)
+
     def normalize_amount(self, amount: Wad) -> Wad:
         assert(isinstance(amount, Wad))
 
@@ -59,5 +61,3 @@ class Token:
 
     def __repr__(self):
         return pformat(vars(self))
-
-
