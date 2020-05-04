@@ -360,6 +360,14 @@ You can then run all tests with:
 ./test.sh
 ```
 
+By default, `pymaker` will not send a transaction to the chain if gas estimation fails, because this means the 
+transaction would revert.  For testing purposes, it is sometimes useful to send bad transactions to the chain.  To 
+accomplish this, set class variable `gas_estimate_for_bad_txs` in your application.  For example:
+```
+from pymaker import Transact
+Transact.gas_estimate_for_bad_txs = 200000
+```
+
 ## License
 
 See [COPYING](https://github.com/makerdao/pymaker/blob/master/COPYING) file.
