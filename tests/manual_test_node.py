@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 import sys
 from web3 import Web3, HTTPProvider
 
@@ -32,10 +33,10 @@ logging.getLogger("web3").setLevel(logging.INFO)
 logging.getLogger("asyncio").setLevel(logging.INFO)
 logging.getLogger("requests").setLevel(logging.INFO)
 
-endpoint_uri = f"https://localhost:8545"
+endpoint_uri = sys.argv[1]              # ex: https://localhost:8545
 web3 = Web3(HTTPProvider(endpoint_uri=endpoint_uri, request_kwargs={"timeout": 30}))
-web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
-register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
+web3.eth.defaultAccount = sys.argv[2]   # ex: 0x0000000000000000000000000000000aBcdef123
+register_keys(web3, [sys.argv[3]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
 
 mcd = DssDeployment.from_node(web3)
 our_address = Address(web3.eth.defaultAccount)
@@ -43,6 +44,7 @@ our_address = Address(web3.eth.defaultAccount)
 collateral = mcd.collaterals['ETH-A']
 ilk = collateral.ilk
 collateral.approve(our_address)
+past_blocks = 100
 
 class TestApp:
     def __init__(self):
@@ -60,11 +62,17 @@ class TestApp:
         assert collateral.adapter.join(our_address, self.amount).transact()
         self.joined += self.amount
         logging.info(f"Urn balance is {mcd.vat.gem(ilk, our_address)} {ilk.name}")
+        self.request_history()
+
+    def request_history(self):
+        logs = mcd.vat.past_frobs(past_blocks)
+        logging.info(f"Found {len(logs)} frobs in the past {past_blocks} blocks")
 
     def on_shutdown(self):
         if self.joined > Wad(0):
             logging.info(f"Exiting {self.joined} {ilk.name} from our urn")
             assert collateral.adapter.exit(our_address, self.joined).transact()
+            assert collateral.gem.withdraw(self.joined).transact()
 
 
 if __name__ == '__main__':
