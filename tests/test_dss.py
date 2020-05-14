@@ -600,7 +600,7 @@ class TestJug:
         c = mcd.collaterals['ETH-A']
         assert isinstance(mcd.jug.vat, Vat)
         assert isinstance(mcd.jug.vow, Vow)
-        assert isinstance(mcd.jug.base(), Wad)
+        assert isinstance(mcd.jug.base(), Ray)
         assert isinstance(mcd.jug.duty(c.ilk), Ray)
         assert isinstance(mcd.jug.rho(c.ilk), int)
 

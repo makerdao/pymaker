@@ -743,8 +743,8 @@ class Jug(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [ilk.toBytes()])
 
-    def base(self) -> Wad:
-        return Wad(self._contract.functions.base().call())
+    def base(self) -> Ray:
+        return Ray(self._contract.functions.base().call())
 
     def duty(self, ilk: Ilk) -> Ray:
         assert isinstance(ilk, Ilk)
