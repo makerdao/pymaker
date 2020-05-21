@@ -347,6 +347,7 @@ class Transact:
     """Represents an Ethereum transaction before it gets executed."""
 
     logger = logging.getLogger()
+    gas_estimate_for_bad_txs = None
 
     def __init__(self,
                  origin: Optional[object],
@@ -556,8 +557,12 @@ class Transact:
         try:
             gas_estimate = self.estimated_gas(Address(from_account))
         except:
-            self.logger.warning(f"Transaction {self.name()} will fail, refusing to send ({sys.exc_info()[1]})")
-            return None
+            if Transact.gas_estimate_for_bad_txs:
+                self.logger.warning(f"Transaction {self.name()} will fail, submitting anyway")
+                gas_estimate = Transact.gas_estimate_for_bad_txs
+            else:
+                self.logger.warning(f"Transaction {self.name()} will fail, refusing to send ({sys.exc_info()[1]})")
+                return None
 
         # Get or calculate `gas`. Get `gas_price`, which in fact refers to a gas pricing algorithm.
         gas = self._gas(gas_estimate, **kwargs)
