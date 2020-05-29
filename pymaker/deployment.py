@@ -41,6 +41,7 @@ from pymaker.shutdown import ShutdownModule, End
 from pymaker.token import DSToken, DSEthToken
 from pymaker.vault import DSVault
 from pymaker.cdpmanager import CdpManager
+from pymaker.dsrmanager import DsrManager
 
 
 def deploy_contract(web3: Web3, contract_name: str, args: Optional[list] = None) -> Address:
@@ -165,7 +166,7 @@ class DssDeployment:
                      flopper: Flopper, pot: Pot, dai: DSToken, dai_join: DaiJoin, mkr: DSToken,
                      spotter: Spotter, ds_chief: DSChief, esm: ShutdownModule, end: End,
                      proxy_registry: ProxyRegistry, dss_proxy_actions: DssProxyActionsDsr, cdp_manager: CdpManager,
-                     collaterals: Optional[Dict[str, Collateral]] = None):
+                     dsr_manager: DsrManager, Manacollaterals: Optional[Dict[str, Collateral]] = None):
             self.pause = pause
             self.vat = vat
             self.vow = vow
@@ -184,6 +185,7 @@ class DssDeployment:
             self.proxy_registry = proxy_registry
             self.dss_proxy_actions = dss_proxy_actions
             self.cdp_manager = cdp_manager
+            self.dsr_manager = dsr_manager
             self.collaterals = collaterals or {}
 
         @staticmethod
@@ -207,6 +209,7 @@ class DssDeployment:
             proxy_registry = ProxyRegistry(web3, Address(conf['PROXY_REGISTRY']))
             dss_proxy_actions = DssProxyActionsDsr(web3, Address(conf['PROXY_ACTIONS_DSR']))
             cdp_manager = CdpManager(web3, Address(conf['CDP_MANAGER']))
+            dsr_manager = DsrManager(web3, Address(conf['DSR_MANAGER']))
 
             collaterals = {}
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
@@ -236,7 +239,8 @@ class DssDeployment:
 
             return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper, pot,
                                         dai, dai_adapter, mkr, spotter, ds_chief, esm, end,
-                                        proxy_registry, dss_proxy_actions, cdp_manager, collaterals)
+                                        proxy_registry, dss_proxy_actions, cdp_manager,
+                                        dsr_manager, collaterals)
 
         @staticmethod
         def _infer_collaterals_from_addresses(keys: []) -> List:
@@ -271,6 +275,8 @@ class DssDeployment:
                 'MCD_END': self.end.address.address,
                 'PROXY_REGISTRY': self.proxy_registry.address.address,
                 'PROXY_ACTIONS_DSR': self.dss_proxy_actions.address.address
+                'CDP_MANAGER': self.cdp_manager.address.address,
+                'DSR_MANAGER': self.dsr_manager.address.address
             }
 
             for collateral in self.collaterals.values():
@@ -312,6 +318,7 @@ class DssDeployment:
         self.proxy_registry = config.proxy_registry
         self.dss_proxy_actions = config.dss_proxy_actions
         self.cdp_manager = config.cdp_manager
+        self.dsr_manager = config.dsr_manager
 
     @staticmethod
     def from_json(web3: Web3, conf: str):
