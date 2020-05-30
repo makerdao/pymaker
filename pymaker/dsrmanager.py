@@ -79,15 +79,6 @@ class DsrManager(Contract):
 
         return dai
 
-    # Note: Although daiBalance(address usr) is exposed in DsrManager.sol, its
-    #       primary use case is for on-chain applications
-
-    # def daiBalance(self, usr: Address) -> Transact:
-    #     '''Calculate exact Dai balance of a given usr address - new Chi calculated and used to find most current Dai Balance'''
-    #     assert isinstance(usr, Address)
-    #
-    #     return Transact(self, self.web3, self.abi, self.address, self._contract, 'daiBalance', [usr.address])
-
     def join(self, dst: Address, dai: Wad) -> Transact:
         """Lock a given amount of ERC20 Dai into the DSR Contract and give to dst address """
         assert isinstance(dst, Address)
