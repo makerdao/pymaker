@@ -24,7 +24,7 @@ class TestCdpManager:
     def setup_class(self):
         dss_deployment = mcd(web3())
         self.ilk = dss_deployment.collaterals['ETH-A'].ilk
-        self.cdpmanager = CdpManager(web3(), Address("0x32Ee2bF1267253f76298D4199095B9C6b5A389c0"))
+        self.cdpmanager = CdpManager(web3(), Address("0x84617303947304444Ceb641582c024f277BBF4Ff"))
 
     def test_none(self, our_address):
         assert self.cdpmanager.first(our_address) == 0
