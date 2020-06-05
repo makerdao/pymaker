@@ -350,9 +350,14 @@ class Lifecycle:
         def new_block_watch():
             event_filter = self.web3.eth.filter('latest')
             while True:
-                for event in event_filter.get_new_entries():
-                    new_block_callback(event)
-                time.sleep(1)
+                try:
+                    for event in event_filter.get_new_entries():
+                        new_block_callback(event)
+                except ValueError:
+                    self.logger.warning("Node dropped event emitter; recreating latest block filter")
+                    event_filter = self.web3.eth.filter('latest')
+                finally:
+                    time.sleep(1)
 
         if self.block_function:
             self._on_block_callback = AsyncCallback(self.block_function)
