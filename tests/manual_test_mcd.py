@@ -43,7 +43,6 @@ collateral_amount = Wad.from_number(0.2)
 dai_amount = Wad.from_number(20.0)
 
 if collateral.gem.balance_of(our_address) > collateral_amount:
-    print(f"collateral.ilk.name={collateral.ilk.name}")
     if run_transactions and collateral.ilk.name.startswith("ETH"):
         # Wrap ETH to produce WETH
         assert collateral.gem.deposit(collateral_amount).transact()
