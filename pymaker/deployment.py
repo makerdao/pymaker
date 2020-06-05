@@ -274,7 +274,7 @@ class DssDeployment:
                 'MCD_ESM': self.esm.address.address,
                 'MCD_END': self.end.address.address,
                 'PROXY_REGISTRY': self.proxy_registry.address.address,
-                'PROXY_ACTIONS_DSR': self.dss_proxy_actions.address.address
+                'PROXY_ACTIONS_DSR': self.dss_proxy_actions.address.address,
                 'CDP_MANAGER': self.cdp_manager.address.address,
                 'DSR_MANAGER': self.dsr_manager.address.address
             }

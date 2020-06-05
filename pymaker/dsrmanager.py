@@ -44,7 +44,7 @@ class DsrManager(Contract):
         self._contract = self._get_contract(web3, self.abi, address)
 
     def pot(self) -> Pot:
-        address = Address(self._contract.functions.pot().call()))
+        address = Address(self._contract.functions.pot().call())
         return Pot(self.web3, address)
 
     def dai(self) -> DSToken:

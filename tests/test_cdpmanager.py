@@ -21,10 +21,11 @@ from tests.conftest import mcd, web3
 
 
 class TestCdpManager:
-    def setup_class(self):
-        dss_deployment = mcd(web3())
-        self.ilk = dss_deployment.collaterals['ETH-A'].ilk
-        self.cdpmanager = CdpManager(web3(), Address("0x84617303947304444Ceb641582c024f277BBF4Ff"))
+    def setup_class(self, mcd: DssDeployment):
+        # dss_deployment = mcd(web3())
+        self.ilk = mcd.collaterals['ETH-A'].ilk
+        # self.cdpmanager = CdpManager(web3(), Address("0x84617303947304444Ceb641582c024f277BBF4Ff"))
+        self.cdpmanager = mcd.cdp_manager
 
     def test_none(self, our_address):
         assert self.cdpmanager.first(our_address) == 0
