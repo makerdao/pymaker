@@ -51,8 +51,8 @@ class DsrManager(Contract):
         address = Address(self._contract.functions.dai().call())
         return DSToken(self.web3, address)
 
-    def dai_join(self) -> DaiJoin:
-        address = Address(self._contract.functions.dai_join().call())
+    def dai_adapter(self) -> DaiJoin:
+        address = Address(self._contract.functions.daiJoin().call())
         return DaiJoin(self.web3, address)
 
     def supply(self) -> Wad:
@@ -73,9 +73,9 @@ class DsrManager(Contract):
         assert isinstance(usr, Address)
 
         pie = self.pieOf(usr)
-        chi = Pot(self.pot).chi()
+        chi = self.pot().chi()
 
-        dai = Rad(pie * chi)
+        dai = Rad(pie) * Rad(chi)
 
         return dai
 

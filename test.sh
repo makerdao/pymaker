@@ -14,7 +14,7 @@ docker-compose up -d parity
 sleep 2
 
 # Run the tests
-py.test --cov=pymaker --cov-report=term --cov-append tests/test_cdpmanager.py $@
+py.test --cov=pymaker --cov-report=term --cov-append tests/ $@
 TEST_RESULT=$?
 
 # Cleanup

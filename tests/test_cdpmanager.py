@@ -16,30 +16,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pymaker import Address
-from pymaker.cdpmanager import CdpManager, Urn
-from tests.conftest import mcd, web3
+from pymaker.deployment import DssDeployment
+from pymaker.cdpmanager import Urn
 
 
 class TestCdpManager:
-    def setup_class(self, mcd: DssDeployment):
-        # dss_deployment = mcd(web3())
-        self.ilk = mcd.collaterals['ETH-A'].ilk
-        # self.cdpmanager = CdpManager(web3(), Address("0x84617303947304444Ceb641582c024f277BBF4Ff"))
-        self.cdpmanager = mcd.cdp_manager
 
-    def test_none(self, our_address):
-        assert self.cdpmanager.first(our_address) == 0
-        assert self.cdpmanager.last(our_address) == 0
-        assert self.cdpmanager.count(our_address) == 0
+    def test_none(self, our_address: Address, mcd: DssDeployment):
+        assert mcd.cdp_manager.first(our_address) == 0
+        assert mcd.cdp_manager.last(our_address) == 0
+        assert mcd.cdp_manager.count(our_address) == 0
 
-    def test_open(self, our_address):
-        assert self.cdpmanager.open(self.ilk, our_address).transact()
-        assert self.cdpmanager.last(our_address) == 1
-        assert self.cdpmanager.ilk(1).name == self.ilk.name
-        assert self.cdpmanager.owns(1) == our_address
-        assert isinstance(self.cdpmanager.urn(1), Urn)
+    def test_open(self, our_address: Address, mcd: DssDeployment):
+        ilk = mcd.collaterals['ETH-A'].ilk
+        assert mcd.cdp_manager.open(ilk, our_address).transact()
+        assert mcd.cdp_manager.last(our_address) == 1
+        assert mcd.cdp_manager.ilk(1).name == ilk.name
+        assert mcd.cdp_manager.owns(1) == our_address
+        assert isinstance(mcd.cdp_manager.urn(1), Urn)
 
-    def test_one(self, our_address):
-        assert self.cdpmanager.first(our_address) == 1
-        assert self.cdpmanager.last(our_address) == 1
-        assert self.cdpmanager.count(our_address) == 1
+    def test_one(self, our_address: Address, mcd: DssDeployment):
+        assert mcd.cdp_manager.first(our_address) == 1
+        assert mcd.cdp_manager.last(our_address) == 1
+        assert mcd.cdp_manager.count(our_address) == 1

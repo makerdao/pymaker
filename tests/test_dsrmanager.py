@@ -16,39 +16,48 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from pymaker import Address
-# from pymaker.dsrmanager import DsrManager
 from tests.helpers import time_travel_by
 from pymaker.numeric import Wad, Rad, Ray
-from tests.conftest import mcd, web3
+from pymaker.deployment import DssDeployment
+from pymaker.dss import Pot, DaiJoin, Collateral
+from pymaker.token import DSToken
 from tests.test_dss import wrap_eth, frob
+
+def mint_dai(mcd: DssDeployment, amount: Wad, ilkName: str, our_address: Address):
+
+    dai = amount
+    # Add collateral to our CDP and draw internal Dai
+    collateral=mcd.collaterals[ilkName]
+    ilk = mcd.vat.ilk(collateral.ilk.name)
+    dink = Wad.from_number(1)
+    dart = Wad( Rad(dai) / Rad(ilk.rate))
+    wrap_eth(mcd, our_address, dink)
+    assert collateral.gem.balance_of(our_address) >= dink
+    assert collateral.gem.approve(collateral.adapter.address).transact(from_address=our_address)
+    assert collateral.adapter.join(our_address, dink).transact(from_address=our_address)
+    frob(mcd, collateral, our_address, dink=dink, dart=dart)
+
+    # Exit to Dai Token and make some checks
+    assert mcd.vat.hope(mcd.dai_adapter.address).transact(from_address=our_address)
+    assert mcd.dai_adapter.exit(our_address, dai).transact(from_address=our_address)
+    assert mcd.dai.balance_of(our_address) == dai
 
 
 class TestDsrManager:
 
     def test_getters(self, mcd: DssDeployment):
         assert isinstance(mcd.dsr_manager.pot(), Pot)
-        assert mcd.dsr_manager.pot().address.address = self.mcd.pot.address.address
+        assert mcd.dsr_manager.pot().address.address == mcd.pot.address.address
         assert isinstance(mcd.dsr_manager.dai(), DSToken)
-        assert mcd.dsr_manager.dai().address.address = self.mcd.dai.address.address
-        assert isinstance(mcd.dsr_manager.dai_join(), DaiJoin)
-        assert mcd.dsr_manager.dai_join().address.address = self.mcd.dai_join.address.address
+        assert mcd.dsr_manager.dai().address.address == mcd.dai.address.address
+        assert isinstance(mcd.dsr_manager.dai_adapter(), DaiJoin)
+        assert mcd.dsr_manager.dai_adapter().address.address == mcd.dai_adapter.address.address
 
     def test_join(self, mcd: DssDeployment, our_address: Address):
 
+        # Mint 58 Dai and lock it in the Pot contract through DsrManager
         dai = Wad.from_number(58)
-        # Add collateral to our CDP and draw internal Dai
-        collateral = mcd.collaterals['ETH-A']
-        ilk = mcd.vat.ilk(collateral.ilk.name)
-        dink = Wad.from_number(1)
-        dart = Wad( Rad(dai) / Rad(ilk.rate))
-        wrap_eth(mcd, our_address, dink)
-        assert collateral.gem.balance_of(our_address) >= dink
-        assert collateral.adapter.join(our_address, dink).transact(from_address=our_address)
-        frob(mcd, collateral, our_address, dink=dink, dart=dart)
-
-        # Exit to Dai Token and make some checks
-        assert mcd.dai_adapter.exit(our_address, dai).transact(from_address=our_address)
-        assert mcd.dai.balance_of(our_address) == dai
+        mint_dai(mcd=mcd, amount=dai, ilkName='ETH-A', our_address=our_address)
         assert mcd.dai.approve(mcd.dsr_manager.address).transact(from_address=our_address)
         assert mcd.dsr_manager.supply() == Wad(0)
 
@@ -58,18 +67,17 @@ class TestDsrManager:
 
     def test_supply_pie_dai(self, mcd: DssDeployment, our_address: Address):
 
-
         chi1 = mcd.pot.chi()
-        # assert chi1 == Ray.from_number(1)
-        pie = Wad(Rad.from_number(58) / chi1)
+        # assert chi1 == Ray.from_number(1) Commented out in case there's some initial state on testchain
+        pie = Wad(Rad.from_number(58) / Rad(chi1))
         assert mcd.dsr_manager.supply() == pie
         assert mcd.dsr_manager.pieOf(our_address) == pie
 
         time_travel_by(web3=mcd.web3, seconds=10)
-        assert mcd.dsrmanager.drip().transact(from_address=our_address)
+        assert mcd.pot.drip().transact(from_address=our_address)
         chi2 = mcd.pot.chi()
         assert chi1 != chi2
-        dia = Rad(pie * Wad(chi))
+        dai = Rad(pie) * Rad(chi2)
         assert mcd.dsr_manager.daiOf(our_address) == dai
 
     def test_exit(self, mcd: DssDeployment, our_address: Address):

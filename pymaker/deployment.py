@@ -166,7 +166,7 @@ class DssDeployment:
                      flopper: Flopper, pot: Pot, dai: DSToken, dai_join: DaiJoin, mkr: DSToken,
                      spotter: Spotter, ds_chief: DSChief, esm: ShutdownModule, end: End,
                      proxy_registry: ProxyRegistry, dss_proxy_actions: DssProxyActionsDsr, cdp_manager: CdpManager,
-                     dsr_manager: DsrManager, Manacollaterals: Optional[Dict[str, Collateral]] = None):
+                     dsr_manager: DsrManager, collaterals: Optional[Dict[str, Collateral]] = None):
             self.pause = pause
             self.vat = vat
             self.vow = vow
