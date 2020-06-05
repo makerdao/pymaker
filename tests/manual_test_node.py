@@ -35,16 +35,22 @@ logging.getLogger("requests").setLevel(logging.INFO)
 
 endpoint_uri = sys.argv[1]              # ex: https://localhost:8545
 web3 = Web3(HTTPProvider(endpoint_uri=endpoint_uri, request_kwargs={"timeout": 30}))
-web3.eth.defaultAccount = sys.argv[2]   # ex: 0x0000000000000000000000000000000aBcdef123
-register_keys(web3, [sys.argv[3]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
+if len(sys.argv) > 3:
+    web3.eth.defaultAccount = sys.argv[2]  # ex: 0x0000000000000000000000000000000aBcdef123
+    register_keys(web3, [sys.argv[3]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
+    our_address = Address(web3.eth.defaultAccount)
+    run_transactions = True
+else:
+    our_address = Address(sys.argv[2])
+    run_transactions = False
 
 mcd = DssDeployment.from_node(web3)
-our_address = Address(web3.eth.defaultAccount)
-
 collateral = mcd.collaterals['ETH-A']
 ilk = collateral.ilk
-collateral.approve(our_address)
+if run_transactions:
+    collateral.approve(our_address)
 past_blocks = 100
+
 
 class TestApp:
     def __init__(self):
@@ -57,10 +63,13 @@ class TestApp:
             lifecycle.on_block(self.on_block)
 
     def on_block(self):
-        logging.info(f"Found new block, joining {self.amount} {ilk.name}  to our urn")
-        collateral.gem.deposit(self.amount).transact()
-        assert collateral.adapter.join(our_address, self.amount).transact()
-        self.joined += self.amount
+        if run_transactions:
+            logging.info(f"Found block {web3.eth.blockNumber}, joining {self.amount} {ilk.name}  to our urn")
+            collateral.gem.deposit(self.amount).transact()
+            assert collateral.adapter.join(our_address, self.amount).transact()
+            self.joined += self.amount
+        else:
+            logging.info(f"Found block {web3.eth.blockNumber}")
         logging.info(f"Urn balance is {mcd.vat.gem(ilk, our_address)} {ilk.name}")
         self.request_history()
 
@@ -69,7 +78,7 @@ class TestApp:
         logging.info(f"Found {len(logs)} frobs in the past {past_blocks} blocks")
 
     def on_shutdown(self):
-        if self.joined > Wad(0):
+        if run_transactions and self.joined > Wad(0):
             logging.info(f"Exiting {self.joined} {ilk.name} from our urn")
             assert collateral.adapter.exit(our_address, self.joined).transact()
             assert collateral.gem.withdraw(self.joined).transact()
