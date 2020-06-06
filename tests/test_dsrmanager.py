@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import pytest
 from pymaker import Address
 from tests.helpers import time_travel_by
 from pymaker.numeric import Wad, Rad, Ray
@@ -25,6 +26,7 @@ from tests.test_dss import wrap_eth, frob
 
 def mint_dai(mcd: DssDeployment, amount: Wad, ilkName: str, our_address: Address):
 
+    startingAmount = mcd.dai.balance_of(our_address)
     dai = amount
     # Add collateral to our CDP and draw internal Dai
     collateral=mcd.collaterals[ilkName]
@@ -40,8 +42,9 @@ def mint_dai(mcd: DssDeployment, amount: Wad, ilkName: str, our_address: Address
     # Exit to Dai Token and make some checks
     assert mcd.vat.hope(mcd.dai_adapter.address).transact(from_address=our_address)
     assert mcd.dai_adapter.exit(our_address, dai).transact(from_address=our_address)
-    assert mcd.dai.balance_of(our_address) == dai
+    assert mcd.dai.balance_of(our_address) == dai + startingAmount
 
+pytest.global_dai = Wad(0)
 
 class TestDsrManager:
 
@@ -56,8 +59,9 @@ class TestDsrManager:
     def test_join(self, mcd: DssDeployment, our_address: Address):
 
         # Mint 58 Dai and lock it in the Pot contract through DsrManager
-        dai = Wad.from_number(58)
-        mint_dai(mcd=mcd, amount=dai, ilkName='ETH-A', our_address=our_address)
+        more_dai = Wad.from_number(58)
+        mint_dai(mcd=mcd, amount=more_dai, ilkName='ETH-A', our_address=our_address)
+        dai = mcd.dai.balance_of(our_address)
         assert mcd.dai.approve(mcd.dsr_manager.address).transact(from_address=our_address)
         assert mcd.dsr_manager.supply() == Wad(0)
 
@@ -65,11 +69,14 @@ class TestDsrManager:
         assert mcd.dsr_manager.join(our_address, dai).transact(from_address=our_address)
         assert mcd.dai.balance_of(our_address) == Wad(0)
 
+        pytest.global_dai = dai
+
     def test_supply_pie_dai(self, mcd: DssDeployment, our_address: Address):
 
+        dai = pytest.global_dai
         chi1 = mcd.pot.chi()
         # assert chi1 == Ray.from_number(1) Commented out in case there's some initial state on testchain
-        pie = Wad(Rad.from_number(58) / Rad(chi1))
+        pie = Wad(Rad(dai) / Rad(chi1))
         assert mcd.dsr_manager.supply() == pie
         assert mcd.dsr_manager.pieOf(our_address) == pie
 
@@ -82,8 +89,7 @@ class TestDsrManager:
 
     def test_exit(self, mcd: DssDeployment, our_address: Address):
 
-        dai = Wad.from_number(58)
-
+        dai = pytest.global_dai
         assert mcd.dai.balance_of(our_address) == Wad.from_number(0)
         # since drip was called in previous test, there should be some amount left
         assert mcd.dsr_manager.exit(our_address, dai).transact(from_address=our_address)
