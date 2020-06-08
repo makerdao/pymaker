@@ -1,6 +1,6 @@
 # This file is part of Maker Keeper Framework.
 #
-# Copyright (C) 2020 kentonprescott
+# Copyright (C) 2020 Maker Ecosystem Growth Holdings, INC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -78,14 +78,14 @@ class TestDsrManager:
         # assert chi1 == Ray.from_number(1) Commented out in case there's some initial state on testchain
         pie = Wad(Rad(dai) / Rad(chi1))
         assert mcd.dsr_manager.supply() == pie
-        assert mcd.dsr_manager.pieOf(our_address) == pie
+        assert mcd.dsr_manager.pie_of(our_address) == pie
 
         time_travel_by(web3=mcd.web3, seconds=10)
         assert mcd.pot.drip().transact(from_address=our_address)
         chi2 = mcd.pot.chi()
         assert chi1 != chi2
         dai = Rad(pie) * Rad(chi2)
-        assert mcd.dsr_manager.daiOf(our_address) == dai
+        assert mcd.dsr_manager.dai_of(our_address) == dai
 
     def test_exit(self, mcd: DssDeployment, our_address: Address):
 

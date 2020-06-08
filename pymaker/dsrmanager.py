@@ -1,7 +1,7 @@
 
 # This file is part of Maker Keeper Framework.
 #
-# Copyright (C) 2020 kentonprescott
+# Copyright (C) 2020 Maker Ecosystem Growth Holdings, INC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -59,20 +59,20 @@ class DsrManager(Contract):
         """Total supply of pie locked in Pot through DsrManager"""
         return Wad(self._contract.functions.supply().call())
 
-    def pieOf(self, usr: Address) -> Wad:
+    def pie_of(self, usr: Address) -> Wad:
         """Pie balance of a given usr address"""
         assert isinstance(usr, Address)
 
         return Wad(self._contract.functions.pieOf(usr.address).call())
 
-    def daiOf(self, usr: Address) -> Rad:
+    def dai_of(self, usr: Address) -> Rad:
         """
         Internal Dai balance of a given usr address - current Chi is used
         i.e. Dai balance potentially stale
         """
         assert isinstance(usr, Address)
 
-        pie = self.pieOf(usr)
+        pie = self.pie_of(usr)
         chi = self.pot().chi()
 
         dai = Rad(pie) * Rad(chi)
