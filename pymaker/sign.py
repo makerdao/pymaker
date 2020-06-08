@@ -42,7 +42,7 @@ def eth_sign(message: bytes, web3: Web3, key=None, in_hexbytes=False, account=No
             pkey = key
 
         start_time = time.time()
-        start_clock = time.clock()
+        start_clock = time.process_time()
         try:
             if in_hexbytes:
                 message_hash = message
@@ -51,7 +51,7 @@ def eth_sign(message: bytes, web3: Web3, key=None, in_hexbytes=False, account=No
             signature = web3.eth.account.signHash(message_hash, private_key=pkey).signature.hex()
         finally:
             end_time = time.time()
-            end_clock = time.clock()
+            end_clock = time.process_time()
 
         logging.debug(f"Local signing took {end_time - start_time:.3f}s time, {end_clock - start_clock:.3f}s clock")
 
