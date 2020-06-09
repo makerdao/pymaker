@@ -929,7 +929,7 @@ class Pot(Contract):
     def drip(self) -> Transact:
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [])
 
-    """Note that join requires use of proxy contract, so join/exit are not provided here."""
+    """ Join/Exit in Pot can be invoked through pymaker/dsrmanager.py and pymaker/dsr.py """
 
     def __repr__(self):
         return f"Pot('{self.address}')"
