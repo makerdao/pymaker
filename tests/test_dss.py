@@ -418,67 +418,61 @@ class TestVat:
         # rollback
         cleanup_urn(mcd, collateral, other_address)
 
-    def test_past_frob_and_urns(self, mcd, our_address, other_address):
+    def test_past_frob(self, mcd, our_address, other_address):
         # given
         collateral0 = mcd.collaterals['ETH-B']
         ilk0 = collateral0.ilk
         collateral1 = mcd.collaterals['ETH-C']
         ilk1 = collateral1.ilk
 
-        # when
-        wrap_eth(mcd, our_address, Wad(18))
-        wrap_eth(mcd, other_address, Wad(18))
+        try:
+            # when
+            wrap_eth(mcd, our_address, Wad(18))
+            wrap_eth(mcd, other_address, Wad(18))
 
-        collateral0.approve(our_address)
-        assert collateral0.adapter.join(our_address, Wad(9)).transact()
-        assert mcd.vat.frob(ilk0, our_address, Wad(3), Wad(0)).transact()
+            collateral0.approve(our_address)
+            assert collateral0.adapter.join(our_address, Wad(9)).transact()
+            assert mcd.vat.frob(ilk0, our_address, Wad(3), Wad(0)).transact()
 
-        collateral1.approve(other_address)
-        assert collateral1.adapter.join(other_address, Wad(9)).transact(from_address=other_address)
-        assert mcd.vat.frob(ilk1, other_address, Wad(9), Wad(0)).transact(from_address=other_address)
-        assert mcd.vat.frob(ilk1, other_address, Wad(-3), Wad(0)).transact(from_address=other_address)
+            collateral1.approve(other_address)
+            assert collateral1.adapter.join(other_address, Wad(9)).transact(from_address=other_address)
+            assert mcd.vat.frob(ilk1, other_address, Wad(9), Wad(0)).transact(from_address=other_address)
+            assert mcd.vat.frob(ilk1, other_address, Wad(-3), Wad(0)).transact(from_address=other_address)
 
-        assert mcd.vat.frob(ilk1, our_address, Wad(3), Wad(0),
-                            collateral_owner=other_address, dai_recipient=other_address).transact(
-            from_address=other_address)
+            assert mcd.vat.frob(ilk1, our_address, Wad(3), Wad(0),
+                                collateral_owner=other_address, dai_recipient=other_address).transact(
+                from_address=other_address)
 
-        # then
-        frobs = mcd.vat.past_frobs(10)
-        assert len(frobs) == 4
-        assert frobs[0].ilk == ilk0.name
-        assert frobs[0].urn == our_address
-        assert frobs[0].dink == Wad(3)
-        assert frobs[0].dart == Wad(0)
-        assert frobs[1].ilk == ilk1.name
-        assert frobs[1].urn == other_address
-        assert frobs[1].dink == Wad(9)
-        assert frobs[1].dart == Wad(0)
-        assert frobs[2].ilk == ilk1.name
-        assert frobs[2].urn == other_address
-        assert frobs[2].dink == Wad(-3)
-        assert frobs[2].dart == Wad(0)
-        assert frobs[3].urn == our_address
-        assert frobs[3].collateral_owner == other_address
-        assert frobs[3].dink == Wad(3)
-        assert frobs[3].dart == Wad(0)
+            # then
+            current_block = mcd.web3.eth.blockNumber
+            from_block = current_block - 6
+            frobs = mcd.vat.past_frobs(from_block)
+            assert len(frobs) == 4
+            assert frobs[0].ilk == ilk0.name
+            assert frobs[0].urn == our_address
+            assert frobs[0].dink == Wad(3)
+            assert frobs[0].dart == Wad(0)
+            assert frobs[1].ilk == ilk1.name
+            assert frobs[1].urn == other_address
+            assert frobs[1].dink == Wad(9)
+            assert frobs[1].dart == Wad(0)
+            assert frobs[2].ilk == ilk1.name
+            assert frobs[2].urn == other_address
+            assert frobs[2].dink == Wad(-3)
+            assert frobs[2].dart == Wad(0)
+            assert frobs[3].urn == our_address
+            assert frobs[3].collateral_owner == other_address
+            assert frobs[3].dink == Wad(3)
+            assert frobs[3].dart == Wad(0)
 
-        assert len(mcd.vat.past_frobs(6, ilk0)) == 1
-        assert len(mcd.vat.past_frobs(6, ilk1)) == 3
-        assert len(mcd.vat.past_frobs(6, mcd.collaterals['USDC-A'].ilk)) == 0
+            assert len(mcd.vat.past_frobs(from_block, ilk=ilk0)) == 1
+            assert len(mcd.vat.past_frobs(from_block, ilk=ilk1)) == 3
+            assert len(mcd.vat.past_frobs(from_block, ilk=mcd.collaterals['USDC-A'].ilk)) == 0
 
-        urns0 = mcd.vat.urns(ilk=ilk0)
-        assert len(urns0[ilk0.name]) == 1
-        urns1 = mcd.vat.urns(ilk=ilk1)
-        assert len(urns1[ilk1.name]) == 2
-        urns_all = mcd.vat.urns()
-        print(urns_all)
-        assert len(urns_all) >= 2
-        assert len(urns_all[ilk0.name]) == 1
-        assert len(urns_all[ilk1.name]) == 2
-
-        # teardown
-        cleanup_urn(mcd, collateral0, our_address)
-        cleanup_urn(mcd, collateral1, other_address)
+        finally:
+            # teardown
+            cleanup_urn(mcd, collateral0, our_address)
+            cleanup_urn(mcd, collateral1, other_address)
 
     def test_heal(self, mcd):
         assert mcd.vat.heal(Rad(0)).transact()

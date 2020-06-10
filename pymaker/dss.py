@@ -369,30 +369,6 @@ class Vat(Contract):
         (ink, art) = self._contract.functions.urns(ilk.toBytes(), address.address).call()
         return Urn(address, ilk, Wad(ink), Wad(art))
 
-    def urns(self, ilk=None, from_block=0) -> dict:
-        """Retrieve a collection of Urns indexed by Ilk.name and then Urn address
-
-        Args:
-            ilk: Optionally filter results by ilk.name.
-            from_block: Filter urns adjusted on or after the specified block.
-        """
-        assert isinstance(ilk, Ilk) or ilk is None
-        assert isinstance(from_block, int)
-
-        urn_keys = set()
-        urns = defaultdict(dict)
-
-        number_of_past_blocks = self._contract.web3.eth.blockNumber - from_block
-        logfrobs = self.past_frobs(number_of_past_blocks, ilk)
-        for frob in logfrobs:
-            urn_keys.add((frob.ilk, frob.urn))
-        for urn_key in urn_keys:
-            ilk = urn_key[0]
-            urn = urn_key[1]
-            urns[ilk][urn] = self.urn(Ilk(ilk), urn)
-
-        return urns
-
     def debt(self) -> Rad:
         return Rad(self._contract.functions.debt().call())
 
@@ -535,35 +511,59 @@ class Vat(Contract):
         assert rate != Ray(0)
         assert self.live()
 
-    def past_frobs(self, number_of_past_blocks: int, ilk=None) -> List[LogFrob]:
+    def past_frobs(self, from_block: int, to_block: int = None, ilk: Ilk = None, chunk_size=20000) -> List[LogFrob]:
         """Synchronously retrieve a list showing which ilks and urns have been frobbed.
          Args:
-            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+            from_block: Oldest Ethereum block to retrieve the events from.
+            to_block: Optional newest Ethereum block to retrieve the events from, defaults to current block
             ilk: Optionally filter frobs by ilk.name
+            chunk_size: Number of blocks to fetch from chain at one time, for performance tuning
          Returns:
             List of past `LogFrob` events represented as :py:class:`pymaker.dss.Vat.LogFrob` class.
         """
-        assert isinstance(number_of_past_blocks, int)
+        current_block = self._contract.web3.eth.blockNumber
+        assert isinstance(from_block, int)
+        assert from_block < current_block
+        if to_block is None:
+            to_block = current_block
+        else:
+            assert isinstance(to_block, int)
+            assert to_block >= from_block
+            assert to_block <= current_block
         assert isinstance(ilk, Ilk) or ilk is None
+        assert chunk_size > 0
 
-        block_number = self._contract.web3.eth.blockNumber
-        filter_params = {
-            'address': self.address.address,
-            'fromBlock': max(block_number-number_of_past_blocks, 0),
-            'toBlock': block_number
-        }
+        logger.debug(f"Consumer requested frob data from block {from_block} to {to_block}")
+        start = from_block
+        end = None
+        chunks_queried = 0
+        retval = []
+        while end is None or start <= to_block:
+            chunks_queried += 1
+            end = min(to_block, start+chunk_size)
 
-        logs = self.web3.eth.getLogs(filter_params)
+            filter_params = {
+                'address': self.address.address,
+                'fromBlock': start,
+                'toBlock': end
+            }
+            logger.debug(f"Querying frobs from block {start} to {end} ({end-start} blocks); "
+                         f"accumulated {len(retval)} frobs in {chunks_queried-1} requests")
 
-        lognotes = list(map(lambda l: LogNote.from_event(l, Vat.abi), logs))
-        # '0x7cdd3fde' is Vat.slip (from GemJoin.join) and '0x76088703' is Vat.frob
-        logfrobs = list(filter(lambda l: l.sig == '0x76088703', lognotes))
-        logfrobs = list(map(lambda l: Vat.LogFrob(l), logfrobs))
+            logs = self.web3.eth.getLogs(filter_params)
 
-        if ilk is not None:
-            logfrobs = list(filter(lambda l: l.ilk == ilk.name, logfrobs))
+            lognotes = list(map(lambda l: LogNote.from_event(l, Vat.abi), logs))
+            # '0x7cdd3fde' is Vat.slip (from GemJoin.join) and '0x76088703' is Vat.frob
+            logfrobs = list(filter(lambda l: l.sig == '0x76088703', lognotes))
+            logfrobs = list(map(lambda l: Vat.LogFrob(l), logfrobs))
+            if ilk is not None:
+                logfrobs = list(filter(lambda l: l.ilk == ilk.name, logfrobs))
 
-        return logfrobs
+            retval.extend(logfrobs)
+            start += chunk_size
+
+        logger.debug(f"Found {len(retval)} frobs in {chunks_queried} requests")
+        return retval
 
     def heal(self, vice: Rad) -> Transact:
         assert isinstance(vice, Rad)
