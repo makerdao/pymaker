@@ -57,7 +57,7 @@ class TestApp:
 
     def main(self):
         self.startup()
-        # self.test_replacement()
+        self.test_replacement()
         self.test_simultaneous()
         self.shutdown()
 
