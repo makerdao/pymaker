@@ -17,6 +17,7 @@
 
 import asyncio
 import logging
+import os
 import sys
 import threading
 import time
@@ -36,8 +37,7 @@ logging.getLogger("web3").setLevel(logging.INFO)
 logging.getLogger("asyncio").setLevel(logging.INFO)
 logging.getLogger("requests").setLevel(logging.INFO)
 
-endpoint_uri = f"https://localhost:8545"
-web3 = Web3(HTTPProvider(endpoint_uri=endpoint_uri, request_kwargs={"timeout": 60}))
+web3 = Web3(HTTPProvider(endpoint_uri=os.environ['ETH_RPC_URL'], request_kwargs={"timeout": 60}))
 web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
 register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
 
@@ -58,6 +58,7 @@ class TestApp:
     def main(self):
         self.startup()
         self.test_replacement()
+        self.test_simultaneous()
         self.shutdown()
 
     def startup(self):
@@ -75,6 +76,12 @@ class TestApp:
         second_tx.transact(replace=first_tx, gas_price=FixedGasPrice(2*GWEI))
 
         assert first_tx.replaced
+
+    def test_simultaneous(self):
+        gas = FixedGasPrice(3*GWEI)
+        self._run_future(collateral.adapter.join(our_address, Wad(1)).transact_async(gas_price=gas))
+        self._run_future(collateral.adapter.join(our_address, Wad(5)).transact_async(gas_price=gas))
+        asyncio.sleep(6)
 
     def shutdown(self):
         logging.info(f"Exiting {ilk.name} from our urn")

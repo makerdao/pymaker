@@ -385,7 +385,8 @@ class Transact:
     def _is_parity(self) -> bool:
         global node_is_parity
         if node_is_parity is None:
-            node_is_parity = "parity" in self.web3.clientVersion.lower()
+            node_is_parity = "parity" in self.web3.clientVersion.lower() or \
+                             "openethereum" in self.web3.clientVersion.lower()
 
         return node_is_parity
 
