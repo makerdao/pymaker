@@ -74,7 +74,7 @@ class TestApp:
         self.request_history()
 
     def request_history(self):
-        logs = mcd.vat.past_frobs(past_blocks)
+        logs = mcd.vat.past_frobs(web3.eth.blockNumber - past_blocks)
         logging.info(f"Found {len(logs)} frobs in the past {past_blocks} blocks")
 
     def on_shutdown(self):
