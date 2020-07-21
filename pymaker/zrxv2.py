@@ -287,6 +287,9 @@ class LogFill:
 
             return LogFill(event_data)
 
+        else:
+            return None
+
     def __eq__(self, other):
         assert(isinstance(other, LogFill))
         return self.__dict__ == other.__dict__
