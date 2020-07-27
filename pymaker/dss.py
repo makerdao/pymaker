@@ -468,48 +468,57 @@ class Vat(Contract):
 
     def validate_frob(self, ilk: Ilk, address: Address, dink: Wad, dart: Wad):
         """Helps diagnose `frob` transaction failures by asserting on `require` conditions in the contract"""
+
+        def r(value, decimals=1):  # rounding function
+            return round(float(value), decimals)
+
+        def f(value, decimals=1):  # formatting function
+            return f"{r(value):16,.{decimals}f}"
+
         assert isinstance(ilk, Ilk)
         assert isinstance(address, Address)
         assert isinstance(dink, Wad)
         assert isinstance(dart, Wad)
 
+        assert self.live()  # system is live
+
         urn = self.urn(ilk, address)
         ilk = self.ilk(ilk.name)
+        assert ilk.rate != Ray(0)  # ilk has been initialised
 
-        logger.debug(f"urn.ink={urn.ink}, urn.art={urn.art}, dink={dink}, dart={dart}, "
-                     f"ilk.rate={ilk.rate}, debt={str(self.debt())}")
         ink = urn.ink + dink
         art = urn.art + dart
         ilk_art = ilk.art + dart
-        rate = ilk.rate
 
-        gem = self.gem(ilk, urn.address) - dink
-        dai = self.dai(urn.address) + Rad(rate * dart)
-        debt = self.debt() + Rad(rate * dart)
+        logger.debug(f"System     | debt {f(self.debt())} | ceiling {f(self.line())}")
+        logger.debug(f"Collateral | debt {f(Ray(ilk_art) * ilk.rate)} | ceiling {f(ilk.line)}")
 
-        # stablecoin debt does not increase
-        cool = dart <= Wad(0)
-        # collateral balance does not decrease
-        firm = dink >= Wad(0)
-        nice = cool and firm
+        dtab = Rad(ilk.rate * Ray(dart))
+        tab = ilk.rate * art
+        debt = self.debt() + dtab
+        logger.debug(f"Frobbing     debt={r(ilk_art)}, ink={r(ink)}, dink={r(dink)}, dart={r(dart)}, "
+                     f"ilk.rate={r(ilk.rate,8)}, tab={r(tab)}, spot={r(ilk.spot, 4)}, debt={r(debt)}")
 
-        # Vault remains under both collateral and total debt ceilings
-        under_collateral_debt_ceiling = Rad(ilk_art * rate) <= ilk.line
+        # either debt has decreased, or debt ceilings are not exceeded
+        under_collateral_debt_ceiling = Rad(Ray(ilk_art) * ilk.rate) <= ilk.line
+        under_system_debt_ceiling = debt < self.line()
+        calm = dart <= Wad(0) or (under_collateral_debt_ceiling and under_system_debt_ceiling)
+
+        # urn is either less risky than before, or it is safe
+        safe = (dart <= Wad(0) and dink >= Wad(0)) or tab <= Ray(ink) * ilk.spot
+
+        # urn has no debt, or a non-dusty amount
+        neat = art == Wad(0) or Rad(tab) >= ilk.dust
+
         if not under_collateral_debt_ceiling:
-            logger.warning(f"Vault would exceed collateral debt ceiling of {ilk.line}")
-        under_total_debt_ceiling = debt < self.line()
-        if not under_total_debt_ceiling:
-            logger.warning(f"Vault would exceed total debt ceiling of {self.line()}")
-        calm = under_collateral_debt_ceiling and under_total_debt_ceiling
-
-        safe = (urn.art * rate) <= ink * ilk.spot
-
-        assert calm or cool
-        assert nice or safe
-
-        assert Rad(ilk_art * rate) >= ilk.dust or (art == Wad(0))
-        assert rate != Ray(0)
-        assert self.live()
+            logger.warning("collateral debt ceiling would be exceeded")
+        if not under_system_debt_ceiling:
+            logger.warning("system debt ceiling would be exceeded")
+        if not safe:
+            logger.warning("urn would be unsafe")
+        if not neat:
+            logger.warning("debt would not exceed dust cutoff")
+        assert calm and safe and neat
 
     def past_frobs(self, from_block: int, to_block: int = None, ilk: Ilk = None, chunk_size=20000) -> List[LogFrob]:
         """Synchronously retrieve a list showing which ilks and urns have been frobbed.
