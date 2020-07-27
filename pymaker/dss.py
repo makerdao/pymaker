@@ -486,12 +486,12 @@ class Vat(Contract):
         ilk = self.ilk(ilk.name)
         assert ilk.rate != Ray(0)  # ilk has been initialised
 
-        logger.debug(f"System     | debt {f(self.debt())} | ceiling {f(self.line())}")
-        logger.debug(f"Collateral | debt {f(ilk.art)} | ceiling {f(ilk.line)}")
-
         ink = urn.ink + dink
         art = urn.art + dart
         ilk_art = ilk.art + dart
+
+        logger.debug(f"System     | debt {f(self.debt())} | ceiling {f(self.line())}")
+        logger.debug(f"Collateral | debt {f(Ray(ilk_art) * ilk.rate)} | ceiling {f(ilk.line)}")
 
         dtab = Rad(ilk.rate * Ray(dart))
         tab = ilk.rate * art
