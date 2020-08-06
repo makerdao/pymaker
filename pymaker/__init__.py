@@ -393,14 +393,13 @@ class Transact:
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
         try:
             raw_receipt = self.web3.eth.getTransactionReceipt(transaction_hash)
-
             if raw_receipt is not None and raw_receipt['blockNumber'] is not None:
                 receipt = Receipt(raw_receipt)
                 receipt.result = self.result_function(receipt) if self.result_function is not None else None
-
                 return receipt
         except TransactionNotFound:
-            self.logger.warning(f"Transaction failed, with hash {transaction_hash}")
+            # This means in _func, Web3 returned something other than a tx hash, which happens quite frequently
+            self.logger.debug(f"Transaction {transaction_hash} not found")
         return None
 
     def _as_dict(self, dict_or_none) -> dict:
@@ -431,14 +430,15 @@ class Transact:
 
         if self.contract is not None:
             if self.function_name is None:
-                return self.web3.eth.sendTransaction({**transaction_params, **{'to': self.address.address,
-                                                                               'data': self.parameters[0]}})
 
+                return bytes_to_hexstring(self.web3.eth.sendTransaction({**transaction_params,
+                                                                         **{'to': self.address.address,
+                                                                            'data': self.parameters[0]}}))
             else:
-                return self._contract_function().transact(transaction_params)
-
+                return bytes_to_hexstring(self._contract_function().transact(transaction_params))
         else:
-            return self.web3.eth.sendTransaction({**transaction_params, **{'to': self.address.address}})
+            return bytes_to_hexstring(self.web3.eth.sendTransaction({**transaction_params,
+                                                                     **{'to': self.address.address}}))
 
     def _contract_function(self):
         if '(' in self.function_name:
@@ -588,23 +588,24 @@ class Transact:
         while True:
             seconds_elapsed = int(time.time() - initial_time)
 
+            # CAUTION: if transact_async is called rapidly, we will hammer the node with these JSON-RPC requests
             if self.nonce is not None and self.web3.eth.getTransactionCount(from_account) > self.nonce:
                 # Check if any transaction sent so far has been mined (has a receipt).
                 # If it has, we return either the receipt (if if was successful) or `None`.
                 for attempt in range(1, 11):
                     if self.replaced:
-                        self.logger.debug(f"Transaction with nonce={self.nonce} was replaced with a newer transaction")
+                        self.logger.info(f"Transaction with nonce={self.nonce} was replaced with a newer transaction")
                         return None
 
                     for tx_hash in tx_hashes:
                         receipt = self._get_receipt(tx_hash)
                         if receipt:
                             if receipt.successful:
-                                self.logger.info(f"Transaction {self.name()} was successful (tx_hash={bytes_to_hexstring(tx_hash)})")
+                                self.logger.info(f"Transaction {self.name()} was successful (tx_hash={tx_hash})")
                                 return receipt
                             else:
                                 self.logger.warning(f"Transaction {self.name()} mined successfully but generated no single"
-                                                    f" log entry, assuming it has failed (tx_hash={bytes_to_hexstring(tx_hash)})")
+                                                    f" log entry, assuming it has failed (tx_hash={tx_hash})")
                                 return None
 
                     self.logger.debug(f"No receipt found in attempt #{attempt}/10 (nonce={self.nonce},"
@@ -641,7 +642,7 @@ class Transact:
 
                     self.logger.info(f"Sent transaction {self.name()} with nonce={self.nonce}, gas={gas},"
                                      f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
-                                     f" (tx_hash={bytes_to_hexstring(tx_hash)})")
+                                     f" (tx_hash={tx_hash})")
                 except Exception as e:
                     self.logger.warning(f"Failed to send transaction {self.name()} with nonce={self.nonce}, gas={gas},"
                                         f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
