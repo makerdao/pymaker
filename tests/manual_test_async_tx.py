@@ -18,6 +18,7 @@
 import asyncio
 import logging
 import os
+import requests
 import sys
 import threading
 import time
@@ -26,7 +27,7 @@ from web3 import Web3, HTTPProvider
 
 from pymaker import Address
 from pymaker.deployment import DssDeployment
-from pymaker.gas import FixedGasPrice
+from pymaker.gas import FixedGasPrice, GeometricGasPrice
 from pymaker.keys import register_keys
 from pymaker.numeric import Wad
 
@@ -37,9 +38,18 @@ logging.getLogger("web3").setLevel(logging.INFO)
 logging.getLogger("asyncio").setLevel(logging.INFO)
 logging.getLogger("requests").setLevel(logging.INFO)
 
-web3 = Web3(HTTPProvider(endpoint_uri=os.environ['ETH_RPC_URL'], request_kwargs={"timeout": 60}))
+pool_size = int(sys.argv[3]) if len(sys.argv) > 3 else 10
+adapter = requests.adapters.HTTPAdapter(pool_connections=pool_size, pool_maxsize=pool_size)
+session = requests.Session()
+session.mount('http://', adapter)
+session.mount('https://', adapter)
+
+web3 = Web3(HTTPProvider(endpoint_uri=os.environ['ETH_RPC_URL'],
+                         request_kwargs={"timeout": 60},
+                         session=session))
 web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
 register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
+
 
 mcd = DssDeployment.from_node(web3)
 our_address = Address(web3.eth.defaultAccount)
@@ -53,7 +63,7 @@ GWEI = 1000000000
 
 class TestApp:
     def __init__(self):
-        self.wrap_amount = Wad(10)
+        self.wrap_amount = Wad(12)
 
     def main(self):
         self.startup()
@@ -78,7 +88,7 @@ class TestApp:
         assert first_tx.replaced
 
     def test_simultaneous(self):
-        gas = FixedGasPrice(3*GWEI)
+        gas = GeometricGasPrice(initial_price=int(0.5*GWEI), every_secs=30, max_price=2000*GWEI)
         self._run_future(collateral.adapter.join(our_address, Wad(1)).transact_async(gas_price=gas))
         self._run_future(collateral.adapter.join(our_address, Wad(5)).transact_async(gas_price=gas))
         asyncio.sleep(6)
@@ -87,7 +97,7 @@ class TestApp:
         logging.info(f"Exiting {ilk.name} from our urn")
         # balance = mcd.vat.gem(ilk, our_address)
         # assert collateral.adapter.exit(our_address, balance).transact()
-        assert collateral.adapter.exit(our_address, Wad(6)).transact()
+        assert collateral.adapter.exit(our_address, Wad(12)).transact()
         logging.info(f"Balance is {mcd.vat.gem(ilk, our_address)} {ilk.name}")
         logging.info(f"Unwrapping {self.wrap_amount} ETH")
         assert collateral.gem.withdraw(self.wrap_amount).transact()
