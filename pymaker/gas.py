@@ -172,11 +172,10 @@ class GeometricGasPrice(GasPrice):
     def get_gas_price(self, time_elapsed: int) -> Optional[int]:
         assert(isinstance(time_elapsed, int))
 
-        if time_elapsed < self.every_secs:
-            return self.initial_price
         result = self.initial_price
-        for second in range(math.floor(time_elapsed/self.every_secs)):
-            result *= self.coefficient
+        if time_elapsed >= self.every_secs:
+            for second in range(math.floor(time_elapsed/self.every_secs)):
+                result *= self.coefficient
         if self.max_price is not None:
             result = min(result, self.max_price)
 
