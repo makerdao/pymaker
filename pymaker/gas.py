@@ -162,7 +162,7 @@ class GeometricGasPrice(GasPrice):
         assert (every_secs > 0)
         assert (coefficient > 1)
         if max_price is not None:
-            assert(max_price > 0)
+            assert(max_price >= initial_price)
 
         self.initial_price = initial_price
         self.every_secs = every_secs

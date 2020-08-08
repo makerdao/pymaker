@@ -164,14 +164,6 @@ class TestGeometricGasPrice:
         assert geometric_gas_price.get_gas_price(3000) == 2500
         assert geometric_gas_price.get_gas_price(1000000) == 2500
 
-        # given
-        geometric_gas_price = GeometricGasPrice(6000, 30, 1.125, 5000)
-
-        # expect
-        assert geometric_gas_price.get_gas_price(0) == 5000
-        assert geometric_gas_price.get_gas_price(31) == 5000
-        assert geometric_gas_price.get_gas_price(62) == 5000
-
     def test_behaves_with_realistic_values(self):
         # given
         GWEI = 1000000000
@@ -217,3 +209,7 @@ class TestGeometricGasPrice:
 
         with pytest.raises(AssertionError):
             GeometricGasPrice(1000, 60, 1.125, -1)
+
+    def test_max_price_should_exceed_initial_price(self):
+        with pytest.raises(AssertionError):
+            GeometricGasPrice(6000, 30, 2.25, 5000)
