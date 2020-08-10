@@ -16,14 +16,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
+from typing import Optional
+from web3 import Web3
 
-from pymaker.gas import DefaultGasPrice, FixedGasPrice, GasPrice, GeometricGasPrice, IncreasingGasPrice
+from pymaker.gas import DefaultGasPrice, FixedGasPrice, GasPrice, GeometricGasPrice, IncreasingGasPrice, NodeAwareGasPrice
+from tests.conftest import web3
 
 
 class TestGasPrice:
     def test_not_implemented(self):
         with pytest.raises(Exception):
             GasPrice().get_gas_price(0)
+
+    def test_gwei(self):
+        assert GasPrice.GWEI == 1000000000
 
 
 class TestDefaultGasPrice:
@@ -35,6 +41,28 @@ class TestDefaultGasPrice:
         assert default_gas_price.get_gas_price(0) is None
         assert default_gas_price.get_gas_price(1) is None
         assert default_gas_price.get_gas_price(1000000) is None
+
+
+class TestNodeAwareGasPrice:
+    class DumbSampleImplementation(NodeAwareGasPrice):
+        def get_gas_price(self, time_elapsed: int) -> Optional[int]:
+            return self.get_node_gas_price() * max(time_elapsed, 1)
+
+    class BadImplementation(NodeAwareGasPrice):
+        pass
+
+    def test_retrieve_node_gas_price(self, web3):
+        strategy = TestNodeAwareGasPrice.DumbSampleImplementation(web3)
+        assert strategy.get_gas_price(0) > 0
+        assert strategy.get_gas_price(60) < strategy.get_gas_price(120)
+
+    def test_not_implemented(self, web3):
+        with pytest.raises(NotImplementedError):
+            NodeAwareGasPrice(web3)
+
+        bad = TestNodeAwareGasPrice.BadImplementation(web3)
+        with pytest.raises(NotImplementedError):
+            bad.get_gas_price(0)
 
 
 class TestFixedGasPrice:
