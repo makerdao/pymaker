@@ -17,9 +17,12 @@
 
 import math
 from typing import Optional
+from web3 import Web3
 
 
 class GasPrice(object):
+    GWEI = 1000000000
+
     """Abstract class, which can be inherited for implementing different gas price strategies.
 
     `GasPrice` class contains only one method, `get_gas_price`, which is responsible for
@@ -64,6 +67,27 @@ class DefaultGasPrice(GasPrice):
 
     def get_gas_price(self, time_elapsed: int) -> Optional[int]:
         return None
+
+
+class NodeAwareGasPrice(GasPrice):
+    """Abstract baseclass which is Web3-aware.
+
+    Retrieves the default gas price provided by the Ethereum node to be consumed by subclasses.
+    """
+
+    def __init__(self, web3: Web3):
+        assert isinstance(web3, Web3)
+        if self.__class__ == NodeAwareGasPrice:
+            raise NotImplementedError('This class is not intended to be used directly')
+        self.web3 = web3
+
+    def get_gas_price(self, time_elapsed: int) -> Optional[int]:
+        """If user wants node to choose gas price, they should use DefaultGasPrice for the same functionality
+        without an additional HTTP request.  This baseclass exists to let a subclass manipulate the node price."""
+        raise NotImplementedError("Please implement this method")
+
+    def get_node_gas_price(self):
+        return max(self.web3.manager.request_blocking("eth_gasPrice", []), 1 * self.GWEI)
 
 
 class FixedGasPrice(GasPrice):
