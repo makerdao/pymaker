@@ -209,3 +209,7 @@ class TestGeometricGasPrice:
 
         with pytest.raises(AssertionError):
             GeometricGasPrice(1000, 60, 1.125, -1)
+
+    def test_max_price_should_exceed_initial_price(self):
+        with pytest.raises(AssertionError):
+            GeometricGasPrice(6000, 30, 2.25, 5000)
