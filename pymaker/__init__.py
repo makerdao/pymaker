@@ -19,6 +19,7 @@ import asyncio
 import json
 import logging
 import re
+import requests
 import sys
 import time
 from enum import Enum, auto
@@ -30,7 +31,7 @@ import eth_utils
 import pkg_resources
 from hexbytes import HexBytes
 
-from web3 import Web3
+from web3 import HTTPProvider, Web3
 from web3._utils.contracts import get_function_info, encode_abi
 from web3._utils.events import get_event_data
 from web3.exceptions import TransactionNotFound
@@ -45,6 +46,19 @@ from pymaker.util import synchronize, bytes_to_hexstring, is_contract_at
 filter_threads = []
 node_is_parity = None
 transaction_lock = Lock()
+
+
+def web3_via_http(endpoint_uri: str, timeout=60, http_pool_size=20):
+    assert isinstance(endpoint_uri, str)
+    adapter = requests.adapters.HTTPAdapter(pool_connections=http_pool_size, pool_maxsize=http_pool_size)
+    session = requests.Session()
+    if endpoint_uri.startswith("http"):
+        # Mount over both existing adaptors created by default (rather than just the one which applies to our URI)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+    else:
+        raise ValueError("Unsupported protocol")
+    return Web3(HTTPProvider(endpoint_uri=endpoint_uri, request_kwargs={"timeout": timeout}, session=session))
 
 
 def register_filter_thread(filter_thread):

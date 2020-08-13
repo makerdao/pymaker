@@ -20,7 +20,7 @@ import pytest
 
 from web3 import Web3, HTTPProvider
 
-from pymaker import Address
+from pymaker import Address, web3_via_http
 from pymaker.auctions import Flipper, Flapper, Flopper
 from pymaker.deployment import Deployment, DssDeployment
 from pymaker.dss import Vat, Vow, Cat, Jug, Pot
@@ -41,7 +41,7 @@ def deployment(new_deployment: Deployment) -> Deployment:
 @pytest.fixture(scope="session")
 def web3() -> Web3:
     # for local dockerized parity testchain
-    web3 = Web3(HTTPProvider("http://0.0.0.0:8545"))
+    web3 = web3_via_http("http://0.0.0.0:8545")
     web3.eth.defaultAccount = "0x50FF810797f75f6bfbf2227442e0c961a8562F4C"
     register_keys(web3,
                   ["key_file=tests/config/keys/UnlimitedChain/key1.json,pass_file=/dev/null",
