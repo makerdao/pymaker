@@ -61,6 +61,16 @@ def web3_via_http(endpoint_uri: str, timeout=60, http_pool_size=20):
     return Web3(HTTPProvider(endpoint_uri=endpoint_uri, request_kwargs={"timeout": timeout}, session=session))
 
 
+def _is_parity(web3: Web3) -> bool:
+    assert isinstance(web3, Web3)
+    global node_is_parity
+    if node_is_parity is None:
+        node_is_parity = "parity" in web3.clientVersion.lower() or \
+                         "openethereum" in web3.clientVersion.lower()
+
+    return node_is_parity
+
+
 def register_filter_thread(filter_thread):
     filter_threads.append(filter_thread)
 
@@ -357,6 +367,27 @@ class TransactStatus(Enum):
      FINISHED = auto()
 
 
+def get_pending_transactions(web3: Web3, address: Address = None) -> list:
+    assert isinstance(web3, Web3)
+    assert isinstance(address, Address) or address is None
+
+    if address is None:
+        address = Address(web3.eth.defaultAccount)
+
+    # Get the list of pending transactions and their details from specified sources
+    if _is_parity(web3):
+        items = web3.manager.request_blocking("parity_pendingTransactions", [])
+        items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
+        items = filter(lambda item: item['blockNumber'] is None, items)
+    else:
+        items = web3.manager.request_blocking("eth_getBlockByNumber", [])
+        items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
+
+    return list(map(lambda item: RecoveredTransact(web3=web3, address=address, nonce=int(item['nonce'], 16),
+                                                   latest_tx_hash=item['hash'], current_gas=int(item['gasPrice'], 16)),
+                    items))
+
+
 class Transact:
     """Represents an Ethereum transaction before it gets executed."""
 
@@ -395,14 +426,7 @@ class Transact:
         self.status = TransactStatus.NEW
         self.nonce = None
         self.replaced = False
-
-    def _is_parity(self) -> bool:
-        global node_is_parity
-        if node_is_parity is None:
-            node_is_parity = "parity" in self.web3.clientVersion.lower() or \
-                             "openethereum" in self.web3.clientVersion.lower()
-
-        return node_is_parity
+        self.tx_hashes = []
 
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
         try:
@@ -595,7 +619,6 @@ class Transact:
             self.nonce = replaced_tx.nonce
 
         # Initialize variables which will be used in the main loop.
-        tx_hashes = []
         initial_time = time.time()
         gas_price_last = 0
 
@@ -611,7 +634,7 @@ class Transact:
                         self.logger.info(f"Transaction with nonce={self.nonce} was replaced with a newer transaction")
                         return None
 
-                    for tx_hash in tx_hashes:
+                    for tx_hash in self.tx_hashes:
                         receipt = self._get_receipt(tx_hash)
                         if receipt:
                             if receipt.successful:
@@ -637,7 +660,7 @@ class Transact:
             # - no transaction has been sent yet, or
             # - the requested gas price has changed enough since the last transaction has been sent
             gas_price_value = gas_price.get_gas_price(seconds_elapsed)
-            if len(tx_hashes) == 0 or ((gas_price_value is not None) and (gas_price_last is not None) and
+            if len(self.tx_hashes) == 0 or ((gas_price_value is not None) and (gas_price_last is not None) and
                                            (gas_price_value > gas_price_last * 1.125)):
                 gas_price_last = gas_price_value
 
@@ -645,14 +668,14 @@ class Transact:
                     # We need the lock in order to not try to send two transactions with the same nonce.
                     with transaction_lock:
                         if self.nonce is None:
-                            if self._is_parity():
+                            if _is_parity(self.web3):
                                 self.nonce = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
 
                             else:
                                 self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
 
                         tx_hash = self._func(from_account, gas, gas_price_value, self.nonce)
-                        tx_hashes.append(tx_hash)
+                        self.tx_hashes.append(tx_hash)
 
                     self.logger.info(f"Sent transaction {self.name()} with nonce={self.nonce}, gas={gas},"
                                      f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
@@ -662,7 +685,7 @@ class Transact:
                                         f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
                                         f" ({e})")
 
-                    if len(tx_hashes) == 0:
+                    if len(self.tx_hashes) == 0:
                         raise
 
             await asyncio.sleep(0.25)
@@ -679,6 +702,65 @@ class Transact:
             :py:class:`pymaker.Invocation` object for this pending Ethereum transaction.
         """
         return Invocation(self.address, Calldata(self._contract_function()._encode_transaction_data()))
+
+
+class RecoveredTransact(Transact):
+    def __init__(self, web3: Web3,
+                 address: Address,
+                 nonce: int,
+                 latest_tx_hash: str,
+                 current_gas: int):
+        assert isinstance(current_gas, int)
+        super().__init__(origin=None,
+                         web3=web3,
+                         abi=None,
+                         address=address,
+                         contract=None,
+                         function_name=None,
+                         parameters=None)
+        self.nonce = nonce
+        self.tx_hashes.append(latest_tx_hash)
+        self.current_gas = current_gas
+
+    def name(self):
+        return f"Recovered tx with nonce {self.nonce}"
+
+    # TODO: Move these to base class
+    def cancel(self, gas_price: GasPrice):
+        return synchronize([self.cancel_async(gas_price)])[0]
+
+    async def cancel_async(self, gas_price: GasPrice):
+        assert isinstance(gas_price, GasPrice)
+        initial_time = time.time()
+        gas_price_last = self.current_gas
+        self.tx_hashes.clear()
+
+        if gas_price.get_gas_price(0) <= self.current_gas * 1.125:
+            self.logger.warning(f"Recovery gas price is less than current gas price {self.current_gas}; "
+                                "cancellation will be deferred until the strategy produces an acceptable price.")
+
+        while True:
+            seconds_elapsed = int(time.time() - initial_time)
+            gas_price_value = gas_price.get_gas_price(seconds_elapsed)
+            if gas_price_value > gas_price_last * 1.125:
+                gas_price_last = gas_price_value
+                # Transaction lock isn't needed here, as we are replacing an existing nonce
+                tx_hash = bytes_to_hexstring(self.web3.eth.sendTransaction({'from': self.address.address,
+                                                                            'to': self.address.address,
+                                                                            'gasPrice': gas_price_value,
+                                                                            'nonce': self.nonce,
+                                                                            'value': 0}))
+                self.tx_hashes.append(tx_hash)
+                self.logger.info(f"Attempting to cancel recovered tx with nonce={self.nonce}, "
+                                 f" gas_price={gas_price_value} (tx_hash={tx_hash})")
+
+            for tx_hash in self.tx_hashes:
+                receipt = self._get_receipt(tx_hash)
+                if receipt:
+                    self.logger.info(f"{self.name()} was cancelled (tx_hash={tx_hash})")
+                    return
+
+            await asyncio.sleep(0.75)
 
 
 class Transfer:

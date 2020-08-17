@@ -19,14 +19,14 @@ import asyncio
 import logging
 import os
 import sys
-import threading
 import time
+import threading
+from pprint import pprint
 
-from pymaker import Address, web3_via_http
+from pymaker import Address, get_pending_transactions, Wad, web3_via_http
 from pymaker.deployment import DssDeployment
 from pymaker.gas import FixedGasPrice, GeometricGasPrice
 from pymaker.keys import register_keys
-from pymaker.numeric import Wad
 
 logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(message)s', level=logging.INFO)
 # reduce logspew
@@ -36,64 +36,38 @@ logging.getLogger("asyncio").setLevel(logging.INFO)
 logging.getLogger("requests").setLevel(logging.INFO)
 
 pool_size = int(sys.argv[3]) if len(sys.argv) > 3 else 10
-web3 = web3_via_http(endpoint_uri=os.environ['ETH_RPC_URL'], http_pool_size=pool_size)
+web3 = web3_via_http(endpoint_uri=os.environ['ETH_RPC_URL'])
 web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
 register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
-
-
-mcd = DssDeployment.from_node(web3)
 our_address = Address(web3.eth.defaultAccount)
-
-collateral = mcd.collaterals['ETH-A']
-ilk = collateral.ilk
-collateral.approve(our_address)
+weth = DssDeployment.from_node(web3).collaterals['ETH-A'].gem
 
 GWEI = 1000000000
 fast_gas = GeometricGasPrice(initial_price=int(1 * GWEI), every_secs=30, max_price=2000 * GWEI)
-slow_gas = GeometricGasPrice(initial_price=int(0.8 * GWEI), every_secs=30, max_price=2000 * GWEI)
+slow_gas = GeometricGasPrice(initial_price=int(0.3 * GWEI), every_secs=30, max_price=2000 * GWEI)
 
 
 class TestApp:
-    def __init__(self):
-        self.wrap_amount = Wad(12)
-
     def main(self):
         self.startup()
-        self.test_replacement()
-        self.test_simultaneous()
+
+        pending_txes = get_pending_transactions(web3)
+        pprint(list(map(lambda t: f"{t.name()} with gas {t.current_gas}", pending_txes)))
+
+        if len(pending_txes) > 0:
+            pending_txes[0].cancel(gas_price=slow_gas)
+        else:
+            logging.info("No pending transactions were found; submitting one")
+            self._run_future(weth.deposit(Wad(1)).transact_async(gas_price=FixedGasPrice(int(0.4 * GWEI))))
+            time.sleep(0.5)
+
         self.shutdown()
 
     def startup(self):
-        logging.info(f"Wrapping {self.wrap_amount} ETH")
-        assert collateral.gem.deposit(self.wrap_amount).transact(gas_price=fast_gas)
-
-    def test_replacement(self):
-        first_tx = collateral.adapter.join(our_address, Wad(4))
-        logging.info(f"Submitting first TX with gas price deliberately too low")
-        self._run_future(first_tx.transact_async(gas_price=slow_gas))
-        time.sleep(2)
-
-        second_tx = collateral.adapter.join(our_address, Wad(6))
-        logging.info(f"Replacing first TX with legitimate gas price")
-        second_tx.transact(replace=first_tx, gas_price=FixedGasPrice(2*GWEI))
-
-        assert first_tx.replaced
-
-    def test_simultaneous(self):
-        self._run_future(collateral.adapter.join(our_address, Wad(1)).transact_async(gas_price=slow_gas))
-        self._run_future(collateral.adapter.join(our_address, Wad(5)).transact_async(gas_price=slow_gas))
-        asyncio.sleep(6)
+        pass
 
     def shutdown(self):
-        logging.info(f"Exiting {ilk.name} from our urn")
-        balance = mcd.vat.gem(ilk, our_address)
-        if balance < Wad(100):  # this account's tiny vault came from this test
-            assert collateral.adapter.exit(our_address, balance).transact(gas_price=fast_gas)
-        else:  # the account has a vault for some other reason
-            assert collateral.adapter.exit(our_address, Wad(12)).transact(gas_price=fast_gas)
-        logging.info(f"Balance is {mcd.vat.gem(ilk, our_address)} {ilk.name}")
-        logging.info(f"Unwrapping {self.wrap_amount} ETH")
-        assert collateral.gem.withdraw(self.wrap_amount).transact(gas_price=fast_gas)
+        pass
 
     @staticmethod
     def _run_future(future):
