@@ -26,6 +26,7 @@ from enum import Enum, auto
 from functools import total_ordering, wraps
 from threading import Lock
 from typing import Optional
+from weakref import WeakKeyDictionary
 
 import eth_utils
 import pkg_resources
@@ -44,7 +45,7 @@ from pymaker.numeric import Wad
 from pymaker.util import synchronize, bytes_to_hexstring, is_contract_at
 
 filter_threads = []
-node_is_parity = None
+node_is_parity = WeakKeyDictionary()
 transaction_lock = Lock()
 
 
@@ -64,11 +65,13 @@ def web3_via_http(endpoint_uri: str, timeout=60, http_pool_size=20):
 def _is_parity(web3: Web3) -> bool:
     assert isinstance(web3, Web3)
     global node_is_parity
-    if node_is_parity is None:
-        node_is_parity = "parity" in web3.clientVersion.lower() or \
-                         "openethereum" in web3.clientVersion.lower()
-
-    return node_is_parity
+    if web3 in node_is_parity:
+        return node_is_parity[web3]
+    else:
+        is_parity = "parity" in web3.clientVersion.lower() or \
+                    "openethereum" in web3.clientVersion.lower()
+        node_is_parity[web3] = is_parity
+        return is_parity
 
 
 def register_filter_thread(filter_thread):
