@@ -43,8 +43,7 @@ our_address = Address(web3.eth.defaultAccount)
 weth = DssDeployment.from_node(web3).collaterals['ETH-A'].gem
 
 GWEI = 1000000000
-fast_gas = GeometricGasPrice(initial_price=int(1 * GWEI), every_secs=30, max_price=2000 * GWEI)
-slow_gas = GeometricGasPrice(initial_price=int(0.3 * GWEI), every_secs=30, max_price=2000 * GWEI)
+increasing_gas = GeometricGasPrice(initial_price=int(0.5 * GWEI), every_secs=30, coefficient=1.5, max_price=100 * GWEI)
 
 
 class TestApp:
@@ -55,7 +54,7 @@ class TestApp:
         pprint(list(map(lambda t: f"{t.name()} with gas {t.current_gas}", pending_txes)))
 
         if len(pending_txes) > 0:
-            pending_txes[0].cancel(gas_price=slow_gas)
+            pending_txes[0].cancel(gas_price=increasing_gas)
         else:
             logging.info("No pending transactions were found; submitting one")
             self._run_future(weth.deposit(Wad(1)).transact_async(gas_price=FixedGasPrice(int(0.4 * GWEI))))

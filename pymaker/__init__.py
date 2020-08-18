@@ -382,13 +382,17 @@ def get_pending_transactions(web3: Web3, address: Address = None) -> list:
         items = web3.manager.request_blocking("parity_pendingTransactions", [])
         items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
         items = filter(lambda item: item['blockNumber'] is None, items)
+        txes = map(lambda item: RecoveredTransact(web3=web3, address=address, nonce=int(item['nonce'], 16),
+                                                  latest_tx_hash=item['hash'], current_gas=int(item['gasPrice'], 16)),
+                   items)
     else:
-        items = web3.manager.request_blocking("eth_getBlockByNumber", [])
+        items = web3.manager.request_blocking("eth_getBlockByNumber", ["pending", True])['transactions']
         items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
+        txes = map(lambda item: RecoveredTransact(web3=web3, address=address, nonce=item['nonce'],
+                                                  latest_tx_hash=item['hash'], current_gas=item['gasPrice']),
+                   items)
 
-    return list(map(lambda item: RecoveredTransact(web3=web3, address=address, nonce=int(item['nonce'], 16),
-                                                   latest_tx_hash=item['hash'], current_gas=int(item['gasPrice'], 16)),
-                    items))
+    return list(txes)
 
 
 class Transact:
