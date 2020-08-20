@@ -388,6 +388,8 @@ def get_pending_transactions(web3: Web3, address: Address = None) -> list:
     else:
         items = web3.manager.request_blocking("eth_getBlockByNumber", ["pending", True])['transactions']
         items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
+        from pprint import pprint
+        pprint(list(items))
         txes = map(lambda item: RecoveredTransact(web3=web3, address=address, nonce=item['nonce'],
                                                   latest_tx_hash=item['hash'], current_gas=item['gasPrice']),
                    items)
@@ -430,9 +432,11 @@ class Transact:
         self.parameters = parameters
         self.extra = extra
         self.result_function = result_function
+        self.initial_time = None
         self.status = TransactStatus.NEW
         self.nonce = None
         self.replaced = False
+        self.gas_price = None
         self.tx_hashes = []
 
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
@@ -442,9 +446,8 @@ class Transact:
                 receipt = Receipt(raw_receipt)
                 receipt.result = self.result_function(receipt) if self.result_function is not None else None
                 return receipt
-        except TransactionNotFound:
-            # This means in _func, Web3 returned something other than a tx hash, which happens quite frequently
-            self.logger.debug(f"Transaction {transaction_hash} not found")
+        except (TransactionNotFound, ValueError):
+            self.logger.debug(f"Transaction {transaction_hash} not found (may have been dropped/replaced)")
         return None
 
     def _as_dict(self, dict_or_none) -> dict:
@@ -588,6 +591,7 @@ class Transact:
             invocation was successful, or `None` if it failed.
         """
 
+        self.initial_time = time.time()
         unknown_kwargs = set(kwargs.keys()) - {'from_address', 'replace', 'gas', 'gas_buffer', 'gas_price'}
         if len(unknown_kwargs) > 0:
             raise Exception(f"Unknown kwargs: {unknown_kwargs}")
@@ -612,8 +616,9 @@ class Transact:
 
         # Get or calculate `gas`. Get `gas_price`, which in fact refers to a gas pricing algorithm.
         gas = self._gas(gas_estimate, **kwargs)
-        gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
-        assert(isinstance(gas_price, GasPrice))
+        self.gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
+        assert(isinstance(self.gas_price, GasPrice))
+        gas_price_last = 0
 
         # Get the transaction this one is supposed to replace.
         # If there is one, try to borrow the nonce from it as long as that transaction isn't finished.
@@ -624,13 +629,17 @@ class Transact:
 
             replaced_tx.replaced = True
             self.nonce = replaced_tx.nonce
-
-        # Initialize variables which will be used in the main loop.
-        initial_time = time.time()
-        gas_price_last = 0
+            # Gas should be calculated from the original time of submission
+            self.initial_time = replaced_tx.initial_time if replaced_tx.initial_time else time.time()
+            # Use gas strategy from the original transaction if one was not provided
+            if 'gas_price' not in kwargs:
+                self.gas_price = replaced_tx.gas_price if replaced_tx.gas_price else DefaultGasPrice()
+            # Detain replacement until gas strategy produces a price acceptable to the node
+            if replaced_tx.tx_hashes:
+                self.tx_hashes = [replaced_tx.tx_hashes[-1]]
 
         while True:
-            seconds_elapsed = int(time.time() - initial_time)
+            seconds_elapsed = int(time.time() - self.initial_time)
 
             # CAUTION: if transact_async is called rapidly, we will hammer the node with these JSON-RPC requests
             if self.nonce is not None and self.web3.eth.getTransactionCount(from_account) > self.nonce:
@@ -663,12 +672,21 @@ class Transact:
                                     f" with the same nonce, which means it has failed")
                 return None
 
+            # Trap replacement after the tx has entered the mempool and before it has been mined
+            if self.replaced:
+                self.logger.info(f"Transaction {self.name()} with nonce={self.nonce} was replaced")
+                return None
+
             # Send a transaction if:
             # - no transaction has been sent yet, or
             # - the requested gas price has changed enough since the last transaction has been sent
-            gas_price_value = gas_price.get_gas_price(seconds_elapsed)
-            if len(self.tx_hashes) == 0 or ((gas_price_value is not None) and (gas_price_last is not None) and
-                                           (gas_price_value > gas_price_last * 1.125)):
+            # - the gas price on a replacement has sufficiently exceeded that of the original transaction
+            gas_price_value = self.gas_price.get_gas_price(seconds_elapsed)
+            transaction_was_sent = len(self.tx_hashes) > 0 or (replaced_tx is not None and len(replaced_tx.tx_hashes) > 0)
+            # if seconds_elapsed % 11 == 0:  # Log this periodically to debug transaction submission
+            #     self.logger.debug(f"Transaction {self.name()} is churning: was_sent={transaction_was_sent}, gas_price_value={gas_price_value} gas_price_last={gas_price_last}")
+            if not transaction_was_sent or ((gas_price_value is not None) and (gas_price_last is not None) and
+                                            (gas_price_value > gas_price_last * 1.125)):
                 gas_price_last = gas_price_value
 
                 try:
@@ -677,9 +695,13 @@ class Transact:
                         if self.nonce is None:
                             if _is_parity(self.web3):
                                 self.nonce = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
-
                             else:
                                 self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
+
+                        # Trap replacement while original is holding the lock awaiting nonce assignment
+                        if self.replaced:
+                            self.logger.info(f"Transaction {self.name()} with nonce={self.nonce} was replaced")
+                            return None
 
                         tx_hash = self._func(from_account, gas, gas_price_value, self.nonce)
                         self.tx_hashes.append(tx_hash)
@@ -732,7 +754,6 @@ class RecoveredTransact(Transact):
     def name(self):
         return f"Recovered tx with nonce {self.nonce}"
 
-    # TODO: Move these to base class
     def cancel(self, gas_price: GasPrice):
         return synchronize([self.cancel_async(gas_price)])[0]
 
@@ -759,7 +780,7 @@ class RecoveredTransact(Transact):
                                                                             'value': 0}))
                 self.tx_hashes.append(tx_hash)
                 self.logger.info(f"Attempting to cancel recovered tx with nonce={self.nonce}, "
-                                 f" gas_price={gas_price_value} (tx_hash={tx_hash})")
+                                 f"gas_price={gas_price_value} (tx_hash={tx_hash})")
 
             for tx_hash in self.tx_hashes:
                 receipt = self._get_receipt(tx_hash)

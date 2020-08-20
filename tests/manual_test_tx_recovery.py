@@ -43,7 +43,7 @@ our_address = Address(web3.eth.defaultAccount)
 weth = DssDeployment.from_node(web3).collaterals['ETH-A'].gem
 
 GWEI = 1000000000
-increasing_gas = GeometricGasPrice(initial_price=int(0.5 * GWEI), every_secs=30, coefficient=1.5, max_price=100 * GWEI)
+increasing_gas = GeometricGasPrice(initial_price=int(0.7 * GWEI), every_secs=30, coefficient=1.5, max_price=100 * GWEI)
 
 
 class TestApp:

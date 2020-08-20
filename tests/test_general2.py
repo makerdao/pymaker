@@ -233,7 +233,7 @@ class TestTransactReplace:
         self.web3.eth.getTransaction = MagicMock(return_value={'nonce': nonce})
         # and
         transact_1 = self.token.transfer(self.second_address, Wad(500))
-        future_receipt_1 = asyncio.ensure_future(transact_1.transact_async())
+        future_receipt_1 = asyncio.ensure_future(transact_1.transact_async(gas_price=FixedGasPrice(100000)))
         # and
         await asyncio.sleep(2)
         # then
@@ -245,7 +245,8 @@ class TestTransactReplace:
         self.web3.eth.getTransaction = original_get_transaction
         # and
         transact_2 = self.token.transfer(self.third_address, Wad(700))
-        future_receipt_2 = asyncio.ensure_future(transact_2.transact_async(replace=transact_1))
+        future_receipt_2 = asyncio.ensure_future(transact_2.transact_async(replace=transact_1,
+                                                                           gas_price=FixedGasPrice(150000)))
         # and
         await asyncio.sleep(10)
         # then
@@ -301,7 +302,7 @@ class TestTransactRecover:
         self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.token = DSToken.deploy(self.web3, 'ABC')
-        self.token.mint(Wad(1000000)).transact()
+        assert self.token.mint(Wad(100)).transact()
 
     def test_nothing_pending(self):
         # given no pending transactions created by prior tests
