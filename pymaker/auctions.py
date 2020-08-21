@@ -149,6 +149,12 @@ class AuctionContract(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'deal', [id])
 
+    def tick(self, id: int) -> Transact:
+        """Resurrect an auction which expired without any bids."""
+        assert(isinstance(id, int))
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'tick', [id])
+
     def get_past_lognotes(self, number_of_past_blocks: int, abi: list) -> List[LogNote]:
         assert isinstance(number_of_past_blocks, int)
         assert isinstance(abi, list)
@@ -446,12 +452,6 @@ class Flapper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tend', [id, lot.value, bid.value])
 
-    def tick(self, id: int) -> Transact:
-        """Resurrect an auction which expired without any bids."""
-        assert (isinstance(id, int))
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'tick', [id])
-
     def yank(self, id: int) -> Transact:
         """While `cage`d, refund current bid to the bidder"""
         assert (isinstance(id, int))
@@ -603,12 +603,6 @@ class Flopper(AuctionContract):
         assert(isinstance(bid, Rad))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'dent', [id, lot.value, bid.value])
-
-    def tick(self, id: int) -> Transact:
-        """Resurrect an auction which expired without any bids."""
-        assert (isinstance(id, int))
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'tick', [id])
 
     def yank(self, id: int) -> Transact:
         """While `cage`d, refund current bid to the bidder"""
