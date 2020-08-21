@@ -17,10 +17,32 @@
 
 import pytest
 from hexbytes import HexBytes
+from web3 import HTTPProvider, Web3
+from web3._utils.request import _get_session
 
-from pymaker import Address, Calldata, Receipt, Transfer
+from pymaker import Address, Calldata, Receipt, Transfer, web3_via_http
 from pymaker.numeric import Wad
+from pymaker.util import eth_balance
 from tests.helpers import is_hashable
+
+
+class TestConnect:
+    def test_connect_to_testchain(self, our_address):
+        uri = "http://0.0.0.0:8545"
+        web3 = web3_via_http(uri, 63, 39)
+        assert isinstance(web3.provider, HTTPProvider)
+        assert web3.provider._request_kwargs['timeout'] == 63
+
+        for adapter in _get_session(uri).adapters.values():
+            assert adapter._pool_connections == 39
+            assert adapter._pool_maxsize == 39
+
+        assert isinstance(web3, Web3)
+        assert eth_balance(web3, our_address) > Wad(0)
+
+    def test_unsupported_url(self):
+        with pytest.raises(ValueError):
+            web3_via_http("wss://0.0.0.0:8545")
 
 
 class TestAddress:

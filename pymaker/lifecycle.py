@@ -194,9 +194,9 @@ class Lifecycle:
             return
 
         # wait for the client to have at least one peer
-        if self.web3.net.peerCount == 0:
+        if self.web3.net.peer_count == 0:
             self.logger.info(f"Waiting for the node to have at least one peer...")
-            while self.web3.net.peerCount == 0:
+            while self.web3.net.peer_count == 0:
                 time.sleep(0.25)
 
         # wait for the client to sync completely,
