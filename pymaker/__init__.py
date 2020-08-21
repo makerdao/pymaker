@@ -437,6 +437,7 @@ class Transact:
         self.nonce = None
         self.replaced = False
         self.gas_price = None
+        self.gas_price_last = 0
         self.tx_hashes = []
 
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
@@ -618,7 +619,6 @@ class Transact:
         gas = self._gas(gas_estimate, **kwargs)
         self.gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
         assert(isinstance(self.gas_price, GasPrice))
-        gas_price_last = 0
 
         # Get the transaction this one is supposed to replace.
         # If there is one, try to borrow the nonce from it as long as that transaction isn't finished.
@@ -634,6 +634,7 @@ class Transact:
             # Use gas strategy from the original transaction if one was not provided
             if 'gas_price' not in kwargs:
                 self.gas_price = replaced_tx.gas_price if replaced_tx.gas_price else DefaultGasPrice()
+            self.gas_price_last = replaced_tx.gas_price_last
             # Detain replacement until gas strategy produces a price acceptable to the node
             if replaced_tx.tx_hashes:
                 self.tx_hashes = [replaced_tx.tx_hashes[-1]]
@@ -674,7 +675,7 @@ class Transact:
 
             # Trap replacement after the tx has entered the mempool and before it has been mined
             if self.replaced:
-                self.logger.info(f"Transaction {self.name()} with nonce={self.nonce} was replaced")
+                self.logger.info(f"Transaction {self.name()} with nonce={self.nonce} is being replaced")
                 return None
 
             # Send a transaction if:
@@ -683,11 +684,10 @@ class Transact:
             # - the gas price on a replacement has sufficiently exceeded that of the original transaction
             gas_price_value = self.gas_price.get_gas_price(seconds_elapsed)
             transaction_was_sent = len(self.tx_hashes) > 0 or (replaced_tx is not None and len(replaced_tx.tx_hashes) > 0)
-            # if seconds_elapsed % 11 == 0:  # Log this periodically to debug transaction submission
-            #     self.logger.debug(f"Transaction {self.name()} is churning: was_sent={transaction_was_sent}, gas_price_value={gas_price_value} gas_price_last={gas_price_last}")
-            if not transaction_was_sent or ((gas_price_value is not None) and (gas_price_last is not None) and
-                                            (gas_price_value > gas_price_last * 1.125)):
-                gas_price_last = gas_price_value
+            # Uncomment this to debug state during transaction submission
+            self.logger.debug(f"Transaction {self.name()} is churning: was_sent={transaction_was_sent}, gas_price_value={gas_price_value} gas_price_last={self.gas_price_last}")
+            if not transaction_was_sent or (gas_price_value is not None and gas_price_value > self.gas_price_last * 1.125):
+                self.gas_price_last = gas_price_value
 
                 try:
                     # We need the lock in order to not try to send two transactions with the same nonce.
@@ -760,7 +760,7 @@ class RecoveredTransact(Transact):
     async def cancel_async(self, gas_price: GasPrice):
         assert isinstance(gas_price, GasPrice)
         initial_time = time.time()
-        gas_price_last = self.current_gas
+        self.gas_price_last = self.current_gas
         self.tx_hashes.clear()
 
         if gas_price.get_gas_price(0) <= self.current_gas * 1.125:
@@ -770,8 +770,8 @@ class RecoveredTransact(Transact):
         while True:
             seconds_elapsed = int(time.time() - initial_time)
             gas_price_value = gas_price.get_gas_price(seconds_elapsed)
-            if gas_price_value > gas_price_last * 1.125:
-                gas_price_last = gas_price_value
+            if gas_price_value > self.gas_price_last * 1.125:
+                self.gas_price_last = gas_price_value
                 # Transaction lock isn't needed here, as we are replacing an existing nonce
                 tx_hash = bytes_to_hexstring(self.web3.eth.sendTransaction({'from': self.address.address,
                                                                             'to': self.address.address,
