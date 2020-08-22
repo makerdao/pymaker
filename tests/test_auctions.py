@@ -243,6 +243,10 @@ class TestFlipper:
         assert log.usr == deployment_address
         assert log.gal == mcd.vow.address
 
+        # Allow the auction to expire, and then resurrect it
+        wait(mcd, our_address, flipper.tau()+1)
+        assert flipper.tick(kick).transact()
+
         # Wrap some eth and handle approvals before bidding
         eth_required = Wad(current_bid.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
         wrap_eth(mcd, other_address, eth_required)
