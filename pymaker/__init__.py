@@ -754,6 +754,11 @@ class RecoveredTransact(Transact):
     def name(self):
         return f"Recovered tx with nonce {self.nonce}"
 
+    @_track_status
+    async def transact_async(self, **kwargs) -> Optional[Receipt]:
+        # TODO: Read transaction data from chain, create a new state machine to manage gas for the transaction.
+        raise NotImplementedError()
+
     def cancel(self, gas_price: GasPrice):
         return synchronize([self.cancel_async(gas_price)])[0]
 
