@@ -371,6 +371,7 @@ class TransactStatus(Enum):
 
 
 def get_pending_transactions(web3: Web3, address: Address = None) -> list:
+    """Retrieves a list of pending transactions from the mempool."""
     assert isinstance(web3, Web3)
     assert isinstance(address, Address) or address is None
 
@@ -734,6 +735,11 @@ class Transact:
 
 
 class RecoveredTransact(Transact):
+    """ Models a pending transaction retrieved from the mempool.
+
+    These can be created by a call to `get_pending_transactions`, enabling the consumer to implement logic which
+    cancels pending transactions upon keeper/bot startup.
+    """
     def __init__(self, web3: Web3,
                  address: Address,
                  nonce: int,
