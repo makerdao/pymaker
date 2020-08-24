@@ -685,7 +685,7 @@ class Transact:
             gas_price_value = self.gas_price.get_gas_price(seconds_elapsed)
             transaction_was_sent = len(self.tx_hashes) > 0 or (replaced_tx is not None and len(replaced_tx.tx_hashes) > 0)
             # Uncomment this to debug state during transaction submission
-            self.logger.debug(f"Transaction {self.name()} is churning: was_sent={transaction_was_sent}, gas_price_value={gas_price_value} gas_price_last={self.gas_price_last}")
+            # self.logger.debug(f"Transaction {self.name()} is churning: was_sent={transaction_was_sent}, gas_price_value={gas_price_value} gas_price_last={self.gas_price_last}")
             if not transaction_was_sent or (gas_price_value is not None and gas_price_value > self.gas_price_last * 1.125):
                 self.gas_price_last = gas_price_value
 
