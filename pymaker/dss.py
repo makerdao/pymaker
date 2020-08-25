@@ -846,29 +846,29 @@ class Cat(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'bite', [ilk.toBytes(), urn.address.address])
 
-    def lump(self, ilk: Ilk) -> Wad:
+    def chop(self, ilk: Ilk) -> Wad:
         assert isinstance(ilk, Ilk)
 
-        (flip, chop, lump) = self._contract.functions.ilks(ilk.toBytes()).call()
-        return Wad(lump)
+        (flip, chop, dunk) = self._contract.functions.ilks(ilk.toBytes()).call()
+        return Wad(chop)
 
-    def chop(self, ilk: Ilk) -> Ray:
+    def dunk(self, ilk: Ilk) -> Rad:
         assert isinstance(ilk, Ilk)
 
-        (flip, chop, lump) = self._contract.functions.ilks(ilk.toBytes()).call()
-        return Ray(chop)
-
-    def file_vow(self, vow: Vow) -> Transact:
-        assert isinstance(vow, Vow)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,address)', [Web3.toBytes(text="vow"), vow.address.address])
+        (flip, chop, dunk) = self._contract.functions.ilks(ilk.toBytes()).call()
+        return Rad(dunk)
 
     def flipper(self, ilk: Ilk) -> Address:
         assert isinstance(ilk, Ilk)
 
-        (flip, chop, lump) = self._contract.functions.ilks(ilk.toBytes()).call()
+        (flip, chop, dunk) = self._contract.functions.ilks(ilk.toBytes()).call()
         return Address(flip)
+
+    def box(self) -> Rad:
+        return Rad(self._contract.functions.box().call())
+
+    def litter(self) -> Rad:
+        return Rad(self._contract.functions.litter().call())
 
     def past_bites(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogBite]:
         """Synchronously retrieve past LogBite events.

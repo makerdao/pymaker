@@ -175,7 +175,7 @@ class TestFlipper:
         assert flipper.kicks() >= 0
 
     def test_scenario(self, web3, mcd, collateral, flipper, our_address, other_address, deployment_address):
-        # Create a CDP
+        # Create a vault
         collateral = mcd.collaterals['ETH-A']
         kicks_before = flipper.kicks()
         ilk = collateral.ilk
@@ -193,7 +193,7 @@ class TestFlipper:
         assert mcd.dai.balance_of(deployment_address) == dart
         assert mcd.vat.dai(deployment_address) == Rad(0)
 
-        # Undercollateralize the CDP
+        # Undercollateralize the vault
         to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
         set_collateral_price(mcd, collateral, to_price)
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
@@ -204,11 +204,10 @@ class TestFlipper:
         assert not safe
         assert len(flipper.active_auctions()) == 0
 
-        # Bite the CDP, which moves debt to the vow and kicks the flipper
+        # Bite the vault, which moves debt to the vow and kicks the flipper
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
         assert urn.ink > Wad(0)
-        lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
-        art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
+        art = min(urn.art, Wad(mcd.cat.dunk(ilk)))  # Wad
         tab = art * ilk.rate  # Wad
         assert tab == dart
         simulate_bite(mcd, collateral, deployment_address)

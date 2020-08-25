@@ -188,15 +188,17 @@ def simulate_bite(mcd: DssDeployment, collateral: Collateral, our_address: Addre
     # Collateral value should be less than the product of our stablecoin debt and the debt multiplier
     assert (Ray(urn.ink) * ilk.spot) < (Ray(urn.art) * ilk.rate)
 
-    # Lesser of our collateral balance and the liquidation quantity
-    lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
-    # Lesser of our stablecoin debt and the canceled debt pro rata the seized collateral
-    art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
-    # Stablecoin to be raised in flip auction
-    tab = Ray(art) * ilk.rate  # Ray
+    # Ensure there's room in the litter box
+    box: Rad = mcd.cat.box()
+    litter: Rad = mcd.cat.litter()
+    room: Rad = box - litter
+    assert litter < box and room >= ilk.dust
 
-    assert -int(lot) < 0 and -int(art) < 0
-    assert tab > Ray(0)
+    # ilk.dunk [Rad], ilk.rate [Ray], ilk.chop [Wad]
+    dart: Wad = min(urn.art, Wad(min(mcd.cat.dunk(ilk), room) / Rad(ilk.rate) / Rad(mcd.cat.chop(ilk))))
+    dink: Wad = min(urn.ink, urn.ink * dart / urn.art)
+
+    assert dart > Wad(0) and dink > Wad(0)
 
 
 @pytest.fixture(scope="session")
@@ -548,8 +550,8 @@ class TestCat:
 
         collateral = mcd.collaterals['ETH-C']
         assert mcd.cat.flipper(collateral.ilk) == collateral.flipper.address
-        assert isinstance(mcd.cat.lump(collateral.ilk), Wad)
-        assert isinstance(mcd.cat.chop(collateral.ilk), Ray)
+        assert mcd.cat.chop(collateral.ilk) == Wad.from_number(1.05)
+        assert mcd.cat.dunk(collateral.ilk) == Rad.from_number(1000)
 
 
 class TestSpotter:
