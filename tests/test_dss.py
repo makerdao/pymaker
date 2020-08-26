@@ -180,30 +180,6 @@ def cleanup_urn(mcd: DssDeployment, collateral: Collateral, address: Address):
     # TestVat.ensure_clean_urn(mcd, collateral, address)
 
 
-def simulate_bite(mcd: DssDeployment, collateral: Collateral, our_address: Address):
-    assert isinstance(mcd, DssDeployment)
-    assert isinstance(collateral, Collateral)
-    assert isinstance(our_address, Address)
-
-    ilk = mcd.vat.ilk(collateral.ilk.name)
-    urn = mcd.vat.urn(collateral.ilk, our_address)
-
-    # Collateral value should be less than the product of our stablecoin debt and the debt multiplier
-    assert (Ray(urn.ink) * ilk.spot) < (Ray(urn.art) * ilk.rate)
-
-    # Ensure there's room in the litter box
-    box: Rad = mcd.cat.box()
-    litter: Rad = mcd.cat.litter()
-    room: Rad = box - litter
-    assert litter < box and room >= ilk.dust
-
-    # Prevent null auction (ilk.dunk [Rad], ilk.rate [Ray], ilk.chop [Wad])
-    dart: Wad = min(urn.art, Wad(min(mcd.cat.dunk(ilk), room) / Rad(ilk.rate) / Rad(mcd.cat.chop(ilk))))
-    dink: Wad = min(urn.ink, urn.ink * dart / urn.art)
-
-    assert dart > Wad(0) and dink > Wad(0)
-
-
 @pytest.fixture(scope="session")
 def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
     collateral = mcd.collaterals['ETH-A']
