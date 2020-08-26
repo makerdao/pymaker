@@ -56,7 +56,6 @@ class TestApp:
         if len(pending_txes) > 0:
             while len(pending_txes) > 0:
                 pending_txes[0].cancel(gas_price=increasing_gas)
-                time.sleep(5)
                 pending_txes = get_pending_transactions(web3)
         else:
             logging.info("No pending transactions were found; submitting one")
