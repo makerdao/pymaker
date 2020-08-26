@@ -389,8 +389,7 @@ def get_pending_transactions(web3: Web3, address: Address = None) -> list:
     else:
         items = web3.manager.request_blocking("eth_getBlockByNumber", ["pending", True])['transactions']
         items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
-        from pprint import pprint
-        pprint(list(items))
+        list(items)  # Unsure why this is required
         txes = map(lambda item: RecoveredTransact(web3=web3, address=address, nonce=item['nonce'],
                                                   latest_tx_hash=item['hash'], current_gas=item['gasPrice']),
                    items)
@@ -638,7 +637,8 @@ class Transact:
             self.gas_price_last = replaced_tx.gas_price_last
             # Detain replacement until gas strategy produces a price acceptable to the node
             if replaced_tx.tx_hashes:
-                self.tx_hashes = [replaced_tx.tx_hashes[-1]]
+                most_recent_tx = replaced_tx.tx_hashes[-1]
+                self.tx_hashes = [most_recent_tx]
 
         while True:
             seconds_elapsed = int(time.time() - self.initial_time)

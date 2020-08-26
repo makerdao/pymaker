@@ -50,9 +50,6 @@ fast_gas = GeometricGasPrice(initial_price=int(1.1 * GWEI), every_secs=30, max_p
 
 
 class TestApp:
-    def __init__(self):
-        pass
-
     def main(self):
         self.test_replacement()
         self.test_simultaneous()
