@@ -213,7 +213,7 @@ class DssDeployment:
 
             collaterals = {}
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
-                ilk = Ilk(name[0].replace('_', '-'))
+                ilk = vat.ilk(name[0].replace('_', '-'))
                 if name[1] == "ETH":
                     gem = DSEthToken(web3, Address(conf[name[1]]))
                 else:
