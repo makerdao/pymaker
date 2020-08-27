@@ -20,7 +20,7 @@ import pytest
 from mock import MagicMock
 from web3 import Web3, HTTPProvider
 
-from pymaker import Address, eth_transfer, TransactStatus, Calldata, Receipt
+from pymaker import Address, eth_transfer, get_pending_transactions, RecoveredTransact, TransactStatus, Calldata, Receipt
 from pymaker.gas import FixedGasPrice
 from pymaker.numeric import Wad
 from pymaker.proxy import DSProxy, DSProxyCache
@@ -233,7 +233,7 @@ class TestTransactReplace:
         self.web3.eth.getTransaction = MagicMock(return_value={'nonce': nonce})
         # and
         transact_1 = self.token.transfer(self.second_address, Wad(500))
-        future_receipt_1 = asyncio.ensure_future(transact_1.transact_async())
+        future_receipt_1 = asyncio.ensure_future(transact_1.transact_async(gas_price=FixedGasPrice(100000)))
         # and
         await asyncio.sleep(2)
         # then
@@ -245,7 +245,8 @@ class TestTransactReplace:
         self.web3.eth.getTransaction = original_get_transaction
         # and
         transact_2 = self.token.transfer(self.third_address, Wad(700))
-        future_receipt_2 = asyncio.ensure_future(transact_2.transact_async(replace=transact_1))
+        future_receipt_2 = asyncio.ensure_future(transact_2.transact_async(replace=transact_1,
+                                                                           gas_price=FixedGasPrice(150000)))
         # and
         await asyncio.sleep(10)
         # then
@@ -294,3 +295,37 @@ class TestTransactReplace:
         assert receipt_2.successful
         # and
         assert self.token.balance_of(self.second_address) == Wad(500)
+
+
+class TestTransactRecover:
+    def setup_method(self):
+        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
+        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
+        self.token = DSToken.deploy(self.web3, 'ABC')
+        assert self.token.mint(Wad(100)).transact()
+
+    def test_nothing_pending(self):
+        # given no pending transactions created by prior tests
+
+        # then
+        assert get_pending_transactions(self.web3) == []
+
+    @pytest.mark.skip("Ganache and Parity testchains don't seem to simulate pending transactions in the mempool")
+    @pytest.mark.asyncio
+    async def test_recover_pending_tx(self, other_address):
+        # given
+        low_gas = FixedGasPrice(1)
+        await self.token.transfer(other_address, Wad(5)).transact_async(gas_price=low_gas)
+        await asyncio.sleep(0.5)
+
+        # when
+        pending = get_pending_transactions(self.web3)
+
+        # and
+        assert len(pending) == 1
+        recovered: RecoveredTransact = pending[0]
+        high_gas = FixedGasPrice(int(1 * FixedGasPrice.GWEI))
+        recovered.cancel(high_gas)
+
+        # then
+        assert get_pending_transactions(self.web3) == []

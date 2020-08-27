@@ -19,16 +19,16 @@ import asyncio
 import logging
 import os
 import sys
-import threading
 import time
+import threading
+from pprint import pprint
 
-from pymaker import Address, web3_via_http
+from pymaker import Address, get_pending_transactions, Wad, web3_via_http
 from pymaker.deployment import DssDeployment
 from pymaker.gas import FixedGasPrice, GeometricGasPrice
 from pymaker.keys import register_keys
-from pymaker.numeric import Wad
 
-logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(message)s', level=logging.INFO)
 # reduce logspew
 logging.getLogger('urllib3').setLevel(logging.INFO)
 logging.getLogger("web3").setLevel(logging.INFO)
@@ -36,50 +36,41 @@ logging.getLogger("asyncio").setLevel(logging.INFO)
 logging.getLogger("requests").setLevel(logging.INFO)
 
 pool_size = int(sys.argv[3]) if len(sys.argv) > 3 else 10
-web3 = web3_via_http(endpoint_uri=os.environ['ETH_RPC_URL'], http_pool_size=pool_size)
+web3 = web3_via_http(endpoint_uri=os.environ['ETH_RPC_URL'])
 web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
 register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
-
-mcd = DssDeployment.from_node(web3)
 our_address = Address(web3.eth.defaultAccount)
 weth = DssDeployment.from_node(web3).collaterals['ETH-A'].gem
 
 GWEI = 1000000000
-slow_gas = GeometricGasPrice(initial_price=int(0.8 * GWEI), every_secs=30, max_price=2000 * GWEI)
-fast_gas = GeometricGasPrice(initial_price=int(1.1 * GWEI), every_secs=30, max_price=2000 * GWEI)
+increasing_gas = GeometricGasPrice(initial_price=int(1 * GWEI), every_secs=30, coefficient=1.5, max_price=100 * GWEI)
 
 
 class TestApp:
     def main(self):
-        self.test_replacement()
-        self.test_simultaneous()
+        self.startup()
+
+        pending_txes = get_pending_transactions(web3)
+        pprint(list(map(lambda t: f"{t.name()} with gas {t.current_gas}", pending_txes)))
+
+        if len(pending_txes) > 0:
+            while len(pending_txes) > 0:
+                pending_txes[0].cancel(gas_price=increasing_gas)
+                # After the synchronous cancel, wait to see if subsequent transactions get mined
+                time.sleep(15)
+                pending_txes = get_pending_transactions(web3)
+        else:
+            logging.info("No pending transactions were found; submitting one")
+            self._run_future(weth.deposit(Wad(1)).transact_async(gas_price=FixedGasPrice(int(0.4 * GWEI))))
+            time.sleep(0.5)
+
         self.shutdown()
 
-    def test_replacement(self):
-        first_tx = weth.deposit(Wad(4))
-        logging.info(f"Submitting first TX with gas price deliberately too low")
-        self._run_future(first_tx.transact_async(gas_price=slow_gas))
-        time.sleep(0.5)
-
-        second_tx = weth.deposit(Wad(6))
-        logging.info(f"Replacing first TX with legitimate gas price")
-        second_tx.transact(replace=first_tx)
-
-        assert first_tx.replaced
-
-    def test_simultaneous(self):
-        self._run_future(weth.deposit(Wad(1)).transact_async(gas_price=fast_gas))
-        self._run_future(weth.deposit(Wad(5)).transact_async(gas_price=fast_gas))
-        asyncio.sleep(6)
+    def startup(self):
+        pass
 
     def shutdown(self):
-        balance = weth.balance_of(our_address)
-        if Wad(0) < balance < Wad(100):  # this account's tiny WETH balance came from this test
-            logging.info(f"Unwrapping {balance} WETH")
-            assert weth.withdraw(balance).transact(gas_price=fast_gas)
-        elif balance >= Wad(12):  # user already had a balance, so unwrap what a successful test would have consumed
-            logging.info(f"Unwrapping 12 WETH")
-            assert weth.withdraw(Wad(12)).transact(gas_price=fast_gas)
+        pass
 
     @staticmethod
     def _run_future(future):
