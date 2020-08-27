@@ -614,7 +614,7 @@ class TestPot:
         assert isinstance(mcd.pot.rho(), datetime)
 
         assert mcd.pot.pie() >= Wad(0)
-        assert mcd.pot.dsr() >= Ray.from_number(1)
+        assert mcd.pot.dsr() > Ray.from_number(1)
         assert datetime.fromtimestamp(0) < mcd.pot.rho() < datetime.utcnow()
 
     def test_drip(self, mcd):
@@ -622,7 +622,10 @@ class TestPot:
         assert isinstance(chi_before, Ray)
         assert mcd.pot.drip().transact()
         chi_after = mcd.pot.chi()
-        assert chi_before < chi_after
+        if mcd.pot.dsr() == Ray.from_number(1):
+            assert chi_before == chi_after
+        else:
+            assert chi_before < chi_after
 
 class TestOsm:
     def test_price(self, web3, mcd):

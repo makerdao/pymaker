@@ -838,7 +838,7 @@ class Cat(Contract):
         assert isinstance(urn, Urn)
         ilk = self.vat.ilk(ilk.name)
         urn = self.vat.urn(ilk, urn.address)
-        rate = self.vat.ilk(ilk.name).rate
+        rate = ilk.rate
 
         # Collateral value should be less than the product of our stablecoin debt and the debt multiplier
         safe = Ray(urn.ink) * ilk.spot >= Ray(urn.art) * rate
@@ -849,7 +849,10 @@ class Cat(Contract):
         box: Rad = self.box()
         litter: Rad = self.litter()
         room: Rad = box - litter
-        if litter >= box or room < ilk.dust:
+        if litter >= box:
+            logger.debug(f"biting {urn.address} would exceed maximum Dai out for liquidation")
+            return False
+        if room < ilk.dust:
             return False
 
         # Prevent null auction (ilk.dunk [Rad], ilk.rate [Ray], ilk.chop [Wad])
