@@ -286,8 +286,13 @@ class TestVat:
     def test_ilk(self, mcd):
         assert mcd.vat.ilk('XXX') == Ilk('XXX',
                                          rate=Ray(0), ink=Wad(0), art=Wad(0), spot=Ray(0), line=Rad(0), dust=Rad(0))
-        representation = repr(mcd.collaterals["ETH-A"].ilk)
-        assert "ETH-A" in representation
+
+        ilk = mcd.collaterals["ETH-C"].ilk
+        assert ilk.line == Rad.from_number(1000000)
+        assert ilk.dust == Rad.from_number(20)
+
+        representation = repr(ilk)
+        assert "ETH-C" in representation
 
     def test_gem(self, web3: Web3, mcd: DssDeployment, our_address: Address):
         # given
