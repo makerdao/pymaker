@@ -26,7 +26,7 @@ from pymaker.auctions import AuctionContract, Flipper, Flapper, Flopper
 from pymaker.deployment import DssDeployment
 from pymaker.dss import Collateral, Urn
 from pymaker.numeric import Wad, Ray, Rad
-from tests.test_dss import wrap_eth, mint_mkr, set_collateral_price, wait, frob, cleanup_urn, max_dart, simulate_bite
+from tests.test_dss import wrap_eth, mint_mkr, set_collateral_price, wait, frob, cleanup_urn, max_dart
 
 
 def create_surplus(mcd: DssDeployment, flapper: Flapper, deployment_address: Address):
@@ -59,7 +59,7 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
     assert isinstance(our_address, Address)
     assert isinstance(deployment_address, Address)
 
-    # Create a CDP
+    # Create a vault
     collateral = mcd.collaterals['ETH-A']
     ilk = collateral.ilk
     wrap_eth(mcd, deployment_address, Wad.from_number(1))
@@ -69,16 +69,18 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
     frob(mcd, collateral, deployment_address, dink=Wad.from_number(1), dart=Wad(0))
     dart = max_dart(mcd, collateral, deployment_address) - Wad(1)
     frob(mcd, collateral, deployment_address, dink=Wad(0), dart=dart)
+    assert not mcd.cat.can_bite(ilk, mcd.vat.urn(collateral.ilk, deployment_address))
 
-    # Undercollateralize and bite the CDP
+    # Undercollateralize by dropping the spot price, and then bite the vault
     to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
     set_collateral_price(mcd, collateral, to_price)
     urn = mcd.vat.urn(collateral.ilk, deployment_address)
-    ilk = mcd.vat.ilk(ilk.name)
+    assert urn.ink is not None and urn.art is not None
+    assert ilk.spot is not None
     safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * ilk.spot
     assert not safe
-    simulate_bite(mcd, collateral, deployment_address)
-    assert mcd.cat.bite(collateral.ilk, Urn(deployment_address)).transact()
+    assert mcd.cat.can_bite(collateral.ilk, urn)
+    assert mcd.cat.bite(collateral.ilk, urn).transact()
     flip_kick = collateral.flipper.kicks()
 
     # Generate some Dai, bid on and win the flip auction without covering all the debt
@@ -175,7 +177,7 @@ class TestFlipper:
         assert flipper.kicks() >= 0
 
     def test_scenario(self, web3, mcd, collateral, flipper, our_address, other_address, deployment_address):
-        # Create a CDP
+        # Create a vault
         collateral = mcd.collaterals['ETH-A']
         kicks_before = flipper.kicks()
         ilk = collateral.ilk
@@ -193,7 +195,7 @@ class TestFlipper:
         assert mcd.dai.balance_of(deployment_address) == dart
         assert mcd.vat.dai(deployment_address) == Rad(0)
 
-        # Undercollateralize the CDP
+        # Undercollateralize the vault
         to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
         set_collateral_price(mcd, collateral, to_price)
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
@@ -203,16 +205,16 @@ class TestFlipper:
         safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * ilk.spot
         assert not safe
         assert len(flipper.active_auctions()) == 0
+        litter_before = mcd.cat.litter()
 
-        # Bite the CDP, which moves debt to the vow and kicks the flipper
+        # Bite the vault, which moves debt to the vow and kicks the flipper
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
         assert urn.ink > Wad(0)
-        lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
-        art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
+        art = min(urn.art, Wad(mcd.cat.dunk(ilk)))  # Wad
         tab = art * ilk.rate  # Wad
         assert tab == dart
-        simulate_bite(mcd, collateral, deployment_address)
-        assert mcd.cat.bite(collateral.ilk, Urn(deployment_address)).transact()
+        assert mcd.cat.can_bite(ilk, urn)
+        assert mcd.cat.bite(ilk, urn).transact()
         kick = flipper.kicks()
         assert kick == kicks_before + 1
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
@@ -225,6 +227,8 @@ class TestFlipper:
         assert len(bites) == 1
         last_bite = bites[0]
         assert last_bite.tab > Rad(0)
+        litter_after = mcd.cat.litter()
+        assert litter_before < litter_after
         # Check the flipper
         current_bid = flipper.bids(kick)
         assert isinstance(current_bid, Flipper.Bid)

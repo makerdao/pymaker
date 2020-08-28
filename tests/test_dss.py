@@ -35,7 +35,10 @@ from tests.conftest import validate_contracts_loaded
 @pytest.fixture
 def urn(our_address: Address, mcd: DssDeployment):
     collateral = mcd.collaterals['ETH-A']
-    return mcd.vat.urn(collateral.ilk, our_address)
+    urn = mcd.vat.urn(collateral.ilk, our_address)
+    assert urn.ilk is not None
+    assert urn.ilk == collateral.ilk
+    return urn
 
 
 def wrap_eth(mcd: DssDeployment, address: Address, amount: Wad):
@@ -177,28 +180,6 @@ def cleanup_urn(mcd: DssDeployment, collateral: Collateral, address: Address):
     # TestVat.ensure_clean_urn(mcd, collateral, address)
 
 
-def simulate_bite(mcd: DssDeployment, collateral: Collateral, our_address: Address):
-    assert isinstance(mcd, DssDeployment)
-    assert isinstance(collateral, Collateral)
-    assert isinstance(our_address, Address)
-
-    ilk = mcd.vat.ilk(collateral.ilk.name)
-    urn = mcd.vat.urn(collateral.ilk, our_address)
-
-    # Collateral value should be less than the product of our stablecoin debt and the debt multiplier
-    assert (Ray(urn.ink) * ilk.spot) < (Ray(urn.art) * ilk.rate)
-
-    # Lesser of our collateral balance and the liquidation quantity
-    lot = min(urn.ink, mcd.cat.lump(ilk))  # Wad
-    # Lesser of our stablecoin debt and the canceled debt pro rata the seized collateral
-    art = min(urn.art, (lot * urn.art) / urn.ink)  # Wad
-    # Stablecoin to be raised in flip auction
-    tab = Ray(art) * ilk.rate  # Ray
-
-    assert -int(lot) < 0 and -int(art) < 0
-    assert tab > Ray(0)
-
-
 @pytest.fixture(scope="session")
 def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
     collateral = mcd.collaterals['ETH-A']
@@ -219,7 +200,7 @@ def bite(web3: Web3, mcd: DssDeployment, our_address: Address):
     set_collateral_price(mcd, collateral, to_price)
 
     # Bite the CDP
-    simulate_bite(mcd, collateral, our_address)
+    assert mcd.cat.can_bite(collateral.ilk, Urn(our_address))
     assert mcd.cat.bite(collateral.ilk, Urn(our_address)).transact()
 
 
@@ -306,6 +287,13 @@ class TestVat:
         assert mcd.vat.ilk('XXX') == Ilk('XXX',
                                          rate=Ray(0), ink=Wad(0), art=Wad(0), spot=Ray(0), line=Rad(0), dust=Rad(0))
 
+        ilk = mcd.collaterals["ETH-C"].ilk
+        assert ilk.line == Rad.from_number(1000000)
+        assert ilk.dust == Rad.from_number(20)
+
+        representation = repr(ilk)
+        assert "ETH-C" in representation
+
     def test_gem(self, web3: Web3, mcd: DssDeployment, our_address: Address):
         # given
         collateral = mcd.collaterals['ETH-A']
@@ -313,7 +301,7 @@ class TestVat:
         our_urn = mcd.vat.urn(collateral.ilk, our_address)
         assert isinstance(collateral.ilk, Ilk)
         assert isinstance(collateral.adapter, GemJoin)
-        assert collateral.ilk == collateral.adapter.ilk()
+        assert collateral.ilk.name == collateral.adapter.ilk().name
         assert our_urn.address == our_address
         wrap_eth(mcd, our_address, amount_to_join)
         assert collateral.gem.balance_of(our_address) >= amount_to_join
@@ -352,6 +340,13 @@ class TestVat:
         debt = mcd.vat.debt()
         assert debt >= Rad(0)
         assert debt < mcd.vat.line()
+
+    def test_urn(self, urn):
+        time.sleep(11)
+        assert urn.ilk is not None
+        urn_bytes = urn.toBytes()
+        urn_from_bytes = urn.fromBytes(urn_bytes)
+        assert urn_from_bytes.address == urn.address
 
     def test_frob_noop(self, mcd, our_address):
         # given
@@ -548,8 +543,9 @@ class TestCat:
 
         collateral = mcd.collaterals['ETH-C']
         assert mcd.cat.flipper(collateral.ilk) == collateral.flipper.address
-        assert isinstance(mcd.cat.lump(collateral.ilk), Wad)
-        assert isinstance(mcd.cat.chop(collateral.ilk), Ray)
+        assert mcd.cat.chop(collateral.ilk) == Wad.from_number(1.05)
+        assert mcd.cat.dunk(collateral.ilk) == Rad.from_number(1000)
+        assert mcd.cat.box() == Rad.from_number(5000)
 
 
 class TestSpotter:
@@ -590,20 +586,25 @@ class TestVow:
 
 
 class TestJug:
-    def test_getters(self, mcd):
+    def test_getters(self, mcd, our_address):
         c = mcd.collaterals['ETH-A']
         assert isinstance(mcd.jug.vat, Vat)
         assert isinstance(mcd.jug.vow, Vow)
         assert isinstance(mcd.jug.base(), Ray)
         assert isinstance(mcd.jug.duty(c.ilk), Ray)
         assert isinstance(mcd.jug.rho(c.ilk), int)
+        assert not mcd.jug.wards(our_address)
 
     def test_drip(self, mcd):
         # given
         c = mcd.collaterals['ETH-A']
 
         # then
+        rho_before = mcd.jug.rho(c.ilk)
+        assert rho_before > 0
         assert mcd.jug.drip(c.ilk).transact()
+        rho_after = mcd.jug.rho(c.ilk)
+        assert rho_before < rho_after
 
 
 class TestPot:
@@ -613,12 +614,18 @@ class TestPot:
         assert isinstance(mcd.pot.rho(), datetime)
 
         assert mcd.pot.pie() >= Wad(0)
-        assert mcd.pot.dsr() > Ray(0)
+        assert mcd.pot.dsr() > Ray.from_number(1)
         assert datetime.fromtimestamp(0) < mcd.pot.rho() < datetime.utcnow()
 
     def test_drip(self, mcd):
+        chi_before = mcd.pot.chi()
+        assert isinstance(chi_before, Ray)
         assert mcd.pot.drip().transact()
-
+        chi_after = mcd.pot.chi()
+        if mcd.pot.dsr() == Ray.from_number(1):
+            assert chi_before == chi_after
+        else:
+            assert chi_before < chi_after
 
 class TestOsm:
     def test_price(self, web3, mcd):

@@ -1,7 +1,7 @@
 version: "3.2"
 services:
   parity:
-    image: makerdao/testchain-pymaker:unit-testing
+    image: makerdao/testchain-pymaker:unit-testing-1.1.0
     container_name: parity-pymaker-test
     ports:
       - "8545:8545"

@@ -827,12 +827,46 @@ class Cat(Contract):
     def live(self) -> bool:
         return self._contract.functions.live().call() > 0
 
+    def can_bite(self, ilk: Ilk, urn: Urn) -> bool:
+        """ Determine whether a vault can be liquidated
+
+        Args:
+            ilk: Collateral type
+            urn: Identifies the vault holder or proxy
+        """
+        assert isinstance(ilk, Ilk)
+        assert isinstance(urn, Urn)
+        ilk = self.vat.ilk(ilk.name)
+        urn = self.vat.urn(ilk, urn.address)
+        rate = ilk.rate
+
+        # Collateral value should be less than the product of our stablecoin debt and the debt multiplier
+        safe = Ray(urn.ink) * ilk.spot >= Ray(urn.art) * rate
+        if safe:
+            return False
+
+        # Ensure there's room in the litter box
+        box: Rad = self.box()
+        litter: Rad = self.litter()
+        room: Rad = box - litter
+        if litter >= box:
+            logger.debug(f"biting {urn.address} would exceed maximum Dai out for liquidation")
+            return False
+        if room < ilk.dust:
+            return False
+
+        # Prevent null auction (ilk.dunk [Rad], ilk.rate [Ray], ilk.chop [Wad])
+        dart: Wad = min(urn.art, Wad(min(self.dunk(ilk), room) / Rad(ilk.rate) / Rad(self.chop(ilk))))
+        dink: Wad = min(urn.ink, urn.ink * dart / urn.art)
+
+        return dart > Wad(0) and dink > Wad(0)
+
     def bite(self, ilk: Ilk, urn: Urn) -> Transact:
-        """ Initiate liquidation of a CDP, kicking off a flip auction
+        """ Initiate liquidation of a vault, kicking off a flip auction
 
         Args:
             ilk: Identifies the type of collateral.
-            urn: Address of the CDP holder.
+            urn: Address of the vault holder.
         """
         assert isinstance(ilk, Ilk)
         assert isinstance(urn, Urn)
@@ -840,35 +874,35 @@ class Cat(Contract):
         ilk = self.vat.ilk(ilk.name)
         urn = self.vat.urn(ilk, urn.address)
         rate = self.vat.ilk(ilk.name).rate
-        logger.info(f'Biting {ilk.name} CDP {urn.address.address} with ink={urn.ink} spot={ilk.spot} '
+        logger.info(f'Biting {ilk.name} vault {urn.address.address} with ink={urn.ink} spot={ilk.spot} '
                     f'art={urn.art} rate={rate}')
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'bite', [ilk.toBytes(), urn.address.address])
 
-    def lump(self, ilk: Ilk) -> Wad:
+    def chop(self, ilk: Ilk) -> Wad:
         assert isinstance(ilk, Ilk)
 
-        (flip, chop, lump) = self._contract.functions.ilks(ilk.toBytes()).call()
-        return Wad(lump)
+        (flip, chop, dunk) = self._contract.functions.ilks(ilk.toBytes()).call()
+        return Wad(chop)
 
-    def chop(self, ilk: Ilk) -> Ray:
+    def dunk(self, ilk: Ilk) -> Rad:
         assert isinstance(ilk, Ilk)
 
-        (flip, chop, lump) = self._contract.functions.ilks(ilk.toBytes()).call()
-        return Ray(chop)
-
-    def file_vow(self, vow: Vow) -> Transact:
-        assert isinstance(vow, Vow)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'file(bytes32,address)', [Web3.toBytes(text="vow"), vow.address.address])
+        (flip, chop, dunk) = self._contract.functions.ilks(ilk.toBytes()).call()
+        return Rad(dunk)
 
     def flipper(self, ilk: Ilk) -> Address:
         assert isinstance(ilk, Ilk)
 
-        (flip, chop, lump) = self._contract.functions.ilks(ilk.toBytes()).call()
+        (flip, chop, dunk) = self._contract.functions.ilks(ilk.toBytes()).call()
         return Address(flip)
+
+    def box(self) -> Rad:
+        return Rad(self._contract.functions.box().call())
+
+    def litter(self) -> Rad:
+        return Rad(self._contract.functions.litter().call())
 
     def past_bites(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogBite]:
         """Synchronously retrieve past LogBite events.
