@@ -1,6 +1,6 @@
 # This file is part of Maker Keeper Framework.
 # 
-# Copyright (C) 2017-2018 mitakash
+# Copyright (C) 2017-2020 mitakash, MikeHathaway
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -58,6 +58,19 @@ class Token:
 
     def __str__(self):
         return self.name
+
+    def __repr__(self):
+        return pformat(vars(self))
+
+
+class TokenConfig:
+    def __init__(self, data: dict):
+        assert (isinstance(data, dict))
+
+        self.tokens = [Token(name=key,
+                             address=Address(value['tokenAddress']) if 'tokenAddress' in value else None,
+                             decimals=value['tokenDecimals'] if 'tokenDecimals' in value else 18) for key, value in
+                       data['tokens'].items()]
 
     def __repr__(self):
         return pformat(vars(self))
