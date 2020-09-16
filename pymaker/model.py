@@ -67,7 +67,7 @@ class TokenConfig:
     def __init__(self, data: dict):
         assert (isinstance(data, dict))
 
-        self.tokens_list = []
+        self.token_list = []
         self.token_config = data['tokens']
 
     def set_token_list(self, data):
