@@ -67,10 +67,19 @@ class TokenConfig:
     def __init__(self, data: dict):
         assert (isinstance(data, dict))
 
-        self.tokens = [Token(name=key,
+        self.tokens_list = []
+        self.token_config = data['tokens']
+
+    def set_token_list(self, data):
+        assert (isinstance(data, dict))
+
+        self.token_list = [Token(name=key,
                              address=Address(value['tokenAddress']) if 'tokenAddress' in value else None,
                              decimals=value['tokenDecimals'] if 'tokenDecimals' in value else 18) for key, value in
                        data['tokens'].items()]
+
+    def get_token_list(self) -> List[Token]:
+        return self.token_list
 
     def __repr__(self):
         return pformat(vars(self))
