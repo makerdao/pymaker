@@ -1,6 +1,6 @@
 # This file is part of Maker Keeper Framework.
 #
-# Copyright (C) 2019 EdNoepel
+# Copyright (C) 2019-2020 EdNoepel
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -24,7 +24,9 @@ from pymaker.deployment import DssDeployment
 from pymaker.keys import register_keys
 from pymaker.numeric import Wad
 
+assert os.environ['ETH_RPC_URL']
 web3 = Web3(HTTPProvider(endpoint_uri=os.environ['ETH_RPC_URL'], request_kwargs={"timeout": 10}))
+our_address = None
 if len(sys.argv) > 1:
     web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
     our_address = Address(web3.eth.defaultAccount)
@@ -34,6 +36,10 @@ if len(sys.argv) > 2:
 else:
     run_transactions = False
 mcd = DssDeployment.from_node(web3)
+
+# Print a list of collaterals available for this deployment of MCD
+for collateral in mcd.collaterals.values():
+    print(f"Found {collateral.ilk.name:>9} - {collateral.gem.name():<20} with {collateral.adapter.dec():>2} decimals")
 
 # Choose the desired collateral; in this case we'll wrap some Eth
 collateral = mcd.collaterals['ETH-A']
