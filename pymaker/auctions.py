@@ -172,6 +172,7 @@ class AuctionContract(Contract):
         assert chunk_size > 0
         assert isinstance(abi, list)
 
+        logger.debug(f"Consumer requested auction data from block {from_block} to {to_block}")
         start = from_block
         end = None
         chunks_queried = 0
