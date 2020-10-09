@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
+import logging
 from pprint import pformat
 from typing import List
 from web3 import Web3
@@ -34,6 +35,9 @@ from pymaker.token import ERC20Token
 def toBytes(string: str):
     assert(isinstance(string, str))
     return string.encode('utf-8').ljust(32, bytes(1))
+
+
+logger = logging.getLogger()
 
 
 class AuctionContract(Contract):
@@ -155,19 +159,40 @@ class AuctionContract(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tick', [id])
 
-    def get_past_lognotes(self, number_of_past_blocks: int, abi: list) -> List[LogNote]:
-        assert isinstance(number_of_past_blocks, int)
+    def get_past_lognotes(self, abi: list, from_block: int, to_block: int = None, chunk_size=20000) -> List[LogNote]:
+        current_block = self._contract.web3.eth.blockNumber
+        assert isinstance(from_block, int)
+        assert from_block < current_block
+        if to_block is None:
+            to_block = current_block
+        else:
+            assert isinstance(to_block, int)
+            assert to_block >= from_block
+            assert to_block <= current_block
+        assert chunk_size > 0
         assert isinstance(abi, list)
 
-        block_number = self._contract.web3.eth.blockNumber
-        filter_params = {
-            'address': self.address.address,
-            'fromBlock': max(block_number - number_of_past_blocks, 0),
-            'toBlock': block_number
-        }
+        logger.debug(f"Consumer requested auction data from block {from_block} to {to_block}")
+        start = from_block
+        end = None
+        chunks_queried = 0
+        events = []
+        while end is None or start <= to_block:
+            chunks_queried += 1
+            end = min(to_block, start + chunk_size)
 
-        logs = self.web3.eth.getLogs(filter_params)
-        events = list(map(lambda l: self.parse_event(l), logs))
+            filter_params = {
+                'address': self.address.address,
+                'fromBlock': start,
+                'toBlock': end
+            }
+            logger.debug(f"Querying logs from block {start} to {end} ({end-start} blocks); "
+                         f"accumulated {len(events)} events in {chunks_queried-1} requests")
+
+            logs = self.web3.eth.getLogs(filter_params)
+            events.extend(list(map(lambda l: self.parse_event(l), logs)))
+            start += chunk_size
+
         return list(filter(lambda l: l is not None, events))
 
     def parse_event(self, event):
@@ -315,9 +340,8 @@ class Flipper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'dent', [id, lot.value, bid.value])
 
-    def past_logs(self, number_of_past_blocks: int):
-        assert isinstance(number_of_past_blocks, int)
-        logs = super().get_past_lognotes(number_of_past_blocks, Flipper.abi)
+    def past_logs(self, from_block: int, to_block: int = None):
+        logs = super().get_past_lognotes(Flipper.abi, from_block, to_block)
 
         history = []
         for log in logs:
@@ -458,9 +482,8 @@ class Flapper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'yank', [id])
 
-    def past_logs(self, number_of_past_blocks: int):
-        assert isinstance(number_of_past_blocks, int)
-        logs = super().get_past_lognotes(number_of_past_blocks, Flapper.abi)
+    def past_logs(self, from_block: int, to_block: int = None):
+        logs = super().get_past_lognotes(Flapper.abi, from_block, to_block)
 
         history = []
         for log in logs:
@@ -610,9 +633,8 @@ class Flopper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'yank', [id])
 
-    def past_logs(self, number_of_past_blocks: int):
-        assert isinstance(number_of_past_blocks, int)
-        logs = super().get_past_lognotes(number_of_past_blocks, Flopper.abi)
+    def past_logs(self, from_block: int, to_block: int = None):
+        logs = super().get_past_lognotes(Flopper.abi, from_block, to_block)
 
         history = []
         for log in logs:

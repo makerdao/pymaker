@@ -169,6 +169,11 @@ class TestFlipper:
 
         assert flipper.dent(id, lot, bid).transact(from_address=address)
 
+    @staticmethod
+    def last_log(flipper: Flipper):
+        current_block = flipper.web3.eth.blockNumber
+        return flipper.past_logs(current_block-1, current_block)[0]
+
     def test_getters(self, mcd, flipper):
         assert flipper.vat() == mcd.vat.address
         assert flipper.beg() > Wad.from_number(1)
@@ -238,7 +243,7 @@ class TestFlipper:
         # Cat doesn't incorporate the liquidation penalty (chop), but the kicker includes it.
         # Awaiting word from @dc why this is so.
         #assert last_bite.tab == current_bid.tab
-        log = flipper.past_logs(1)[0]
+        log = self.last_log(flipper)
         assert isinstance(log, Flipper.KickLog)
         assert log.id == kick
         assert log.lot == current_bid.lot
@@ -273,7 +278,7 @@ class TestFlipper:
         assert current_bid.bid == current_bid.tab
         assert len(flipper.active_auctions()) == 1
         check_active_auctions(flipper)
-        log = flipper.past_logs(1)[0]
+        log = self.last_log(flipper)
         assert isinstance(log, Flipper.TendLog)
         assert log.guy == current_bid.guy
         assert log.id == current_bid.id
@@ -291,7 +296,7 @@ class TestFlipper:
         assert current_bid.guy == our_address
         assert current_bid.bid == current_bid.tab
         assert current_bid.lot == lot
-        log = flipper.past_logs(1)[0]
+        log = self.last_log(flipper)
         assert isinstance(log, Flipper.DentLog)
         assert log.guy == current_bid.guy
         assert log.id == current_bid.id
@@ -304,7 +309,7 @@ class TestFlipper:
         assert 0 < current_bid.tic < now or current_bid.end < now
         assert flipper.deal(kick).transact(from_address=our_address)
         assert len(flipper.active_auctions()) == 0
-        log = flipper.past_logs(1)[0]
+        log = self.last_log(flipper)
         assert isinstance(log, Flipper.DealLog)
         assert log.usr == our_address
 
@@ -343,12 +348,17 @@ class TestFlapper:
         assert bid >= flapper.beg() * current_bid.bid
 
         assert flapper.tend(id, lot, bid).transact(from_address=address)
-        log = flapper.past_logs(1)[0]
+        log = TestFlapper.last_log(flapper)
         assert isinstance(log, Flapper.TendLog)
         assert log.guy == address
         assert log.id == id
         assert log.lot == lot
         assert log.bid == bid
+
+    @staticmethod
+    def last_log(flapper: Flapper):
+        current_block = flapper.web3.eth.blockNumber
+        return flapper.past_logs(current_block-1, current_block)[0]
 
     def test_getters(self, mcd, flapper):
         assert flapper.vat() == mcd.vat.address
@@ -371,7 +381,7 @@ class TestFlapper:
         check_active_auctions(flapper)
         current_bid = flapper.bids(1)
         assert current_bid.lot > Rad(0)
-        log = flapper.past_logs(1)[0]
+        log = self.last_log(flapper)
         assert isinstance(log, Flapper.KickLog)
         assert log.id == kick
         assert log.lot == current_bid.lot
@@ -399,7 +409,7 @@ class TestFlapper:
         joy_after = mcd.vat.dai(mcd.vow.address)
         print(f'joy_before={str(joy_before)}, joy_after={str(joy_after)}')
         assert joy_before - joy_after == mcd.vow.bump()
-        log = flapper.past_logs(1)[0]
+        log = self.last_log(flapper)
         assert isinstance(log, Flapper.DealLog)
         assert log.usr == our_address
         assert log.id == kick
@@ -435,12 +445,17 @@ class TestFlopper:
         assert flopper.beg() * lot <= current_bid.lot
 
         assert flopper.dent(id, lot, bid).transact(from_address=address)
-        log = flopper.past_logs(1)[0]
+        log = TestFlopper.last_log(flopper)
         assert isinstance(log, Flopper.DentLog)
         assert log.guy == address
         assert log.id == id
         assert log.lot == lot
         assert log.bid == bid
+
+    @staticmethod
+    def last_log(flopper: Flopper):
+        current_block = flopper.web3.eth.blockNumber
+        return flopper.past_logs(current_block-1, current_block)[0]
 
     def test_getters(self, mcd, flopper):
         assert flopper.vat() == mcd.vat.address
@@ -462,7 +477,7 @@ class TestFlopper:
         assert len(flopper.active_auctions()) == 1
         check_active_auctions(flopper)
         current_bid = flopper.bids(kick)
-        log = flopper.past_logs(1)[0]
+        log = self.last_log(flopper)
         assert isinstance(log, Flopper.KickLog)
         assert log.id == kick
         assert log.lot == current_bid.lot
@@ -491,7 +506,7 @@ class TestFlopper:
         assert flopper.deal(kick).transact(from_address=our_address)
         mkr_after = mcd.mkr.balance_of(our_address)
         assert mkr_after > mkr_before
-        log = flopper.past_logs(1)[0]
+        log = self.last_log(flopper)
         assert isinstance(log, Flopper.DealLog)
         assert log.usr == our_address
         assert log.id == kick
