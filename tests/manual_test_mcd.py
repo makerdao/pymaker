@@ -39,7 +39,7 @@ mcd = DssDeployment.from_node(web3)
 
 # Print a list of collaterals available for this deployment of MCD
 for collateral in mcd.collaterals.values():
-    print(f"Found {collateral.ilk.name:>9} - {collateral.gem.name():<20} with {collateral.adapter.dec():>2} decimals")
+    print(f"Found {collateral.ilk.name:>9} - {collateral.gem.name():<21} with {collateral.adapter.dec():>2} decimals")
 
 # Choose the desired collateral; in this case we'll wrap some Eth
 collateral = mcd.collaterals['ETH-A']
