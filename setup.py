@@ -16,6 +16,10 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+# Read requirements.txt
+with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
+    requirements = f.read().split('\n')
+
 # Arguments marked as "Required" below must be included for upload to PyPI.
 # Fields marked as "Optional" may be commented out.
 
@@ -28,7 +32,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='1.1.0',  # Required
+    version='1.1.3',  # Required
     description='Python API for Maker contracts',
     license='COPYING',
     long_description=long_description,
@@ -46,10 +50,5 @@ setup(
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=[
-        'pytz==2017.3',
-        'web3==5.6.0',
-        'requests==2.22.0',
-        'eth-keys<0.3.0,>=0.2.1'
-        ],
+    install_requires=requirements
 )
