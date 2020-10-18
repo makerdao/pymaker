@@ -72,7 +72,7 @@ class TestApp:
             assert collateral.adapter.join(our_address, self.amount).transact()
             self.joined += self.amount
         else:
-            logging.info(f"Found block {web3.eth.blockNumber}")
+            logging.info(f"Found block; web3.eth.blockNumber={web3.eth.blockNumber}")
         if our_address:
             logging.info(f"Urn balance is {mcd.vat.gem(ilk, our_address)} {ilk.name}")
         # self.request_history()
