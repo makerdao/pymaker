@@ -74,6 +74,15 @@ class TestWad:
     def test_subtract_should_not_work_with_rays(self):
         with pytest.raises(ArithmeticError):
             Wad(10) - Ray(2)
+    
+    def test_modulo(self):
+        assert Wad(10) % Wad(2) == Wad(0)
+        assert Wad(11) % Wad(5) == Wad(1)
+        assert Wad(11) % Wad(3) == Wad(2)
+
+    def test_modulo_should_not_work_with_rays(self):
+        with pytest.raises(ArithmeticError):
+            Wad(10) % Ray(3)
 
     def test_multiply(self):
         assert Wad.from_number(2) * Wad.from_number(3) == Wad.from_number(6)
@@ -283,6 +292,15 @@ class TestRay:
     def test_subtract_should_not_work_with_wads(self):
         with pytest.raises(ArithmeticError):
             Ray(10) - Wad(2)
+
+    def test_modulo(self):
+        assert Ray(10) % Ray(2) == Ray(0)
+        assert Ray(11) % Ray(5) == Ray(1)
+        assert Ray(11) % Ray(3) == Ray(2)
+
+    def test_modulo_should_not_work_with_wads(self):
+        with pytest.raises(ArithmeticError):
+            Ray(10) % Wad(3)
 
     def test_multiply(self):
         assert Ray.from_number(2) * Ray.from_number(3) == Ray.from_number(6)
@@ -494,6 +512,15 @@ class TestRad:
     def test_subtract_should_not_work_with_rays(self):
         with pytest.raises(ArithmeticError):
             Rad(10) - Ray(2)
+
+    def test_modulo(self):
+        assert Rad(10) % Rad(2) == Rad(0)
+        assert Rad(11) % Rad(5) == Rad(1)
+        assert Rad(11) % Rad(3) == Rad(2)
+
+    def test_modulo_should_not_work_with_wads(self):
+        with pytest.raises(ArithmeticError):
+            Rad(10) % Wad(3)
 
     def test_multiply(self):
         assert Rad.from_number(2) * Rad.from_number(3) == Rad.from_number(6)
