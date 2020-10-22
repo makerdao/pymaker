@@ -328,7 +328,7 @@ class Lifecycle:
             block_number = block['number']
             if not self.web3.eth.syncing:
                 max_block_number = self.web3.eth.blockNumber
-                if block_number == max_block_number:
+                if block_number >= max_block_number:
                     def on_start():
                         self.logger.debug(f"Processing block #{block_number} ({block_hash.hex()})")
 
