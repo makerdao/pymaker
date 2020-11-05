@@ -68,7 +68,7 @@ As such, certain JSON-RPC calls in `__init__.py` may not function properly.
  * Some node providers only support certain calls using websocket endpoints.  Unfortunately, Web3.py's 
  `WebsocketProvider` [does not support](https://github.com/ethereum/web3.py/issues/1413) multiple threads awaiting a 
  response from the websocket, breaking some core `pymaker` functionality in `Lifecycle` and `Transact` classes.
- * When using and **Infura** node to pull event logs, ensure your requests are batched into a small enough chunks such 
+ * When using an **Infura** node to pull event logs, ensure your requests are batched into a small enough chunks such 
  that no more than 10,000 results will be returned for each request.
 
 

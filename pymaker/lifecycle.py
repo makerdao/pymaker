@@ -24,6 +24,7 @@ import time
 import pytz
 from pymaker.sign import eth_sign
 from web3 import Web3
+from web3.exceptions import BlockNotFound, BlockNumberOutofRange
 
 from pymaker import register_filter_thread, any_filter_thread_present, stop_all_filter_threads, all_filter_threads_alive
 from pymaker.util import AsyncCallback
@@ -349,12 +350,13 @@ class Lifecycle:
 
         def new_block_watch():
             event_filter = self.web3.eth.filter('latest')
+            logging.debug(f"Created event filter: {event_filter}")
             while True:
                 try:
                     for event in event_filter.get_new_entries():
                         new_block_callback(event)
-                except ValueError:
-                    self.logger.warning("Node dropped event emitter; recreating latest block filter")
+                except (BlockNotFound, BlockNumberOutofRange, ValueError) as ex:
+                    self.logger.warning(f"Node dropped event emitter; recreating latest block filter: {ex}")
                     event_filter = self.web3.eth.filter('latest')
                 finally:
                     time.sleep(1)
