@@ -61,6 +61,19 @@ and set the `LDFLAGS` environment variable before you run `pip3 install -r requi
 export LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
 ```
 
+### Known node issues
+ * `pymaker` has been tested against **Parity/OpenEthereum** and **Geth**.  It has not been tested against **Hyperledger Besu**.
+ * Many Ethereum node providers do not support the full [JSON-RPC API](https://eth.wiki/json-rpc/API#json-rpc-methods). 
+As such, certain JSON-RPC calls in `__init__.py` may not function properly.  
+ * Some node providers only support certain calls using websocket endpoints.  Unfortunately, Web3.py's 
+ `WebsocketProvider` [does not support](https://github.com/ethereum/web3.py/issues/1413) multiple threads awaiting a 
+ response from the websocket, breaking some core `pymaker` functionality in `Lifecycle` and `Transact` classes.
+ * When using an **Infura** node to pull event logs, ensure your requests are batched into a small enough chunks such 
+ that no more than 10,000 results will be returned for each request.
+ * Asynchronous submission of simultaneous transactions will not work on **Infura** due to lack of  
+ [parity_nextNonce](https://community.infura.io/t/wrong-nonce-number-in-eth-gettransactioncount/357/14) support. 
+
+
 ## Available APIs
 
 The current version provides APIs around:
@@ -79,9 +92,7 @@ The current version provides APIs around:
 * `0x v2`.
 
 APIs around the following functionality have not been implemented:
-* Dai Savings Rate (`Pot`)
-* Global Settlement (`End`)
-* Governance (`DSAuth`, `DSChief`, `DSGuard`, `DSSpell`, `Mom`)
+* Governance (`DSAuth`, `DSGuard`, `DSSpell`, `Mom`)
 
 Contributions from the community are appreciated.
 

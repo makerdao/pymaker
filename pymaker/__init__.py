@@ -47,6 +47,7 @@ from pymaker.util import synchronize, bytes_to_hexstring, is_contract_at
 filter_threads = []
 node_is_parity = WeakKeyDictionary()
 transaction_lock = Lock()
+logger = logging.getLogger()
 
 
 def web3_via_http(endpoint_uri: str, timeout=60, http_pool_size=20):
@@ -65,13 +66,12 @@ def web3_via_http(endpoint_uri: str, timeout=60, http_pool_size=20):
 def _is_parity(web3: Web3) -> bool:
     assert isinstance(web3, Web3)
     global node_is_parity
-    if web3 in node_is_parity:
-        return node_is_parity[web3]
-    else:
-        is_parity = "parity" in web3.clientVersion.lower() or \
-                    "openethereum" in web3.clientVersion.lower()
-        node_is_parity[web3] = is_parity
-        return is_parity
+    if web3 not in node_is_parity:
+        logger.debug(f"node clientVersion={web3.clientVersion}")
+        is_infura = "infura" in web3.manager.provider.endpoint_uri
+        is_parity = "parity" in web3.clientVersion.lower() or "openethereum" in web3.clientVersion.lower()
+        node_is_parity[web3] = is_parity and not is_infura
+    return node_is_parity[web3]
 
 
 def register_filter_thread(filter_thread):

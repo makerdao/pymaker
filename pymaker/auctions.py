@@ -340,8 +340,8 @@ class Flipper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'dent', [id, lot.value, bid.value])
 
-    def past_logs(self, from_block: int, to_block: int = None):
-        logs = super().get_past_lognotes(Flipper.abi, from_block, to_block)
+    def past_logs(self, from_block: int, to_block: int = None, chunk_size=20000):
+        logs = super().get_past_lognotes(Flipper.abi, from_block, to_block, chunk_size)
 
         history = []
         for log in logs:
@@ -482,8 +482,8 @@ class Flapper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'yank', [id])
 
-    def past_logs(self, from_block: int, to_block: int = None):
-        logs = super().get_past_lognotes(Flapper.abi, from_block, to_block)
+    def past_logs(self, from_block: int, to_block: int = None, chunk_size=20000):
+        logs = super().get_past_lognotes(Flapper.abi, from_block, to_block, chunk_size)
 
         history = []
         for log in logs:
@@ -633,8 +633,8 @@ class Flopper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'yank', [id])
 
-    def past_logs(self, from_block: int, to_block: int = None):
-        logs = super().get_past_lognotes(Flopper.abi, from_block, to_block)
+    def past_logs(self, from_block: int, to_block: int = None, chunk_size=20000):
+        logs = super().get_past_lognotes(Flopper.abi, from_block, to_block, chunk_size)
 
         history = []
         for log in logs:
