@@ -28,19 +28,19 @@ from pymaker.deployment import DssDeployment
 from pymaker.gas import FixedGasPrice, GeometricGasPrice
 from pymaker.keys import register_keys
 
-logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(message)s', level=logging.DEBUG)
 # reduce logspew
 logging.getLogger('urllib3').setLevel(logging.INFO)
 logging.getLogger("web3").setLevel(logging.INFO)
 logging.getLogger("asyncio").setLevel(logging.INFO)
 logging.getLogger("requests").setLevel(logging.INFO)
 
-pool_size = int(sys.argv[3]) if len(sys.argv) > 3 else 10
 web3 = web3_via_http(endpoint_uri=os.environ['ETH_RPC_URL'])
 web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
 register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
 our_address = Address(web3.eth.defaultAccount)
 weth = DssDeployment.from_node(web3).collaterals['ETH-A'].gem
+stuck_txes_to_submit = int(sys.argv[3]) if len(sys.argv) > 3 else 1
 
 GWEI = 1000000000
 increasing_gas = GeometricGasPrice(initial_price=int(1 * GWEI), every_secs=30, coefficient=1.5, max_price=100 * GWEI)
@@ -60,9 +60,10 @@ class TestApp:
                 time.sleep(15)
                 pending_txes = get_pending_transactions(web3)
         else:
-            logging.info("No pending transactions were found; submitting one")
-            self._run_future(weth.deposit(Wad(1)).transact_async(gas_price=FixedGasPrice(int(0.4 * GWEI))))
-            time.sleep(0.5)
+            logging.info(f"No pending transactions were found; submitting {stuck_txes_to_submit}")
+            for i in range(1, stuck_txes_to_submit+1):
+                self._run_future(weth.deposit(Wad(i)).transact_async(gas_price=FixedGasPrice(int(0.4 * i * GWEI))))
+            time.sleep(2)
 
         self.shutdown()
 

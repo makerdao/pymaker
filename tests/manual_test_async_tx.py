@@ -63,23 +63,25 @@ class TestApp:
 
         second_tx = weth.deposit(Wad(6))
         logging.info(f"Replacing first TX with legitimate gas price")
-        second_tx.transact(replace=first_tx)
+        second_tx.transact(replace=first_tx, gas_price=fast_gas)
 
         assert first_tx.replaced
 
     def test_simultaneous(self):
         self._run_future(weth.deposit(Wad(1)).transact_async(gas_price=fast_gas))
+        self._run_future(weth.deposit(Wad(3)).transact_async(gas_price=fast_gas))
         self._run_future(weth.deposit(Wad(5)).transact_async(gas_price=fast_gas))
-        asyncio.sleep(6)
+        self._run_future(weth.deposit(Wad(7)).transact_async(gas_price=fast_gas))
+        time.sleep(3)
 
     def shutdown(self):
         balance = weth.balance_of(our_address)
         if Wad(0) < balance < Wad(100):  # this account's tiny WETH balance came from this test
             logging.info(f"Unwrapping {balance} WETH")
             assert weth.withdraw(balance).transact(gas_price=fast_gas)
-        elif balance >= Wad(12):  # user already had a balance, so unwrap what a successful test would have consumed
+        elif balance >= Wad(22):  # user already had a balance, so unwrap what a successful test would have consumed
             logging.info(f"Unwrapping 12 WETH")
-            assert weth.withdraw(Wad(12)).transact(gas_price=fast_gas)
+            assert weth.withdraw(Wad(22)).transact(gas_price=fast_gas)
 
     @staticmethod
     def _run_future(future):
