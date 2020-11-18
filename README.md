@@ -73,8 +73,9 @@ As such, certain JSON-RPC calls in `__init__.py` may not function properly.
  * Asynchronous submission of simultaneous transactions often doesn't work on third-party node providers because RPC 
  calls to `parity_nextNonce` and `getTransactionCount` are inappropriately proxied, cached, or just plain not 
  supported.  To remedy this, a serial-incrementing nonce is used for these providers' URLs.  The downside to a serial-
- incrementing nonce is that transactions for the same account from another wallet or keeper will bring the next nonce 
- out-of-alignment, and the application using `pymaker` will need to be restarted to recover.
+ incrementing nonce is that transactions submitted for the same account from another wallet or keeper will bring the 
+ next nonce out-of-alignment, causing transaction failures or unexpected replacements.  To work around this, stop the 
+ application, wait for pending transactions for the account to be mined, and then restart the application.  
  * Recovery of pending transactions does not work on certain third-party node providers.
 
 
