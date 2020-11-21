@@ -717,7 +717,9 @@ class Transact:
                             elif nonce_calculation == NonceCalculation.TX_COUNT:
                                 self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
                             elif nonce_calculation == NonceCalculation.SERIAL:
-                                self.nonce = next_nonce[from_account]
+                                tx_count = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
+                                next_serial = next_nonce[from_account]
+                                self.nonce = max(tx_count, next_serial)
                             next_nonce[from_account] = self.nonce + 1
 
                         # Trap replacement while original is holding the lock awaiting nonce assignment

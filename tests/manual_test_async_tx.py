@@ -45,8 +45,8 @@ our_address = Address(web3.eth.defaultAccount)
 weth = DssDeployment.from_node(web3).collaterals['ETH-A'].gem
 
 GWEI = 1000000000
-slow_gas = GeometricGasPrice(initial_price=int(0.8 * GWEI), every_secs=30, max_price=2000 * GWEI)
-fast_gas = GeometricGasPrice(initial_price=int(1.1 * GWEI), every_secs=30, max_price=2000 * GWEI)
+slow_gas = GeometricGasPrice(initial_price=int(44 * GWEI), every_secs=42, max_price=200 * GWEI)
+fast_gas = GeometricGasPrice(initial_price=int(66 * GWEI), every_secs=42, max_price=200 * GWEI)
 
 
 class TestApp:
@@ -72,7 +72,7 @@ class TestApp:
         self._run_future(weth.deposit(Wad(3)).transact_async(gas_price=fast_gas))
         self._run_future(weth.deposit(Wad(5)).transact_async(gas_price=fast_gas))
         self._run_future(weth.deposit(Wad(7)).transact_async(gas_price=fast_gas))
-        time.sleep(3)
+        time.sleep(33)
 
     def shutdown(self):
         balance = weth.balance_of(our_address)
