@@ -32,7 +32,7 @@ if len(sys.argv) > 1:
     our_address = Address(web3.eth.defaultAccount)
 if len(sys.argv) > 2:
     register_keys(web3, [sys.argv[2]])  # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
-    run_transactions = False
+    run_transactions = True
 else:
     run_transactions = False
 mcd = DssDeployment.from_node(web3)
@@ -47,9 +47,9 @@ ilk = collateral.ilk
 
 if run_transactions:
     # Determine minimum amount of Dai which can be drawn
-    dai_amount = Wad(mcd.vat.ilk().dust)
+    dai_amount = Wad(ilk.dust)
     # Set an amount of collateral to join and an amount of Dai to draw
-    collateral_amount = Wad.from_number(0.2)
+    collateral_amount = Wad.from_number(105)
     if collateral.gem.balance_of(our_address) > collateral_amount:
         if collateral.ilk.name.startswith("ETH"):
             # Wrap ETH to produce WETH
