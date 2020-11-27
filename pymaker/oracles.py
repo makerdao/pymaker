@@ -53,6 +53,9 @@ class OSM(Contract):
     def peep(self) -> Wad:
         return Wad(self._extract_price(4))
 
+    def zzz(self) -> int:
+        return self._contract.functions.zzz().call()
+
     def _extract_price(self, storage_slot: int) -> int:
         assert isinstance(storage_slot, int)
         return Web3.toInt(self.web3.eth.getStorageAt(self.address.address, storage_slot)[16:])
