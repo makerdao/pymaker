@@ -68,6 +68,7 @@ class NonceCalculation(Enum):
     TX_COUNT = auto()
     PARITY_NEXTNONCE = auto()
     SERIAL = auto()
+    PARITY_SERIAL = auto()
 
 
 def _get_nonce_calc(web3: Web3) -> NonceCalculation:
@@ -78,7 +79,9 @@ def _get_nonce_calc(web3: Web3) -> NonceCalculation:
         requires_serial_nonce = any(provider in web3.manager.provider.endpoint_uri for provider in
                                     providers_without_nonce_calculation)
         is_parity = "parity" in web3.clientVersion.lower() or "openethereum" in web3.clientVersion.lower()
-        if requires_serial_nonce:
+        if is_parity and requires_serial_nonce:
+            nonce_calc[web3] = NonceCalculation.PARITY_SERIAL
+        elif requires_serial_nonce:
             nonce_calc[web3] = NonceCalculation.SERIAL
         elif is_parity:
             nonce_calc[web3] = NonceCalculation.PARITY_NEXTNONCE
@@ -393,7 +396,7 @@ def get_pending_transactions(web3: Web3, address: Address = None) -> list:
         address = Address(web3.eth.defaultAccount)
 
     # Get the list of pending transactions and their details from specified sources
-    if _get_nonce_calc(web3) == NonceCalculation.PARITY_NEXTNONCE:
+    if _get_nonce_calc(web3) in (NonceCalculation.PARITY_NEXTNONCE, NonceCalculation.PARITY_SERIAL):
         items = web3.manager.request_blocking("parity_pendingTransactions", [])
         items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
         items = filter(lambda item: item['blockNumber'] is None, items)
@@ -718,6 +721,10 @@ class Transact:
                                 self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
                             elif nonce_calculation == NonceCalculation.SERIAL:
                                 tx_count = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
+                                next_serial = next_nonce[from_account]
+                                self.nonce = max(tx_count, next_serial)
+                            elif nonce_calculation == NonceCalculation.PARITY_SERIAL:
+                                tx_count = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
                                 next_serial = next_nonce[from_account]
                                 self.nonce = max(tx_count, next_serial)
                             next_nonce[from_account] = self.nonce + 1
