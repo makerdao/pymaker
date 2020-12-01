@@ -27,6 +27,36 @@ from datetime import datetime, timedelta
 
 from tests.test_dss import mint_mkr
 
+def mint_approve_lock(mcd: DssDeployment, amount: Wad, address: Address):
+    prevBalance = mcd.mkr.balance_of(address)
+    mint_mkr(mcd.mkr, address, amount)
+    assert mcd.mkr.balance_of(address) == amount + prevBalance
+
+    # Lock MKR in DS-Chief
+    assert mcd.mkr.approve(mcd.ds_chief.address).transact(from_address=address)
+    assert mcd.ds_chief.lock(amount).transact(from_address=address)
+    assert mcd.mkr.balance_of(address) == prevBalance
+
+def approve_iou_free_mkr(mcd: DssDeployment, amount: Wad, address: Address):
+    prevBalance = mcd.mkr.balance_of(address)
+    iou = mcd.ds_chief.iou()
+    assert iou.approve(mcd.ds_chief.address).transact(from_address=address)
+    assert mcd.ds_chief.free(amount).transact(from_address=address)
+    assert mcd.mkr.balance_of(address) == amount + prevBalance
+
+# Relevant to DS-Chief 1.2 
+def launch_chief(mcd: DssDeployment, address: Address):
+    launchAmount = Wad.from_number(80000)
+    mint_approve_lock(mcd, launchAmount, address)
+
+    # Vote on address(0) to activate DSChief.launch()
+    zero_address = Address("0x0000000000000000000000000000000000000000")
+    assert mcd.ds_chief.vote_yays([zero_address.address]).transact(from_address=address)
+
+    # Launch Ds-Chief (1.2)
+    assert mcd.ds_chief.launch().transact(from_address=address)
+    approve_iou_free_mkr(mcd, launchAmount, address)
+
 
 @pytest.mark.skip(reason="not fully implemented")
 class TestDSPause:
@@ -51,19 +81,18 @@ class TestDSPause:
         assert self.ds_pause.exec(self.plan).transact()
 
 class TestDSChief:
+
+    def test_launch(self, mcd: DssDeployment, our_address: Address):
+        assert mcd.ds_chief.live() == False
+        launch_chief(mcd, our_address)
+        assert mcd.ds_chief.live() == True
+
     def test_scenario(self, mcd: DssDeployment, our_address: Address, other_address: Address):
         isinstance(mcd, DssDeployment)
         isinstance(our_address, Address)
 
-        prevBalance = mcd.mkr.balance_of(our_address)
         amount = Wad.from_number(1000)
-        mint_mkr(mcd.mkr, our_address, amount)
-        assert mcd.mkr.balance_of(our_address) == amount + prevBalance
-
-        # Lock MKR in DS-Chief
-        assert mcd.mkr.approve(mcd.ds_chief.address).transact(from_address=our_address)
-        assert mcd.ds_chief.lock(amount).transact(from_address=our_address)
-        assert mcd.mkr.balance_of(our_address) == prevBalance
+        mint_approve_lock(mcd, amount, our_address)
 
         # Vote for our address
         assert mcd.ds_chief.vote_yays([our_address.address]).transact(from_address=our_address)
@@ -85,13 +114,5 @@ class TestDSChief:
         assert mcd.ds_chief.lift(other_address).transact(from_address=our_address)
         assert mcd.ds_chief.get_hat() == other_address
 
-        # TODO. Need to give DS-Chief approval to move/burn IOU tokens before
-        # calling mcd.ds_chief.free(amount)
-        # Can fix in one of two ways:
-        # 1.) Need to add IOU DStoken to DssDeployment
-        # https://github.com/dapphub/ds-chief/blob/master/src/chief.sol#L65
-        # 2.) Look for the "mint" event to determine the address of the IOU token
-        # _past_events(self, contract, event, cls, number_of_past_blocks, event_filter)
+        approve_iou_free_mkr(mcd, amount, our_address)
 
-        # assert mcd.ds_chief.free(amount).transact(from_address=our_address)
-        # assert mcd.mkr.balance_of(our_address) == amount

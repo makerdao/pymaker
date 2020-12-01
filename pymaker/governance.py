@@ -172,6 +172,12 @@ class DSChief(Contract):
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
 
+    def live(self) -> bool:
+        return self._contract.functions.live().call()
+
+    def iou(self) -> DSToken:
+        return DSToken(self.web3, Address(self._contract.functions.IOU().call()))
+
     def get_votes(self, address):
         return self._contract.functions.votes(address).call()
 
@@ -189,6 +195,9 @@ class DSChief(Contract):
 
     def get_max_yays(self) -> int:
         return self._contract.functions.MAX_YAYS().call()
+
+    def launch(self) -> Transact:
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'launch', [])
 
     def lock(self, amount: Wad) -> Transact:
         assert isinstance(amount, Wad)
