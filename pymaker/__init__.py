@@ -45,7 +45,8 @@ from pymaker.numeric import Wad
 from pymaker.util import synchronize, bytes_to_hexstring, is_contract_at
 
 filter_threads = []
-node_is_parity = WeakKeyDictionary()
+nonce_calc = WeakKeyDictionary()
+next_nonce = {}
 transaction_lock = Lock()
 logger = logging.getLogger()
 
@@ -63,15 +64,31 @@ def web3_via_http(endpoint_uri: str, timeout=60, http_pool_size=20):
     return Web3(HTTPProvider(endpoint_uri=endpoint_uri, request_kwargs={"timeout": timeout}, session=session))
 
 
-def _is_parity(web3: Web3) -> bool:
+class NonceCalculation(Enum):
+    TX_COUNT = auto()
+    PARITY_NEXTNONCE = auto()
+    SERIAL = auto()
+    PARITY_SERIAL = auto()
+
+
+def _get_nonce_calc(web3: Web3) -> NonceCalculation:
     assert isinstance(web3, Web3)
-    global node_is_parity
-    if web3 not in node_is_parity:
-        logger.debug(f"node clientVersion={web3.clientVersion}")
-        is_infura = "infura" in web3.manager.provider.endpoint_uri
+    global nonce_calc
+    if web3 not in nonce_calc:
+        providers_without_nonce_calculation = ['infura', 'quiknode']
+        requires_serial_nonce = any(provider in web3.manager.provider.endpoint_uri for provider in
+                                    providers_without_nonce_calculation)
         is_parity = "parity" in web3.clientVersion.lower() or "openethereum" in web3.clientVersion.lower()
-        node_is_parity[web3] = is_parity and not is_infura
-    return node_is_parity[web3]
+        if is_parity and requires_serial_nonce:
+            nonce_calc[web3] = NonceCalculation.PARITY_SERIAL
+        elif requires_serial_nonce:
+            nonce_calc[web3] = NonceCalculation.SERIAL
+        elif is_parity:
+            nonce_calc[web3] = NonceCalculation.PARITY_NEXTNONCE
+        else:
+            nonce_calc[web3] = NonceCalculation.TX_COUNT
+        logger.debug(f"node clientVersion={web3.clientVersion}, will use {nonce_calc[web3]}")
+    return nonce_calc[web3]
 
 
 def register_filter_thread(filter_thread):
@@ -379,7 +396,7 @@ def get_pending_transactions(web3: Web3, address: Address = None) -> list:
         address = Address(web3.eth.defaultAccount)
 
     # Get the list of pending transactions and their details from specified sources
-    if _is_parity(web3):
+    if _get_nonce_calc(web3) in (NonceCalculation.PARITY_NEXTNONCE, NonceCalculation.PARITY_SERIAL):
         items = web3.manager.request_blocking("parity_pendingTransactions", [])
         items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
         items = filter(lambda item: item['blockNumber'] is None, items)
@@ -592,13 +609,16 @@ class Transact:
             invocation was successful, or `None` if it failed.
         """
 
+        global next_nonce
         self.initial_time = time.time()
         unknown_kwargs = set(kwargs.keys()) - {'from_address', 'replace', 'gas', 'gas_buffer', 'gas_price'}
         if len(unknown_kwargs) > 0:
-            raise Exception(f"Unknown kwargs: {unknown_kwargs}")
+            raise ValueError(f"Unknown kwargs: {unknown_kwargs}")
 
-        # Get the from account.
+        # Get the from account; initialize the first nonce for the account.
         from_account = kwargs['from_address'].address if ('from_address' in kwargs) else self.web3.eth.defaultAccount
+        if not next_nonce or from_account not in next_nonce:
+            next_nonce[from_account] = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
 
         # First we try to estimate the gas usage of the transaction. If gas estimation fails
         # it means there is no point in sending the transaction, thus we fail instantly and
@@ -694,10 +714,20 @@ class Transact:
                     # We need the lock in order to not try to send two transactions with the same nonce.
                     with transaction_lock:
                         if self.nonce is None:
-                            if _is_parity(self.web3):
+                            nonce_calculation = _get_nonce_calc(self.web3)
+                            if nonce_calculation == NonceCalculation.PARITY_NEXTNONCE:
                                 self.nonce = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
-                            else:
+                            elif nonce_calculation == NonceCalculation.TX_COUNT:
                                 self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
+                            elif nonce_calculation == NonceCalculation.SERIAL:
+                                tx_count = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
+                                next_serial = next_nonce[from_account]
+                                self.nonce = max(tx_count, next_serial)
+                            elif nonce_calculation == NonceCalculation.PARITY_SERIAL:
+                                tx_count = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
+                                next_serial = next_nonce[from_account]
+                                self.nonce = max(tx_count, next_serial)
+                            next_nonce[from_account] = self.nonce + 1
 
                         # Trap replacement while original is holding the lock awaiting nonce assignment
                         if self.replaced:

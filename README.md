@@ -70,8 +70,13 @@ As such, certain JSON-RPC calls in `__init__.py` may not function properly.
  response from the websocket, breaking some core `pymaker` functionality in `Lifecycle` and `Transact` classes.
  * When using an **Infura** node to pull event logs, ensure your requests are batched into a small enough chunks such 
  that no more than 10,000 results will be returned for each request.
- * Asynchronous submission of simultaneous transactions will not work on **Infura** due to lack of  
- [parity_nextNonce](https://community.infura.io/t/wrong-nonce-number-in-eth-gettransactioncount/357/14) support. 
+ * Asynchronous submission of simultaneous transactions often doesn't work on third-party node providers because RPC 
+ calls to `parity_nextNonce` and `getTransactionCount` are inappropriately proxied, cached, or just plain not 
+ supported.  To remedy this, a serial-incrementing nonce is used for these providers' URLs.  The downside to a serial-
+ incrementing nonce is that transactions submitted for the same account from another wallet or keeper will bring the 
+ next nonce out-of-alignment, causing transaction failures or unexpected replacements.  To work around this, stop the 
+ application, wait for pending transactions for the account to be mined, and then restart the application.  
+ * Recovery of pending transactions does not work on certain third-party node providers.
 
 
 ## Available APIs
