@@ -219,7 +219,7 @@ class DssDeployment:
                 else:
                     gem = DSToken(web3, Address(conf[name[1]]))
 
-                if name[1] in ['USDC', 'WBTC', 'TUSD', 'USDT', 'GUSD']:
+                if name[1] in ['USDC', 'WBTC', 'TUSD', 'USDT', 'GUSD', 'RENBTC']:
                     adapter = GemJoin5(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
                 else:
                     adapter = GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
