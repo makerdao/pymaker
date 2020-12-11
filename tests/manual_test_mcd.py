@@ -82,3 +82,4 @@ if run_transactions:
 
 if our_address:
     print(f"Collateral balance: {mcd.vat.gem(ilk, our_address)}")
+    print(f"Urn balance: {mcd.vat.urn(ilk, our_address)}")
