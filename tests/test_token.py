@@ -49,6 +49,23 @@ class TestERC20Token:
         assert self.token.balance_of(self.our_address) == Wad(1000000)
         assert self.token.balance_of(self.second_address) == Wad(0)
 
+    def test_balance_at_block(self):
+        """ This test relies on ganache creating a new block for every transaction by default """
+
+        starting_block = int(self.web3.eth.getBlock('latest')['number'])
+
+        # check balance before minting
+        assert self.token.balance_at_block(self.our_address, starting_block - 1) == Wad(0)
+
+        # check balance after minting
+        assert self.token.balance_at_block(self.our_address, starting_block) == Wad(1000000)
+
+        self.token.transfer(self.second_address, Wad(500)).transact()
+
+        # check balance after additional transfer
+        assert self.token.balance_at_block(self.our_address, starting_block + 1) == Wad(999500)
+        assert self.token.balance_at_block(self.our_address, starting_block) == Wad(1000000)
+
     def test_transfer(self):
         # when
         receipt = self.token.transfer(self.second_address, Wad(500)).transact()

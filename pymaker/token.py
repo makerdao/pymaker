@@ -87,6 +87,21 @@ class ERC20Token(Contract):
 
         return Wad(self._contract.functions.balanceOf(address.address).call())
 
+    def balance_at_block(self, address: Address, block_identifier: int = 'latest') -> Wad:
+        """Returns the token balance of a given address.
+
+        Args:
+            address: The address to check the balance of.
+            block_identifier: block at which to retrieve the balance
+
+        Returns:
+            The token balance of the address specified.
+        """
+        assert(isinstance(address, Address))
+        assert(isinstance(block_identifier, int) or block_identifier == 'latest')
+
+        return Wad(self._contract.functions.balanceOf(address.address).call(block_identifier=block_identifier))
+
     def allowance_of(self, address: Address, payee: Address) -> Wad:
         """Returns the current allowance of a specified `payee` (delegate account).
 
