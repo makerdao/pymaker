@@ -35,7 +35,7 @@ from pymaker.gas import DefaultGasPrice
 from pymaker.governance import DSPause, DSChief
 from pymaker.numeric import Wad, Ray
 from pymaker.oasis import MatchingMarket
-from pymaker.oracles import OSM
+from pymaker.oracles import OSM, Univ2LpOSM
 from pymaker.sai import Tub, Tap, Top, Vox
 from pymaker.shutdown import ShutdownModule, End
 from pymaker.token import DSToken, DSEthToken
@@ -230,7 +230,10 @@ class DssDeployment:
                 if network == "testnet":
                     pip = DSValue(web3, pip_address)
                 else:
-                    pip = OSM(web3, pip_address)
+                    if name[1].startswith('UNIV2'):
+                        pip = Univ2LpOSM(web3, pip_address)
+                    else:
+                        pip = OSM(web3, pip_address)
 
                 collateral = Collateral(ilk=ilk, gem=gem, adapter=adapter,
                                         flipper=Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}'])),

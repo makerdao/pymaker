@@ -62,3 +62,20 @@ class OSM(Contract):
 
     def __repr__(self):
         return f"OSM('{self.address}')"
+
+
+class Univ2LpOSM(OSM):
+    """A custom `OSM` contract for Uniswap LP tokens
+
+    You can find the source code of the `OSM` contract here:
+    <https://github.com/makerdao/univ2-lp-oracle>.
+    """
+
+    def __init__(self, web3: Web3, address: Address):
+        super().__init__(web3, address)
+
+    def peek(self) -> Wad:
+        return Wad(self._extract_price(6))
+
+    def peep(self) -> Wad:
+        return Wad(self._extract_price(7))
