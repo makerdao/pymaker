@@ -40,7 +40,7 @@ mcd = DssDeployment.from_node(web3)
 
 # Print a list of collaterals available for this deployment of MCD
 for collateral in mcd.collaterals.values():
-    osm = OSM(web3, collateral.pip.address)
+    osm: OSM = collateral.pip
     print(f"Found {collateral.ilk.name:>15} - {collateral.gem.name():<21} with {collateral.adapter.dec():>2} decimals " 
           f"with oracle price {float(osm.peek())}")
 
