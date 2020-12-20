@@ -23,6 +23,7 @@ from pymaker import Address
 from pymaker.deployment import DssDeployment
 from pymaker.keys import register_keys
 from pymaker.numeric import Wad
+from pymaker.oracles import OSM
 
 assert os.environ['ETH_RPC_URL']
 web3 = Web3(HTTPProvider(endpoint_uri=os.environ['ETH_RPC_URL'], request_kwargs={"timeout": 10}))
@@ -39,7 +40,9 @@ mcd = DssDeployment.from_node(web3)
 
 # Print a list of collaterals available for this deployment of MCD
 for collateral in mcd.collaterals.values():
-    print(f"Found {collateral.ilk.name:>9} - {collateral.gem.name():<21} with {collateral.adapter.dec():>2} decimals")
+    osm = OSM(web3, collateral.pip.address)
+    print(f"Found {collateral.ilk.name:>15} - {collateral.gem.name():<21} with {collateral.adapter.dec():>2} decimals " 
+          f"with oracle price {float(osm.peek())}")
 
 # Choose the desired collateral; in this case we'll wrap some Eth
 collateral = mcd.collaterals['ETH-A']
