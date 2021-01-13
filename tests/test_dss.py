@@ -508,6 +508,15 @@ class TestVat:
         other_balance_after = mcd.vat.dai(other_address)
         assert other_balance_before + Rad(Wad(10)) == other_balance_after
 
+        # confirm log was emitted and could be parsed
+        from_block = mcd.web3.eth.blockNumber
+        logs = mcd.vat.past_logs(from_block)
+        assert isinstance(logs[0], Vat.LogMove)
+        logmove: Vat.LogMove = logs[0]
+        assert logmove.src == our_address
+        assert logmove.dst == other_address
+        assert logmove.dart == Rad(Wad(10))
+
         # rollback
         cleanup_urn(mcd, collateral, our_address)
 
@@ -530,6 +539,17 @@ class TestVat:
         urn_after = mcd.vat.urn(collateral.ilk, other_address)
         assert urn_before.ink + Wad(3) == urn_after.ink
         assert urn_before.art + Wad(10) == urn_after.art
+
+        # confirm log was emitted and could be parsed
+        from_block = mcd.web3.eth.blockNumber
+        logs = mcd.vat.past_logs(from_block)
+        assert isinstance(logs[0], Vat.LogFork)
+        logfork: Vat.LogFork = logs[0]
+        assert logfork.ilk == collateral.ilk.name
+        assert logfork.src == our_address
+        assert logfork.dst == other_address
+        assert logfork.dink == Wad(3)
+        assert logfork.dart == Wad(10)
 
         # rollback
         cleanup_urn(mcd, collateral, our_address)
