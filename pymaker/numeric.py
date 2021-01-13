@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
 from functools import total_ordering, reduce
 from decimal import *
 
@@ -138,6 +139,9 @@ class Wad:
 
     def __round__(self, ndigits: int = 0):
         return Wad(round(self.value, -18 + ndigits))
+
+    def __sqrt__(self):
+        return Wad.from_number(math.sqrt(self.__float__()))
 
     @staticmethod
     def min(*args):
@@ -265,6 +269,9 @@ class Ray:
     def __round__(self, ndigits: int = 0):
         return Ray(round(self.value, -27 + ndigits))
 
+    def __sqrt__(self):
+        return Ray.from_number(math.sqrt(self.__float__()))
+
     @staticmethod
     def min(*args):
         """Returns the lower of the Ray values"""
@@ -390,6 +397,9 @@ class Rad:
 
     def __round__(self, ndigits: int = 0):
         return Rad(round(self.value, -45 + ndigits))
+
+    def __sqrt__(self):
+        return Rad.from_number(math.sqrt(self.__float__()))
 
     @staticmethod
     def min(*args):
