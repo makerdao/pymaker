@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
 import pytest
 
 from pymaker.numeric import Wad, Ray, Rad
@@ -239,6 +240,11 @@ class TestWad:
         round_distance = Wad(abs(round_difference.value))
         assert round_distance <= Wad.from_number(0.5 * 10**(-ndigits))    
 
+    def test_square_root(self):
+        test_std_sqrt = Wad.from_number(math.sqrt(16.5))
+        test_pymaker_sqrt = Wad.__sqrt__(Wad.from_number(16.5))
+
+        assert test_std_sqrt == test_pymaker_sqrt
 
 class TestRay:
     def test_should_support_negative_values(self):
@@ -448,6 +454,11 @@ class TestRay:
         assert round(Ray.from_number(123.4567), 0) == Ray.from_number(123.0)
         assert round(Ray.from_number(123.4567), -2) == Ray.from_number(100.0)
 
+    def test_square_root(self):
+        test_std_sqrt = Ray.from_number(math.sqrt(16.5))
+        test_pymaker_sqrt = Ray.__sqrt__(Ray.from_number(16.5))
+
+        assert test_std_sqrt == test_pymaker_sqrt
 
 class TestRad:
     def test_should_support_negative_values(self):
@@ -708,3 +719,9 @@ class TestRad:
         assert round(Rad.from_number(123.4567), 2) == Rad.from_number(123.46)
         assert round(Rad.from_number(123.4567), 0) == Rad.from_number(123.0)
         assert round(Rad.from_number(123.4567), -2) == Rad.from_number(100.0)
+
+    def test_square_root(self):
+        test_std_sqrt = Rad.from_number(math.sqrt(16.5))
+        test_pymaker_sqrt = Rad.__sqrt__(Rad.from_number(16.5))
+
+        assert test_std_sqrt == test_pymaker_sqrt
