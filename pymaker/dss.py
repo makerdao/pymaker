@@ -285,8 +285,8 @@ class Vat(Contract):
     Ref. <https://github.com/makerdao/dss/blob/master/src/vat.sol>
     """
 
-    # Identifies CDP holders and collateral types they have frobbed
-    class LogFrob():
+    # Identifies vault holders and collateral types they have frobbed
+    class LogFrob:
         def __init__(self, lognote: LogNote):
             assert isinstance(lognote, LogNote)
 
@@ -301,6 +301,36 @@ class Vat(Contract):
 
         def __repr__(self):
             return f"LogFrob({pformat(vars(self))})"
+
+    # Tracks movement of stablecoin between urns
+    class LogMove:
+        def __init__(self, lognote: LogNote):
+            assert isinstance(lognote, LogNote)
+
+            self.src = Address(Web3.toHex(lognote.arg1)[26:])
+            self.dst = Address(Web3.toHex(lognote.arg2)[26:])
+            self.dart = Rad(int.from_bytes(lognote.get_bytes_at_index(2), byteorder="big", signed=True))
+            self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
+
+        def __repr__(self):
+            return f"LogMove({pformat(vars(self))})"
+
+    # Shows vaults being split or merged
+    class LogFork:
+        def __init__(self, lognote: LogNote):
+            assert isinstance(lognote, LogNote)
+
+            self.ilk = str(Web3.toText(lognote.arg1)).replace('\x00', '')
+            self.src = Address(Web3.toHex(lognote.arg2)[26:])
+            self.dst = Address(Web3.toHex(lognote.arg3)[26:])
+            self.dink = Wad(int.from_bytes(lognote.get_bytes_at_index(3), byteorder="big", signed=True))
+            self.dart = Wad(int.from_bytes(lognote.get_bytes_at_index(4), byteorder="big", signed=True))
+            self.block = lognote.block
+            self.tx_hash = lognote.tx_hash
+
+        def __repr__(self):
+            return f"LogFork({pformat(vars(self))})"
 
     abi = Contract._load_abi(__name__, 'abi/Vat.abi')
     bin = Contract._load_bin(__name__, 'abi/Vat.bin')
@@ -530,9 +560,23 @@ class Vat(Contract):
          Returns:
             List of past `LogFrob` events represented as :py:class:`pymaker.dss.Vat.LogFrob` class.
         """
+        return self.past_logs(from_block, to_block, ilk,
+                              include_forks=False, include_moves=False, chunk_size=chunk_size)
+
+    def past_logs(self, from_block: int, to_block: int = None, ilk: Ilk = None,
+                   include_forks=True, include_moves=True, chunk_size=20000) -> List[object]:
+        """Synchronously retrieve a unordered list of vat activity, optionally filtered by collateral type.
+        Args:
+            from_block: Oldest Ethereum block to retrieve the events from.
+            to_block: Optional newest Ethereum block to retrieve the events from, defaults to current block
+            ilk: Optionally filter frobs by ilk.name
+            chunk_size: Number of blocks to fetch from chain at one time, for performance tuning
+        Returns:
+            Unordered list of past `LogFork`, `LogFrob`, and `LogMove` events.
+        """
         current_block = self._contract.web3.eth.blockNumber
         assert isinstance(from_block, int)
-        assert from_block < current_block
+        assert from_block <= current_block
         if to_block is None:
             to_block = current_block
         else:
@@ -556,22 +600,37 @@ class Vat(Contract):
                 'fromBlock': start,
                 'toBlock': end
             }
-            logger.debug(f"Querying frobs from block {start} to {end} ({end-start} blocks); "
-                         f"accumulated {len(retval)} frobs in {chunks_queried-1} requests")
+            logger.debug(f"Querying logs from block {start} to {end} ({end-start} blocks); "
+                         f"accumulated {len(retval)} logs in {chunks_queried-1} requests")
 
             logs = self.web3.eth.getLogs(filter_params)
 
             lognotes = list(map(lambda l: LogNote.from_event(l, Vat.abi), logs))
+
             # '0x7cdd3fde' is Vat.slip (from GemJoin.join) and '0x76088703' is Vat.frob
             logfrobs = list(filter(lambda l: l.sig == '0x76088703', lognotes))
             logfrobs = list(map(lambda l: Vat.LogFrob(l), logfrobs))
             if ilk is not None:
                 logfrobs = list(filter(lambda l: l.ilk == ilk.name, logfrobs))
-
             retval.extend(logfrobs)
+
+            # '0xbb35783b' is Vat.move
+            if include_moves:
+                logmoves = list(filter(lambda l: l.sig == '0xbb35783b', lognotes))
+                logmoves = list(map(lambda l: Vat.LogMove(l), logmoves))
+                retval.extend(logmoves)
+
+            # '0x870c616d' is Vat.fork
+            if include_forks:
+                logforks = list(filter(lambda l: l.sig == '0x870c616d', lognotes))
+                logforks = list(map(lambda l: Vat.LogFork(l), logforks))
+                if ilk is not None:
+                    logforks = list(filter(lambda l: l.ilk == ilk.name, logforks))
+                retval.extend(logforks)
+
             start += chunk_size
 
-        logger.debug(f"Found {len(retval)} frobs in {chunks_queried} requests")
+        logger.debug(f"Found {len(retval)} logs in {chunks_queried} requests")
         return retval
 
     def heal(self, vice: Rad) -> Transact:
