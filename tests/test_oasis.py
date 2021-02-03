@@ -23,7 +23,7 @@ import time
 from web3 import HTTPProvider
 from web3 import Web3
 
-from pymaker import Address, Wad, Contract
+from pymaker import Address, Wad, Contract, Transact
 from pymaker.approval import directly
 from pymaker.oasis import SimpleMarket, MatchingMarket, Order
 from pymaker.token import DSToken
@@ -52,6 +52,10 @@ class OasisMockPriceOracle(Contract):
         return OasisMockPriceOracle(web3=web3, address=Contract._deploy(web3, OasisMockPriceOracle.abi,
                                                                         OasisMockPriceOracle.bin, []))
 
+    def set_price(self, price: Wad):
+        assert isinstance(price, Wad)
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'setPrice', [price.value])
+
     def __eq__(self, other):
         return self.address == other.address
 
@@ -71,7 +75,7 @@ class GeneralMarketTest:
         self.our_address = Address(self.web3.eth.defaultAccount)
 
         self.price_oracle = OasisMockPriceOracle.deploy(self.web3)
-        # TODO: set price
+        self.price_oracle.set_price(Wad.from_number(10))
 
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1_tokenclass = Token('AAA', self.token1.address, 18)
@@ -615,6 +619,7 @@ class TestMatchingMarketWithSupportContract(TestMatchingMarket):
         support_bin = Contract._load_bin(__name__, '../pymaker/abi/MakerOtcSupportMethods.bin')
         support_address = Contract._deploy(self.web3, support_abi, support_bin, [])
 
+        self.price_oracle = OasisMockPriceOracle.deploy(self.web3)
         self.otc = MatchingMarket.deploy(self.web3, self.token1.address, Wad(0), self.price_oracle.address, support_address)
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
         self.otc.add_token_pair_whitelist(self.token1.address, self.token3.address).transact()
@@ -644,7 +649,8 @@ class TestMatchingMarketDecimal:
         support_bin = Contract._load_bin(__name__, '../pymaker/abi/MakerOtcSupportMethods.bin')
         support_address = Contract._deploy(self.web3, support_abi, support_bin, [])
 
-        self.otc = MatchingMarket.deploy(self.web3, self.token1.address, Wad(0), self.price_oracle.address)
+        price_oracle = OasisMockPriceOracle.deploy(self.web3)
+        self.otc = MatchingMarket.deploy(self.web3, self.token1.address, Wad(0), price_oracle.address, support_address)
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
         self.otc.approve([self.token1, self.token2], directly())
 
@@ -677,38 +683,13 @@ class TestMatchingMarketPosition:
         self.token2 = DSToken.deploy(self.web3, 'BBB')
         self.token2.mint(Wad.from_number(10000)).transact()
         self.token2_tokenclass = Token('BBB', self.token2.address, 18)
-        self.otc = MatchingMarket.deploy(self.web3, self.token1.address, Wad(0), self.price_oracle.address)
+        price_oracle = OasisMockPriceOracle.deploy(self.web3)
+        self.otc = MatchingMarket.deploy(self.web3, self.token1.address, Wad(0), price_oracle.address)
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
         self.otc.approve([self.token1, self.token2], directly())
         for amount in [11,55,44,34,36,21,45,51,15]:
             self.otc.make(p_token=self.token1_tokenclass, pay_amount=Wad.from_number(1),
                           b_token=self.token2_tokenclass, buy_amount=Wad.from_number(amount)).transact()
-
-    def test_buy_enabled(self):
-        # when
-        self.otc.set_buy_enabled(False).transact()
-
-        # then
-        assert self.otc.is_buy_enabled() is False
-
-        # when
-        self.otc.set_buy_enabled(True).transact()
-
-        # then
-        assert self.otc.is_buy_enabled() is True
-
-    def test_matching_enabled(self):
-        # when
-        self.otc.set_matching_enabled(False).transact()
-
-        # then
-        assert self.otc.is_matching_enabled() is False
-
-        # when
-        self.otc.set_matching_enabled(True).transact()
-
-        # then
-        assert self.otc.is_matching_enabled() is True
 
     def test_should_calculate_correct_order_position(self):
         # expect

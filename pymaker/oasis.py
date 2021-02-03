@@ -519,7 +519,9 @@ class MatchingMarket(SimpleMarket):
         assert isinstance(price_oracle, Address)
 
         return MatchingMarket(web3=web3, address=Contract._deploy(web3, MatchingMarket.abi, MatchingMarket.bin,
-                                                                  [dust_token, dust_limit, price_oracle]),
+                                                                  [dust_token.address,
+                                                                   dust_limit.value,
+                                                                   price_oracle.address]),
                               support_address=support_address)
 
     def add_token_pair_whitelist(self, base_token: Address, quote_token: Address) -> Transact:
@@ -609,7 +611,7 @@ class MatchingMarket(SimpleMarket):
 
             return sorted(orders, key=lambda order: order.order_id)
         else:
-            return super(SimpleMarket, self).get_orders(pay_token, buy_token)
+            return super(MatchingMarket, self).get_orders(pay_token, buy_token)
 
     def make(self, p_token: Token, pay_amount: Wad, b_token: Token, buy_amount: Wad, pos: int = None) -> Transact:
         """Create a new order.
