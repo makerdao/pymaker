@@ -35,8 +35,7 @@ class Order:
     """Represents a single order on `OasisDEX`.
 
     Instances of this class shouldn't be created directly. Instead of that, new orders can be queried
-    using methods of :py:class:`pymaker.oasis.SimpleMarket`, :py:class:`pymaker.oasis.ExpiringMarket`
-    or :py:class:`pymaker.oasis.MatchingMarket`.
+    using methods of :py:class:`pymaker.oasis.SimpleMarket` or :py:class:`pymaker.oasis.MatchingMarket`.
 
     Attributes:
         order_id: Id of the order.
@@ -453,8 +452,7 @@ class SimpleMarket(Contract):
     def kill(self, order_id: int) -> Transact:
         """Cancels an existing order.
 
-        Orders can be cancelled only by their owners. In addition to that, in case of expiring markets,
-        after the market has expired all orders can be cancelled by anyone.
+        Orders can be cancelled only by their owners.
 
         Args:
             order_id: Id of the order you want to cancel.
@@ -474,47 +472,7 @@ class SimpleMarket(Contract):
         return f"SimpleMarket('{self.address}')"
 
 
-class ExpiringMarket(SimpleMarket):
-    """A client for a `ExpiringMarket` contract.
-
-    You can find the source code of the `OasisDEX` contracts here:
-    <https://github.com/makerdao/maker-otc>.
-
-    Attributes:
-        web3: An instance of `Web` from `web3.py`.
-        address: Ethereum address of the `ExpiringMarket` contract.
-    """
-
-    abi = Contract._load_abi(__name__, 'abi/ExpiringMarket.abi')
-    bin = Contract._load_bin(__name__, 'abi/ExpiringMarket.bin')
-
-    @staticmethod
-    def deploy(web3: Web3, close_time: int):
-        """Deploy a new instance of the `ExpiringMarket` contract.
-
-        Args:
-            web3: An instance of `Web` from `web3.py`.
-            close_time: Unix timestamp of when the market will close.
-
-        Returns:
-            A `ExpiringMarket` class instance.
-        """
-        return ExpiringMarket(web3=web3, address=Contract._deploy(web3, ExpiringMarket.abi, ExpiringMarket.bin,
-                                                                  [close_time]))
-
-    def is_closed(self) -> bool:
-        """Check if the market is closed.
-
-        Returns:
-            `True` if the market is closed. `False` otherwise.
-        """
-        return self._contract.functions.isClosed().call()
-
-    def __repr__(self):
-        return f"ExpiringMarket('{self.address}')"
-
-
-class MatchingMarket(ExpiringMarket):
+class MatchingMarket(SimpleMarket):
     """A client for a `MatchingMarket` contract.
 
     You can find the source code of the `OasisDEX` contracts here:
@@ -541,61 +499,28 @@ class MatchingMarket(ExpiringMarket):
             if self.support_address else None
 
     @staticmethod
-    def deploy(web3: Web3, close_time: int, support_address: Optional[Address] = None):
+    def deploy(web3: Web3, dust_token: Address, dust_limit: Wad, price_oracle: Address,
+               support_address: Optional[Address] = None):
         """Deploy a new instance of the `MatchingMarket` contract.
 
         Args:
             web3: An instance of `Web` from `web3.py`.
-            close_time: Unix timestamp of when the market will close.
+            dust_token: Address of token serving as unit of measurement for dust_limit
+            dust_limit: The limit itself
+            price_oracle: Exposes getPriceFor method for price conversion
             support_address: Ethereum address of the `MakerOtcSupportMethods` contract (optional).
 
         Returns:
             A `MatchingMarket` class instance.
         """
+
+        assert isinstance(dust_token, Address)
+        assert isinstance(dust_limit, Wad)
+        assert isinstance(price_oracle, Address)
+
         return MatchingMarket(web3=web3, address=Contract._deploy(web3, MatchingMarket.abi, MatchingMarket.bin,
-                                                                  [close_time]), support_address=support_address)
-
-    def is_buy_enabled(self) -> bool:
-        """Checks if direct buy is enabled.
-
-        Returns:
-            `True` if direct buy is enabled, `False` otherwise.
-        """
-        return self._contract.functions.buyEnabled().call()
-
-    def set_buy_enabled(self, buy_enabled: bool) -> Transact:
-        """Enables or disables direct buy.
-
-        Args:
-            buy_enabled: Whether direct buy should be enabled or disabled.
-
-        Returns:
-            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
-        """
-        assert(isinstance(buy_enabled, bool))
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'setBuyEnabled', [buy_enabled])
-
-    def is_matching_enabled(self) -> bool:
-        """Checks if order matching is enabled.
-
-        Returns:
-            `True` if order matching is enabled, `False` otherwise.
-        """
-        return self._contract.functions.matchingEnabled().call()
-
-    def set_matching_enabled(self, matching_enabled: bool) -> Transact:
-        """Enables or disables order matching.
-
-        Args:
-            matching_enabled: Whether order matching should be enabled or disabled.
-
-        Returns:
-            A :py:class:`pymaker.Transact` instance, which can be used to trigger the transaction.
-        """
-        assert(isinstance(matching_enabled, bool))
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'setMatchingEnabled', [matching_enabled])
+                                                                  [dust_token, dust_limit, price_oracle]),
+                              support_address=support_address)
 
     def add_token_pair_whitelist(self, base_token: Address, quote_token: Address) -> Transact:
         """Adds a token pair to the whitelist.
@@ -684,7 +609,7 @@ class MatchingMarket(ExpiringMarket):
 
             return sorted(orders, key=lambda order: order.order_id)
         else:
-            return super(ExpiringMarket, self).get_orders(pay_token, buy_token)
+            return super(SimpleMarket, self).get_orders(pay_token, buy_token)
 
     def make(self, p_token: Token, pay_amount: Wad, b_token: Token, buy_amount: Wad, pos: int = None) -> Transact:
         """Create a new order.
