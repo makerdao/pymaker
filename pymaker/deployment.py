@@ -34,7 +34,6 @@ from pymaker.feed import DSValue
 from pymaker.gas import DefaultGasPrice
 from pymaker.governance import DSPause, DSChief
 from pymaker.numeric import Wad, Ray
-from pymaker.oasis import MatchingMarket
 from pymaker.oracles import OSM, Univ2LpOSM
 from pymaker.sai import Tub, Tap, Top, Vox
 from pymaker.shutdown import ShutdownModule, End
@@ -97,7 +96,6 @@ class Deployment:
 
         tub._contract.functions.turn(tap.address.address).transact()
 
-        otc = MatchingMarket.deploy(web3, 2600000000)
         etherdelta = EtherDelta.deploy(web3,
                                        admin=Address('0x1111100000999998888877777666665555544444'),
                                        fee_account=Address('0x8888877777666665555544444111110000099999'),
@@ -112,9 +110,6 @@ class Deployment:
         tub.set_authority(dad.address).transact()
         for auth in [sai, sin, skr, gem, gov, pit, tap, top]:
             auth.set_authority(dad.address).transact()
-
-        # whitelist pairs
-        otc.add_token_pair_whitelist(sai.address, gem.address).transact()
 
         # approve
         tub.approve(directly())
@@ -136,7 +131,6 @@ class Deployment:
         self.tub = tub
         self.tap = tap
         self.top = top
-        self.otc = otc
         self.etherdelta = etherdelta
 
     def reset(self):
