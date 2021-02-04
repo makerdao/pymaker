@@ -17,14 +17,15 @@
 from typing import List
 from unittest.mock import Mock
 
+import logging
 import pytest
 import time
 from web3 import HTTPProvider
 from web3 import Web3
 
-from pymaker import Address, Wad, Contract
+from pymaker import Address, Wad, Contract, Transact
 from pymaker.approval import directly
-from pymaker.oasis import SimpleMarket, ExpiringMarket, MatchingMarket, Order
+from pymaker.oasis import SimpleMarket, MatchingMarket, Order
 from pymaker.token import DSToken
 from pymaker.model import Token
 from tests.helpers import wait_until_mock_called, is_hashable
@@ -32,11 +33,50 @@ from tests.helpers import wait_until_mock_called, is_hashable
 PAST_BLOCKS = 100
 
 
+class OasisMockPriceOracle(Contract):
+    """A mock price Oracle for deploying Oasis MatchingMarket contract"""
+
+    abi = Contract._load_abi(__name__, 'abi/OasisMockPriceOracle.abi')
+    bin = Contract._load_bin(__name__, 'abi/OasisMockPriceOracle.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert(isinstance(web3, Web3))
+        assert(isinstance(address, Address))
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+
+    @staticmethod
+    def deploy(web3: Web3):
+        return OasisMockPriceOracle(web3=web3, address=Contract._deploy(web3, OasisMockPriceOracle.abi,
+                                                                        OasisMockPriceOracle.bin, []))
+
+    def set_price(self, price: Wad):
+        assert isinstance(price, Wad)
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'setPrice', [price.value])
+
+    def __eq__(self, other):
+        return self.address == other.address
+
+    def __repr__(self):
+        return f"OasisMockPriceOracle('{self.address}')"
+
+
 class GeneralMarketTest:
     def setup_method(self):
+        # reduce logspew
+        logging.getLogger("web3").setLevel(logging.INFO)
+        logging.getLogger("urllib3").setLevel(logging.INFO)
+        logging.getLogger("asyncio").setLevel(logging.INFO)
+
         self.web3 = Web3(HTTPProvider("http://localhost:8555"))
         self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
         self.our_address = Address(self.web3.eth.defaultAccount)
+
+        self.price_oracle = OasisMockPriceOracle.deploy(self.web3)
+        self.price_oracle.set_price(Wad.from_number(10))
+
         self.token1 = DSToken.deploy(self.web3, 'AAA')
         self.token1_tokenclass = Token('AAA', self.token1.address, 18)
         self.token1.mint(Wad.from_number(10000)).transact()
@@ -499,37 +539,10 @@ class TestSimpleMarket(GeneralMarketTest):
         assert repr(self.otc) == f"SimpleMarket('{self.otc.address}')"
 
 
-class TestExpiringMarket(GeneralMarketTest):
-    def setup_method(self):
-        GeneralMarketTest.setup_method(self)
-        self.otc = ExpiringMarket.deploy(self.web3, 2500000000)
-
-    def test_fail_when_no_contract_under_that_address(self):
-        # expect
-        with pytest.raises(Exception):
-            ExpiringMarket(web3=self.web3, address=Address('0xdeadadd1e5500000000000000000000000000000'))
-
-    def test_is_closed(self):
-        # when
-        # (market is open)
-
-        # then
-        assert self.otc.is_closed() is False
-
-        # when
-        self.otc._contract.functions.stop().transact()
-
-        # then
-        assert self.otc.is_closed() is True
-
-    def test_should_have_printable_representation(self):
-        assert repr(self.otc) == f"ExpiringMarket('{self.otc.address}')"
-
-
 class TestMatchingMarket(GeneralMarketTest):
     def setup_method(self):
         GeneralMarketTest.setup_method(self)
-        self.otc = MatchingMarket.deploy(self.web3, 2500000000)
+        self.otc = MatchingMarket.deploy(self.web3, self.token1.address, Wad(0), self.price_oracle.address)
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
         self.otc.add_token_pair_whitelist(self.token1.address, self.token3.address).transact()
         self.otc.add_token_pair_whitelist(self.token2.address, self.token3.address).transact()
@@ -606,7 +619,8 @@ class TestMatchingMarketWithSupportContract(TestMatchingMarket):
         support_bin = Contract._load_bin(__name__, '../pymaker/abi/MakerOtcSupportMethods.bin')
         support_address = Contract._deploy(self.web3, support_abi, support_bin, [])
 
-        self.otc = MatchingMarket.deploy(self.web3, 2500000000, support_address)
+        self.price_oracle = OasisMockPriceOracle.deploy(self.web3)
+        self.otc = MatchingMarket.deploy(self.web3, self.token1.address, Wad(0), self.price_oracle.address, support_address)
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
         self.otc.add_token_pair_whitelist(self.token1.address, self.token3.address).transact()
         self.otc.add_token_pair_whitelist(self.token2.address, self.token3.address).transact()
@@ -635,7 +649,8 @@ class TestMatchingMarketDecimal:
         support_bin = Contract._load_bin(__name__, '../pymaker/abi/MakerOtcSupportMethods.bin')
         support_address = Contract._deploy(self.web3, support_abi, support_bin, [])
 
-        self.otc = MatchingMarket.deploy(self.web3, 2500000000, support_address)
+        price_oracle = OasisMockPriceOracle.deploy(self.web3)
+        self.otc = MatchingMarket.deploy(self.web3, self.token1.address, Wad(0), price_oracle.address, support_address)
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
         self.otc.approve([self.token1, self.token2], directly())
 
@@ -668,38 +683,13 @@ class TestMatchingMarketPosition:
         self.token2 = DSToken.deploy(self.web3, 'BBB')
         self.token2.mint(Wad.from_number(10000)).transact()
         self.token2_tokenclass = Token('BBB', self.token2.address, 18)
-        self.otc = MatchingMarket.deploy(self.web3, 2500000000)
+        price_oracle = OasisMockPriceOracle.deploy(self.web3)
+        self.otc = MatchingMarket.deploy(self.web3, self.token1.address, Wad(0), price_oracle.address)
         self.otc.add_token_pair_whitelist(self.token1.address, self.token2.address).transact()
         self.otc.approve([self.token1, self.token2], directly())
         for amount in [11,55,44,34,36,21,45,51,15]:
             self.otc.make(p_token=self.token1_tokenclass, pay_amount=Wad.from_number(1),
                           b_token=self.token2_tokenclass, buy_amount=Wad.from_number(amount)).transact()
-
-    def test_buy_enabled(self):
-        # when
-        self.otc.set_buy_enabled(False).transact()
-
-        # then
-        assert self.otc.is_buy_enabled() is False
-
-        # when
-        self.otc.set_buy_enabled(True).transact()
-
-        # then
-        assert self.otc.is_buy_enabled() is True
-
-    def test_matching_enabled(self):
-        # when
-        self.otc.set_matching_enabled(False).transact()
-
-        # then
-        assert self.otc.is_matching_enabled() is False
-
-        # when
-        self.otc.set_matching_enabled(True).transact()
-
-        # then
-        assert self.otc.is_matching_enabled() is True
 
     def test_should_calculate_correct_order_position(self):
         # expect
