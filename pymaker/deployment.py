@@ -21,7 +21,7 @@ import re
 from typing import Dict, List, Optional
 
 import pkg_resources
-from pymaker.auctions import Flapper, Flopper, Flipper
+from pymaker.auctions import Clipper, Flapper, Flipper, Flopper
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address
@@ -229,9 +229,13 @@ class DssDeployment:
                     else:
                         pip = OSM(web3, pip_address)
 
-                collateral = Collateral(ilk=ilk, gem=gem, adapter=adapter,
-                                        flipper=Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}'])),
-                                        pip=pip)
+                auction = None
+                if f'MCD_FLIP_{name[0]}' in conf:
+                    auction = Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}']))
+                elif f'MCD_CLIP_{name[0]}' in conf:
+                    auction = Clipper(web3, Address(conf[f'MCD_CLIP_{name[0]}']))
+
+                collateral = Collateral(ilk=ilk, gem=gem, adapter=adapter, auction=auction, pip=pip, vat=vat)
                 collaterals[ilk.name] = collateral
 
             return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper, pot,
@@ -243,11 +247,11 @@ class DssDeployment:
         def _infer_collaterals_from_addresses(keys: []) -> List:
             collaterals = []
             for key in keys:
-                match = re.search(r'MCD_FLIP_((\w+)_\w+)', key)
+                match = re.search(r'MCD_[CF]LIP_(?!CALC)((\w+)_\w+)', key)
                 if match:
                     collaterals.append((match.group(1), match.group(2)))
                     continue
-                match = re.search(r'MCD_FLIP_(\w+)', key)
+                match = re.search(r'MCD_[CF]LIP_(?!CALC)(\w+)', key)
                 if match:
                     collaterals.append((match.group(1), match.group(1)))
 
@@ -283,7 +287,10 @@ class DssDeployment:
                 if collateral.pip:
                     conf_dict[f'PIP_{name[1]}'] = collateral.pip.address.address
                 conf_dict[f'MCD_JOIN_{name[0]}'] = collateral.adapter.address.address
-                conf_dict[f'MCD_FLIP_{name[0]}'] = collateral.flipper.address.address
+                if collateral.flipper:
+                    conf_dict[f'MCD_FLIP_{name[0]}'] = collateral.flipper.address.address
+                elif collateral.clipper:
+                    conf_dict[f'MCD_CLIP_{name[0]}'] = collateral.clipper.address.address
 
             return conf_dict
 
@@ -358,12 +365,18 @@ class DssDeployment:
 
     def active_auctions(self) -> dict:
         flips = {}
+        clips = {}
         for collateral in self.collaterals.values():
-            # Each collateral has it's own flip contract; add auctions from each.
-            flips[collateral.ilk.name] = collateral.flipper.active_auctions()
+            # Each collateral has it's own liquidation contract; add auctions from each.
+            if collateral.flipper:
+                flips[collateral.ilk.name] = collateral.flipper.active_auctions()
+            elif collateral.clipper:
+                pass  # TODO: implement clipper.active_auctions()
+                # clips[collateral.ilk.name] = collateral.clipper.active_auctions()
 
         return {
             "flips": flips,
+            "clips": clips,
             "flaps": self.flapper.active_auctions(),
             "flops": self.flopper.active_auctions()
         }

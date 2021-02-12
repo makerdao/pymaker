@@ -660,3 +660,26 @@ class Flopper(AuctionContract):
 
     def __repr__(self):
         return f"Flopper('{self.address}')"
+
+
+class Clipper(Contract):
+    """A client for the `Flipper` contract, used to interact with collateral auctions.
+
+    You can find the source code of the `Flipper` contract here:
+    <https://github.com/makerdao/dss/blob/master/src/clip.sol>.
+
+    Attributes:
+        web3: An instance of `Web` from `web3.py`.
+        address: Ethereum address of the `Flipper` contract.
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/Clipper.abi')
+    bin = Contract._load_bin(__name__, 'abi/Clipper.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)

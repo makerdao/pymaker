@@ -237,9 +237,9 @@ class TestConfig:
             assert len(collateral.ilk.name) > 0
             assert len(collateral.gem.name()) > 0
             assert len(collateral.gem.symbol()) > 0
-            assert collateral.adapter is not None
-            assert collateral.flipper is not None
-            assert collateral.pip is not None
+            assert collateral.adapter
+            assert collateral.flipper or collateral.clipper
+            assert collateral.pip
 
     def test_account_transfers(self, web3: Web3, mcd, our_address, other_address):
         print(mcd.collaterals)

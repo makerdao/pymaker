@@ -31,7 +31,7 @@ from eth_abi.registry import registry as default_registry
 
 from pymaker import Address, Contract, Transact
 from pymaker.approval import directly, hope_directly
-from pymaker.auctions import Flapper, Flipper, Flopper
+from pymaker.auctions import Clipper, Flipper
 from pymaker.gas import DefaultGasPrice
 from pymaker.logging import LogNote
 from pymaker.token import DSToken, ERC20Token
@@ -253,19 +253,26 @@ class Collateral:
     but will share the same gem (WETH token), GemJoin instance, and Flipper contract.
     """
 
-    def __init__(self, ilk: Ilk, gem: ERC20Token, adapter: GemJoin, flipper: Flipper, pip):
+    def __init__(self, ilk: Ilk, gem: ERC20Token, adapter: GemJoin, auction: Contract, pip, vat: Contract):
         assert isinstance(ilk, Ilk)
         assert isinstance(gem, ERC20Token)
         assert isinstance(adapter, GemJoin)
-        assert isinstance(flipper, Flipper)
+        assert isinstance(auction, Contract)
+        assert isinstance(vat, Contract)
 
         self.ilk = ilk
         self.gem = gem
         self.adapter = adapter
-        self.flipper = flipper
+        if isinstance(auction, Flipper):
+            self.flipper = auction
+            self.clipper = None
+        elif isinstance(auction, Clipper):
+            self.flipper = None
+            self.clipper = auction
         # Points to `median` for official deployments, `DSValue` for testing purposes.
         # Users generally have no need to interact with the pip.
         self.pip = pip
+        self.vat = vat
 
     def approve(self, usr: Address, **kwargs):
         """
@@ -275,7 +282,7 @@ class Collateral:
             usr: User making transactions with this collateral
         """
         gas_price = kwargs['gas_price'] if 'gas_price' in kwargs else DefaultGasPrice()
-        self.adapter.approve(hope_directly(from_address=usr, gas_price=gas_price), self.flipper.vat())
+        self.adapter.approve(hope_directly(from_address=usr, gas_price=gas_price), self.vat.address)
         self.adapter.approve_token(directly(from_address=usr, gas_price=gas_price))
 
 
