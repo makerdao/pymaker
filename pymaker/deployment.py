@@ -28,7 +28,7 @@ from pymaker import Address
 from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
-from pymaker.dss import Cat, Collateral, DaiJoin, GemJoin, GemJoin5, Ilk, Jug, Pot, Spotter, Vat, Vow
+from pymaker.dss import Cat, Collateral, DaiJoin, Dog, GemJoin, GemJoin5, Ilk, Jug, Pot, Spotter, Vat, Vow
 from pymaker.proxy import ProxyRegistry, DssProxyActionsDsr
 from pymaker.feed import DSValue
 from pymaker.gas import DefaultGasPrice
@@ -156,7 +156,7 @@ class DssDeployment:
     }
 
     class Config:
-        def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flapper: Flapper,
+        def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, dog: Dog, flapper: Flapper,
                      flopper: Flopper, pot: Pot, dai: DSToken, dai_join: DaiJoin, mkr: DSToken,
                      spotter: Spotter, ds_chief: DSChief, esm: ShutdownModule, end: End,
                      proxy_registry: ProxyRegistry, dss_proxy_actions: DssProxyActionsDsr, cdp_manager: CdpManager,
@@ -166,6 +166,7 @@ class DssDeployment:
             self.vow = vow
             self.jug = jug
             self.cat = cat
+            self.dog = dog
             self.flapper = flapper
             self.flopper = flopper
             self.pot = pot
@@ -189,7 +190,8 @@ class DssDeployment:
             vat = Vat(web3, Address(conf['MCD_VAT']))
             vow = Vow(web3, Address(conf['MCD_VOW']))
             jug = Jug(web3, Address(conf['MCD_JUG']))
-            cat = Cat(web3, Address(conf['MCD_CAT']))
+            cat = Cat(web3, Address(conf['MCD_CAT'])) if 'MCD_CAT' in conf else None
+            dog = Dog(web3, Address(conf['MCD_DOG'])) if 'MCD_DOG' in conf else None
             dai = DSToken(web3, Address(conf['MCD_DAI']))
             dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']))
             flapper = Flapper(web3, Address(conf['MCD_FLAP']))
@@ -238,7 +240,7 @@ class DssDeployment:
                 collateral = Collateral(ilk=ilk, gem=gem, adapter=adapter, auction=auction, pip=pip, vat=vat)
                 collaterals[ilk.name] = collateral
 
-            return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper, pot,
+            return DssDeployment.Config(pause, vat, vow, jug, cat, dog, flapper, flopper, pot,
                                         dai, dai_adapter, mkr, spotter, ds_chief, esm, end,
                                         proxy_registry, dss_proxy_actions, cdp_manager,
                                         dsr_manager, collaterals)
@@ -263,7 +265,6 @@ class DssDeployment:
                 'MCD_VAT': self.vat.address.address,
                 'MCD_VOW': self.vow.address.address,
                 'MCD_JUG': self.jug.address.address,
-                'MCD_CAT': self.cat.address.address,
                 'MCD_FLAP': self.flapper.address.address,
                 'MCD_FLOP': self.flopper.address.address,
                 'MCD_POT': self.pot.address.address,
@@ -279,6 +280,11 @@ class DssDeployment:
                 'CDP_MANAGER': self.cdp_manager.address.address,
                 'DSR_MANAGER': self.dsr_manager.address.address
             }
+
+            if self.cat:
+                conf_dict['MCD_CAT'] = self.cat.address.address
+            if self.dog:
+                conf_dict['MCD_DOG'] = self.dog.address.address
 
             for collateral in self.collaterals.values():
                 match = re.search(r'(\w+)(?:-\w+)?', collateral.ilk.name)
@@ -308,6 +314,7 @@ class DssDeployment:
         self.vow = config.vow
         self.jug = config.jug
         self.cat = config.cat
+        self.dog = config.dog
         self.flapper = config.flapper
         self.flopper = config.flopper
         self.pot = config.pot

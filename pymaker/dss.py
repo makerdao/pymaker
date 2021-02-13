@@ -991,6 +991,76 @@ class Cat(Contract):
         return f"Cat('{self.address}')"
 
 
+class Dog(Contract):
+    """A client for the `Dog` contract, used to liquidate unsafe vaults.
+    Specifically, this contract is useful for Clip auctions.
+
+    Ref. <https://github.com/makerdao/dss/blob/master/src/dog.sol>
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/Dog.abi')
+    bin = Contract._load_bin(__name__, 'abi/Dog.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+        self.vat = Vat(web3, Address(self._contract.functions.vat().call()))
+        self.vow = Vow(web3, Address(self._contract.functions.vow().call()))
+
+    def live(self) -> bool:
+        return self._contract.functions.live().call() > 0
+
+    def clipper(self, ilk: Ilk) -> Address:
+        assert isinstance(ilk, Ilk)
+
+        (clip, chop, hole, dirt) = self._contract.functions.ilks(ilk.toBytes()).call()
+        return Address(clip)
+
+    def chop(self, ilk: Ilk) -> Wad:
+        assert isinstance(ilk, Ilk)
+        (clip, chop, hole, dirt) = self._contract.functions.ilks(ilk.toBytes()).call()
+        return Wad(chop)
+
+    def hole(self, ilk: Ilk) -> Rad:
+        assert isinstance(ilk, Ilk)
+        (clip, chop, hole, dirt) = self._contract.functions.ilks(ilk.toBytes()).call()
+        return Rad(hole)
+
+    def dirt(self, ilk: Ilk) -> Rad:
+        assert isinstance(ilk, Ilk)
+        (clip, chop, hole, dirt) = self._contract.functions.ilks(ilk.toBytes()).call()
+        return Rad(dirt)
+
+    def dog_hole(self) -> Rad:
+        return Rad(self._contract.functions.Hole().call())
+
+    def dog_dirt(self) -> Rad:
+        return Rad(self._contract.functions.Dirt().call())
+
+    def bark(self, ilk: Ilk, urn: Urn) -> Transact:
+        """ Initiate liquidation of a vault, kicking off a flip auction
+
+        Args:
+            ilk: Identifies the type of collateral.
+            urn: Address of the vault holder.
+        """
+        assert isinstance(ilk, Ilk)
+        assert isinstance(urn, Urn)
+
+        ilk = self.vat.ilk(ilk.name)
+        urn = self.vat.urn(ilk, urn.address)
+        rate = self.vat.ilk(ilk.name).rate
+        logger.info(f'Barking {ilk.name} vault {urn.address.address} with ink={urn.ink} spot={ilk.spot} '
+                    f'art={urn.art} rate={rate}')
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract,
+                        'bark', [ilk.toBytes(), urn.address.address, self.address.address])
+
+
 class Pot(Contract):
     """A client for the `Pot` contract, which implements the DSR.
 

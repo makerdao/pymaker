@@ -562,10 +562,27 @@ class TestCat:
         assert isinstance(mcd.cat.vow, Vow)
 
         collateral = mcd.collaterals['ETH-C']
+        assert not collateral.clipper
         assert mcd.cat.flipper(collateral.ilk) == collateral.flipper.address
         assert mcd.cat.chop(collateral.ilk) == Wad.from_number(1.05)
         assert mcd.cat.dunk(collateral.ilk) == Rad.from_number(1000)
         assert mcd.cat.box() == Rad.from_number(5000)
+
+
+class TestDog:
+    def test_getters(self, mcd):
+        assert isinstance(mcd.dog.live(), bool)
+        assert isinstance(mcd.cat.vat, Vat)
+        assert isinstance(mcd.cat.vow, Vow)
+
+        collateral = mcd.collaterals['ETH-B']
+        assert not collateral.flipper
+        assert mcd.dog.clipper(collateral.ilk) == collateral.clipper.address
+        assert mcd.dog.chop(collateral.ilk) == Wad.from_number(1.05)
+        assert mcd.dog.hole(collateral.ilk) == Rad.from_number(300)
+        assert mcd.dog.dirt(collateral.ilk) == Rad(0)
+        assert mcd.dog.dog_hole() == Rad.from_number(5000)
+        assert mcd.dog.dog_dirt() == Rad(0)
 
 
 class TestSpotter:
