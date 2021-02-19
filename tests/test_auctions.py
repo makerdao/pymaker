@@ -22,7 +22,7 @@ from web3 import Web3
 
 from pymaker import Address
 from pymaker.approval import directly, hope_directly
-from pymaker.auctions import AuctionContract, Flipper, Flapper, Flopper
+from pymaker.auctions import DealableAuctionContract, Clipper, Flapper, Flipper, Flopper
 from pymaker.deployment import DssDeployment
 from pymaker.dss import Collateral, Urn
 from pymaker.numeric import Wad, Ray, Rad
@@ -114,7 +114,7 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
     assert mcd.vow.woe() >= mcd.vow.sump()
 
 
-def check_active_auctions(auction: AuctionContract):
+def check_active_auctions(auction: DealableAuctionContract):
     for bid in auction.active_auctions():
         assert bid.id > 0
         assert auction.kicks() >= bid.id
@@ -183,7 +183,6 @@ class TestFlipper:
 
     def test_scenario(self, web3, mcd, collateral, flipper, our_address, other_address, deployment_address):
         # Create a vault
-        collateral = mcd.collaterals['ETH-A']
         kicks_before = flipper.kicks()
         ilk = collateral.ilk
         wrap_eth(mcd, deployment_address, Wad.from_number(1))
@@ -316,6 +315,105 @@ class TestFlipper:
         # Grab our collateral
         collateral_before = collateral.gem.balance_of(our_address)
         assert collateral.adapter.exit(our_address, current_bid.lot).transact(from_address=our_address)
+        collateral_after = collateral.gem.balance_of(our_address)
+        assert collateral_before < collateral_after
+
+        # Cleanup
+        set_collateral_price(mcd, collateral, Wad.from_number(230))
+        cleanup_urn(mcd, collateral, other_address)
+
+
+class TestClipper:
+    @pytest.fixture(scope="session")
+    def collateral(self, mcd: DssDeployment) -> Collateral:
+        return mcd.collaterals['ETH-B']
+
+    @pytest.fixture(scope="session")
+    def clipper(self, collateral, deployment_address) -> Clipper:
+        return collateral.clipper
+
+    def test_getters(self, mcd, clipper):
+        assert clipper.kicks() == 0
+
+    @pytest.mark.skip("clipper.take is not working yet")
+    def test_scenario(self, web3, mcd, collateral, clipper, our_address, other_address, deployment_address):
+        dirt_before = mcd.dog.dog_dirt()
+        vice_before = mcd.vat.vice()
+        sin_before = mcd.vow.sin()
+
+        # Create a vault
+        ilk = collateral.ilk
+        wrap_eth(mcd, deployment_address, Wad.from_number(1))
+        collateral.approve(deployment_address)
+        assert collateral.adapter.join(deployment_address, Wad.from_number(1)).transact(
+            from_address=deployment_address)
+        frob(mcd, collateral, deployment_address, dink=Wad.from_number(1), dart=Wad(0))
+        dart = max_dart(mcd, collateral, deployment_address) - Wad(1)
+        frob(mcd, collateral, deployment_address, dink=Wad(0), dart=dart)
+
+        # Mint and withdraw all the Dai
+        mcd.approve_dai(deployment_address)
+        assert mcd.dai_adapter.exit(deployment_address, dart).transact(from_address=deployment_address)
+        assert mcd.vat.dai(deployment_address) == Rad(0)
+
+        # Undercollateralize the vault
+        to_price = Wad(Web3.toInt(collateral.pip.read())) / Wad.from_number(2)
+        set_collateral_price(mcd, collateral, to_price)
+        urn = mcd.vat.urn(collateral.ilk, deployment_address)
+        ilk = mcd.vat.ilk(ilk.name)
+        assert ilk.rate is not None
+        assert ilk.spot is not None
+        safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * ilk.spot
+        assert not safe
+        assert clipper.active_count() == 0
+
+        # Bark the vault, which moves debt to the vow and kicks the clipper
+        urn = mcd.vat.urn(collateral.ilk, deployment_address)
+        assert urn.ink > Wad(0)
+        tab = urn.art * ilk.rate  # Wad
+        assert tab == dart
+        assert mcd.dog.bark(ilk, urn).transact()
+        kick = clipper.kicks()
+        assert kick == 1
+        urn = mcd.vat.urn(collateral.ilk, deployment_address)
+        # Check vat, vow, and dog
+        assert urn.ink == Wad(0)
+        assert vice_before < mcd.vat.vice()
+        assert sin_before < mcd.vow.sin()
+        assert dirt_before < mcd.dog.dog_dirt()
+        # Check the clipper
+        current_sale = clipper.sales(kick)
+        from pprint import pprint
+        pprint(current_sale)
+        assert isinstance(current_sale, Clipper.Sale)
+        assert current_sale.pos == 0
+        assert round(current_sale.tab) == Rad.from_number(105)
+        assert current_sale.lot == Wad.from_number(1)
+        assert current_sale.usr == deployment_address
+        assert current_sale.tic > 0
+        assert round(current_sale.top, 1) == Ray.from_number(172.5)
+
+        # TODO: Allow the auction to expire, and then resurrect it
+        # wait(mcd, our_address, flipper.tau()+1)
+        # assert flipper.tick(kick).transact()
+
+        # Wrap some eth and handle approvals before bidding
+        eth_required = Wad(current_sale.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
+        wrap_eth(mcd, other_address, eth_required)
+        collateral.approve(other_address)
+        assert collateral.adapter.join(other_address, eth_required).transact(from_address=other_address)
+        wrap_eth(mcd, our_address, eth_required)
+        collateral.approve(our_address)
+        assert collateral.adapter.join(our_address, eth_required).transact(from_address=our_address)
+        clipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=other_address))
+
+        # Ensure we cannot take collateral below the top price
+        assert not clipper.take(kick, Wad.from_number(1), Ray.from_number(160)).transact(from_address=our_address)
+
+        # FIXME: Take collateral with max above the top price
+        assert clipper.take(kick, Wad.from_number(1), Ray.from_number(180)).transact(from_address=our_address)
+        collateral_before = collateral.gem.balance_of(our_address)
+        assert collateral.adapter.exit(our_address, Wad.from_number(0.5)).transact(from_address=our_address)
         collateral_after = collateral.gem.balance_of(our_address)
         assert collateral_before < collateral_after
 
