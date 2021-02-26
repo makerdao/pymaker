@@ -333,9 +333,14 @@ class TestClipper:
         return collateral.clipper
 
     def test_getters(self, mcd, clipper):
+        assert clipper.ilk_name() == "ETH-B"
         assert clipper.kicks() == 0
+        assert clipper.buf() == Ray.from_number(1.50)
+        assert clipper.tail() == 10800
+        assert clipper.cusp() == Ray.from_number(0.3333)
+        assert clipper.chip() == Wad.from_number(0.02)
+        assert clipper.tip() == Rad.from_number(100)
 
-    @pytest.mark.skip("clipper.take is not working yet")
     def test_scenario(self, web3, mcd, collateral, clipper, our_address, other_address, deployment_address):
         dirt_before = mcd.dog.dog_dirt()
         vice_before = mcd.vat.vice()
@@ -373,6 +378,7 @@ class TestClipper:
         tab = urn.art * ilk.rate  # Wad
         assert tab == dart
         assert mcd.dog.bark(ilk, urn).transact()
+        assert clipper.active_count() == 1
         kick = clipper.kicks()
         assert kick == 1
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
@@ -405,12 +411,21 @@ class TestClipper:
         wrap_eth(mcd, our_address, eth_required)
         collateral.approve(our_address)
         assert collateral.adapter.join(our_address, eth_required).transact(from_address=our_address)
-        clipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=other_address))
+        clipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=our_address))
 
-        # Ensure we cannot take collateral below the top price
-        assert not clipper.take(kick, Wad.from_number(1), Ray.from_number(160)).transact(from_address=our_address)
+        (done, price) = clipper.status(kick)
+        assert not done
+        print(f"top price is {price}")
+        from pymaker import Transact
+        Transact.gas_estimate_for_bad_txs = 200000
+
+        # Ensure we cannot take collateral below the top price (150.9375)
+        with pytest.raises(AssertionError):
+            clipper.can_take(kick, Wad.from_number(1), Ray.from_number(140))
+        assert not clipper.take(kick, Wad.from_number(1), Ray.from_number(140)).transact(from_address=our_address)
 
         # FIXME: Take collateral with max above the top price
+        assert clipper.can_take(kick, Wad.from_number(1), Ray.from_number(180))
         assert clipper.take(kick, Wad.from_number(1), Ray.from_number(180)).transact(from_address=our_address)
         collateral_before = collateral.gem.balance_of(our_address)
         assert collateral.adapter.exit(our_address, Wad.from_number(0.5)).transact(from_address=our_address)

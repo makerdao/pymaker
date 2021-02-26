@@ -713,21 +713,47 @@ class Clipper(AuctionContract):
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
 
-    # TODO: Add links to dog, vow, spotter, calc contracts
+    # TODO: Add links to ilk, vat, dog, vow, spotter, calc contracts
 
-    # TODO: Add getters for buf, tail, cusp, chip, and tip
+    def ilk_name(self) -> str:
+        ilk = self._contract.functions.ilk().call()
+        return Web3.toText(ilk.strip(bytes(1)))
+
+    def buf(self) -> Ray:
+        """Multiplicative factor to increase starting price"""
+        return Ray(self._contract.functions.buf().call())
+
+    def tail(self) -> int:
+        """Time elapsed before auction reset"""
+        return int(self._contract.functions.tail().call())
+
+    def cusp(self) -> Ray:
+        """Percentage drop before auction reset"""
+        return Ray(self._contract.functions.cusp().call())
+
+    def chip(self) -> Wad:
+        """Percentage of tab to suck from vow to incentivize keepers"""
+        return Wad(self._contract.functions.chip().call())
+
+    def tip(self) -> Rad:
+        """Flat fee to suck from vow to incentivize keepers"""
+        return Rad(self._contract.functions.tip().call())
 
     def kicks(self) -> int:
-        """Returns the number of auctions started so far."""
+        """Number of auctions started so far."""
         return int(self._contract.functions.kicks().call())
 
     def active_count(self) -> int:
-        """Returns the number of active auctions."""
+        """Number of active auctions."""
         return int(self._contract.functions.count().call())
 
     def active_list(self) -> List[int]:
-        """Returns list of active auction ids."""
+        """List of active auction ids."""
         return self._contract.functions.list().call()
+
+    def status(self, id: int) -> (bool, Ray):
+        (done, price) = self._contract.functions.getStatus(id).call()
+        return done, Ray(price)
 
     def sales(self, id: int) -> Sale:
         """Returns the auction details.
@@ -749,11 +775,31 @@ class Clipper(AuctionContract):
                             tic=int(array[4]),
                             top=Ray(array[5]))
 
+    def can_take(self, id: int, amount: Wad, max_price: Ray, our_address: Address = None) -> bool:
+        """ Determine whether collateral can be purchased from an auction"""
+        assert isinstance(id, int)
+        assert isinstance(amount, Wad)
+        assert isinstance(max_price, Ray)
+
+        sale = self.sales(id)
+        assert sale.usr != Address("0x0000000000000000000000000000000000000000")
+
+        (done, price) = self.status(id)
+        assert not done
+        assert max_price >= price
+
+        # TODO: finish porting from https://github.com/makerdao/dss/blob/liq-2.0/src/clip.sol#L308
+        # dust = vat.ilk()
+        # assert sale.tab > dust
+
+        return True
+
     def take(self, id: int, amount: Wad, max_price: Ray, our_address: Address = None) -> Transact:
         """Buy amount of collateral from auction indexed by id."""
         assert isinstance(id, int)
         assert isinstance(amount, Wad)
         assert isinstance(max_price, Ray)
+
         if our_address:
             assert isinstance(our_address, Address)
         else:
