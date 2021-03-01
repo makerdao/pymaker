@@ -59,6 +59,26 @@ def register_key_file(web3: Web3, key_file: str, pass_file: Optional[str] = None
         private_key = Account.decrypt(read_key, read_pass)
         register_private_key(web3, private_key)
 
+def get_private_key(web3: Web3, key: str):
+    assert(isinstance(web3, Web3))
+    assert(isinstance(key, str))
+
+    parsed = {}
+    for p in key.split(","):
+        var, val = p.split("=")
+        parsed[var] = val
+
+    with open(parsed.get('key_file')) as key_file_open:
+        read_key = key_file_open.read()
+        private_key = web3
+        if parsed.get('pass_file'):
+            with open(parsed.get('pass_file')) as pass_file_open:
+                read_pass = pass_file_open.read().replace("\n", "")
+        else:
+            read_pass = getpass.getpass(prompt=f"Password for {key_file}: ")
+
+        private_key = Account.decrypt(read_key, read_pass).hex()
+        return private_key
 
 def register_private_key(web3: Web3, private_key):
     assert(isinstance(web3, Web3))
