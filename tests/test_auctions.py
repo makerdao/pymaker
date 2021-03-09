@@ -347,7 +347,7 @@ class TestClipper:
         assert clipper.chip() == Wad.from_number(0.02)
         assert clipper.tip() == Rad.from_number(100)
 
-    # @pytest.mark.skip("clipper.take not yet working")
+    @pytest.mark.skip("clipper.take not yet working")
     def test_scenario(self, web3, mcd, collateral, clipper, our_address, other_address, deployment_address):
         dirt_before = mcd.dog.dog_dirt()
         vice_before = mcd.vat.vice()
@@ -417,8 +417,8 @@ class TestClipper:
         assert log.tab == current_sale.tab
         assert log.lot == current_sale.lot
         assert log.usr == deployment_address
-        # assert log.kpr == our_address
-        # assert log.coin == Rad(0)
+        assert log.kpr == our_address
+        assert log.coin == Rad(clipper.tip() + (current_sale.tab * clipper.chip()))
 
         # TODO: Allow the auction to expire, and then resurrect it
         # wait(mcd, our_address, flipper.tau()+1)

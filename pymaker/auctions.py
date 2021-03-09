@@ -695,9 +695,8 @@ class Clipper(AuctionContract):
             self.tab = Rad(args['tab'])         # debt
             self.lot = Wad(args['lot'])         # collateral
             self.usr = Address(args['usr'])     # liquidated vault
-            # TODO: Update testchain and add these
-            # self.kpr = Address(args['kpr'])     # keeper who barked
-            # self.coin = Rad(args['coin'])       # total kick incentive (tip + tab*chip)
+            self.kpr = Address(args['kpr'])     # keeper who barked
+            self.coin = Rad(args['coin'])       # total kick incentive (tip + tab*chip)
             self.block = log['blockNumber']
             self.tx_hash = log['transactionHash'].hex()
 
@@ -847,7 +846,8 @@ class Clipper(AuctionContract):
     def parse_event(self, event):
         signature = Web3.toHex(event['topics'][0])
         codec = ABICodec(default_registry)
-        if signature == "0xa78092f3554caa63ccbfdb0ac3fefe1082e9822af5afe2023eea252c4ac5bbca":
+        # print(f"Found signature {signature}")
+        if signature == "0x7c5bfdc0a5e8192f6cd4972f382cec69116862fb62e6abff8003874c58e064b8":
             event_data = get_event_data(codec, self.kick_abi, event)
             return Clipper.KickLog(event_data)
         else:
