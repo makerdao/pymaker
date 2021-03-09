@@ -333,6 +333,11 @@ class TestClipper:
     def clipper(self, collateral, deployment_address) -> Clipper:
         return collateral.clipper
 
+    @staticmethod
+    def last_log(clipper: Clipper):
+        current_block = clipper.web3.eth.blockNumber
+        return clipper.past_logs(current_block-1, current_block)[0]
+
     def test_getters(self, mcd, clipper):
         assert clipper.ilk_name() == "ETH-B"
         assert clipper.kicks() == 0
@@ -342,7 +347,7 @@ class TestClipper:
         assert clipper.chip() == Wad.from_number(0.02)
         assert clipper.tip() == Rad.from_number(100)
 
-    @pytest.mark.skip("clipper.take not yet working")
+    # @pytest.mark.skip("clipper.take not yet working")
     def test_scenario(self, web3, mcd, collateral, clipper, our_address, other_address, deployment_address):
         dirt_before = mcd.dog.dog_dirt()
         vice_before = mcd.vat.vice()
@@ -404,6 +409,16 @@ class TestClipper:
         assert current_sale.usr == deployment_address
         assert current_sale.tic > 0
         assert round(current_sale.top, 1) == Ray.from_number(172.5)
+
+        log = self.last_log(clipper)
+        assert isinstance(log, Clipper.KickLog)
+        assert log.id == kick
+        assert log.top == current_sale.top
+        assert log.tab == current_sale.tab
+        assert log.lot == current_sale.lot
+        assert log.usr == deployment_address
+        # assert log.kpr == our_address
+        # assert log.coin == Rad(0)
 
         # TODO: Allow the auction to expire, and then resurrect it
         # wait(mcd, our_address, flipper.tau()+1)

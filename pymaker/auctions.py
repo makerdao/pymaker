@@ -44,7 +44,7 @@ class AuctionContract(Contract):
     """Abstract baseclass shared across all auction contracts."""
     def __init__(self, web3: Web3, address: Address, abi: list):
         if self.__class__ == DealableAuctionContract:
-            raise NotImplemented('Abstract class; please call Clipper, Flipper, Flapper, or Flopper ctor')
+            raise NotImplemented('Abstract class; please call Clipper, Flapper, Flipper, or Flopper ctor')
         assert isinstance(web3, Web3)
         assert isinstance(address, Address)
         assert isinstance(abi, list)
@@ -53,6 +53,14 @@ class AuctionContract(Contract):
         self.address = address
         self.abi = abi
         self._contract = self._get_contract(web3, abi, address)
+
+        self.log_note_abi = None
+        self.kick_abi = None
+        for member in abi:
+            if not self.log_note_abi and member.get('name') == 'LogNote':
+                self.log_note_abi = member
+            elif not self.kick_abi and member.get('name') == 'Kick':
+                self.kick_abi = member
 
     def approve(self, source: Address, approval_function):
         """Approve the auction to access our collateral, Dai, or MKR so we can participate in auctions.
@@ -77,6 +85,45 @@ class AuctionContract(Contract):
         """
         return Address(self._contract.functions.vat().call())
 
+    def get_past_lognotes(self, abi: list, from_block: int, to_block: int = None, chunk_size=20000) -> List[LogNote]:
+        current_block = self._contract.web3.eth.blockNumber
+        assert isinstance(from_block, int)
+        assert from_block < current_block
+        if to_block is None:
+            to_block = current_block
+        else:
+            assert isinstance(to_block, int)
+            assert to_block >= from_block
+            assert to_block <= current_block
+        assert chunk_size > 0
+        assert isinstance(abi, list)
+
+        logger.debug(f"Consumer requested auction data from block {from_block} to {to_block}")
+        start = from_block
+        end = None
+        chunks_queried = 0
+        events = []
+        while end is None or start <= to_block:
+            chunks_queried += 1
+            end = min(to_block, start + chunk_size)
+
+            filter_params = {
+                'address': self.address.address,
+                'fromBlock': start,
+                'toBlock': end
+            }
+            logger.debug(f"Querying logs from block {start} to {end} ({end-start} blocks); "
+                         f"accumulated {len(events)} events in {chunks_queried-1} requests")
+
+            logs = self.web3.eth.getLogs(filter_params)
+            events.extend(list(map(lambda l: self.parse_event(l), logs)))
+            start += chunk_size
+
+        return list(filter(lambda l: l is not None, events))
+
+    def parse_event(self, event):
+        raise NotImplemented()
+
 
 class DealableAuctionContract(AuctionContract):
     """Abstract baseclass shared across original auction contracts."""
@@ -98,14 +145,6 @@ class DealableAuctionContract(AuctionContract):
         super(DealableAuctionContract, self).__init__(web3, address, abi)
 
         self._bids = bids
-
-        self.log_note_abi = None
-        self.kick_abi = None
-        for member in abi:
-            if not self.log_note_abi and member.get('name') == 'LogNote':
-                self.log_note_abi = member
-            elif not self.kick_abi and member.get('name') == 'Kick':
-                self.kick_abi = member
 
     def wards(self, address: Address) -> bool:
         assert isinstance(address, Address)
@@ -167,45 +206,6 @@ class DealableAuctionContract(AuctionContract):
         assert(isinstance(id, int))
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'tick', [id])
-
-    def get_past_lognotes(self, abi: list, from_block: int, to_block: int = None, chunk_size=20000) -> List[LogNote]:
-        current_block = self._contract.web3.eth.blockNumber
-        assert isinstance(from_block, int)
-        assert from_block < current_block
-        if to_block is None:
-            to_block = current_block
-        else:
-            assert isinstance(to_block, int)
-            assert to_block >= from_block
-            assert to_block <= current_block
-        assert chunk_size > 0
-        assert isinstance(abi, list)
-
-        logger.debug(f"Consumer requested auction data from block {from_block} to {to_block}")
-        start = from_block
-        end = None
-        chunks_queried = 0
-        events = []
-        while end is None or start <= to_block:
-            chunks_queried += 1
-            end = min(to_block, start + chunk_size)
-
-            filter_params = {
-                'address': self.address.address,
-                'fromBlock': start,
-                'toBlock': end
-            }
-            logger.debug(f"Querying logs from block {start} to {end} ({end-start} blocks); "
-                         f"accumulated {len(events)} events in {chunks_queried-1} requests")
-
-            logs = self.web3.eth.getLogs(filter_params)
-            events.extend(list(map(lambda l: self.parse_event(l), logs)))
-            start += chunk_size
-
-        return list(filter(lambda l: l is not None, events))
-
-    def parse_event(self, event):
-        raise NotImplemented()
 
 
 class Flipper(DealableAuctionContract):
@@ -685,6 +685,25 @@ class Clipper(AuctionContract):
     abi = Contract._load_abi(__name__, 'abi/Clipper.abi')
     bin = Contract._load_bin(__name__, 'abi/Clipper.bin')
 
+    class KickLog:
+        def __init__(self, log):
+            args = log['args']
+            from pprint import pprint
+            pprint(args)
+            self.id = args['id']
+            self.top = Ray(args['top'])         # starting price
+            self.tab = Rad(args['tab'])         # debt
+            self.lot = Wad(args['lot'])         # collateral
+            self.usr = Address(args['usr'])     # liquidated vault
+            # TODO: Update testchain and add these
+            # self.kpr = Address(args['kpr'])     # keeper who barked
+            # self.coin = Rad(args['coin'])       # total kick incentive (tip + tab*chip)
+            self.block = log['blockNumber']
+            self.tx_hash = log['transactionHash'].hex()
+
+        def __repr__(self):
+            return f"Clipper.KickLog({pformat(vars(self))})"
+
     class Sale:
         def __init__(self, pos: int, tab: Rad, lot: Wad, usr: Address, tic: int, top: Ray):
             assert(isinstance(pos, int))
@@ -807,3 +826,33 @@ class Clipper(AuctionContract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'take',
                         [id, amount.value, max_price.value, our_address.address, b''])
+
+    def past_logs(self, from_block: int, to_block: int = None, chunk_size=20000):
+        logs = super().get_past_lognotes(Clipper.abi, from_block, to_block, chunk_size)
+
+        history = []
+        for log in logs:
+            if log is None:
+                continue
+            elif isinstance(log, Clipper.KickLog):
+                history.append(log)
+            # elif log.sig == '0x4b43ed12':
+            #     history.append(Flipper.TendLog(log))
+            # elif log.sig == '0x5ff3a382':
+            #     history.append(Flipper.DentLog(log))
+            else:
+                print(f"Found log with signature {log.sig}")
+        return history
+
+    def parse_event(self, event):
+        signature = Web3.toHex(event['topics'][0])
+        codec = ABICodec(default_registry)
+        if signature == "0xa78092f3554caa63ccbfdb0ac3fefe1082e9822af5afe2023eea252c4ac5bbca":
+            event_data = get_event_data(codec, self.kick_abi, event)
+            return Clipper.KickLog(event_data)
+        else:
+            event_data = get_event_data(codec, self.log_note_abi, event)
+            return LogNote(event_data)
+
+    def __repr__(self):
+        return f"Clipper('{self.address}')"
