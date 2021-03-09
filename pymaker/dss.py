@@ -851,21 +851,8 @@ class Cat(Contract):
             self.art = Wad(log['args']['art'])
             self.tab = Rad(log['args']['tab'])
             self.flip = Address(log['args']['flip'])
+            self.id = int(log['args']['id'])
             self.raw = log
-
-        @classmethod
-        def from_event(cls, event: dict):
-            assert isinstance(event, dict)
-
-            topics = event.get('topics')
-            if topics and topics[0] == HexBytes('0x99b5620489b6ef926d4518936cfec15d305452712b88bd59da2d9c10fb0953e8'):
-                log_bite_abi = [abi for abi in Cat.abi if abi.get('name') == 'Bite'][0]
-                codec = ABICodec(default_registry)
-                event_data = get_event_data(codec, log_bite_abi, event)
-
-                return Cat.LogBite(event_data)
-            else:
-                logging.warning(f'[from_event] Invalid topic in {event}')
 
         def era(self, web3: Web3):
             return web3.eth.getBlock(self.raw['blockNumber'])['timestamp']
@@ -998,6 +985,28 @@ class Dog(Contract):
     Ref. <https://github.com/makerdao/dss/blob/master/src/dog.sol>
     """
 
+    # This information is read from the `Bark` event emitted from `Dog.bark`
+    class LogBark:
+        def __init__(self, log):
+            self.ilk = Ilk.fromBytes(log['args']['ilk'])
+            self.urn = Urn(Address(log['args']['urn']))
+            self.ink = Wad(log['args']['ink'])
+            self.art = Wad(log['args']['art'])
+            self.due = Rad(log['args']['due'])
+            self.clip = Address(log['args']['clip'])
+            self.id = int(log['args']['id'])
+            self.raw = log
+
+        def era(self, web3: Web3):
+            return web3.eth.getBlock(self.raw['blockNumber'])['timestamp']
+
+        def __eq__(self, other):
+            assert isinstance(other, Cat.LogBite)
+            return self.__dict__ == other.__dict__
+
+        def __repr__(self):
+            return pformat(vars(self))
+
     abi = Contract._load_abi(__name__, 'abi/Dog.abi')
     bin = Contract._load_bin(__name__, 'abi/Dog.bin')
 
@@ -1064,6 +1073,23 @@ class Dog(Contract):
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'bark', [ilk.toBytes(), urn.address.address, our_address.address])
+
+    def past_barks(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogBark]:
+        """Synchronously retrieve past LogBark events.
+
+        `LogBark` events are emitted every time someone bites a vault.
+
+        Args:
+            number_of_past_blocks: Number of past Ethereum blocks to retrieve the events from.
+            event_filter: Filter which will be applied to returned events.
+
+        Returns:
+            List of past `LogBark` events represented as :py:class:`pymaker.dss.Dog.LogBark` class.
+        """
+        assert isinstance(number_of_past_blocks, int)
+        assert isinstance(event_filter, dict) or (event_filter is None)
+
+        return self._past_events(self._contract, 'Bark', Dog.LogBark, number_of_past_blocks, event_filter)
 
 
 class Pot(Contract):
