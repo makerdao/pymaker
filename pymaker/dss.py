@@ -1,6 +1,6 @@
 # This file is part of Maker Keeper Framework.
 #
-# Copyright (C) 2018-2019 bargst, EdNoepel
+# Copyright (C) 2018-2021 bargst, EdNoepel
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -16,98 +16,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from collections import defaultdict
 from datetime import datetime
 from pprint import pformat
-from typing import Optional, List
+from typing import List
 
-from hexbytes import HexBytes
 from web3 import Web3
 
-from web3._utils.events import get_event_data
-
-from eth_abi.codec import ABICodec
-from eth_abi.registry import registry as default_registry
-
 from pymaker import Address, Contract, Transact
-from pymaker.approval import directly, hope_directly
-from pymaker.auctions import Clipper, Flipper
-from pymaker.gas import DefaultGasPrice
+from pymaker.ilk import Ilk
 from pymaker.logging import LogNote
 from pymaker.token import DSToken, ERC20Token
 from pymaker.numeric import Wad, Ray, Rad
 
 
 logger = logging.getLogger()
-
-
-class Ilk:
-    """Models one collateral type, the combination of a token and a set of risk parameters.
-    For example, ETH-A and ETH-B are different collateral types with the same underlying token (WETH) but with
-    different risk parameters.
-    """
-
-    def __init__(self, name: str, rate: Optional[Ray] = None,
-                 ink: Optional[Wad] = None,
-                 art: Optional[Wad] = None,
-                 spot: Optional[Ray] = None,
-                 line: Optional[Rad] = None,
-                 dust: Optional[Rad] = None):
-        assert (isinstance(name, str))
-        assert (isinstance(rate, Ray) or (rate is None))
-        assert (isinstance(ink, Wad) or (ink is None))
-        assert (isinstance(art, Wad) or (art is None))
-        assert (isinstance(spot, Ray) or (spot is None))
-        assert (isinstance(line, Rad) or (line is None))
-        assert (isinstance(dust, Rad) or (dust is None))
-
-        self.name = name
-        self.rate = rate
-        self.ink = ink
-        self.art = art
-        self.spot = spot
-        self.line = line
-        self.dust = dust
-
-    def toBytes(self):
-        return Web3.toBytes(text=self.name).ljust(32, bytes(1))
-
-    @staticmethod
-    def fromBytes(ilk: bytes):
-        assert (isinstance(ilk, bytes))
-
-        name = Web3.toText(ilk.strip(bytes(1)))
-        return Ilk(name)
-
-    def __eq__(self, other):
-        assert isinstance(other, Ilk)
-
-        return (self.name == other.name) \
-           and (self.rate == other.rate) \
-           and (self.ink == other.ink) \
-           and (self.art == other.art) \
-           and (self.spot == other.spot) \
-           and (self.line == other.line) \
-           and (self.dust == other.dust)
-
-    def __repr__(self):
-        repr = ''
-        if self.rate:
-            repr += f' rate={self.rate}'
-        if self.ink:
-            repr += f' Ink={self.ink}'
-        if self.art:
-            repr += f' Art={self.art}'
-        if self.spot:
-            repr += f' spot={self.spot}'
-        if self.line:
-            repr += f' line={self.line}'
-        if self.dust:
-            repr += f' dust={self.dust}'
-        if repr:
-            repr = f'[{repr.strip()}]'
-
-        return f"Ilk('{self.name}'){repr}"
 
 
 class Urn:
@@ -153,137 +75,6 @@ class Urn:
         if repr:
             repr = f'[{repr.strip()}]'
         return f"Urn('{self.address}'){repr}"
-
-
-class Join(Contract):
-    def __init__(self, web3: Web3, address: Address):
-        assert isinstance(web3, Web3)
-        assert isinstance(address, Address)
-
-        self.web3 = web3
-        self.address = address
-        self._contract = self._get_contract(web3, self.abi, address)
-        self._token: DSToken = None
-
-    def approve(self, approval_function, source: Address):
-        assert(callable(approval_function))
-        assert isinstance(source, Address)
-
-        approval_function(ERC20Token(web3=self.web3, address=source), self.address, self.__class__.__name__)
-
-    def approve_token(self, approval_function, **kwargs):
-        return self.approve(approval_function, self._token.address, **kwargs)
-
-    def join(self, usr: Address, value: Wad) -> Transact:
-        assert isinstance(usr, Address)
-        assert isinstance(value, Wad)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'join', [usr.address, value.value])
-
-    def exit(self, usr: Address, value: Wad) -> Transact:
-        assert isinstance(usr, Address)
-        assert isinstance(value, Wad)
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'exit', [usr.address, value.value])
-
-
-class DaiJoin(Join):
-    """A client for the `DaiJoin` contract, which allows the CDP holder to draw Dai from their Urn and repay it.
-
-    Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol>
-    """
-
-    abi = Contract._load_abi(__name__, 'abi/DaiJoin.abi')
-    bin = Contract._load_bin(__name__, 'abi/DaiJoin.bin')
-
-    def __init__(self, web3: Web3, address: Address):
-        super(DaiJoin, self).__init__(web3, address)
-        self._token = self.dai()
-
-    def dai(self) -> DSToken:
-        address = Address(self._contract.functions.dai().call())
-        return DSToken(self.web3, address)
-
-
-class GemJoin(Join):
-    """A client for the `GemJoin` contract, which allows the user to deposit collateral into a new or existing vault.
-
-    Ref. <https://github.com/makerdao/dss/blob/master/src/join.sol>
-    """
-
-    abi = Contract._load_abi(__name__, 'abi/GemJoin.abi')
-    bin = Contract._load_bin(__name__, 'abi/GemJoin.bin')
-
-    def __init__(self, web3: Web3, address: Address):
-        super(GemJoin, self).__init__(web3, address)
-        self._token = self.gem()
-
-    def ilk(self):
-        return Ilk.fromBytes(self._contract.functions.ilk().call())
-
-    def gem(self) -> DSToken:
-        address = Address(self._contract.functions.gem().call())
-        return DSToken(self.web3, address)
-
-    def dec(self) -> int:
-        return 18
-
-
-class GemJoin5(GemJoin):
-    """A client for the `GemJoin5` contract, which allows the user to deposit collateral into a new or existing vault.
-
-    Ref. <https://github.com/makerdao/dss-deploy/blob/master/src/join.sol#L274>
-    """
-    abi = Contract._load_abi(__name__, 'abi/GemJoin5.abi')
-    bin = Contract._load_bin(__name__, 'abi/GemJoin5.bin')
-
-    def __init__(self, web3: Web3, address: Address):
-        super(GemJoin5, self).__init__(web3, address)
-        self._token = self.gem()
-
-    def dec(self) -> int:
-        return int(self._contract.functions.dec().call())
-
-
-class Collateral:
-    """The `Collateral` object wraps accounting information in the Ilk with token-wide artifacts shared across
-    multiple collateral types for the same token.  For example, ETH-A and ETH-B are represented by different Ilks,
-    but will share the same gem (WETH token), GemJoin instance, and Flipper contract.
-    """
-
-    def __init__(self, ilk: Ilk, gem: ERC20Token, adapter: GemJoin, auction: Contract, pip, vat: Contract):
-        assert isinstance(ilk, Ilk)
-        assert isinstance(gem, ERC20Token)
-        assert isinstance(adapter, GemJoin)
-        assert isinstance(auction, Contract)
-        assert isinstance(vat, Contract)
-
-        self.ilk = ilk
-        self.gem = gem
-        self.adapter = adapter
-        if isinstance(auction, Flipper):
-            self.flipper = auction
-            self.clipper = None
-        elif isinstance(auction, Clipper):
-            self.flipper = None
-            self.clipper = auction
-        # Points to `median` for official deployments, `DSValue` for testing purposes.
-        # Users generally have no need to interact with the pip.
-        self.pip = pip
-        self.vat = vat
-
-    def approve(self, usr: Address, **kwargs):
-        """
-        Allows the user to move this collateral into and out of their CDP.
-
-        Args
-            usr: User making transactions with this collateral
-        """
-        gas_price = kwargs['gas_price'] if 'gas_price' in kwargs else DefaultGasPrice()
-        self.adapter.approve(hope_directly(from_address=usr, gas_price=gas_price), self.vat.address)
-        self.adapter.approve_token(directly(from_address=usr, gas_price=gas_price))
 
 
 class Vat(Contract):

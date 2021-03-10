@@ -27,6 +27,7 @@ from eth_abi.codec import ABICodec
 from eth_abi.registry import registry as default_registry
 
 from pymaker import Contract, Address, Transact
+from pymaker.dss import Ilk, Vat
 from pymaker.logging import LogNote
 from pymaker.numeric import Wad, Rad, Ray
 from pymaker.token import ERC20Token
@@ -730,6 +731,7 @@ class Clipper(AuctionContract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
+        self.vat = Vat(web3, Address(self._contract.functions.vat().call()))
 
     # TODO: Add links to ilk, vat, dog, vow, spotter, calc contracts
 
@@ -793,11 +795,16 @@ class Clipper(AuctionContract):
                             tic=int(array[4]),
                             top=Ray(array[5]))
 
-    def can_take(self, id: int, amount: Wad, max_price: Ray, our_address: Address = None) -> bool:
-        """ Determine whether collateral can be purchased from an auction"""
+    def validate_take(self, id: int, amount: Wad, max_price: Ray, our_address: Address = None):
+        """Raise assertion if collateral cannot be purchased from an auction as desired"""
         assert isinstance(id, int)
         assert isinstance(amount, Wad)
         assert isinstance(max_price, Ray)
+
+        if our_address:
+            assert isinstance(our_address, Address)
+        else:
+            our_address = Address(self.web3.eth.defaultAccount)
 
         sale = self.sales(id)
         assert sale.usr != Address("0x0000000000000000000000000000000000000000")
@@ -806,11 +813,24 @@ class Clipper(AuctionContract):
         assert not done
         assert max_price >= price
 
-        # TODO: finish porting from https://github.com/makerdao/dss/blob/liq-2.0/src/clip.sol#L308
-        # dust = vat.ilk()
-        # assert sale.tab > dust
+        slice: Wad = min(sale.lot, amount)  # Purchase as much as possible, up to amt
+        owe: Ray = Ray(slice) * price       # DAI needed to buy a slice of this sale
 
-        return True
+        if Rad(owe) > sale.tab:
+            owe = Ray(sale.tab)
+            slice = Wad(owe / price)
+        elif Rad(owe) < sale.tab and slice < sale.lot:
+            ilk = self.vat.ilk(self.ilk_name())
+            if (sale.tab - Rad(owe)) < ilk.dust:
+                assert sale.tab > ilk.dust
+                owe = Ray(sale.tab - ilk.dust)
+                slice = Wad(owe / price)
+
+        tab: Rad = sale.tab - Rad(owe)
+        lot: Wad = sale.lot - slice
+        assert Ray(self.vat.dai(our_address)) > owe
+
+        logger.debug(f"Validating clip.take with tab={tab} and lot={lot}")
 
     def take(self, id: int, amount: Wad, max_price: Ray, our_address: Address = None) -> Transact:
         """Buy amount of collateral from auction indexed by id."""
@@ -835,10 +855,10 @@ class Clipper(AuctionContract):
                 continue
             elif isinstance(log, Clipper.KickLog):
                 history.append(log)
-            # elif log.sig == '0x4b43ed12':
-            #     history.append(Flipper.TendLog(log))
-            # elif log.sig == '0x5ff3a382':
-            #     history.append(Flipper.DentLog(log))
+            # elif log.sig == '0x???':
+            #     history.append(Clipper.TakeLog(log))
+            # elif log.sig == '0x???':
+            #     history.append(Clipper.RedoLog(log))
             else:
                 print(f"Found log with signature {log.sig}")
         return history

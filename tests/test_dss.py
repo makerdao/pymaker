@@ -23,9 +23,10 @@ from web3 import Web3
 
 from pymaker import Address
 from pymaker.approval import hope_directly
-from pymaker.deployment import DssDeployment
-from pymaker.dss import Collateral, DaiJoin, GemJoin, GemJoin5, Ilk, Urn, Vat, Vow
+from pymaker.deployment import Collateral, DssDeployment
+from pymaker.dss import Ilk, Urn, Vat, Vow
 from pymaker.feed import DSValue
+from pymaker.join import DaiJoin, GemJoin, GemJoin5
 from pymaker.numeric import Wad, Ray, Rad
 from pymaker.oracles import OSM
 from pymaker.token import DSToken, DSEthToken, ERC20Token

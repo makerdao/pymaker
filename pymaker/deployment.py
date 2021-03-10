@@ -28,7 +28,9 @@ from pymaker import Address
 from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
-from pymaker.dss import Cat, Collateral, DaiJoin, Dog, GemJoin, GemJoin5, Ilk, Jug, Pot, Spotter, Vat, Vow
+from pymaker.collateral import Collateral
+from pymaker.dss import Cat, Dog, Jug, Pot, Spotter, Vat, Vow
+from pymaker.join import DaiJoin, GemJoin, GemJoin5
 from pymaker.proxy import ProxyRegistry, DssProxyActionsDsr
 from pymaker.feed import DSValue
 from pymaker.gas import DefaultGasPrice

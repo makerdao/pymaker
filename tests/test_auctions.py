@@ -23,8 +23,7 @@ from web3 import Web3
 from pymaker import Address
 from pymaker.approval import directly, hope_directly
 from pymaker.auctions import DealableAuctionContract, Clipper, Flapper, Flipper, Flopper
-from pymaker.deployment import DssDeployment
-from pymaker.dss import Collateral, Urn
+from pymaker.deployment import Collateral, DssDeployment
 from pymaker.numeric import Wad, Ray, Rad
 from tests.test_dss import wrap_eth, mint_mkr, set_collateral_price, wait, frob, cleanup_urn, max_dart
 
@@ -347,7 +346,7 @@ class TestClipper:
         assert clipper.chip() == Wad.from_number(0.02)
         assert clipper.tip() == Rad.from_number(100)
 
-    @pytest.mark.skip("clipper.take not yet working")
+    @pytest.mark.skip("need to fully liquidate the urn before running flapper tests")
     def test_scenario(self, web3, mcd, collateral, clipper, our_address, other_address, deployment_address):
         dirt_before = mcd.dog.dog_dirt()
         vice_before = mcd.vat.vice()
@@ -421,8 +420,8 @@ class TestClipper:
         assert log.coin == Rad(clipper.tip() + (current_sale.tab * clipper.chip()))
 
         # TODO: Allow the auction to expire, and then resurrect it
-        # wait(mcd, our_address, flipper.tau()+1)
-        # assert flipper.tick(kick).transact()
+        # wait(mcd, our_address, clipper.tau()+1)
+        # assert clipper.redo(kick).transact()
 
         # Wrap some eth and handle approvals before bidding
         eth_required = Wad(current_sale.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
@@ -437,21 +436,25 @@ class TestClipper:
         (done, price) = clipper.status(kick)
         assert not done
         print(f"top price is {price}")
-        from pymaker import Transact
-        Transact.gas_estimate_for_bad_txs = 200000
 
         # Ensure we cannot take collateral below the top price (150.9375)
         with pytest.raises(AssertionError):
-            clipper.can_take(kick, Wad.from_number(1), Ray.from_number(140))
-        assert not clipper.take(kick, Wad.from_number(1), Ray.from_number(140)).transact(from_address=our_address)
+            clipper.validate_take(kick, Wad.from_number(0.4), Ray.from_number(140))
+        assert not clipper.take(kick, Wad.from_number(0.4), Ray.from_number(140)).transact(from_address=our_address)
+        # Ensure validation fails if we have insufficient Dai for our bid
+        with pytest.raises(AssertionError):
+            clipper.validate_take(kick, Wad.from_number(1), Ray.from_number(180))
+        assert not clipper.take(kick, Wad.from_number(1), Ray.from_number(180)).transact(from_address=our_address)
 
-        # FIXME: Take collateral with max above the top price
-        assert clipper.can_take(kick, Wad.from_number(1), Ray.from_number(180))
-        assert clipper.take(kick, Wad.from_number(1), Ray.from_number(180)).transact(from_address=our_address)
+        # Take half the collateral with max above the top price
+        assert clipper.take(kick, Wad.from_number(0.1), Ray.from_number(180)).transact(from_address=our_address)
         collateral_before = collateral.gem.balance_of(our_address)
         assert collateral.adapter.exit(our_address, Wad.from_number(0.5)).transact(from_address=our_address)
         collateral_after = collateral.gem.balance_of(our_address)
         assert collateral_before < collateral_after
+        # TODO: check auction state, logs, events, and such
+
+        # TODO: Sleep until price has gone down enough to bid with remaining Dai?
 
         # Cleanup
         set_collateral_price(mcd, collateral, Wad.from_number(230))
