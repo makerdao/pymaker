@@ -25,6 +25,7 @@ from pymaker.approval import directly, hope_directly
 from pymaker.auctions import DealableAuctionContract, Clipper, Flapper, Flipper, Flopper
 from pymaker.deployment import Collateral, DssDeployment
 from pymaker.numeric import Wad, Ray, Rad
+from tests.helpers import time_travel_by
 from tests.test_dss import wrap_eth, mint_mkr, set_collateral_price, wait, frob, cleanup_urn, max_dart
 
 
@@ -35,16 +36,16 @@ def create_surplus(mcd: DssDeployment, flapper: Flapper, deployment_address: Add
 
     joy = mcd.vat.dai(mcd.vow.address)
 
-    if joy < mcd.vow.hump() + mcd.vow.bump():
+    if joy < mcd.vat.sin(mcd.vow.address) + mcd.vow.hump() + mcd.vow.bump():
         # Create a CDP with surplus
         print('Creating a CDP with surplus')
         collateral = mcd.collaterals['ETH-B']
         assert flapper.kicks() == 0
-        wrap_eth(mcd, deployment_address, Wad.from_number(0.1))
+        wrap_eth(mcd, deployment_address, Wad.from_number(100))
         collateral.approve(deployment_address)
-        assert collateral.adapter.join(deployment_address, Wad.from_number(0.1)).transact(
+        assert collateral.adapter.join(deployment_address, Wad.from_number(100)).transact(
             from_address=deployment_address)
-        frob(mcd, collateral, deployment_address, dink=Wad.from_number(0.1), dart=Wad.from_number(10))
+        frob(mcd, collateral, deployment_address, dink=Wad.from_number(100), dart=Wad.from_number(1000))
         assert mcd.jug.drip(collateral.ilk).transact(from_address=deployment_address)
         joy = mcd.vat.dai(mcd.vow.address)
         assert joy >= mcd.vow.hump() + mcd.vow.bump()
@@ -346,7 +347,7 @@ class TestClipper:
         assert clipper.chip() == Wad.from_number(0.02)
         assert clipper.tip() == Rad.from_number(100)
 
-    @pytest.mark.skip("need to fully liquidate the urn before running flapper tests")
+    # @pytest.mark.skip("need to fully liquidate the urn before running flapper tests")
     def test_scenario(self, web3, mcd, collateral, clipper, our_address, other_address, deployment_address):
         dirt_before = mcd.dog.dog_dirt()
         vice_before = mcd.vat.vice()
@@ -392,6 +393,9 @@ class TestClipper:
         kick = clipper.kicks()
         assert kick == 1
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
+        (done, price) = clipper.status(kick)
+        assert not done
+        assert price == Ray.from_number(172.5)
         # Check vat, vow, and dog
         assert urn.ink == Wad(0)
         assert vice_before < mcd.vat.vice()
@@ -399,25 +403,24 @@ class TestClipper:
         assert dirt_before < mcd.dog.dog_dirt()
         # Check the clipper
         current_sale = clipper.sales(kick)
-        from pprint import pprint
-        pprint(current_sale)
         assert isinstance(current_sale, Clipper.Sale)
         assert current_sale.pos == 0
         assert round(current_sale.tab) == Rad.from_number(105)
         assert current_sale.lot == Wad.from_number(1)
         assert current_sale.usr == deployment_address
         assert current_sale.tic > 0
-        assert round(current_sale.top, 1) == Ray.from_number(172.5)
-
-        log = self.last_log(clipper)
-        assert isinstance(log, Clipper.KickLog)
-        assert log.id == kick
-        assert log.top == current_sale.top
-        assert log.tab == current_sale.tab
-        assert log.lot == current_sale.lot
-        assert log.usr == deployment_address
-        assert log.kpr == our_address
-        assert log.coin == Rad(clipper.tip() + (current_sale.tab * clipper.chip()))
+        assert round(current_sale.top, 1) == price
+        kick_log = self.last_log(clipper)
+        assert isinstance(kick_log, Clipper.KickLog)
+        assert kick_log.id == kick
+        assert kick_log.top == current_sale.top
+        assert kick_log.tab == current_sale.tab
+        assert kick_log.lot == current_sale.lot
+        assert kick_log.usr == deployment_address
+        assert kick_log.kpr == our_address
+        assert kick_log.coin == Rad(clipper.tip() + (current_sale.tab * clipper.chip()))
+        (done, price) = clipper.status(kick)
+        assert not done
 
         # TODO: Allow the auction to expire, and then resurrect it
         # wait(mcd, our_address, clipper.tau()+1)
@@ -433,28 +436,57 @@ class TestClipper:
         assert collateral.adapter.join(our_address, eth_required).transact(from_address=our_address)
         clipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=our_address))
 
-        (done, price) = clipper.status(kick)
-        assert not done
-        print(f"top price is {price}")
-
         # Ensure we cannot take collateral below the top price (150.9375)
         with pytest.raises(AssertionError):
-            clipper.validate_take(kick, Wad.from_number(0.4), Ray.from_number(140))
-        assert not clipper.take(kick, Wad.from_number(0.4), Ray.from_number(140)).transact(from_address=our_address)
+            clipper.validate_take(kick, Wad.from_number(1), Ray.from_number(140))
+        assert not clipper.take(kick, Wad.from_number(1), Ray.from_number(140)).transact(from_address=our_address)
         # Ensure validation fails if we have insufficient Dai for our bid
         with pytest.raises(AssertionError):
             clipper.validate_take(kick, Wad.from_number(1), Ray.from_number(180))
         assert not clipper.take(kick, Wad.from_number(1), Ray.from_number(180)).transact(from_address=our_address)
 
-        # Take half the collateral with max above the top price
-        assert clipper.take(kick, Wad.from_number(0.1), Ray.from_number(180)).transact(from_address=our_address)
+        # Take some collateral with max above the top price
+        (done, price) = clipper.status(kick)
+        assert not done
+        clipper.validate_take(kick, Wad.from_number(0.3), Ray.from_number(180))
+        assert clipper.take(kick, Wad.from_number(0.3), Ray.from_number(180)).transact(from_address=our_address)
+        (done, price) = clipper.status(kick)
+        assert not done
+        current_sale = clipper.sales(kick)
+        assert current_sale.lot == Wad.from_number(0.7)
+        assert current_sale.top > price
+        assert current_sale.tab < kick_log.tab
+        first_take_log = self.last_log(clipper)
+        assert first_take_log.id == 1
+        assert first_take_log.max == Ray.from_number(180)
+        assert first_take_log.price == price
+        assert first_take_log.lot == current_sale.lot
+        assert round(first_take_log.owe, 18) == round(Rad.from_number(0.3) * Rad(price), 18)
+
+        # Sleep until price has gone down enough to bid with remaining Dai
+        dai = mcd.vat.dai(our_address)
+        last_price = price
+        while price * Ray(current_sale.lot) > Ray(dai):
+            print(f"Bid cost {price * Ray(current_sale.lot)} exceeds Dai balance {dai}")
+            time_travel_by(web3, 1)
+            (done, price) = clipper.status(kick)
+            assert price < last_price
+            assert not done
+            last_price = price
+        clipper.validate_take(kick, current_sale.lot, price)
+        assert clipper.take(kick, current_sale.lot, price).transact(from_address=our_address)
+        current_sale = clipper.sales(kick)
+        assert current_sale.lot == Wad(0)
+        assert current_sale.tab == Rad(0)
+        # TODO: Determine why auction isn't "done" even if collateral has been taken
+        #(done, price) = clipper.status(kick)
+        #assert done
+
+        # Ensure we can retrieve our collateral
         collateral_before = collateral.gem.balance_of(our_address)
         assert collateral.adapter.exit(our_address, Wad.from_number(0.5)).transact(from_address=our_address)
         collateral_after = collateral.gem.balance_of(our_address)
         assert collateral_before < collateral_after
-        # TODO: check auction state, logs, events, and such
-
-        # TODO: Sleep until price has gone down enough to bid with remaining Dai?
 
         # Cleanup
         set_collateral_price(mcd, collateral, Wad.from_number(230))

@@ -689,8 +689,6 @@ class Clipper(AuctionContract):
     class KickLog:
         def __init__(self, log):
             args = log['args']
-            from pprint import pprint
-            pprint(args)
             self.id = args['id']
             self.top = Ray(args['top'])         # starting price
             self.tab = Rad(args['tab'])         # debt
@@ -703,6 +701,21 @@ class Clipper(AuctionContract):
 
         def __repr__(self):
             return f"Clipper.KickLog({pformat(vars(self))})"
+
+    class TakeLog:
+        def __init__(self, log):
+            args = log['args']
+            self.id = args['id']
+            self.max = Ray(args['max'])         # Max bid price specified
+            self.price = Ray(args['price'])     # Calculated bid price
+            self.owe = Rad(args['owe'])         # Dai needed to satisfy the calculated bid price
+            self.tab = Rad(args['tab'])         # Remaining debt
+            self.lot = Wad(args['lot'])         # Remaining lot
+            self.block = log['blockNumber']
+            self.tx_hash = log['transactionHash'].hex()
+
+        def __repr__(self):
+            return f"Clipper.TakeLog({pformat(vars(self))})"
 
     class Sale:
         def __init__(self, pos: int, tab: Rad, lot: Wad, usr: Address, tic: int, top: Ray):
@@ -733,7 +746,12 @@ class Clipper(AuctionContract):
         self._contract = self._get_contract(web3, self.abi, address)
         self.vat = Vat(web3, Address(self._contract.functions.vat().call()))
 
-    # TODO: Add links to ilk, vat, dog, vow, spotter, calc contracts
+        self.take_abi = None
+        for member in self.abi:
+            if not self.take_abi and member.get('name') == 'Take':
+                self.take_abi = member
+
+    # TODO: Add links to dog, vow, spotter, calc contracts
 
     def ilk_name(self) -> str:
         ilk = self._contract.functions.ilk().call()
@@ -814,23 +832,23 @@ class Clipper(AuctionContract):
         assert max_price >= price
 
         slice: Wad = min(sale.lot, amount)  # Purchase as much as possible, up to amt
-        owe: Ray = Ray(slice) * price       # DAI needed to buy a slice of this sale
+        owe: Rad = Rad(slice) * Rad(price)       # DAI needed to buy a slice of this sale
 
         if Rad(owe) > sale.tab:
-            owe = Ray(sale.tab)
-            slice = Wad(owe / price)
-        elif Rad(owe) < sale.tab and slice < sale.lot:
+            owe = Rad(sale.tab)
+            slice = Wad(owe / Rad(price))
+        elif owe < sale.tab and slice < sale.lot:
             ilk = self.vat.ilk(self.ilk_name())
-            if (sale.tab - Rad(owe)) < ilk.dust:
+            if (sale.tab - owe) < ilk.dust:
                 assert sale.tab > ilk.dust
-                owe = Ray(sale.tab - ilk.dust)
-                slice = Wad(owe / price)
+                owe = sale.tab - ilk.dust
+                slice = Wad(owe / Rad(price))
 
-        tab: Rad = sale.tab - Rad(owe)
+        tab: Rad = sale.tab - owe
         lot: Wad = sale.lot - slice
-        assert Ray(self.vat.dai(our_address)) > owe
+        assert self.vat.dai(our_address) > owe
 
-        logger.debug(f"Validating clip.take with tab={tab} and lot={lot}")
+        logger.debug(f"Validated clip.take with tab={tab} and lot={lot}")
 
     def take(self, id: int, amount: Wad, max_price: Ray, our_address: Address = None) -> Transact:
         """Buy amount of collateral from auction indexed by id."""
@@ -853,26 +871,23 @@ class Clipper(AuctionContract):
         for log in logs:
             if log is None:
                 continue
-            elif isinstance(log, Clipper.KickLog):
+            elif isinstance(log, Clipper.KickLog) or isinstance(log, Clipper.TakeLog):
                 history.append(log)
-            # elif log.sig == '0x???':
-            #     history.append(Clipper.TakeLog(log))
-            # elif log.sig == '0x???':
-            #     history.append(Clipper.RedoLog(log))
             else:
-                print(f"Found log with signature {log.sig}")
+                logger.debug(f"Found log with signature {log.sig}")
         return history
 
     def parse_event(self, event):
         signature = Web3.toHex(event['topics'][0])
         codec = ABICodec(default_registry)
-        # print(f"Found signature {signature}")
         if signature == "0x7c5bfdc0a5e8192f6cd4972f382cec69116862fb62e6abff8003874c58e064b8":
             event_data = get_event_data(codec, self.kick_abi, event)
             return Clipper.KickLog(event_data)
+        if signature == "0x05e309fd6ce72f2ab888a20056bb4210df08daed86f21f95053deb19964d86b1":
+            event_data = get_event_data(codec, self.take_abi, event)
+            return Clipper.TakeLog(event_data)
         else:
-            event_data = get_event_data(codec, self.log_note_abi, event)
-            return LogNote(event_data)
+            logger.debug(f"Found event signature {signature}")
 
     def __repr__(self):
         return f"Clipper('{self.address}')"

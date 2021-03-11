@@ -35,6 +35,7 @@ def wait_until_mock_called(mock: Mock):
         pass
     return mock.call_args[0]
 
+
 def time_travel_by(web3: Web3, seconds: int):
     assert(isinstance(web3, Web3))
     assert(isinstance(seconds, int))
@@ -49,10 +50,12 @@ def time_travel_by(web3: Web3, seconds: int):
         # force a block mining to have a correct timestamp in latest block
         web3.manager.request_blocking("evm_mine", [])
 
+
 def snapshot(web3: Web3):
     assert(isinstance(web3, Web3))
 
     return web3.manager.request_blocking("evm_snapshot", [])
+
 
 def reset(web3: Web3, snap_id):
     assert(isinstance(web3, Web3))
