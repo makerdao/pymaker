@@ -87,16 +87,6 @@ def set_collateral_price(mcd: DssDeployment, collateral: Collateral, price: Wad)
     assert get_collateral_price(collateral) == price
 
 
-def wait(mcd: DssDeployment, address: Address, seconds: int):
-    assert isinstance(mcd, DssDeployment)
-    assert isinstance(address, Address)
-    assert seconds > 0
-
-    time.sleep(seconds)
-    # Mine a block to increment block.timestamp
-    wrap_eth(mcd, address, Wad(1))
-
-
 def frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad, dart: Wad):
     """Wraps vat.frob for debugging purposes"""
     # given
