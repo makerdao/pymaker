@@ -841,20 +841,20 @@ class Dog(Contract):
     def dog_dirt(self) -> Rad:
         return Rad(self._contract.functions.Dirt().call())
 
-    def bark(self, ilk: Ilk, urn: Urn, our_address: Address = None) -> Transact:
+    def bark(self, ilk: Ilk, urn: Urn, kpr: Address = None) -> Transact:
         """ Initiate liquidation of a vault, kicking off a flip auction
 
         Args:
             ilk: Identifies the type of collateral.
             urn: Address of the vault holder.
-            our_address: Keeper address; leave empty to use web3 default.
+            kpr: Keeper address; leave empty to use web3 default.
         """
         assert isinstance(ilk, Ilk)
         assert isinstance(urn, Urn)
-        if our_address:
-            assert isinstance(our_address, Address)
+        if kpr:
+            assert isinstance(kpr, Address)
         else:
-            our_address = Address(self.web3.eth.defaultAccount)
+            kpr = Address(self.web3.eth.defaultAccount)
 
         ilk = self.vat.ilk(ilk.name)
         urn = self.vat.urn(ilk, urn.address)
@@ -863,7 +863,7 @@ class Dog(Contract):
                     f'art={urn.art} rate={rate}')
 
         return Transact(self, self.web3, self.abi, self.address, self._contract,
-                        'bark', [ilk.toBytes(), urn.address.address, our_address.address])
+                        'bark', [ilk.toBytes(), urn.address.address, kpr.address])
 
     def past_barks(self, number_of_past_blocks: int, event_filter: dict = None) -> List[LogBark]:
         """Synchronously retrieve past LogBark events.

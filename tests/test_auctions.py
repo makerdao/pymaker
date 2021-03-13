@@ -357,7 +357,6 @@ class TestFlipper:
         # Cleanup
         set_collateral_price(mcd, collateral, Wad.from_number(230))
         cleanup_urn(mcd, collateral, other_address)
-        assert float(mcd.vat.sin(mcd.vow.address)) < 100  # Don't accumulate more debt than we can create surplus for
 
 
 class TestClipper:
@@ -413,6 +412,7 @@ class TestClipper:
         assert clipper.active_count() == 0
 
         # Bark the vault, which moves debt to the vow and kicks the clipper
+        dai_before_bark: Rad = mcd.vat.dai(our_address)
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
         assert urn.ink > Wad(0)
         tab = urn.art * ilk.rate  # Wad
@@ -443,6 +443,10 @@ class TestClipper:
         assert current_sale.usr == deployment_address
         assert current_sale.tic > 0
         assert round(current_sale.top, 1) == price
+        coin = Rad(clipper.tip() + (current_sale.tab * clipper.chip()))
+        # Confirm we received our liquidation reward
+        dai_after_bark: Rad = mcd.vat.dai(our_address)
+        assert dai_after_bark == dai_before_bark + coin
         kick_log = self.last_log(clipper)
         assert isinstance(kick_log, Clipper.KickLog)
         assert kick_log.id == kick
@@ -451,19 +455,18 @@ class TestClipper:
         assert kick_log.lot == current_sale.lot
         assert kick_log.usr == deployment_address
         assert kick_log.kpr == our_address
-        assert kick_log.coin == Rad(clipper.tip() + (current_sale.tab * clipper.chip()))
+        assert kick_log.coin == coin
         (done, price) = clipper.status(kick)
         assert not done
 
-        # TODO: Allow the auction to expire, and then resurrect it
-        # time_travel_by(web3, clipper.tau()+1)
-        # assert clipper.redo(kick).transact()
-
         # Wrap some eth and handle approvals before bidding
         eth_required = Wad(current_sale.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
+        # FIXME: I have no clue why joining collateral to an unrelated address and waiting a second seems to reduce
+        #  the frequency of the problem below.
         wrap_eth(mcd, other_address, eth_required)
         collateral.approve(other_address)
         assert collateral.adapter.join(other_address, eth_required).transact(from_address=other_address)
+        time_travel_by(web3, 1)
         wrap_eth(mcd, our_address, eth_required)
         collateral.approve(our_address)
         assert collateral.adapter.join(our_address, eth_required).transact(from_address=our_address)
@@ -473,30 +476,37 @@ class TestClipper:
         with pytest.raises(AssertionError):
             clipper.validate_take(kick, ink, Ray.from_number(140))
         assert not clipper.take(kick, ink, Ray.from_number(140)).transact(from_address=our_address)
-        # # Ensure validation fails if we have insufficient Dai for our bid
-        # with pytest.raises(AssertionError):
-        #     clipper.validate_take(kick, ink, Ray.from_number(180))
-        # assert not clipper.take(kick, ink, Ray.from_number(180)).transact(from_address=our_address)
 
         # Take some collateral with max above the top price
         (done, price) = clipper.status(kick)
         assert not done
         clipper.validate_take(kick, Wad.from_number(0.07), Ray.from_number(180))
+        assert web3.eth.defaultAccount == our_address.address
         assert clipper.take(kick, Wad.from_number(0.07), Ray.from_number(180)).transact(from_address=our_address)
         (done, price) = clipper.status(kick)
         assert not done
-        # FIXME: Sometimes I need to wait a block here, and I don't understand why
-        time_travel_by(web3, 1)
+        # FIXME: *Sometimes* the auction goes inactive before full lot is taken.
         current_sale = clipper.sales(kick)
         assert current_sale.lot == Wad.from_number(0.03)
         assert current_sale.top > price
-        assert current_sale.tab < kick_log.tab
+        assert Rad(0) < current_sale.tab < kick_log.tab
         first_take_log = self.last_log(clipper)
         assert first_take_log.id == 1
         assert first_take_log.max == Ray.from_number(180)
         assert first_take_log.price == price
         assert first_take_log.lot == current_sale.lot
         assert round(first_take_log.owe, 18) == round(Rad.from_number(0.07) * Rad(price), 18)
+
+        # Allow the auction to expire, and then resurrect it
+        # TODO: If abaci contract is ever wrapped, read tau from it
+        time_travel_by(web3, 24)
+        (done, price) = clipper.status(kick)
+        assert done
+        assert clipper.redo(kick, our_address).transact()
+        (done, price) = clipper.status(kick)
+        assert not done
+        current_sale = clipper.sales(kick)
+        assert current_sale.lot == Wad.from_number(0.03)
 
         # Sleep until price has gone down enough to bid with remaining Dai
         dai = mcd.vat.dai(our_address)
@@ -514,9 +524,6 @@ class TestClipper:
         current_sale = clipper.sales(kick)
         assert current_sale.lot == Wad(0)
         assert current_sale.tab == Rad(0)
-        # TODO: Determine why auction isn't "done" even if collateral has been taken
-        #(done, price) = clipper.status(kick)
-        #assert done
 
         # Ensure we can retrieve our collateral
         collateral_before = collateral.gem.balance_of(our_address)
@@ -526,8 +533,7 @@ class TestClipper:
 
         # Cleanup
         set_collateral_price(mcd, collateral, Wad.from_number(230))
-        cleanup_urn(mcd, collateral, other_address)
-        assert float(mcd.vat.sin(mcd.vow.address)) < 200  # Don't accumulate more debt than we can create surplus for
+        cleanup_urn(mcd, collateral, our_address)
 
 
 class TestFlopper:

@@ -323,19 +323,6 @@ class Flipper(DealableAuctionContract):
                            gal=Address(array[6]),
                            tab=Rad(array[7]))
 
-    def kick(self, usr: Address, gal: Address, tab: Rad, lot: Wad, bid: Rad) -> Transact:
-        assert(isinstance(usr, Address))
-        assert(isinstance(gal, Address))
-        assert(isinstance(tab, Rad))
-        assert(isinstance(lot, Wad))
-        assert(isinstance(bid, Rad))
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kick', [usr.address,
-                                                                                          gal.address,
-                                                                                          tab.value,
-                                                                                          lot.value,
-                                                                                          bid.value])
-
     def tend(self, id: int, lot: Wad, bid: Rad) -> Transact:
         assert(isinstance(id, int))
         assert(isinstance(lot, Wad))
@@ -471,13 +458,6 @@ class Flapper(DealableAuctionContract):
                            guy=Address(array[2]),
                            tic=int(array[3]),
                            end=int(array[4]))
-
-    def kick(self, lot: Rad, bid: Wad) -> Transact:
-        assert(isinstance(lot, Rad))
-        assert(isinstance(bid, Wad))
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kick', [lot.value,
-                                                                                          bid.value])
 
     def tend(self, id: int, lot: Rad, bid: Wad) -> Transact:
         assert(isinstance(id, int))
@@ -620,15 +600,6 @@ class Flopper(DealableAuctionContract):
                            guy=Address(array[2]),
                            tic=int(array[3]),
                            end=int(array[4]))
-
-    def kick(self, gal: Address, lot: Wad, bid: Wad) -> Transact:
-        assert(isinstance(gal, Address))
-        assert(isinstance(lot, Wad))
-        assert(isinstance(bid, Wad))
-
-        return Transact(self, self.web3, self.abi, self.address, self._contract, 'kick', [gal.address,
-                                                                                          lot.value,
-                                                                                          bid.value])
 
     def dent(self, id: int, lot: Wad, bid: Rad) -> Transact:
         assert(isinstance(id, int))
@@ -782,15 +753,17 @@ class Clipper(AuctionContract):
         return int(self._contract.functions.kicks().call())
 
     def active_count(self) -> int:
-        """Number of active auctions."""
+        """Number of active and redoable auctions."""
         return int(self._contract.functions.count().call())
 
-    def active_list(self) -> List[int]:
-        """List of active auction ids."""
-        return self._contract.functions.list().call()
+    # FIXME: This disappeared from the ABI; not sure if we really need it.
+    # def active_list(self) -> List[int]:
+    #     """List of active auction ids."""
+    #     return self._contract.functions.list().call()
 
     def status(self, id: int) -> (bool, Ray):
         (done, price) = self._contract.functions.getStatus(id).call()
+        print(f"Auction {id} is {'done' if done else 'not done'} with price {float(Ray(price))}")
         return done, Ray(price)
 
     def sales(self, id: int) -> Sale:
@@ -813,11 +786,11 @@ class Clipper(AuctionContract):
                             tic=int(array[4]),
                             top=Ray(array[5]))
 
-    def validate_take(self, id: int, amount: Wad, max_price: Ray, our_address: Address = None):
+    def validate_take(self, id: int, amt: Wad, max: Ray, our_address: Address = None):
         """Raise assertion if collateral cannot be purchased from an auction as desired"""
         assert isinstance(id, int)
-        assert isinstance(amount, Wad)
-        assert isinstance(max_price, Ray)
+        assert isinstance(amt, Wad)
+        assert isinstance(max, Ray)
 
         if our_address:
             assert isinstance(our_address, Address)
@@ -829,9 +802,9 @@ class Clipper(AuctionContract):
 
         (done, price) = self.status(id)
         assert not done
-        assert max_price >= price
+        assert max >= price
 
-        slice: Wad = min(sale.lot, amount)  # Purchase as much as possible, up to amt
+        slice: Wad = min(sale.lot, amt)  # Purchase as much as possible, up to amt
         owe: Rad = Rad(slice) * Rad(price)       # DAI needed to buy a slice of this sale
 
         if Rad(owe) > sale.tab:
@@ -850,19 +823,41 @@ class Clipper(AuctionContract):
 
         logger.debug(f"Validated clip.take with tab={tab} and lot={lot}")
 
-    def take(self, id: int, amount: Wad, max_price: Ray, our_address: Address = None) -> Transact:
-        """Buy amount of collateral from auction indexed by id."""
+    def take(self, id: int, amt: Wad, max: Ray, who: Address = None, data=b'') -> Transact:
+        """Buy amount of collateral from auction indexed by id.
+        Args:
+            id:     Auction id
+            amt:    Upper limit on amount of collateral to buy
+            max:    Maximum acceptable price (DAI / collateral)
+            who:    Receiver of collateral and external call address
+            data:   Data to pass in external call; if length 0, no call is done
+        """
         assert isinstance(id, int)
-        assert isinstance(amount, Wad)
-        assert isinstance(max_price, Ray)
+        assert isinstance(amt, Wad)
+        assert isinstance(max, Ray)
 
-        if our_address:
-            assert isinstance(our_address, Address)
+        if who:
+            assert isinstance(who, Address)
         else:
-            our_address = Address(self.web3.eth.defaultAccount)
+            who = Address(self.web3.eth.defaultAccount)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'take',
-                        [id, amount.value, max_price.value, our_address.address, b''])
+                        [id, amt.value, max.value, who.address, data])
+
+    def redo(self, id: int, kpr: Address = None) -> Transact:
+        """Restart an auction which ended without liquidating all collateral.
+            id:     Auction id
+            kpr:    Keeper that called dog.bark()
+        """
+        assert isinstance(id, int)
+        assert isinstance(kpr, Address)
+
+        if kpr:
+            assert isinstance(kpr, Address)
+        else:
+            kpr = Address(self.web3.eth.defaultAccount)
+
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'redo', [id, kpr.address])
 
     def past_logs(self, from_block: int, to_block: int = None, chunk_size=20000):
         logs = super().get_past_lognotes(Clipper.abi, from_block, to_block, chunk_size)
