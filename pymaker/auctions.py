@@ -688,6 +688,11 @@ class Clipper(AuctionContract):
         def __repr__(self):
             return f"Clipper.TakeLog({pformat(vars(self))})"
 
+    class RedoLog(KickLog):
+        # Same fields as KickLog
+        def __repr__(self):
+            return f"Clipper.RedoLog({pformat(vars(self))})"
+
     class Sale:
         def __init__(self, pos: int, tab: Rad, lot: Wad, usr: Address, tic: int, top: Ray):
             assert(isinstance(pos, int))
@@ -718,9 +723,12 @@ class Clipper(AuctionContract):
         self.vat = Vat(web3, Address(self._contract.functions.vat().call()))
 
         self.take_abi = None
+        self.redo_abi = None
         for member in self.abi:
             if not self.take_abi and member.get('name') == 'Take':
                 self.take_abi = member
+            if not self.redo_abi and member.get('name') == 'Redo':
+                self.redo_abi = member
 
     # TODO: Add links to dog, vow, spotter, calc contracts
 
@@ -866,7 +874,9 @@ class Clipper(AuctionContract):
         for log in logs:
             if log is None:
                 continue
-            elif isinstance(log, Clipper.KickLog) or isinstance(log, Clipper.TakeLog):
+            elif isinstance(log, Clipper.KickLog) \
+                    or isinstance(log, Clipper.TakeLog) \
+                    or isinstance(log, Clipper.RedoLog):
                 history.append(log)
             else:
                 logger.debug(f"Found log with signature {log.sig}")
@@ -878,9 +888,12 @@ class Clipper(AuctionContract):
         if signature == "0x7c5bfdc0a5e8192f6cd4972f382cec69116862fb62e6abff8003874c58e064b8":
             event_data = get_event_data(codec, self.kick_abi, event)
             return Clipper.KickLog(event_data)
-        if signature == "0x05e309fd6ce72f2ab888a20056bb4210df08daed86f21f95053deb19964d86b1":
+        elif signature == "0x05e309fd6ce72f2ab888a20056bb4210df08daed86f21f95053deb19964d86b1":
             event_data = get_event_data(codec, self.take_abi, event)
             return Clipper.TakeLog(event_data)
+        elif signature == "0x275de7ecdd375b5e8049319f8b350686131c219dd4dc450a08e9cf83b03c865f":
+            event_data = get_event_data(codec, self.redo_abi, event)
+            return Clipper.RedoLog(event_data)
         else:
             logger.debug(f"Found event signature {signature}")
 

@@ -507,6 +507,16 @@ class TestClipper:
         assert not done
         current_sale = clipper.sales(kick)
         assert current_sale.lot == Wad.from_number(0.03)
+        redo_log = self.last_log(clipper)
+        assert isinstance(redo_log, Clipper.RedoLog)
+        assert redo_log.id == kick
+        assert redo_log.top == current_sale.top
+        assert redo_log.tab == current_sale.tab
+        assert redo_log.lot == current_sale.lot
+        assert redo_log.usr == deployment_address
+        assert redo_log.kpr == our_address
+        coin = Rad(clipper.tip() + (current_sale.tab * clipper.chip()))
+        assert round(float(redo_log.coin), 18) == round(float(coin), 18)
 
         # Sleep until price has gone down enough to bid with remaining Dai
         dai = mcd.vat.dai(our_address)
