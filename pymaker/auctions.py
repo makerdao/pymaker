@@ -79,6 +79,7 @@ class AuctionContract(Contract):
 
         approval_function(token=ERC20Token(web3=self.web3, address=source),
                           spender_address=self.address, spender_name=self.__class__.__name__)
+
     def vat(self) -> Address:
         """Returns the `vat` address.
          Returns:
@@ -720,6 +721,7 @@ class Clipper(AuctionContract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
+        # TODO: Albeit more elegant, this is inconsistent with AuctionContract.vat(), a method call
         self.vat = Vat(web3, Address(self._contract.functions.vat().call()))
 
         self.take_abi = None
@@ -827,7 +829,7 @@ class Clipper(AuctionContract):
 
         tab: Rad = sale.tab - owe
         lot: Wad = sale.lot - slice
-        assert self.vat.dai(our_address) > owe
+        assert self.vat.dai(our_address) >= owe
 
         logger.debug(f"Validated clip.take with tab={tab} and lot={lot}")
 
