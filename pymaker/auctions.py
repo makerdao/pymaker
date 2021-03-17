@@ -858,7 +858,7 @@ class Clipper(AuctionContract):
             kpr:    Keeper that called dog.bark()
         """
         assert isinstance(id, int)
-        assert isinstance(kpr, Address)
+        assert isinstance(kpr, Address) or kpr is None
 
         if kpr:
             assert isinstance(kpr, Address)
