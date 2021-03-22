@@ -21,13 +21,12 @@ from datetime import datetime, timedelta
 
 from pymaker import Address
 from pymaker.approval import directly, hope_directly
-from pymaker.deployment import DssDeployment
-from pymaker.dss import Collateral
+from pymaker.deployment import Collateral, DssDeployment
 from pymaker.numeric import Wad, Ray, Rad
 from pymaker.shutdown import ShutdownModule, End
 
 from tests.helpers import time_travel_by
-from tests.test_auctions import create_surplus
+from tests.test_auctions import TestFlapper
 from tests.test_dss import mint_mkr, wrap_eth, frob
 
 
@@ -51,7 +50,7 @@ def create_flap_auction(mcd: DssDeployment, deployment_address: Address, our_add
     assert isinstance(our_address, Address)
 
     flapper = mcd.flapper
-    create_surplus(mcd, flapper, deployment_address)
+    TestFlapper.create_surplus(mcd, flapper, deployment_address)
     joy = mcd.vat.dai(mcd.vow.address)
     assert joy > mcd.vat.sin(mcd.vow.address) + mcd.vow.bump() + mcd.vow.hump()
     assert (mcd.vat.sin(mcd.vow.address) - mcd.vow.sin()) - mcd.vow.ash() == Rad(0)

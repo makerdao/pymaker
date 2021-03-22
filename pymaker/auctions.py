@@ -771,10 +771,11 @@ class Clipper(AuctionContract):
     #     """List of active auction ids."""
     #     return self._contract.functions.list().call()
 
-    def status(self, id: int) -> (bool, Ray):
-        (done, price) = self._contract.functions.getStatus(id).call()
-        print(f"Auction {id} is {'done' if done else 'not done'} with price {float(Ray(price))}")
-        return done, Ray(price)
+    def status(self, id: int) -> (bool, Ray, Wad, Rad):
+        (needs_redo, price, lot, tab) = self._contract.functions.getStatus(id).call()
+        logging.debug(f"Auction {id} {'needs redo ' if needs_redo else ''}with price={float(Ray(price))} " 
+                      f"lot={float(lot)} tab={float(tab)}")
+        return needs_redo, Ray(price), Wad(lot), Rad(tab)
 
     def sales(self, id: int) -> Sale:
         """Returns the auction details.
@@ -807,31 +808,27 @@ class Clipper(AuctionContract):
         else:
             our_address = Address(self.web3.eth.defaultAccount)
 
-        sale = self.sales(id)
-        assert sale.usr != Address("0x0000000000000000000000000000000000000000")
-
-        (done, price) = self.status(id)
+        (done, price, lot, tab) = self.status(id)
         assert not done
         assert max >= price
 
-        slice: Wad = min(sale.lot, amt)  # Purchase as much as possible, up to amt
+        slice: Wad = min(lot, amt)  # Purchase as much as possible, up to amt
         owe: Rad = Rad(slice) * Rad(price)       # DAI needed to buy a slice of this sale
 
-        if Rad(owe) > sale.tab:
-            owe = Rad(sale.tab)
+        if Rad(owe) > tab:
+            owe = Rad(tab)
             slice = Wad(owe / Rad(price))
-        elif owe < sale.tab and slice < sale.lot:
+        elif owe < tab and slice < lot:
             ilk = self.vat.ilk(self.ilk_name())
-            if (sale.tab - owe) < ilk.dust:
-                assert sale.tab > ilk.dust
-                owe = sale.tab - ilk.dust
+            if (tab - owe) < ilk.dust:
+                assert tab > ilk.dust
+                owe = tab - ilk.dust
                 slice = Wad(owe / Rad(price))
 
-        tab: Rad = sale.tab - owe
-        lot: Wad = sale.lot - slice
+        tab: Rad = tab - owe
+        lot: Wad = lot - slice
         assert self.vat.dai(our_address) >= owe
-
-        logger.debug(f"Validated clip.take with tab={tab} and lot={lot}")
+        logger.debug(f"Validated clip.take which will leave tab={float(tab)} and lot={float(lot)}")
 
     def take(self, id: int, amt: Wad, max: Ray, who: Address = None, data=b'') -> Transact:
         """Buy amount of collateral from auction indexed by id.

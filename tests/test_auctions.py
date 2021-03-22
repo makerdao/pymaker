@@ -84,12 +84,12 @@ class TestFlapper:
             print('Creating a vault with surplus')
             collateral = mcd.collaterals['ETH-C']
             assert flapper.kicks() == 0
-            ink = Wad.from_number(1)
+            ink = Wad.from_number(20)
             wrap_eth(mcd, deployment_address, ink)
             collateral.approve(deployment_address)
             assert collateral.adapter.join(deployment_address, ink).transact(
                 from_address=deployment_address)
-            frob(mcd, collateral, deployment_address, dink=ink, dart=Wad.from_number(100))
+            frob(mcd, collateral, deployment_address, dink=ink, dart=Wad.from_number(3000))
             assert mcd.jug.drip(collateral.ilk).transact(from_address=deployment_address)
             joy = mcd.vat.dai(mcd.vow.address)
             # total surplus > total debt + surplus auction lot size + surplus buffer
@@ -426,9 +426,11 @@ class TestClipper:
         kick = clipper.kicks()
         assert kick == 1
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
-        (done, price) = clipper.status(kick)
-        assert not done
+        (needs_redo, price, lot, tab) = clipper.status(kick)
+        assert not needs_redo
         assert price == Ray.from_number(172.5)
+        assert lot == ink
+        assert float(tab) == 10.5
         # Check vat, vow, and dog
         assert urn.ink == Wad(0)
         assert vice_before < mcd.vat.vice()
@@ -456,8 +458,6 @@ class TestClipper:
         assert kick_log.usr == deployment_address
         assert kick_log.kpr == our_address
         assert kick_log.coin == coin
-        (done, price) = clipper.status(kick)
-        assert not done
 
         # Wrap some eth and handle approvals before bidding
         eth_required = Wad(current_sale.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
@@ -472,19 +472,18 @@ class TestClipper:
         assert collateral.adapter.join(our_address, eth_required).transact(from_address=our_address)
         clipper.approve(mcd.vat.address, approval_function=hope_directly(from_address=our_address))
 
-        # Ensure we cannot take collateral below the top price (150.9375)
+        # Ensure we cannot take collateral below the current price
+        (needs_redo, price, lot, tab) = clipper.status(kick)
         with pytest.raises(AssertionError):
-            clipper.validate_take(kick, ink, Ray.from_number(140))
+            clipper.validate_take(kick, ink, price - Ray.from_number(1))
         assert not clipper.take(kick, ink, Ray.from_number(140)).transact(from_address=our_address)
 
         # Take some collateral with max above the top price
-        (done, price) = clipper.status(kick)
-        assert not done
         clipper.validate_take(kick, Wad.from_number(0.07), Ray.from_number(180))
         assert web3.eth.defaultAccount == our_address.address
         assert clipper.take(kick, Wad.from_number(0.07), Ray.from_number(180)).transact(from_address=our_address)
-        (done, price) = clipper.status(kick)
-        assert not done
+        (needs_redo, price, lot, tab) = clipper.status(kick)
+        assert not needs_redo
         # FIXME: *Sometimes* the auction goes inactive before full lot is taken.
         current_sale = clipper.sales(kick)
         assert current_sale.lot == Wad.from_number(0.03)
@@ -500,11 +499,11 @@ class TestClipper:
         # Allow the auction to expire, and then resurrect it
         # TODO: If abaci contract is ever wrapped, read tau from it
         time_travel_by(web3, 24)
-        (done, price) = clipper.status(kick)
-        assert done
+        (needs_redo, price, lot, tab) = clipper.status(kick)
+        assert needs_redo
         assert clipper.redo(kick, our_address).transact()
-        (done, price) = clipper.status(kick)
-        assert not done
+        (needs_redo, price, lot, tab) = clipper.status(kick)
+        assert not needs_redo
         current_sale = clipper.sales(kick)
         assert current_sale.lot == Wad.from_number(0.03)
         redo_log = self.last_log(clipper)
@@ -525,9 +524,9 @@ class TestClipper:
         while price * Ray(current_sale.lot) > Ray(dai):
             print(f"Bid cost {price * Ray(current_sale.lot)} exceeds Dai balance {dai}")
             time_travel_by(web3, 2)
-            (done, price) = clipper.status(kick)
+            (needs_redo, price, lot, tab) = clipper.status(kick)
             assert price < last_price
-            assert not done
+            assert not needs_redo
             last_price = price
         clipper.validate_take(kick, current_sale.lot, price)
         assert clipper.take(kick, current_sale.lot, price).transact(from_address=our_address)

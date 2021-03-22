@@ -223,15 +223,19 @@ class DssDeployment:
                     adapter = GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
 
                 # PIP contract may be a DSValue, OSM, or bogus address.
-                pip_address = Address(conf[f'PIP_{name[1]}'])
-                network = DssDeployment.NETWORKS.get(web3.net.version, "testnet")
-                if network == "testnet":
-                    pip = DSValue(web3, pip_address)
-                else:
+                pip_name = f'PIP_{name[1]}'
+                pip_address = Address(conf[pip_name]) if pip_name in conf and conf[pip_name] else None
+                val_name = f'VAL_{name[1]}'
+                val_address = Address(conf[val_name]) if val_name in conf and conf[val_name] else None
+                if pip_address:     # Configure OSM as price source
                     if name[1].startswith('UNIV2'):
                         pip = Univ2LpOSM(web3, pip_address)
                     else:
                         pip = OSM(web3, pip_address)
+                elif val_address:   # Configure price using DSValue
+                    pip = DSValue(web3, val_address)
+                else:
+                    pip = None
 
                 auction = None
                 if f'MCD_FLIP_{name[0]}' in conf:
