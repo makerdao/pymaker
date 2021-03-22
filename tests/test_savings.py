@@ -22,7 +22,7 @@ from pymaker.deployment import DssDeployment
 from pymaker.dsr import Dsr
 from pymaker.numeric import Wad
 
-from tests.test_dss import wrap_eth, frob, max_dart
+from tests.test_dss import wrap_eth, frob
 
 
 @pytest.fixture
@@ -45,38 +45,39 @@ def test_join_and_exit(dsr):
 
     mcd = dsr.mcd
 
-    # Create a CDP
+    # create a vault
     collateral = mcd.collaterals['ETH-A']
-    wrap_eth(mcd, dsr.owner, Wad.from_number(1))
+    wrap_eth(mcd, dsr.owner, Wad.from_number(2))
     collateral.approve(dsr.owner)
-    assert collateral.adapter.join(dsr.owner, Wad.from_number(1)).transact(from_address=dsr.owner)
-    frob(mcd, collateral, dsr.owner, dink=Wad.from_number(1), dart=Wad(0))
-    dart = max_dart(mcd, collateral, dsr.owner) - Wad(1)
+    assert collateral.adapter.join(dsr.owner, Wad.from_number(2)).transact(from_address=dsr.owner)
+    frob(mcd, collateral, dsr.owner, dink=Wad.from_number(2), dart=Wad(0))
+    dart = Wad.from_number(100)
     frob(mcd, collateral, dsr.owner, dink=Wad(0), dart=dart)
 
-    # Mint and withdraw all the Dai
+    # mint and withdraw all the Dai
     mcd.approve_dai(dsr.owner)
     assert mcd.dai_adapter.exit(dsr.owner, dart).transact(from_address=dsr.owner)
     assert mcd.dai.balance_of(dsr.owner) == dart
 
-    intial_dai_balance = mcd.dai.balance_of(dsr.owner)
-    assert intial_dai_balance > Wad.from_number(0)
+    initial_dai_balance = mcd.dai.balance_of(dsr.owner)
+    assert initial_dai_balance >= Wad.from_number(100)
     assert dsr.get_balance(proxy.address) == Wad.from_number(0)
 
     # approve Proxy to use 100 DAI from account
     mcd.dai.approve(proxy.address, Wad.from_number(100)).transact(from_address=dsr.owner)
 
     # join 100 DAI in DSR
-    dsr.join(Wad.from_number(100), proxy).transact(from_address=dsr.owner)
-    assert mcd.dai.balance_of(dsr.owner) == intial_dai_balance - Wad.from_number(100)
+    assert dsr.join(Wad.from_number(100), proxy).transact(from_address=dsr.owner)
+    assert mcd.dai.balance_of(dsr.owner) == initial_dai_balance - Wad.from_number(100)
     assert round(dsr.get_balance(proxy.address)) == Wad.from_number(100)
 
     # exit 33 DAI from DSR
-    dsr.exit(Wad.from_number(33), proxy).transact(from_address=dsr.owner)
-    assert round(mcd.dai.balance_of(dsr.owner)) == round(intial_dai_balance) - Wad.from_number(100) + Wad.from_number(33)
+    assert dsr.exit(Wad.from_number(33), proxy).transact(from_address=dsr.owner)
+    assert round(mcd.dai.balance_of(dsr.owner)) == round(initial_dai_balance) - Wad.from_number(100) + Wad.from_number(33)
     assert round(dsr.get_balance(proxy.address)) == Wad.from_number(67)
 
-    # exit remaining DAI from DSR
-    dsr.exit_all(proxy).transact(from_address=dsr.owner)
-    assert round(mcd.dai.balance_of(dsr.owner)) == round(intial_dai_balance)
+    # exit remaining DAI from DSR and repay the vault
+    assert dsr.exit_all(proxy).transact(from_address=dsr.owner)
+    assert round(mcd.dai.balance_of(dsr.owner)) == round(initial_dai_balance)
     assert dsr.get_balance(proxy.address) == Wad.from_number(0)
+    frob(mcd, collateral, dsr.owner, dink=Wad(0), dart=dart*Wad.from_number(-1))
