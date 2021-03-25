@@ -667,7 +667,7 @@ class TestOsm:
 
 
 class TestMcd:
-    def test_healthy_cdp(self, web3, mcd, our_address):
+    def test_healthy_cdp(self, mcd, our_address):
         collateral = mcd.collaterals['ETH-B']
         ilk = collateral.ilk
         TestVat.ensure_clean_urn(mcd, collateral, our_address)
@@ -727,3 +727,11 @@ class TestMcd:
 
         # Cleanup
         cleanup_urn(mcd, collateral, our_address)
+
+    @pytest.mark.skip("gulp works on Kovan but not the local testchain")
+    def test_faucet(self, mcd, our_address):
+        token = mcd.collaterals['GUSD-A'].gem
+        balance_before = token.balance_of(our_address)
+        assert mcd.faucet.gulp(token.address).transact(from_address=our_address)
+        balance_after = token.balance_of(our_address)
+        assert balance_before < balance_after

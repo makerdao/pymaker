@@ -29,7 +29,7 @@ from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
 from pymaker.collateral import Collateral
-from pymaker.dss import Cat, Dog, Jug, Pot, Spotter, Vat, Vow
+from pymaker.dss import Cat, Dog, Jug, Pot, Spotter, TokenFaucet, Vat, Vow
 from pymaker.join import DaiJoin, GemJoin, GemJoin5
 from pymaker.proxy import ProxyRegistry, DssProxyActionsDsr
 from pymaker.feed import DSValue
@@ -162,7 +162,7 @@ class DssDeployment:
                      flopper: Flopper, pot: Pot, dai: DSToken, dai_join: DaiJoin, mkr: DSToken,
                      spotter: Spotter, ds_chief: DSChief, esm: ShutdownModule, end: End,
                      proxy_registry: ProxyRegistry, dss_proxy_actions: DssProxyActionsDsr, cdp_manager: CdpManager,
-                     dsr_manager: DsrManager, collaterals: Optional[Dict[str, Collateral]] = None):
+                     dsr_manager: DsrManager, faucet: TokenFaucet, collaterals: Optional[Dict[str, Collateral]] = None):
             self.pause = pause
             self.vat = vat
             self.vow = vow
@@ -183,17 +183,28 @@ class DssDeployment:
             self.dss_proxy_actions = dss_proxy_actions
             self.cdp_manager = cdp_manager
             self.dsr_manager = dsr_manager
+            self.faucet = faucet
             self.collaterals = collaterals or {}
 
         @staticmethod
         def from_json(web3: Web3, conf: str):
+            def address_in_configs(key: str, conf: str) -> bool:
+                if key not in conf:
+                    return False
+                elif not conf[key]:
+                    return False
+                elif conf[key] == "0x0000000000000000000000000000000000000000":
+                    return False
+                else:
+                    return True
+
             conf = json.loads(conf)
             pause = DSPause(web3, Address(conf['MCD_PAUSE']))
             vat = Vat(web3, Address(conf['MCD_VAT']))
             vow = Vow(web3, Address(conf['MCD_VOW']))
             jug = Jug(web3, Address(conf['MCD_JUG']))
-            cat = Cat(web3, Address(conf['MCD_CAT'])) if 'MCD_CAT' in conf else None
-            dog = Dog(web3, Address(conf['MCD_DOG'])) if 'MCD_DOG' in conf else None
+            cat = Cat(web3, Address(conf['MCD_CAT'])) if address_in_configs('MCD_CAT', conf) else None
+            dog = Dog(web3, Address(conf['MCD_DOG'])) if address_in_configs('MCD_DOG', conf) else None
             dai = DSToken(web3, Address(conf['MCD_DAI']))
             dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']))
             flapper = Flapper(web3, Address(conf['MCD_FLAP']))
@@ -208,6 +219,7 @@ class DssDeployment:
             dss_proxy_actions = DssProxyActionsDsr(web3, Address(conf['PROXY_ACTIONS_DSR']))
             cdp_manager = CdpManager(web3, Address(conf['CDP_MANAGER']))
             dsr_manager = DsrManager(web3, Address(conf['DSR_MANAGER']))
+            faucet = TokenFaucet(web3, Address(conf['FAUCET'])) if address_in_configs('FAUCET', conf) else None
 
             collaterals = {}
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
@@ -249,7 +261,7 @@ class DssDeployment:
             return DssDeployment.Config(pause, vat, vow, jug, cat, dog, flapper, flopper, pot,
                                         dai, dai_adapter, mkr, spotter, ds_chief, esm, end,
                                         proxy_registry, dss_proxy_actions, cdp_manager,
-                                        dsr_manager, collaterals)
+                                        dsr_manager, faucet, collaterals)
 
         @staticmethod
         def _infer_collaterals_from_addresses(keys: []) -> List:
@@ -291,6 +303,8 @@ class DssDeployment:
                 conf_dict['MCD_CAT'] = self.cat.address.address
             if self.dog:
                 conf_dict['MCD_DOG'] = self.dog.address.address
+            if self.faucet:
+                conf_dict['FAUCET'] = self.faucet.address.address
 
             for collateral in self.collaterals.values():
                 match = re.search(r'(\w+)(?:-\w+)?', collateral.ilk.name)
@@ -336,6 +350,7 @@ class DssDeployment:
         self.dss_proxy_actions = config.dss_proxy_actions
         self.cdp_manager = config.cdp_manager
         self.dsr_manager = config.dsr_manager
+        self.faucet = config.faucet
 
     @staticmethod
     def from_json(web3: Web3, conf: str):

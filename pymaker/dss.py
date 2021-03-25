@@ -934,3 +934,24 @@ class Pot(Contract):
 
     def __repr__(self):
         return f"Pot('{self.address}')"
+
+
+class TokenFaucet(Contract):
+    """A client for the `TokenFaucet` contract, to obtain ERC-20 tokens on testnets for testing purposes.
+
+    Ref. <https://github.com/makerdao/token-faucet/blob/master/src/TokenFaucet.sol>
+    """
+
+    abi = Contract._load_abi(__name__, 'abi/TokenFaucet.abi')
+    bin = Contract._load_bin(__name__, 'abi/TokenFaucet.bin')
+
+    def __init__(self, web3: Web3, address: Address):
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
+
+        self.web3 = web3
+        self.address = address
+        self._contract = self._get_contract(web3, self.abi, address)
+
+    def gulp(self, address: Address):
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'gulp(address)', [address.address])
