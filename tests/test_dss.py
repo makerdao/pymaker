@@ -279,7 +279,7 @@ class TestVat:
                                          rate=Ray(0), ink=Wad(0), art=Wad(0), spot=Ray(0), line=Rad(0), dust=Rad(0))
 
         ilk = mcd.collaterals["ETH-C"].ilk
-        assert ilk.line == Rad.from_number(1000000)
+        assert ilk.line == Rad.from_number(15000000)
         assert ilk.dust == Rad.from_number(20)
 
         representation = repr(ilk)

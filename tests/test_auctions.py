@@ -38,12 +38,12 @@ def create_surplus(mcd: DssDeployment, flapper: Flapper, deployment_address: Add
     if joy < mcd.vat.sin(mcd.vow.address) + mcd.vow.hump() + mcd.vow.bump():
         print('Creating a vault with surplus')
         collateral = mcd.collaterals['ETH-C']
-        ink = Wad.from_number(20)
+        ink = Wad.from_number(200)
         wrap_eth(mcd, deployment_address, ink)
         collateral.approve(deployment_address)
         assert collateral.adapter.join(deployment_address, ink).transact(
             from_address=deployment_address)
-        frob(mcd, collateral, deployment_address, dink=ink, dart=Wad.from_number(3000))
+        frob(mcd, collateral, deployment_address, dink=ink, dart=Wad.from_number(30000))
         assert mcd.jug.drip(collateral.ilk).transact(from_address=deployment_address)
         joy = mcd.vat.dai(mcd.vow.address)
         # total surplus > total debt + surplus auction lot size + surplus buffer
