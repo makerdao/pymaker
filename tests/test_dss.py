@@ -102,6 +102,8 @@ def frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad
     art_before = mcd.vat.urn(ilk, address).art
 
     # then
+    if dart < Wad(0):
+        assert mcd.vat.dai(address) >= Rad(dart)
     assert mcd.vat.frob(ilk=ilk, urn_address=address, dink=dink, dart=dart).transact(from_address=address)
     assert mcd.vat.urn(ilk, address).ink == ink_before + dink
     assert mcd.vat.urn(ilk, address).art == art_before + dart
@@ -280,7 +282,7 @@ class TestVat:
 
         ilk = mcd.collaterals["ETH-C"].ilk
         assert ilk.line == Rad.from_number(15000000)
-        assert ilk.dust == Rad.from_number(20)
+        assert ilk.dust == Rad(0)
 
         representation = repr(ilk)
         assert "ETH-C" in representation
@@ -372,12 +374,12 @@ class TestVat:
         our_urn = mcd.vat.urn(collateral.ilk, our_address)
 
         # when
-        wrap_eth(mcd, our_address, Wad(10))
-        assert collateral.adapter.join(our_address, Wad(3)).transact()
-        assert mcd.vat.frob(collateral.ilk, our_address, Wad(3), Wad(10)).transact()
+        wrap_eth(mcd, our_address, Wad.from_number(10))
+        assert collateral.adapter.join(our_address, Wad.from_number(3)).transact()
+        assert mcd.vat.frob(collateral.ilk, our_address, Wad.from_number(3), Wad.from_number(24)).transact()
 
         # then
-        assert mcd.vat.urn(collateral.ilk, our_address).art == our_urn.art + Wad(10)
+        assert mcd.vat.urn(collateral.ilk, our_address).art == our_urn.art + Wad.from_number(24)
 
         # rollback
         cleanup_urn(mcd, collateral, our_address)
@@ -391,15 +393,15 @@ class TestVat:
         assert urn.address == other_address
 
         # when
-        wrap_eth(mcd, other_address, Wad(10))
-        assert collateral.gem.balance_of(other_address) >= Wad(10)
+        wrap_eth(mcd, other_address, Wad.from_number(10))
+        assert collateral.gem.balance_of(other_address) >= Wad.from_number(10)
         assert collateral.gem == collateral.adapter.gem()
         collateral.gem.approve(collateral.adapter.address)
-        assert collateral.adapter.join(other_address, Wad(3)).transact(from_address=other_address)
-        assert mcd.vat.frob(collateral.ilk, other_address, Wad(3), Wad(10)).transact(from_address=other_address)
+        assert collateral.adapter.join(other_address, Wad.from_number(3)).transact(from_address=other_address)
+        assert mcd.vat.frob(collateral.ilk, other_address, Wad.from_number(3), Wad.from_number(20)).transact(from_address=other_address)
 
         # then
-        assert mcd.vat.urn(collateral.ilk, other_address).art == urn.art + Wad(10)
+        assert mcd.vat.urn(collateral.ilk, other_address).art == urn.art + Wad.from_number(20)
 
         # rollback
         cleanup_urn(mcd, collateral, other_address)
@@ -413,19 +415,19 @@ class TestVat:
 
         try:
             # when
-            wrap_eth(mcd, our_address, Wad(18))
-            wrap_eth(mcd, other_address, Wad(18))
+            wrap_eth(mcd, our_address, Wad.from_number(18))
+            wrap_eth(mcd, other_address, Wad.from_number(18))
 
             collateral0.approve(our_address)
-            assert collateral0.adapter.join(our_address, Wad(9)).transact()
-            assert mcd.vat.frob(ilk0, our_address, Wad(3), Wad(0)).transact()
+            assert collateral0.adapter.join(our_address, Wad.from_number(9)).transact()
+            assert mcd.vat.frob(ilk0, our_address, Wad.from_number(3), Wad.from_number(0)).transact()
 
             collateral1.approve(other_address)
-            assert collateral1.adapter.join(other_address, Wad(9)).transact(from_address=other_address)
-            assert mcd.vat.frob(ilk1, other_address, Wad(9), Wad(0)).transact(from_address=other_address)
-            assert mcd.vat.frob(ilk1, other_address, Wad(-3), Wad(0)).transact(from_address=other_address)
+            assert collateral1.adapter.join(other_address, Wad.from_number(9)).transact(from_address=other_address)
+            assert mcd.vat.frob(ilk1, other_address, Wad.from_number(9), Wad.from_number(0)).transact(from_address=other_address)
+            assert mcd.vat.frob(ilk1, other_address, Wad.from_number(-3), Wad.from_number(0)).transact(from_address=other_address)
 
-            assert mcd.vat.frob(ilk1, our_address, Wad(3), Wad(0),
+            assert mcd.vat.frob(ilk1, our_address, Wad.from_number(3), Wad.from_number(0),
                                 collateral_owner=other_address, dai_recipient=other_address).transact(
                 from_address=other_address)
 
@@ -436,19 +438,19 @@ class TestVat:
             assert len(frobs) == 4
             assert frobs[0].ilk == ilk0.name
             assert frobs[0].urn == our_address
-            assert frobs[0].dink == Wad(3)
+            assert frobs[0].dink == Wad.from_number(3)
             assert frobs[0].dart == Wad(0)
             assert frobs[1].ilk == ilk1.name
             assert frobs[1].urn == other_address
-            assert frobs[1].dink == Wad(9)
+            assert frobs[1].dink == Wad.from_number(9)
             assert frobs[1].dart == Wad(0)
             assert frobs[2].ilk == ilk1.name
             assert frobs[2].urn == other_address
-            assert frobs[2].dink == Wad(-3)
+            assert frobs[2].dink == Wad.from_number(-3)
             assert frobs[2].dart == Wad(0)
             assert frobs[3].urn == our_address
             assert frobs[3].collateral_owner == other_address
-            assert frobs[3].dink == Wad(3)
+            assert frobs[3].dink == Wad.from_number(3)
             assert frobs[3].dart == Wad(0)
 
             assert len(mcd.vat.past_frobs(from_block, ilk=ilk0)) == 1
@@ -468,7 +470,7 @@ class TestVat:
         collateral = mcd.collaterals['ETH-A']
         collateral.approve(our_address)
         other_balance_before = mcd.vat.gem(collateral.ilk, other_address)
-        amount = Wad(3)
+        amount = Wad.from_number(3)
         wrap_eth(mcd, our_address, amount)
         assert collateral.adapter.join(our_address, amount).transact()
 
@@ -487,17 +489,17 @@ class TestVat:
         collateral = mcd.collaterals['ETH-A']
         collateral.approve(our_address)
         our_urn = mcd.vat.urn(collateral.ilk, our_address)
-        wrap_eth(mcd, our_address, Wad(10))
-        assert collateral.adapter.join(our_address, Wad(3)).transact()
-        assert mcd.vat.frob(collateral.ilk, our_address, Wad(3), Wad(10)).transact()
+        wrap_eth(mcd, our_address, Wad.from_number(10))
+        assert collateral.adapter.join(our_address, Wad.from_number(3)).transact()
+        assert mcd.vat.frob(collateral.ilk, our_address, Wad.from_number(3), Wad.from_number(30)).transact()
         other_balance_before = mcd.vat.dai(other_address)
 
         # when
-        assert mcd.vat.move(our_address, other_address, Rad(Wad(10))).transact()
+        assert mcd.vat.move(our_address, other_address, Rad.from_number(30)).transact()
 
         # then
         other_balance_after = mcd.vat.dai(other_address)
-        assert other_balance_before + Rad(Wad(10)) == other_balance_after
+        assert other_balance_before + Rad.from_number(30) == other_balance_after
 
         # confirm log was emitted and could be parsed
         from_block = mcd.web3.eth.blockNumber
@@ -506,7 +508,7 @@ class TestVat:
         logmove: Vat.LogMove = logs[0]
         assert logmove.src == our_address
         assert logmove.dst == other_address
-        assert logmove.dart == Rad(Wad(10))
+        assert logmove.dart == Rad.from_number(30)
 
         # rollback
         cleanup_urn(mcd, collateral, our_address)
@@ -518,18 +520,18 @@ class TestVat:
         mcd.vat.hope(other_address).transact(from_address=our_address)
 
         our_urn = mcd.vat.urn(collateral.ilk, our_address)
-        wrap_eth(mcd, our_address, Wad(6))
-        assert collateral.adapter.join(our_address, Wad(6)).transact()
-        assert mcd.vat.frob(collateral.ilk, our_address, Wad(6), Wad(20)).transact()
+        wrap_eth(mcd, our_address, Wad.from_number(6))
+        assert collateral.adapter.join(our_address, Wad.from_number(6)).transact()
+        assert mcd.vat.frob(collateral.ilk, our_address, Wad.from_number(6), Wad.from_number(40)).transact()
         urn_before = mcd.vat.urn(collateral.ilk, other_address)
 
         # when
-        assert mcd.vat.fork(collateral.ilk, our_address, other_address, Wad(3), Wad(10)).transact()
+        assert mcd.vat.fork(collateral.ilk, our_address, other_address, Wad.from_number(3), Wad.from_number(20)).transact()
 
         # then
         urn_after = mcd.vat.urn(collateral.ilk, other_address)
-        assert urn_before.ink + Wad(3) == urn_after.ink
-        assert urn_before.art + Wad(10) == urn_after.art
+        assert urn_before.ink + Wad.from_number(3) == urn_after.ink
+        assert urn_before.art + Wad.from_number(20) == urn_after.art
 
         # confirm log was emitted and could be parsed
         from_block = mcd.web3.eth.blockNumber
@@ -539,8 +541,8 @@ class TestVat:
         assert logfork.ilk == collateral.ilk.name
         assert logfork.src == our_address
         assert logfork.dst == other_address
-        assert logfork.dink == Wad(3)
-        assert logfork.dart == Wad(10)
+        assert logfork.dink == Wad.from_number(3)
+        assert logfork.dart == Wad.from_number(20)
 
         # rollback
         cleanup_urn(mcd, collateral, our_address)

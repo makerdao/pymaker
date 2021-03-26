@@ -324,8 +324,8 @@ class Vat(Contract):
         dtab = Rad(ilk.rate * Ray(dart))
         tab = ilk.rate * art
         debt = self.debt() + dtab
-        logger.debug(f"Frobbing     debt={r(ilk_art)}, ink={r(ink)}, dink={r(dink)}, dart={r(dart)}, "
-                     f"ilk.rate={r(ilk.rate,8)}, tab={r(tab)}, spot={r(ilk.spot, 4)}, debt={r(debt)}")
+        logger.debug(f"Frobbing ink={r(urn.ink)}, art={urn.art}, dtab={r(dtab)}, tab={tab}, "
+                     f"ilk.rate={r(ilk.rate,8)}, ilk.spot={r(ilk.spot, 4)}, vat.debt={r(debt)}")
 
         # either debt has decreased, or debt ceilings are not exceeded
         under_collateral_debt_ceiling = Rad(Ray(ilk_art) * ilk.rate) <= ilk.line

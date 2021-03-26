@@ -449,7 +449,7 @@ class TestClipper:
 
         # Create a vault
         ilk = collateral.ilk
-        ink = Wad.from_number(0.1)
+        ink = Wad.from_number(1)
         wrap_eth(mcd, deployment_address, ink)
         collateral.approve(deployment_address)
         assert collateral.adapter.join(deployment_address, ink).transact(
@@ -490,7 +490,7 @@ class TestClipper:
         assert not needs_redo
         assert price == Ray.from_number(172.5)
         assert lot == ink
-        assert float(tab) == 10.5
+        assert float(tab) == 105.0
         # Check vat, vow, and dog
         assert urn.ink == Wad(0)
         assert vice_before < mcd.vat.vice()
@@ -500,7 +500,7 @@ class TestClipper:
         current_sale = clipper.sales(kick)
         assert isinstance(current_sale, Clipper.Sale)
         assert current_sale.pos == 0
-        assert float(current_sale.tab) == 10.5
+        assert float(current_sale.tab) == 105.0
         assert current_sale.lot == ink
         assert current_sale.usr == deployment_address
         assert current_sale.tic > 0
@@ -546,7 +546,7 @@ class TestClipper:
         assert not needs_redo
         # FIXME: *Sometimes* the auction goes inactive before full lot is taken.
         current_sale = clipper.sales(kick)
-        assert current_sale.lot == Wad.from_number(0.03)
+        assert current_sale.lot > Wad(0)
         assert current_sale.top > price
         assert Rad(0) < current_sale.tab < kick_log.tab
         first_take_log = self.last_log(clipper)
@@ -565,7 +565,7 @@ class TestClipper:
         (needs_redo, price, lot, tab) = clipper.status(kick)
         assert not needs_redo
         current_sale = clipper.sales(kick)
-        assert current_sale.lot == Wad.from_number(0.03)
+        assert current_sale.lot > Wad(0)
         redo_log = self.last_log(clipper)
         assert isinstance(redo_log, Clipper.RedoLog)
         assert redo_log.id == kick
