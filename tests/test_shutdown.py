@@ -38,9 +38,9 @@ def open_cdp(mcd: DssDeployment, collateral: Collateral, address: Address):
     collateral.approve(address)
     wrap_eth(mcd, address, Wad.from_number(10))
     assert collateral.adapter.join(address, Wad.from_number(10)).transact(from_address=address)
-    frob(mcd, collateral, address, Wad.from_number(10), Wad.from_number(15))
+    frob(mcd, collateral, address, Wad.from_number(10), Wad.from_number(20))
 
-    assert mcd.vat.debt() >= Rad(Wad.from_number(15))
+    assert mcd.vat.debt() >= Rad(Wad.from_number(20))
     assert mcd.vat.dai(address) >= Rad.from_number(10)
 
 

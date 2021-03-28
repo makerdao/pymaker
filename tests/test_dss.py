@@ -103,7 +103,7 @@ def frob(mcd: DssDeployment, collateral: Collateral, address: Address, dink: Wad
 
     # then
     if dart < Wad(0):
-        assert mcd.vat.dai(address) >= Rad(dart)
+        assert mcd.vat.dai(address) >= Rad(dart*-1)
     assert mcd.vat.frob(ilk=ilk, urn_address=address, dink=dink, dart=dart).transact(from_address=address)
     assert mcd.vat.urn(ilk, address).ink == ink_before + dink
     assert mcd.vat.urn(ilk, address).art == art_before + dart
@@ -271,7 +271,6 @@ class TestVat:
         assert urn.ink == Wad(0)
         assert urn.art == Wad(0)
         assert mcd.vat.gem(collateral.ilk, address) == Wad(0)
-
 
     def test_getters(self, mcd):
         assert isinstance(mcd.vat.live(), bool)
@@ -657,6 +656,7 @@ class TestPot:
         else:
             assert chi_before < chi_after
 
+
 class TestOsm:
     def test_price(self, web3, mcd):
         collateral = mcd.collaterals['ETH-B']
@@ -718,9 +718,11 @@ class TestMcd:
         assert mcd.dai_adapter.join(our_address, Wad.from_number(333)).transact()
         assert mcd.dai.balance_of(our_address) == Wad(0)
         assert mcd.vat.dai(our_address) == initial_dai + Rad.from_number(333)
+        wipe = mcd.vat.get_wipe_all_dart(collateral.ilk, our_address)
+        assert wipe >= Wad.from_number(333)
+        frob(mcd, collateral, our_address, dink=Wad(0), dart=wipe*-1)
 
         # Withdraw our collateral
-        frob(mcd, collateral, our_address, dink=Wad(0), dart=Wad.from_number(-333))
         frob(mcd, collateral, our_address, dink=Wad.from_number(-9), dart=Wad(0))
         assert mcd.vat.gem(ilk, our_address) == Wad.from_number(9)
         assert collateral.adapter.exit(our_address, Wad.from_number(9)).transact()

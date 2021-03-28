@@ -20,7 +20,7 @@ import pytest
 from pymaker import Address
 from pymaker.deployment import DssDeployment
 from pymaker.dsr import Dsr
-from pymaker.numeric import Wad
+from pymaker.numeric import Wad, Ray, Rad
 
 from tests.test_dss import wrap_eth, frob
 
@@ -46,7 +46,7 @@ def test_join_and_exit(dsr):
     mcd = dsr.mcd
 
     # create a vault
-    collateral = mcd.collaterals['ETH-A']
+    collateral = mcd.collaterals['ETH-C']
     wrap_eth(mcd, dsr.owner, Wad.from_number(2))
     collateral.approve(dsr.owner)
     assert collateral.adapter.join(dsr.owner, Wad.from_number(2)).transact(from_address=dsr.owner)
@@ -70,15 +70,21 @@ def test_join_and_exit(dsr):
     assert dsr.join(Wad.from_number(100), proxy).transact(from_address=dsr.owner)
     assert mcd.dai.balance_of(dsr.owner) == initial_dai_balance - Wad.from_number(100)
     assert round(dsr.get_balance(proxy.address)) == Wad.from_number(100)
+    assert mcd.pot.drip().transact()
 
     # exit 33 DAI from DSR
     assert dsr.exit(Wad.from_number(33), proxy).transact(from_address=dsr.owner)
     assert round(mcd.dai.balance_of(dsr.owner)) == round(initial_dai_balance) - Wad.from_number(100) + Wad.from_number(33)
     assert round(dsr.get_balance(proxy.address)) == Wad.from_number(67)
+    assert mcd.pot.drip().transact()
 
-    # exit remaining DAI from DSR and repay the vault
+    # exit remaining DAI from DSR and join to vat
     assert dsr.exit_all(proxy).transact(from_address=dsr.owner)
     assert round(mcd.dai.balance_of(dsr.owner)) == round(initial_dai_balance)
     assert dsr.get_balance(proxy.address) == Wad.from_number(0)
-    # FIXME: baffled why this frob doesn't work
-    # frob(mcd, collateral, dsr.owner, dink=Wad(0), dart=dart*Wad.from_number(-1))
+    assert mcd.dai_adapter.join(dsr.owner, mcd.dai.balance_of(dsr.owner)).transact(from_address=dsr.owner)
+
+    # repay the vault
+    assert collateral.ilk.dust == Rad(0)
+    wipe: Wad = mcd.vat.get_wipe_all_dart(collateral.ilk, dsr.owner)
+    frob(mcd, collateral, dsr.owner, dink=Wad(0), dart=wipe*-1)

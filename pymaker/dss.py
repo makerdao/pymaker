@@ -294,6 +294,19 @@ class Vat(Contract):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'frob', [ilk.toBytes(), urn_address.address, v.address, w.address, dink.value, dart.value])
 
+    def get_wipe_all_dart(self, ilk: Ilk, urn: Address) -> Wad:
+        """Returns the amount of Dai required to wipe an urn without leaving any dust
+        adapted from https://github.com/makerdao/dss-proxy-actions/blob/master/src/DssProxyActions.sol#L200"""
+        assert isinstance(urn, Address)
+        assert isinstance(ilk, Ilk)
+        assert ilk.rate >= Ray.from_number(1)
+
+        # dai: Rad = self.dai(urn)
+        rad: Rad = Rad(self.urn(ilk, urn).art) * Rad(ilk.rate)  # - dai
+        wad: Wad = Wad(rad)
+        wad = wad + Wad(1) if Rad(wad) < rad else wad
+        return wad
+
     def validate_frob(self, ilk: Ilk, address: Address, dink: Wad, dart: Wad):
         """Helps diagnose `frob` transaction failures by asserting on `require` conditions in the contract"""
 
