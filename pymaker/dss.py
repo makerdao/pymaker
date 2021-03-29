@@ -301,8 +301,7 @@ class Vat(Contract):
         assert isinstance(ilk, Ilk)
         assert ilk.rate >= Ray.from_number(1)
 
-        # dai: Rad = self.dai(urn)
-        rad: Rad = Rad(self.urn(ilk, urn).art) * Rad(ilk.rate)  # - dai
+        rad: Rad = Rad(self.urn(ilk, urn).art) * Rad(ilk.rate)
         wad: Wad = Wad(rad)
         wad = wad + Wad(1) if Rad(wad) < rad else wad
         return wad

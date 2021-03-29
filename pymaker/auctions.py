@@ -766,11 +766,6 @@ class Clipper(AuctionContract):
         """Number of active and redoable auctions."""
         return int(self._contract.functions.count().call())
 
-    # FIXME: This disappeared from the ABI; not sure if we really need it.
-    # def active_list(self) -> List[int]:
-    #     """List of active auction ids."""
-    #     return self._contract.functions.list().call()
-
     def status(self, id: int) -> (bool, Ray, Wad, Rad):
         (needs_redo, price, lot, tab) = self._contract.functions.getStatus(id).call()
         logging.debug(f"Auction {id} {'needs redo ' if needs_redo else ''}with price={float(Ray(price))} " 
