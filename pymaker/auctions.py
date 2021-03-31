@@ -767,6 +767,11 @@ class Clipper(AuctionContract):
         return int(self._contract.functions.count().call())
 
     def status(self, id: int) -> (bool, Ray, Wad, Rad):
+        """Indicates current state of the auction
+        Args:
+            id: Auction identifier.
+        """
+        assert isinstance(id, int)
         (needs_redo, price, lot, tab) = self._contract.functions.getStatus(id).call()
         logging.debug(f"Auction {id} {'needs redo ' if needs_redo else ''}with price={float(Ray(price))} " 
                       f"lot={float(lot)} tab={float(tab)}")
@@ -774,10 +779,8 @@ class Clipper(AuctionContract):
 
     def sales(self, id: int) -> Sale:
         """Returns the auction details.
-
         Args:
             id: Auction identifier.
-
         Returns:
             The auction details.
         """
