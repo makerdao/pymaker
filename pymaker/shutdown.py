@@ -152,6 +152,12 @@ class End(Contract):
         assert isinstance(ilk, Ilk)
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'cage(bytes32)', [ilk.toBytes()])
 
+    def snip(self, ilk: Ilk, clip_id: int) -> Transact:
+        """Cancel a clip auction and seize it's collateral"""
+        assert isinstance(ilk, Ilk)
+        assert isinstance(clip_id, int)
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'snip', [ilk.toBytes(), clip_id])
+
     def skip(self, ilk: Ilk, flip_id: int) -> Transact:
         """Cancel a flip auction and seize it's collateral"""
         assert isinstance(ilk, Ilk)
