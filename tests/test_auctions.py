@@ -441,6 +441,11 @@ class TestClipper:
         assert clipper.cusp() == Ray.from_number(0.3333)
         assert clipper.chip() == Wad.from_number(0.02)
         assert clipper.tip() == Rad.from_number(100)
+        assert isinstance(clipper.calc, Address)
+        assert clipper.calc != Address.zero()
+        assert clipper.dog.address == mcd.dog.address
+        assert clipper.vat.address == mcd.vat.address
+        assert clipper.active_auctions() == []
 
     def test_scenario(self, web3, mcd, collateral, clipper, our_address, other_address, deployment_address):
         dirt_before = mcd.dog.dog_dirt()
@@ -485,6 +490,8 @@ class TestClipper:
         assert clipper.active_count() == 1
         kick = clipper.kicks()
         assert kick == 1
+        assert len(clipper.active_auctions()) == 1
+        assert clipper.active_auctions()[0].id == 1
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
         (needs_redo, price, lot, tab) = clipper.status(kick)
         assert not needs_redo
@@ -521,12 +528,6 @@ class TestClipper:
 
         # Wrap some eth and handle approvals before bidding
         eth_required = Wad(current_sale.tab / Rad(ilk.spot)) * Wad.from_number(1.1)
-        # FIXME: I have no clue why joining collateral to an unrelated address and waiting a second seems to reduce
-        #  the frequency of the problem below.
-        wrap_eth(mcd, other_address, eth_required)
-        collateral.approve(other_address)
-        assert collateral.adapter.join(other_address, eth_required).transact(from_address=other_address)
-        time_travel_by(web3, 1)
         wrap_eth(mcd, our_address, eth_required)
         collateral.approve(our_address)
         assert collateral.adapter.join(our_address, eth_required).transact(from_address=our_address)
@@ -544,7 +545,6 @@ class TestClipper:
         assert clipper.take(kick, Wad.from_number(0.07), Ray.from_number(180)).transact(from_address=our_address)
         (needs_redo, price, lot, tab) = clipper.status(kick)
         assert not needs_redo
-        # FIXME: *Sometimes* the auction goes inactive before full lot is taken.
         current_sale = clipper.sales(kick)
         assert current_sale.lot > Wad(0)
         assert current_sale.top > price
@@ -561,6 +561,7 @@ class TestClipper:
         time_travel_by(web3, 24)
         (needs_redo, price, lot, tab) = clipper.status(kick)
         assert needs_redo
+        assert len(clipper.active_auctions()) == clipper.active_count()
         assert clipper.redo(kick, our_address).transact()
         (needs_redo, price, lot, tab) = clipper.status(kick)
         assert not needs_redo
@@ -593,6 +594,8 @@ class TestClipper:
         current_sale = clipper.sales(kick)
         assert current_sale.lot == Wad(0)
         assert current_sale.tab == Rad(0)
+        assert clipper.active_count() == 0
+        assert len(clipper.active_auctions()) == 0
 
         # Ensure we can retrieve our collateral
         collateral_before = collateral.gem.balance_of(our_address)

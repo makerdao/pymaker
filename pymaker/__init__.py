@@ -154,6 +154,10 @@ class Address:
         else:
             self.address = eth_utils.to_checksum_address(address)
 
+    @staticmethod
+    def zero():
+        return Address("0x0000000000000000000000000000000000000000")
+
     def as_bytes(self) -> bytes:
         """Return the address as a 20-byte bytes array."""
         return bytes.fromhex(self.address.replace('0x', ''))

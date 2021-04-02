@@ -27,7 +27,7 @@ from eth_abi.codec import ABICodec
 from eth_abi.registry import registry as default_registry
 
 from pymaker import Contract, Address, Transact
-from pymaker.dss import Ilk, Vat
+from pymaker.dss import Dog, Vat
 from pymaker.logging import LogNote
 from pymaker.numeric import Wad, Rad, Ray
 from pymaker.token import ERC20Token
@@ -152,7 +152,6 @@ class DealableAuctionContract(AuctionContract):
         assert isinstance(address, Address)
 
         return bool(self._contract.functions.wards(address.address).call())
-
 
     def active_auctions(self) -> list:
         active_auctions = []
@@ -695,7 +694,8 @@ class Clipper(AuctionContract):
             return f"Clipper.RedoLog({pformat(vars(self))})"
 
     class Sale:
-        def __init__(self, pos: int, tab: Rad, lot: Wad, usr: Address, tic: int, top: Ray):
+        def __init__(self, id: int, pos: int, tab: Rad, lot: Wad, usr: Address, tic: int, top: Ray):
+            assert(isinstance(id, int))
             assert(isinstance(pos, int))
             assert(isinstance(tab, Rad))
             assert(isinstance(lot, Wad))
@@ -703,6 +703,7 @@ class Clipper(AuctionContract):
             assert(isinstance(tic, int))
             assert(isinstance(top, Ray))
 
+            self.id = id    # auction identifier
             self.pos = pos  # active index
             self.tab = tab  # dai to raise
             self.lot = lot  # collateral to sell
@@ -721,7 +722,9 @@ class Clipper(AuctionContract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
-        # TODO: Albeit more elegant, this is inconsistent with AuctionContract.vat(), a method call
+        # Albeit more elegant, this is inconsistent with AuctionContract.vat(), a method call
+        self.calc = Address(self._contract.functions.calc().call())
+        self.dog = Dog(web3, Address(self._contract.functions.dog().call()))
         self.vat = Vat(web3, Address(self._contract.functions.vat().call()))
 
         self.take_abi = None
@@ -732,7 +735,14 @@ class Clipper(AuctionContract):
             if not self.redo_abi and member.get('name') == 'Redo':
                 self.redo_abi = member
 
-    # TODO: Add links to dog, vow, spotter, calc contracts
+    def active_auctions(self) -> list:
+        active_auctions = []
+        for index in range(1, self.kicks()+1):
+            sale = self.sales(index)
+            if sale.usr != Address.zero():
+                active_auctions.append(sale)
+            index += 1
+        return active_auctions
 
     def ilk_name(self) -> str:
         ilk = self._contract.functions.ilk().call()
@@ -788,7 +798,8 @@ class Clipper(AuctionContract):
 
         array = self._contract.functions.sales(id).call()
 
-        return Clipper.Sale(pos=int(array[0]),
+        return Clipper.Sale(id=id,
+                            pos=int(array[0]),
                             tab=Rad(array[1]),
                             lot=Wad(array[2]),
                             usr=Address(array[3]),
