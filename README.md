@@ -361,7 +361,8 @@ print(bump_result.transaction_hash)
 ## Testing
 
 Prerequisites:
-* [docker and docker-compose](https://www.docker.com/get-started)
+* [docker and docker-compose](https://www.docker.com/get-started) - for containerized deployments of Ganache and Parity
+* [seth](https://dapp.tools/seth/) - to enable the token faucet
 
 This project uses [pytest](https://docs.pytest.org/en/latest/) for unit testing.  Testing of Multi-collateral Dai is 
 performed on a Dockerized local testchain included in `tests\config`.

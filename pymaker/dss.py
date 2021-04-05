@@ -712,6 +712,7 @@ class Cat(Contract):
             return False
 
         # Prevent null auction (ilk.dunk [Rad], ilk.rate [Ray], ilk.chop [Wad])
+        assert self.chop(ilk) > Wad(0)  # ensure liquidations are enabled and this uses flipper instead of clipper
         dart: Wad = min(urn.art, Wad(min(self.dunk(ilk), room) / Rad(ilk.rate) / Rad(self.chop(ilk))))
         dink: Wad = min(urn.ink, urn.ink * dart / urn.art)
 

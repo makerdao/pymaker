@@ -732,7 +732,6 @@ class TestMcd:
         # Cleanup
         cleanup_urn(mcd, collateral, our_address)
 
-    @pytest.mark.skip("gulp works on Kovan but not the local testchain")
     def test_faucet(self, mcd, our_address):
         token = mcd.collaterals['GUSD-A'].gem
         balance_before = token.balance_of(our_address)

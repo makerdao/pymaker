@@ -61,11 +61,11 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
     # Create a vault
     collateral = mcd.collaterals['ETH-A']
     ilk = collateral.ilk
-    wrap_eth(mcd, deployment_address, Wad.from_number(1))
+    ink = Wad.from_number(10)
+    wrap_eth(mcd, deployment_address, ink)
     collateral.approve(deployment_address)
-    assert collateral.adapter.join(deployment_address, Wad.from_number(1)).transact(
-        from_address=deployment_address)
-    frob(mcd, collateral, deployment_address, dink=Wad.from_number(1), dart=Wad(0))
+    assert collateral.adapter.join(deployment_address, ink).transact(from_address=deployment_address)
+    frob(mcd, collateral, deployment_address, dink=ink, dart=Wad(0))
     dart = max_dart(mcd, collateral, deployment_address) - Wad(1)
     frob(mcd, collateral, deployment_address, dink=Wad(0), dart=dart)
     assert not mcd.cat.can_bite(ilk, mcd.vat.urn(collateral.ilk, deployment_address))
@@ -82,24 +82,23 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
     assert mcd.cat.bite(collateral.ilk, urn).transact()
     flip_kick = collateral.flipper.kicks()
 
-    # Generate some Dai, bid on and win the flip auction without covering all the debt
+    # Generate some Dai, submit a zero bid to win the flip auction without covering all the debt
     wrap_eth(mcd, our_address, Wad.from_number(10))
     collateral.approve(our_address)
     assert collateral.adapter.join(our_address, Wad.from_number(10)).transact(from_address=our_address)
     web3.eth.defaultAccount = our_address.address
-    frob(mcd, collateral, our_address, dink=Wad.from_number(10), dart=Wad.from_number(200))
+    frob(mcd, collateral, our_address, dink=Wad.from_number(10), dart=Wad(1))
     collateral.flipper.approve(mcd.vat.address, approval_function=hope_directly())
     current_bid = collateral.flipper.bids(flip_kick)
-    urn = mcd.vat.urn(collateral.ilk, our_address)
-    assert Rad(urn.art) > current_bid.tab
-    bid = Rad.from_number(6)
-    TestFlipper.tend(collateral.flipper, flip_kick, our_address, current_bid.lot, bid)
+    TestFlipper.tend(collateral.flipper, flip_kick, our_address, current_bid.lot, Rad(1))
     mcd.vat.can(our_address, collateral.flipper.address)
     time_travel_by(web3, collateral.flipper.ttl() + 1)
     assert collateral.flipper.deal(flip_kick).transact()
 
     # Raise debt from the queue (note that vow.wait is 0 on our testchain)
+    assert mcd.vow.wait() == 0
     bites = mcd.cat.past_bites(100)
+    assert len(bites) > 0
     for bite in bites:
         era_bite = bite.era(web3)
         assert era_bite > int(datetime.now().timestamp()) - 120
@@ -108,6 +107,7 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
         assert mcd.vow.sin_of(era_bite) == Rad(0)
     # Cancel out surplus and debt
     dai_vow = mcd.vat.dai(mcd.vow.address)
+    # FIXME: too much surplus
     assert dai_vow <= mcd.vow.woe()
     assert mcd.vow.heal(dai_vow).transact()
     assert mcd.vow.woe() >= mcd.vow.sump()
@@ -697,3 +697,7 @@ class TestFlopper:
         assert isinstance(log, Flopper.DealLog)
         assert log.usr == our_address
         assert log.id == kick
+
+        # Cleanup
+        collateral = mcd.collaterals['ETH-A']
+        set_collateral_price(mcd, collateral, Wad.from_number(230))
