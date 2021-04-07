@@ -80,6 +80,11 @@ class AuctionContract(Contract):
         approval_function(token=ERC20Token(web3=self.web3, address=source),
                           spender_address=self.address, spender_name=self.__class__.__name__)
 
+    def wards(self, address: Address) -> bool:
+        assert isinstance(address, Address)
+
+        return bool(self._contract.functions.wards(address.address).call())
+
     def vat(self) -> Address:
         """Returns the `vat` address.
          Returns:
@@ -147,11 +152,6 @@ class DealableAuctionContract(AuctionContract):
         super(DealableAuctionContract, self).__init__(web3, address, abi)
 
         self._bids = bids
-
-    def wards(self, address: Address) -> bool:
-        assert isinstance(address, Address)
-
-        return bool(self._contract.functions.wards(address.address).call())
 
     def active_auctions(self) -> list:
         active_auctions = []
