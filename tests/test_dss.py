@@ -732,6 +732,7 @@ class TestMcd:
         # Cleanup
         cleanup_urn(mcd, collateral, our_address)
 
+    @pytest.mark.skip("awaiting change to dss-deploy-scripts allowing faucets to be enabled on local testnet")
     def test_faucet(self, mcd, our_address):
         token = mcd.collaterals['GUSD-A'].gem
         balance_before = token.balance_of(our_address)
