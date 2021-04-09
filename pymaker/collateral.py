@@ -19,7 +19,7 @@ import logging
 
 from pymaker import Address, Contract
 from pymaker.approval import directly, hope_directly
-from pymaker.auctions import Clipper, Flipper
+from pymaker.auctions import AuctionContract, Clipper, Flipper
 from pymaker.ilk import Ilk
 from pymaker.gas import DefaultGasPrice
 from pymaker.join import GemJoin
@@ -35,11 +35,11 @@ class Collateral:
     but will share the same gem (WETH token), GemJoin instance, and Flipper contract.
     """
 
-    def __init__(self, ilk: Ilk, gem: ERC20Token, adapter: GemJoin, auction: Contract, pip, vat: Contract):
+    def __init__(self, ilk: Ilk, gem: ERC20Token, adapter: GemJoin, auction: AuctionContract, pip, vat: Contract):
         assert isinstance(ilk, Ilk)
         assert isinstance(gem, ERC20Token)
         assert isinstance(adapter, GemJoin)
-        assert isinstance(auction, Contract)
+        assert isinstance(auction, AuctionContract)
         assert isinstance(vat, Contract)
 
         self.ilk = ilk

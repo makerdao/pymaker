@@ -41,8 +41,9 @@ mcd = DssDeployment.from_node(web3)
 # Print a list of collaterals available for this deployment of MCD
 for collateral in mcd.collaterals.values():
     osm: OSM = collateral.pip
+    liquidation = "clip" if collateral.clipper else "flip"
     print(f"Found {collateral.ilk.name:>15} - {collateral.gem.name():<21} with {collateral.adapter.dec():>2} decimals " 
-          f"with oracle price {float(osm.peek())}")
+          f"with oracle price {float(osm.peek())}, using {liquidation} liquidations")
 
 # Choose the desired collateral; in this case we'll wrap some Eth
 collateral = mcd.collaterals['ETH-A']

@@ -821,8 +821,8 @@ class Clipper(AuctionContract):
         assert not done
         assert max >= price
 
-        slice: Wad = min(lot, amt)  # Purchase as much as possible, up to amt
-        owe: Rad = Rad(slice) * Rad(price)       # DAI needed to buy a slice of this sale
+        slice: Wad = min(lot, amt)          # Purchase as much as possible, up to amt
+        owe: Rad = Rad(slice) * Rad(price)  # DAI needed to buy a slice of this sale
 
         if Rad(owe) > tab:
             owe = Rad(tab)
