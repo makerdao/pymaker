@@ -21,6 +21,8 @@ install:
   - pip install virtualenv --upgrade
   - pip install -r requirements.txt
   - pip install -r requirements-dev.txt
+  - curl -L https://nixos.org/nix/install | sh
+  - curl -L https://dapp.tools/install | sh
 
 script:
   - ./test.sh
