@@ -492,6 +492,7 @@ class TestClipper:
         assert kick == 1
         assert len(clipper.active_auctions()) == 1
         assert clipper.active_auctions()[0].id == 1
+        assert mcd.active_auctions()['clips']['ETH-B'][0].id == 1
         urn = mcd.vat.urn(collateral.ilk, deployment_address)
         (needs_redo, price, lot, tab) = clipper.status(kick)
         assert not needs_redo

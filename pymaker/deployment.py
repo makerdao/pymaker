@@ -399,8 +399,7 @@ class DssDeployment:
             if collateral.flipper:
                 flips[collateral.ilk.name] = collateral.flipper.active_auctions()
             elif collateral.clipper:
-                pass  # TODO: implement clipper.active_auctions()
-                # clips[collateral.ilk.name] = collateral.clipper.active_auctions()
+                clips[collateral.ilk.name] = collateral.clipper.active_auctions()
 
         return {
             "flips": flips,

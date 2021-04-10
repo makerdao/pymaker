@@ -739,3 +739,15 @@ class TestMcd:
         assert mcd.faucet.gulp(token.address).transact(from_address=our_address)
         balance_after = token.balance_of(our_address)
         assert balance_before < balance_after
+
+    def test_empty_auctions_collection(self, mcd):
+        for auction_type, collection in mcd.active_auctions().items():
+            assert collection is not None
+            if auction_type in ['flaps', 'flops']:
+                assert len(collection) == 0
+            elif auction_type in ['clips', 'flips']:
+                assert len(collection) > 0
+                for collateral, collateral_auctions in collection.items():
+                    assert isinstance(collateral, str)
+                    assert collateral_auctions is not None
+                    assert len(collateral_auctions) == 0
