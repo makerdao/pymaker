@@ -44,7 +44,7 @@ logger = logging.getLogger()
 class AuctionContract(Contract):
     """Abstract baseclass shared across all auction contracts."""
     def __init__(self, web3: Web3, address: Address, abi: list):
-        if self.__class__ == DealableAuctionContract:
+        if self.__class__ == AuctionContract:
             raise NotImplemented('Abstract class; please call Clipper, Flapper, Flipper, or Flopper ctor')
         assert isinstance(web3, Web3)
         assert isinstance(address, Address)
@@ -682,6 +682,7 @@ class Clipper(AuctionContract):
             self.owe = Rad(args['owe'])         # Dai needed to satisfy the calculated bid price
             self.tab = Rad(args['tab'])         # Remaining debt
             self.lot = Wad(args['lot'])         # Remaining lot
+            self.usr = Address(args['usr'])     # Liquidated vault
             self.block = log['blockNumber']
             self.tx_hash = log['transactionHash'].hex()
 
