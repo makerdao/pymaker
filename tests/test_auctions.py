@@ -556,6 +556,7 @@ class TestClipper:
         assert first_take_log.price == price
         assert first_take_log.lot == current_sale.lot
         assert first_take_log.usr == deployment_address
+        assert first_take_log.sender == our_address
         assert round(first_take_log.owe, 18) == round(Rad.from_number(0.07) * Rad(price), 18)
 
         # Allow the auction to expire, and then resurrect it

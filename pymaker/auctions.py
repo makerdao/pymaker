@@ -674,7 +674,7 @@ class Clipper(AuctionContract):
             return f"Clipper.KickLog({pformat(vars(self))})"
 
     class TakeLog:
-        def __init__(self, log):
+        def __init__(self, log, sender):
             args = log['args']
             self.id = args['id']
             self.max = Ray(args['max'])         # Max bid price specified
@@ -685,6 +685,7 @@ class Clipper(AuctionContract):
             self.usr = Address(args['usr'])     # Liquidated vault
             self.block = log['blockNumber']
             self.tx_hash = log['transactionHash'].hex()
+            self.sender = sender
 
         def __repr__(self):
             return f"Clipper.TakeLog({pformat(vars(self))})"
@@ -899,12 +900,18 @@ class Clipper(AuctionContract):
             return Clipper.KickLog(event_data)
         elif signature == "0x05e309fd6ce72f2ab888a20056bb4210df08daed86f21f95053deb19964d86b1":
             event_data = get_event_data(codec, self.take_abi, event)
-            return Clipper.TakeLog(event_data)
+            self._get_sender_for_eventlog(event_data)
+            return Clipper.TakeLog(event_data, self._get_sender_for_eventlog(event_data))
         elif signature == "0x275de7ecdd375b5e8049319f8b350686131c219dd4dc450a08e9cf83b03c865f":
             event_data = get_event_data(codec, self.redo_abi, event)
             return Clipper.RedoLog(event_data)
         else:
             logger.debug(f"Found event signature {signature}")
+
+    def _get_sender_for_eventlog(self, event_data) -> Address:
+        tx_hash = event_data['transactionHash'].hex()
+        receipt = self.web3.eth.getTransactionReceipt(tx_hash)
+        return Address(receipt['from'])
 
     def __repr__(self):
         return f"Clipper('{self.address}')"
