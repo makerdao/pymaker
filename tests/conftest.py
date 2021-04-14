@@ -23,7 +23,7 @@ from web3 import Web3, HTTPProvider
 from pymaker import Address, web3_via_http
 from pymaker.auctions import Flipper, Flapper, Flopper
 from pymaker.deployment import Deployment, DssDeployment
-from pymaker.dss import Vat, Vow, Cat, Jug, Pot
+from pymaker.dss import Vat, Vow, Cat, Dog, Jug, Pot
 from pymaker.keys import register_keys
 
 
@@ -80,6 +80,7 @@ def mcd(web3) -> DssDeployment:
     # for local dockerized parity testchain
     deployment = DssDeployment.from_node(web3=web3)
     validate_contracts_loaded(deployment)
+    initialize_collaterals(deployment)
     return deployment
 
 
@@ -90,6 +91,8 @@ def validate_contracts_loaded(deployment: DssDeployment):
     assert deployment.vow.address is not None
     assert isinstance(deployment.cat, Cat)
     assert deployment.cat.address is not None
+    assert isinstance(deployment.dog, Dog)
+    assert deployment.dog.address is not None
     assert isinstance(deployment.jug, Jug)
     assert deployment.jug.address is not None
     assert isinstance(deployment.flapper, Flapper)
@@ -98,3 +101,9 @@ def validate_contracts_loaded(deployment: DssDeployment):
     assert deployment.flopper.address is not None
     assert isinstance(deployment.pot, Pot)
     assert deployment.pot.address is not None
+
+
+def initialize_collaterals(deployment: DssDeployment):
+    for collateral in deployment.collaterals.values():
+        if collateral.clipper:
+            collateral.clipper.upchost().transact(from_address=deployment_address(deployment.web3))

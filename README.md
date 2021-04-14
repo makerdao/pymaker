@@ -2,7 +2,7 @@
 
 Python API for Maker contracts.
 
-[![Build Status](https://travis-ci.org/makerdao/pymaker.svg?branch=master)](https://travis-ci.org/makerdao/pymaker)
+[![Build Status](https://travis-ci.com/makerdao/pymaker.svg?branch=master)](https://travis-ci.com/makerdao/pymaker)
 [![codecov](https://codecov.io/gh/makerdao/pymaker/branch/master/graph/badge.svg)](https://codecov.io/gh/makerdao/pymaker)
 
 <https://chat.makerdao.com/channel/keeper>
@@ -361,7 +361,8 @@ print(bump_result.transaction_hash)
 ## Testing
 
 Prerequisites:
-* [docker and docker-compose](https://www.docker.com/get-started)
+* [docker and docker-compose](https://www.docker.com/get-started) - for containerized deployments of Ganache and Parity
+* [seth](https://dapp.tools/seth/) - to enable the token faucet
 
 This project uses [pytest](https://docs.pytest.org/en/latest/) for unit testing.  Testing of Multi-collateral Dai is 
 performed on a Dockerized local testchain included in `tests\config`.

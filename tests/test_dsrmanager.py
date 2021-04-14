@@ -19,13 +19,13 @@ import pytest
 from pymaker import Address
 from tests.helpers import time_travel_by
 from pymaker.numeric import Wad, Rad, Ray
-from pymaker.deployment import DssDeployment
-from pymaker.dss import Pot, DaiJoin, Collateral
+from pymaker.deployment import DaiJoin, DssDeployment
+from pymaker.dss import Pot
 from pymaker.token import DSToken
 from tests.test_dss import wrap_eth, frob
 
-def mint_dai(mcd: DssDeployment, amount: Wad, ilkName: str, our_address: Address):
 
+def mint_dai(mcd: DssDeployment, amount: Wad, ilkName: str, our_address: Address):
     startingAmount = mcd.dai.balance_of(our_address)
     dai = amount
     # Add collateral to our CDP and draw internal Dai
@@ -44,7 +44,9 @@ def mint_dai(mcd: DssDeployment, amount: Wad, ilkName: str, our_address: Address
     assert mcd.dai_adapter.exit(our_address, dai).transact(from_address=our_address)
     assert mcd.dai.balance_of(our_address) == dai + startingAmount
 
+
 pytest.global_dai = Wad(0)
+
 
 class TestDsrManager:
 

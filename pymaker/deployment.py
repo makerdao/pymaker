@@ -21,14 +21,16 @@ import re
 from typing import Dict, List, Optional
 
 import pkg_resources
-from pymaker.auctions import Flapper, Flopper, Flipper
+from pymaker.auctions import Clipper, Flapper, Flipper, Flopper
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address
 from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
-from pymaker.dss import Cat, Collateral, DaiJoin, GemJoin, GemJoin5, Ilk, Jug, Pot, Spotter, Vat, Vow
+from pymaker.collateral import Collateral
+from pymaker.dss import Cat, Dog, Jug, Pot, Spotter, TokenFaucet, Vat, Vow
+from pymaker.join import DaiJoin, GemJoin, GemJoin5
 from pymaker.proxy import ProxyRegistry, DssProxyActionsDsr
 from pymaker.feed import DSValue
 from pymaker.gas import DefaultGasPrice
@@ -156,16 +158,17 @@ class DssDeployment:
     }
 
     class Config:
-        def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, flapper: Flapper,
+        def __init__(self, pause: DSPause, vat: Vat, vow: Vow, jug: Jug, cat: Cat, dog: Dog, flapper: Flapper,
                      flopper: Flopper, pot: Pot, dai: DSToken, dai_join: DaiJoin, mkr: DSToken,
                      spotter: Spotter, ds_chief: DSChief, esm: ShutdownModule, end: End,
                      proxy_registry: ProxyRegistry, dss_proxy_actions: DssProxyActionsDsr, cdp_manager: CdpManager,
-                     dsr_manager: DsrManager, collaterals: Optional[Dict[str, Collateral]] = None):
+                     dsr_manager: DsrManager, faucet: TokenFaucet, collaterals: Optional[Dict[str, Collateral]] = None):
             self.pause = pause
             self.vat = vat
             self.vow = vow
             self.jug = jug
             self.cat = cat
+            self.dog = dog
             self.flapper = flapper
             self.flopper = flopper
             self.pot = pot
@@ -180,16 +183,28 @@ class DssDeployment:
             self.dss_proxy_actions = dss_proxy_actions
             self.cdp_manager = cdp_manager
             self.dsr_manager = dsr_manager
+            self.faucet = faucet
             self.collaterals = collaterals or {}
 
         @staticmethod
         def from_json(web3: Web3, conf: str):
+            def address_in_configs(key: str, conf: str) -> bool:
+                if key not in conf:
+                    return False
+                elif not conf[key]:
+                    return False
+                elif conf[key] == "0x0000000000000000000000000000000000000000":
+                    return False
+                else:
+                    return True
+
             conf = json.loads(conf)
             pause = DSPause(web3, Address(conf['MCD_PAUSE']))
             vat = Vat(web3, Address(conf['MCD_VAT']))
             vow = Vow(web3, Address(conf['MCD_VOW']))
             jug = Jug(web3, Address(conf['MCD_JUG']))
-            cat = Cat(web3, Address(conf['MCD_CAT']))
+            cat = Cat(web3, Address(conf['MCD_CAT'])) if address_in_configs('MCD_CAT', conf) else None
+            dog = Dog(web3, Address(conf['MCD_DOG'])) if address_in_configs('MCD_DOG', conf) else None
             dai = DSToken(web3, Address(conf['MCD_DAI']))
             dai_adapter = DaiJoin(web3, Address(conf['MCD_JOIN_DAI']))
             flapper = Flapper(web3, Address(conf['MCD_FLAP']))
@@ -204,6 +219,7 @@ class DssDeployment:
             dss_proxy_actions = DssProxyActionsDsr(web3, Address(conf['PROXY_ACTIONS_DSR']))
             cdp_manager = CdpManager(web3, Address(conf['CDP_MANAGER']))
             dsr_manager = DsrManager(web3, Address(conf['DSR_MANAGER']))
+            faucet = TokenFaucet(web3, Address(conf['FAUCET'])) if address_in_configs('FAUCET', conf) else None
 
             collaterals = {}
             for name in DssDeployment.Config._infer_collaterals_from_addresses(conf.keys()):
@@ -219,35 +235,43 @@ class DssDeployment:
                     adapter = GemJoin(web3, Address(conf[f'MCD_JOIN_{name[0]}']))
 
                 # PIP contract may be a DSValue, OSM, or bogus address.
-                pip_address = Address(conf[f'PIP_{name[1]}'])
-                network = DssDeployment.NETWORKS.get(web3.net.version, "testnet")
-                if network == "testnet":
-                    pip = DSValue(web3, pip_address)
-                else:
+                pip_name = f'PIP_{name[1]}'
+                pip_address = Address(conf[pip_name]) if pip_name in conf and conf[pip_name] else None
+                val_name = f'VAL_{name[1]}'
+                val_address = Address(conf[val_name]) if val_name in conf and conf[val_name] else None
+                if pip_address:     # Configure OSM as price source
                     if name[1].startswith('UNIV2'):
                         pip = Univ2LpOSM(web3, pip_address)
                     else:
                         pip = OSM(web3, pip_address)
+                elif val_address:   # Configure price using DSValue
+                    pip = DSValue(web3, val_address)
+                else:
+                    pip = None
 
-                collateral = Collateral(ilk=ilk, gem=gem, adapter=adapter,
-                                        flipper=Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}'])),
-                                        pip=pip)
+                auction = None
+                if f'MCD_FLIP_{name[0]}' in conf:
+                    auction = Flipper(web3, Address(conf[f'MCD_FLIP_{name[0]}']))
+                elif f'MCD_CLIP_{name[0]}' in conf:
+                    auction = Clipper(web3, Address(conf[f'MCD_CLIP_{name[0]}']))
+
+                collateral = Collateral(ilk=ilk, gem=gem, adapter=adapter, auction=auction, pip=pip, vat=vat)
                 collaterals[ilk.name] = collateral
 
-            return DssDeployment.Config(pause, vat, vow, jug, cat, flapper, flopper, pot,
+            return DssDeployment.Config(pause, vat, vow, jug, cat, dog, flapper, flopper, pot,
                                         dai, dai_adapter, mkr, spotter, ds_chief, esm, end,
                                         proxy_registry, dss_proxy_actions, cdp_manager,
-                                        dsr_manager, collaterals)
+                                        dsr_manager, faucet, collaterals)
 
         @staticmethod
         def _infer_collaterals_from_addresses(keys: []) -> List:
             collaterals = []
             for key in keys:
-                match = re.search(r'MCD_FLIP_((\w+)_\w+)', key)
+                match = re.search(r'MCD_[CF]LIP_(?!CALC)((\w+)_\w+)', key)
                 if match:
                     collaterals.append((match.group(1), match.group(2)))
                     continue
-                match = re.search(r'MCD_FLIP_(\w+)', key)
+                match = re.search(r'MCD_[CF]LIP_(?!CALC)(\w+)', key)
                 if match:
                     collaterals.append((match.group(1), match.group(1)))
 
@@ -259,7 +283,6 @@ class DssDeployment:
                 'MCD_VAT': self.vat.address.address,
                 'MCD_VOW': self.vow.address.address,
                 'MCD_JUG': self.jug.address.address,
-                'MCD_CAT': self.cat.address.address,
                 'MCD_FLAP': self.flapper.address.address,
                 'MCD_FLOP': self.flopper.address.address,
                 'MCD_POT': self.pot.address.address,
@@ -276,6 +299,13 @@ class DssDeployment:
                 'DSR_MANAGER': self.dsr_manager.address.address
             }
 
+            if self.cat:
+                conf_dict['MCD_CAT'] = self.cat.address.address
+            if self.dog:
+                conf_dict['MCD_DOG'] = self.dog.address.address
+            if self.faucet:
+                conf_dict['FAUCET'] = self.faucet.address.address
+
             for collateral in self.collaterals.values():
                 match = re.search(r'(\w+)(?:-\w+)?', collateral.ilk.name)
                 name = (collateral.ilk.name.replace('-', '_'), match.group(1))
@@ -283,7 +313,10 @@ class DssDeployment:
                 if collateral.pip:
                     conf_dict[f'PIP_{name[1]}'] = collateral.pip.address.address
                 conf_dict[f'MCD_JOIN_{name[0]}'] = collateral.adapter.address.address
-                conf_dict[f'MCD_FLIP_{name[0]}'] = collateral.flipper.address.address
+                if collateral.flipper:
+                    conf_dict[f'MCD_FLIP_{name[0]}'] = collateral.flipper.address.address
+                elif collateral.clipper:
+                    conf_dict[f'MCD_CLIP_{name[0]}'] = collateral.clipper.address.address
 
             return conf_dict
 
@@ -301,6 +334,7 @@ class DssDeployment:
         self.vow = config.vow
         self.jug = config.jug
         self.cat = config.cat
+        self.dog = config.dog
         self.flapper = config.flapper
         self.flopper = config.flopper
         self.pot = config.pot
@@ -316,6 +350,7 @@ class DssDeployment:
         self.dss_proxy_actions = config.dss_proxy_actions
         self.cdp_manager = config.cdp_manager
         self.dsr_manager = config.dsr_manager
+        self.faucet = config.faucet
 
     @staticmethod
     def from_json(web3: Web3, conf: str):
@@ -358,12 +393,17 @@ class DssDeployment:
 
     def active_auctions(self) -> dict:
         flips = {}
+        clips = {}
         for collateral in self.collaterals.values():
-            # Each collateral has it's own flip contract; add auctions from each.
-            flips[collateral.ilk.name] = collateral.flipper.active_auctions()
+            # Each collateral has it's own liquidation contract; add auctions from each.
+            if collateral.flipper:
+                flips[collateral.ilk.name] = collateral.flipper.active_auctions()
+            elif collateral.clipper:
+                clips[collateral.ilk.name] = collateral.clipper.active_auctions()
 
         return {
             "flips": flips,
+            "clips": clips,
             "flaps": self.flapper.active_auctions(),
             "flops": self.flopper.active_auctions()
         }

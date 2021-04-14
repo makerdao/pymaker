@@ -19,7 +19,8 @@
 
 from web3 import Web3
 from pymaker import Address, Contract, Transact
-from pymaker.dss import Pot, DaiJoin
+from pymaker.dss import Pot
+from pymaker.join import DaiJoin
 from pymaker.numeric import Wad, Rad
 from pymaker.token import DSToken
 

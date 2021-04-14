@@ -1,0 +1,1 @@
+[{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"clipperCall","outputs":[],"stateMutability":"nonpayable","type":"function"}]
