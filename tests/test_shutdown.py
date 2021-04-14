@@ -66,6 +66,7 @@ def create_flap_auction(mcd: DssDeployment, deployment_address: Address, our_add
 nobody = Address("0x0000000000000000000000000000000000000000")
 
 
+@pytest.mark.skip("ShutdownModule needs to be updated to accommodate recent changes")
 class TestShutdownModule:
     """This test must be run after other MCD tests because it will leave the testchain `cage`d."""
 
@@ -111,6 +112,7 @@ class TestShutdownModule:
         assert not mcd.end.live()
 
 
+@pytest.mark.skip("ShutdownModule changes are a prerequisite for these tests")
 class TestEnd:
     """This test must be run after TestShutdownModule, which calls `esm.fire`."""
 

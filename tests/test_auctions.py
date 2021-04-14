@@ -435,12 +435,14 @@ class TestClipper:
 
     def test_getters(self, mcd, clipper):
         assert clipper.ilk_name() == "ETH-B"
+        collateral = mcd.collaterals[clipper.ilk_name()]
         assert clipper.kicks() == 0
         assert clipper.buf() == Ray.from_number(1.50)
         assert clipper.tail() == 10800
         assert clipper.cusp() == Ray.from_number(0.3333)
         assert clipper.chip() == Wad.from_number(0.02)
         assert clipper.tip() == Rad.from_number(100)
+        assert clipper.chost() == collateral.ilk.dust * Rad(mcd.dog.chop(collateral.ilk))
         assert isinstance(clipper.calc, Address)
         assert clipper.calc != Address.zero()
         assert clipper.dog.address == mcd.dog.address

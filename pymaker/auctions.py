@@ -770,6 +770,10 @@ class Clipper(AuctionContract):
         """Flat fee to suck from vow to incentivize keepers"""
         return Rad(self._contract.functions.tip().call())
 
+    def chost(self) -> Rad:
+        """Ilk dust times the ilk chop"""
+        return Rad(self._contract.functions.chost().call())
+
     def kicks(self) -> int:
         """Number of auctions started so far."""
         return int(self._contract.functions.kicks().call())
@@ -786,7 +790,7 @@ class Clipper(AuctionContract):
         assert isinstance(id, int)
         (needs_redo, price, lot, tab) = self._contract.functions.getStatus(id).call()
         logging.debug(f"Auction {id} {'needs redo ' if needs_redo else ''}with price={float(Ray(price))} " 
-                      f"lot={float(lot)} tab={float(tab)}")
+                      f"lot={float(Wad(lot))} tab={float(Rad(tab))}")
         return needs_redo, Ray(price), Wad(lot), Rad(tab)
 
     def sales(self, id: int) -> Sale:
@@ -825,15 +829,15 @@ class Clipper(AuctionContract):
 
         slice: Wad = min(lot, amt)          # Purchase as much as possible, up to amt
         owe: Rad = Rad(slice) * Rad(price)  # DAI needed to buy a slice of this sale
+        chost = self.chost()
 
         if Rad(owe) > tab:
             owe = Rad(tab)
             slice = Wad(owe / Rad(price))
         elif owe < tab and slice < lot:
-            ilk = self.vat.ilk(self.ilk_name())
-            if (tab - owe) < ilk.dust:
-                assert tab > ilk.dust
-                owe = tab - ilk.dust
+            if (tab - owe) < chost:
+                assert tab > chost
+                owe = tab - chost
                 slice = Wad(owe / Rad(price))
 
         tab: Rad = tab - owe
@@ -876,6 +880,10 @@ class Clipper(AuctionContract):
             kpr = Address(self.web3.eth.defaultAccount)
 
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'redo', [id, kpr.address])
+
+    def upchost(self):
+        """Update the the cached dust*chop value following a governance change"""
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'upchost', [])
 
     def past_logs(self, from_block: int, to_block: int = None, chunk_size=20000):
         logs = super().get_past_lognotes(Clipper.abi, from_block, to_block, chunk_size)
