@@ -821,8 +821,10 @@ class Dog(Contract):
         self.web3 = web3
         self.address = address
         self._contract = self._get_contract(web3, self.abi, address)
-        self.vat = Vat(web3, Address(self._contract.functions.vat().call()))
-        self.vow = Vow(web3, Address(self._contract.functions.vow().call()))
+        vat_address = Address(self._contract.functions.vat().call())
+        self.vat = Vat(web3, vat_address) if vat_address != Address.zero() else None
+        vow_address = Address(self._contract.functions.vow().call())
+        self.vow = Vow(web3, vow_address) if vow_address != Address.zero() else None
 
     def live(self) -> bool:
         return self._contract.functions.live().call() > 0
