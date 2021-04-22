@@ -65,10 +65,6 @@ class ShutdownModule(Contract):
         """Minimum amount of MKR required to call `fire`"""
         return Wad(self._contract.functions.min().call())
 
-    def fired(self) -> bool:
-        """True if `fire` has been called"""
-        return bool(self._contract.functions.fired().call())
-
     def join(self, value: Wad) -> Transact:
         """Before `fire` can be called, sufficient MKR must be `join`ed to this contract"""
         assert isinstance(value, Wad)
