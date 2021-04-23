@@ -87,7 +87,7 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
     collateral.approve(our_address)
     assert collateral.adapter.join(our_address, Wad.from_number(10)).transact(from_address=our_address)
     web3.eth.defaultAccount = our_address.address
-    frob(mcd, collateral, our_address, dink=Wad.from_number(10), dart=Wad(1))
+    frob(mcd, collateral, our_address, dink=Wad.from_number(10), dart=Wad.from_number(20))
     collateral.flipper.approve(mcd.vat.address, approval_function=hope_directly())
     current_bid = collateral.flipper.bids(flip_kick)
     TestFlipper.tend(collateral.flipper, flip_kick, our_address, current_bid.lot, Rad(1))
@@ -107,7 +107,6 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
         assert mcd.vow.sin_of(era_bite) == Rad(0)
     # Cancel out surplus and debt
     dai_vow = mcd.vat.dai(mcd.vow.address)
-    # FIXME: too much surplus
     assert dai_vow <= mcd.vow.woe()
     assert mcd.vow.heal(dai_vow).transact()
     assert mcd.vow.woe() >= mcd.vow.sump()
