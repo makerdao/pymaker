@@ -65,10 +65,6 @@ class ShutdownModule(Contract):
         """Minimum amount of MKR required to call `fire`"""
         return Wad(self._contract.functions.min().call())
 
-    def fired(self) -> bool:
-        """True if `fire` has been called"""
-        return bool(self._contract.functions.fired().call())
-
     def join(self, value: Wad) -> Transact:
         """Before `fire` can be called, sufficient MKR must be `join`ed to this contract"""
         assert isinstance(value, Wad)
@@ -78,6 +74,14 @@ class ShutdownModule(Contract):
         """Calls `cage` on the `end` contract, initiating a shutdown."""
         logger.info("Calling fire to cage the end")
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'fire', [])
+
+    def deny(self, address: Address):
+        """Removes the Pause proxy's privileges from address"""
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'deny', [address.address])
+
+    def burn(self):
+        logger.info("Calling burn to burn all the joined MKR")
+        return Transact(self, self.web3, self.abi, self.address, self._contract, 'burn', [])
 
 
 class End(Contract):

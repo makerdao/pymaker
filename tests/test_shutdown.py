@@ -66,7 +66,6 @@ def create_flap_auction(mcd: DssDeployment, deployment_address: Address, our_add
 nobody = Address("0x0000000000000000000000000000000000000000")
 
 
-@pytest.mark.skip("ShutdownModule needs to be updated to accommodate recent changes")
 class TestShutdownModule:
     """This test must be run after other MCD tests because it will leave the testchain `cage`d."""
 
@@ -76,7 +75,7 @@ class TestShutdownModule:
         assert isinstance(mcd.esm.address, Address)
         assert mcd.esm.sum() == Wad(0)
         assert mcd.esm.min() > Wad(0)
-        assert not mcd.esm.fired()
+        assert mcd.end.live()
 
         joy = mcd.vat.dai(mcd.vow.address)
         awe = mcd.vat.sin(mcd.vow.address)
@@ -105,14 +104,11 @@ class TestShutdownModule:
 
     def test_fire(self, mcd, our_address):
         open_cdp(mcd, mcd.collaterals['ETH-A'], our_address)
-
         assert mcd.end.live()
         assert mcd.esm.fire().transact()
-        assert mcd.esm.fired()
         assert not mcd.end.live()
 
 
-@pytest.mark.skip("ShutdownModule changes are a prerequisite for these tests")
 class TestEnd:
     """This test must be run after TestShutdownModule, which calls `esm.fire`."""
 
