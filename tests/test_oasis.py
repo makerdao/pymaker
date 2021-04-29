@@ -1,4 +1,5 @@
 # This file is part of Maker Keeper Framework.
+
 #
 # Copyright (C) 2017-2018 reverendus
 #
@@ -28,7 +29,8 @@ from pymaker.approval import directly
 from pymaker.oasis import SimpleMarket, MatchingMarket, Order
 from pymaker.token import DSToken
 from pymaker.model import Token
-from tests.helpers import wait_until_mock_called, is_hashable
+from tests.helpers import wait_until_mock_called, is_hashable, time_travel_by
+
 
 PAST_BLOCKS = 100
 
@@ -243,6 +245,33 @@ class GeneralMarketTest:
         # and
         assert self.otc.get_orders_by_maker(maker1)[0].maker == maker1
         assert self.otc.get_orders_by_maker(maker2)[0].maker == maker2
+
+
+    def test_get_orders_by_block(self):
+
+        if isinstance(self.otc, MatchingMarket):
+            token1_val = self.token1_tokenclass
+            token2_val = self.token2_tokenclass
+
+            # given
+            maker1 = self.our_address
+
+            # when
+            self.otc.approve([self.token1], directly())
+            made_order = self.otc.make(token1_val, Wad.from_number(1),
+                          token2_val, Wad.from_number(2)).transact()
+            block_number = made_order.raw_receipt.blockNumber
+
+            # and when
+            time_travel_by(self.web3, 10)
+            assert len(self.otc.get_orders_by_maker(maker1)) == 1
+            self.otc.kill(1).transact(gas=4000000)
+            assert len(self.otc.get_orders_by_maker(maker1)) == 0
+
+            # then
+            time_travel_by(self.web3, 10)
+            assert len(self.otc.get_orders(token1_val, token2_val, block_number)) == 1
+
 
     def test_order_comparison(self):
 
