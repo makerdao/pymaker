@@ -317,6 +317,8 @@ class SimpleMarket(Contract):
 
         Args:
             order_id: The id of the order to get the details of.
+            `block_ident`: Block identifier can either be a str, int or None and will fallback to 'latest' block.
+                           Used for historical retreival of orders.
 
         Returns:
             An instance of `Order` if the order is still active, or `None` if the order has been
@@ -560,6 +562,8 @@ class MatchingMarket(SimpleMarket):
         Args:
             `p_token`: Token object (see `model.py`) of the `pay_token` to filter the orders by.
             `b_token`: Token object (see `model.py`) of the `buy_token` to filter the orders by.
+            `block_ident`: Block identifier can either be a str, int or None and will fallback to 'latest' block.
+                           Used for historical retreival of orders.
 
         Returns:
             A list of `Order` objects representing all active orders on Oasis.
