@@ -312,11 +312,13 @@ class SimpleMarket(Contract):
         """
         return self._contract.functions.last_offer_id().call()
 
-    def get_order(self, order_id: int) -> Optional[Order]:
+    def get_order(self, order_id: int, block_ident: Optional[str] = None) -> Optional[Order]:
         """Get order details.
 
         Args:
             order_id: The id of the order to get the details of.
+            `block_ident`: Block identifier can either be a str, int or None and will fallback to 'latest' block.
+                           Used for historical retreival of orders.
 
         Returns:
             An instance of `Order` if the order is still active, or `None` if the order has been
@@ -324,7 +326,10 @@ class SimpleMarket(Contract):
         """
         assert(isinstance(order_id, int))
 
-        array = self._contract.functions.offers(order_id).call()
+        assert(isinstance(block_ident, str) or isinstance(block_ident, int) or (block_ident is None))
+        block_ident = 'latest' if block_ident is None else block_ident
+
+        array = self._contract.functions.offers(order_id).call(block_identifier=block_ident)
         if array[5] == 0:
             return None
         else:
@@ -542,7 +547,7 @@ class MatchingMarket(SimpleMarket):
         return Transact(self, self.web3, self.abi, self.address, self._contract,
                         'addTokenPairWhitelist', [base_token.address, quote_token.address])
 
-    def get_orders(self, p_token: Token = None,  b_token: Token = None) -> List[Order]:
+    def get_orders(self, p_token: Token = None,  b_token: Token = None, block_ident: Optional[str] = None) -> List[Order]:
         """Get all active orders.
 
         If both `p_token` and `b_token` are specified, orders will be filtered by these.
@@ -557,6 +562,8 @@ class MatchingMarket(SimpleMarket):
         Args:
             `p_token`: Token object (see `model.py`) of the `pay_token` to filter the orders by.
             `b_token`: Token object (see `model.py`) of the `buy_token` to filter the orders by.
+            `block_ident`: Block identifier can either be a str, int or None and will fallback to 'latest' block.
+                           Used for historical retreival of orders.
 
         Returns:
             A list of `Order` objects representing all active orders on Oasis.
@@ -564,6 +571,10 @@ class MatchingMarket(SimpleMarket):
 
         assert((isinstance(p_token, Token) and isinstance(b_token, Token))
                or ((p_token is None) and (b_token is None)))
+
+        assert(isinstance(block_ident, int) or isinstance(block_ident, str) or (block_ident is None))
+
+        block_ident = 'latest' if block_ident is None else block_ident
 
         if (p_token is None) or (b_token is None):
             pay_token = None
@@ -576,7 +587,7 @@ class MatchingMarket(SimpleMarket):
             orders = []
 
             if self._support_contract:
-                result = self._support_contract.functions.getOffers(self.address.address, pay_token.address, buy_token.address).call()
+                result = self._support_contract.functions.getOffers(self.address.address, pay_token.address, buy_token.address).call(block_identifier=block_ident)
 
                 while True:
                     count = 0
@@ -594,20 +605,20 @@ class MatchingMarket(SimpleMarket):
                                                 timestamp=result[4][i]))
 
                     if count == 100:
-                        next_order_id = self._contract.functions.getWorseOffer(orders[-1].order_id).call()
-                        result = self._support_contract.functions.getOffers(self.address.address, next_order_id).call()
+                        next_order_id = self._contract.functions.getWorseOffer(orders[-1].order_id).call(block_identifier=block_ident)
+                        result = self._support_contract.functions.getOffers(self.address.address, next_order_id).call(block_identifier=block_ident)
 
                     else:
                         break
 
             else:
-                order_id = self._contract.functions.getBestOffer(pay_token.address, buy_token.address).call()
+                order_id = self._contract.functions.getBestOffer(pay_token.address, buy_token.address).call(block_identifier=block_ident)
                 while order_id != 0:
-                    order = self.get_order(order_id)
+                    order = self.get_order(order_id, block_ident)
                     if order is not None:
                         orders.append(order)
 
-                    order_id = self._contract.functions.getWorseOffer(order_id).call()
+                    order_id = self._contract.functions.getWorseOffer(order_id).call(block_identifier=block_ident)
 
             return sorted(orders, key=lambda order: order.order_id)
         else:
