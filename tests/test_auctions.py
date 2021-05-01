@@ -76,8 +76,6 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
     urn = mcd.vat.urn(collateral.ilk, deployment_address)
     assert urn.ink is not None and urn.art is not None
     assert ilk.spot is not None
-    safe = Ray(urn.art) * mcd.vat.ilk(ilk.name).rate <= Ray(urn.ink) * ilk.spot
-    assert not safe
     assert mcd.cat.can_bite(collateral.ilk, urn)
     assert mcd.cat.bite(collateral.ilk, urn).transact()
     flip_kick = collateral.flipper.kicks()
