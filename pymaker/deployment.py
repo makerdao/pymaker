@@ -36,7 +36,7 @@ from pymaker.feed import DSValue
 from pymaker.gas import DefaultGasPrice
 from pymaker.governance import DSPause, DSChief
 from pymaker.numeric import Wad, Ray
-from pymaker.oracles import OSM, Univ2LpOSM
+from pymaker.oracles import OSM
 from pymaker.sai import Tub, Tap, Top, Vox
 from pymaker.shutdown import ShutdownModule, End
 from pymaker.token import DSToken, DSEthToken
@@ -240,10 +240,7 @@ class DssDeployment:
                 val_name = f'VAL_{name[1]}'
                 val_address = Address(conf[val_name]) if val_name in conf and conf[val_name] else None
                 if pip_address:     # Configure OSM as price source
-                    if name[1].startswith('UNIV2'):
-                        pip = Univ2LpOSM(web3, pip_address)
-                    else:
-                        pip = OSM(web3, pip_address)
+                    pip = OSM(web3, pip_address)
                 elif val_address:   # Configure price using DSValue
                     pip = DSValue(web3, val_address)
                 else:

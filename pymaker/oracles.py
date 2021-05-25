@@ -64,8 +64,8 @@ class OSM(Contract):
         return f"OSM('{self.address}')"
 
 
-class Univ2LpOSM(OSM):
-    """A custom `OSM` contract for Uniswap LP tokens
+class OldUniv2LpOSM(OSM):
+    """A custom `OSM` contract for Uniswap LP tokens which used different storage slots, obsolete as of dss-1.7.0
 
     You can find the source code of the `OSM` contract here:
     <https://github.com/makerdao/univ2-lp-oracle>.
