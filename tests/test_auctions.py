@@ -43,7 +43,7 @@ def create_surplus(mcd: DssDeployment, flapper: Flapper, deployment_address: Add
         collateral.approve(deployment_address)
         assert collateral.adapter.join(deployment_address, ink).transact(
             from_address=deployment_address)
-        frob(mcd, collateral, deployment_address, dink=ink, dart=Wad.from_number(30000))
+        frob(mcd, collateral, deployment_address, dink=ink, dart=Wad.from_number(15000))
         assert mcd.jug.drip(collateral.ilk).transact(from_address=deployment_address)
         joy = mcd.vat.dai(mcd.vow.address)
         # total surplus > total debt + surplus auction lot size + surplus buffer
@@ -103,6 +103,14 @@ def create_debt(web3: Web3, mcd: DssDeployment, our_address: Address, deployment
         assert mcd.vow.sin_of(era_bite) > Rad(0)
         assert mcd.vow.flog(era_bite).transact()
         assert mcd.vow.sin_of(era_bite) == Rad(0)
+    barks = mcd.dog.past_barks(100)
+    assert len(barks) > 0
+    for bark in barks:
+        era_bark = bark.era(web3)
+        assert era_bark > int(datetime.now().timestamp()) - 120
+        assert mcd.vow.sin_of(era_bark) > Rad(0)
+        assert mcd.vow.flog(era_bark).transact()
+        assert mcd.vow.sin_of(era_bark) == Rad(0)
     # Cancel out surplus and debt
     dai_vow = mcd.vat.dai(mcd.vow.address)
     assert dai_vow <= mcd.vow.woe()
