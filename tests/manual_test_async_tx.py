@@ -51,7 +51,7 @@ fast_gas = GeometricGasPrice(initial_price=int(30 * GWEI), every_secs=42, max_pr
 
 class TestApp:
     def main(self):
-        self.test_replacement()
+        # self.test_replacement()
         self.test_simultaneous()
         self.shutdown()
 
@@ -79,9 +79,6 @@ class TestApp:
         if Wad(0) < balance < Wad(100):  # this account's tiny WETH balance came from this test
             logging.info(f"Unwrapping {balance} WETH")
             assert weth.withdraw(balance).transact(gas_price=fast_gas)
-        elif balance >= Wad(22):  # user already had a balance, so unwrap what a successful test would have consumed
-            logging.info(f"Unwrapping 12 WETH")
-            assert weth.withdraw(Wad(22)).transact(gas_price=fast_gas)
 
     @staticmethod
     def _run_future(future):
