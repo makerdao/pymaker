@@ -221,6 +221,7 @@ class TestTransactReplace:
         self.token = DSToken.deploy(self.web3, 'ABC')
         self.token.mint(Wad(1000000)).transact()
 
+    @pytest.mark.skip("Using Web3 5.21.0, transactions sent to Ganache succeed immediately, thus cannot be replaced")
     @pytest.mark.asyncio
     async def test_transaction_replace(self):
         # given
