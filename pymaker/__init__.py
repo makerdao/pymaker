@@ -189,7 +189,8 @@ class Contract:
     logger = logging.getLogger()
 
     @staticmethod
-    def _deploy(web3: Web3, abi: list, bytecode: str, args: list) -> Address:
+    def _deploy(web3: Web3, abi: list, bytecode: str, args: list = [], timeout=60) -> Address:
+        """Meant to be called by a subclass, deploy the contract to the connected chain"""
         assert(isinstance(web3, Web3))
         assert(isinstance(abi, list))
         assert(isinstance(bytecode, str))
@@ -198,8 +199,16 @@ class Contract:
         contract = web3.eth.contract(abi=abi, bytecode=bytecode)
         tx_hash = contract.constructor(*args).transact(
             transaction={'from': eth_utils.to_checksum_address(web3.eth.defaultAccount)})
-        receipt = web3.eth.getTransactionReceipt(tx_hash)
-        return Address(receipt['contractAddress'])
+
+        submitted = time.time()
+        while time.time() - submitted < timeout:
+            try:
+                receipt = web3.eth.getTransactionReceipt(tx_hash)
+                return Address(receipt['contractAddress'])
+            except TransactionNotFound:
+                time.sleep(1)
+
+        raise RuntimeError("Timeout out awaiting receipt for contract deployment")
 
     @staticmethod
     def _get_contract(web3: Web3, abi: list, address: Address):

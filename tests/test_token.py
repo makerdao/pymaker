@@ -102,21 +102,23 @@ class TestERC20Token:
         assert self.token.balance_of(self.our_address) == Wad(1000000)
         assert self.token.balance_of(self.second_address) == Wad(0)
 
+    @pytest.mark.timeout(10)
     def test_transfer_out_of_gas(self):
         # when
-        with pytest.raises(Exception):
-            self.token.transfer(self.second_address, Wad(500)).transact(gas=26000)
+        receipt = self.token.transfer(self.second_address, Wad(500)).transact(gas=26000)
 
         # then
+        assert receipt is None
         assert self.token.balance_of(self.our_address) == Wad(1000000)
         assert self.token.balance_of(self.second_address) == Wad(0)
 
+    @pytest.mark.timeout(10)
     def test_transfer_out_of_gas_async(self):
         # when
-        with pytest.raises(Exception):
-            synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas=26000)])[0]
+        receipt = synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas=26000)])[0]
 
         # then
+        assert receipt is None
         assert self.token.balance_of(self.our_address) == Wad(1000000)
         assert self.token.balance_of(self.second_address) == Wad(0)
 

@@ -20,7 +20,8 @@ import pytest
 from mock import MagicMock
 from web3 import Web3, HTTPProvider
 
-from pymaker import Address, eth_transfer, get_pending_transactions, RecoveredTransact, TransactStatus, Calldata, Receipt
+from pymaker import Address, Calldata, eth_transfer, get_pending_transactions, \
+    Receipt, RecoveredTransact, TransactStatus
 from pymaker.gas import FixedGasPrice
 from pymaker.numeric import Wad
 from pymaker.proxy import DSProxy, DSProxyCache
@@ -221,7 +222,7 @@ class TestTransactReplace:
         self.token = DSToken.deploy(self.web3, 'ABC')
         self.token.mint(Wad(1000000)).transact()
 
-    @pytest.mark.skip("Using Web3 5.21.0, transactions sent to Ganache succeed immediately, thus cannot be replaced")
+    @pytest.mark.skip("Using Web3 5.21.0, transactions sent to Ganache cannot be replaced")
     @pytest.mark.asyncio
     async def test_transaction_replace(self):
         # given
@@ -234,9 +235,9 @@ class TestTransactReplace:
         self.web3.eth.getTransaction = MagicMock(return_value={'nonce': nonce})
         # and
         transact_1 = self.token.transfer(self.second_address, Wad(500))
-        future_receipt_1 = asyncio.ensure_future(transact_1.transact_async(gas_price=FixedGasPrice(100000)))
+        future_receipt_1 = asyncio.ensure_future(transact_1.transact_async(gas_price=FixedGasPrice(1)))
         # and
-        await asyncio.sleep(2)
+        await asyncio.sleep(0.2)
         # then
         assert future_receipt_1.done() is False
         assert self.token.balance_of(self.second_address) == Wad(0)
@@ -246,10 +247,11 @@ class TestTransactReplace:
         self.web3.eth.getTransaction = original_get_transaction
         # and
         transact_2 = self.token.transfer(self.third_address, Wad(700))
+        # FIXME: Ganache produces a "the tx doesn't have the correct nonce" error.
         future_receipt_2 = asyncio.ensure_future(transact_2.transact_async(replace=transact_1,
                                                                            gas_price=FixedGasPrice(150000)))
         # and
-        await asyncio.sleep(10)
+        await asyncio.sleep(2)
         # then
         assert transact_1.status == TransactStatus.FINISHED
         assert future_receipt_1.done()
