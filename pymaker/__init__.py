@@ -18,6 +18,7 @@
 import asyncio
 import json
 import logging
+import pprint
 import re
 import requests
 import sys
@@ -41,12 +42,12 @@ from web3.middleware import geth_poa_middleware
 from eth_abi.codec import ABICodec
 from eth_abi.registry import registry as default_registry
 
-from pymaker.gas import DefaultGasPrice, GasPrice
+from pymaker.gas import DefaultGasPrice, GasStrategy
 from pymaker.numeric import Wad
 from pymaker.util import synchronize, bytes_to_hexstring, is_contract_at
 
 filter_threads = []
-nonce_calc = WeakKeyDictionary()
+endpoint_behavior = WeakKeyDictionary()
 next_nonce = {}
 transaction_lock = Lock()
 logger = logging.getLogger()
@@ -76,24 +77,46 @@ class NonceCalculation(Enum):
     PARITY_SERIAL = auto()
 
 
-def _get_nonce_calc(web3: Web3) -> NonceCalculation:
+class EndpointBehavior:
+    def __init__(self, nonce_calc: NonceCalculation, supports_london: bool):
+        assert isinstance(nonce_calc, NonceCalculation)
+        assert isinstance(supports_london, bool)
+        self.nonce_calc = nonce_calc
+        self.supports_london = supports_london
+
+    def __repr__(self):
+        if self.supports_london:
+            return f"{self.nonce_calc} with EIP 1559 support"
+        else:
+            return f"{self.nonce_calc} without EIP 1559 support"
+
+
+def _get_endpoint_behavior(web3: Web3) -> EndpointBehavior:
     assert isinstance(web3, Web3)
-    global nonce_calc
-    if web3 not in nonce_calc:
+    global endpoint_behavior
+    if web3 not in endpoint_behavior:
+
+        # Determine nonce calculation
         providers_without_nonce_calculation = ['infura', 'quiknode']
         requires_serial_nonce = any(provider in web3.manager.provider.endpoint_uri for provider in
                                     providers_without_nonce_calculation)
         is_parity = "parity" in web3.clientVersion.lower() or "openethereum" in web3.clientVersion.lower()
         if is_parity and requires_serial_nonce:
-            nonce_calc[web3] = NonceCalculation.PARITY_SERIAL
+            nonce_calc = NonceCalculation.PARITY_SERIAL
         elif requires_serial_nonce:
-            nonce_calc[web3] = NonceCalculation.SERIAL
+            nonce_calc = NonceCalculation.SERIAL
         elif is_parity:
-            nonce_calc[web3] = NonceCalculation.PARITY_NEXTNONCE
+            nonce_calc = NonceCalculation.PARITY_NEXTNONCE
         else:
-            nonce_calc[web3] = NonceCalculation.TX_COUNT
-        logger.debug(f"node clientVersion={web3.clientVersion}, will use {nonce_calc[web3]}")
-    return nonce_calc[web3]
+            nonce_calc = NonceCalculation.TX_COUNT
+
+        # Check for EIP 1559 gas parameters support
+        supports_london = 'baseFeePerGas' in web3.eth.get_block('latest')
+
+        behavior = EndpointBehavior(nonce_calc, supports_london)
+        endpoint_behavior[web3] = behavior
+        logger.debug(f"node clientVersion={web3.clientVersion}, will use {behavior}")
+    return endpoint_behavior[web3]
 
 
 def register_filter_thread(filter_thread):
@@ -414,7 +437,8 @@ def get_pending_transactions(web3: Web3, address: Address = None) -> list:
         address = Address(web3.eth.defaultAccount)
 
     # Get the list of pending transactions and their details from specified sources
-    if _get_nonce_calc(web3) in (NonceCalculation.PARITY_NEXTNONCE, NonceCalculation.PARITY_SERIAL):
+    nonce_calc = _get_endpoint_behavior(web3).nonce_calc
+    if False and nonce_calc in (NonceCalculation.PARITY_NEXTNONCE, NonceCalculation.PARITY_SERIAL):
         items = web3.manager.request_blocking("parity_pendingTransactions", [])
         items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
         items = filter(lambda item: item['blockNumber'] is None, items)
@@ -471,8 +495,8 @@ class Transact:
         self.status = TransactStatus.NEW
         self.nonce = None
         self.replaced = False
-        self.gas_price = None
-        self.gas_price_last = 0
+        self.gas_strategy = None
+        self.gas_strategy_last = 0
         self.tx_hashes = []
 
     def _get_receipt(self, transaction_hash: str) -> Optional[Receipt]:
@@ -503,26 +527,51 @@ class Transact:
         else:
             return gas_estimate + 100000
 
-    def _func(self, from_account: str, gas: int, gas_price: Optional[int], nonce: Optional[int]):
-        gas_price_dict = {'gasPrice': gas_price} if gas_price is not None else {}
-        nonce_dict = {'nonce': nonce} if nonce is not None else {}
+    def _gas_params(self, seconds_elapsed: int, gas_strategy: GasStrategy) -> dict:
+        assert isinstance(seconds_elapsed, int)
+        assert isinstance(gas_strategy, GasStrategy)
 
+        gas_price = gas_strategy.get_gas_price(seconds_elapsed)
+        gas_feecap, gas_tip = gas_strategy.get_gas_fees(seconds_elapsed)
+
+        if _get_endpoint_behavior(self.web3).supports_london and gas_feecap and gas_tip:
+            params = {'maxFeePerGas': gas_feecap,
+                      'maxPriorityFeePerGas': gas_tip}
+        elif gas_price:
+            params = {'gasPrice': gas_price}
+        else:
+            params = {}
+        return params
+
+    @staticmethod
+    def _gas_exceeds_replacement_threshold(prev_gas_params: dict, current_gas_params: dict):
+        # TODO: Can a type 0 TX be replaced with a type 2 TX?  Vice-versa?
+        if 'gasPrice' in prev_gas_params and 'gasPrice' in current_gas_params:
+            return current_gas_params['gasPrice'] > prev_gas_params['gasPrice'] * 1.125
+        # TODO: Implement EIP-1559 support
+        return False
+
+    def _func(self, from_account: str, gas: int, gas_price_params: dict, nonce: Optional[int]):
+        assert isinstance(from_account, str)
+        assert isinstance(gas_price_params, dict)
+        assert isinstance(nonce, int) or nonce is None
+
+        nonce_dict = {'nonce': nonce} if nonce is not None else {}
         transaction_params = {**{'from': from_account, 'gas': gas},
-                              **gas_price_dict,
+                              **gas_price_params,
                               **nonce_dict,
                               **self._as_dict(self.extra)}
-
         if self.contract is not None:
             if self.function_name is None:
 
-                return bytes_to_hexstring(self.web3.eth.sendTransaction({**transaction_params,
-                                                                         **{'to': self.address.address,
-                                                                            'data': self.parameters[0]}}))
+                return bytes_to_hexstring(self.web3.eth.send_transaction({**transaction_params,
+                                                                          **{'to': self.address.address,
+                                                                             'data': self.parameters[0]}}))
             else:
                 return bytes_to_hexstring(self._contract_function().transact(transaction_params))
         else:
-            return bytes_to_hexstring(self.web3.eth.sendTransaction({**transaction_params,
-                                                                     **{'to': self.address.address}}))
+            return bytes_to_hexstring(self.web3.eth.send_transaction({**transaction_params,
+                                                                      **{'to': self.address.address}}))
 
     def _contract_function(self):
         if '(' in self.function_name:
@@ -629,7 +678,7 @@ class Transact:
 
         global next_nonce
         self.initial_time = time.time()
-        unknown_kwargs = set(kwargs.keys()) - {'from_address', 'replace', 'gas', 'gas_buffer', 'gas_price'}
+        unknown_kwargs = set(kwargs.keys()) - {'from_address', 'replace', 'gas', 'gas_buffer', 'gas_strategy'}
         if len(unknown_kwargs) > 0:
             raise ValueError(f"Unknown kwargs: {unknown_kwargs}")
 
@@ -653,10 +702,11 @@ class Transact:
                 self.logger.warning(f"Transaction {self.name()} will fail, refusing to send ({sys.exc_info()[1]})")
                 return None
 
-        # Get or calculate `gas`. Get `gas_price`, which in fact refers to a gas pricing algorithm.
+        # Get or calculate `gas`. Get `gas_strategy`, which in fact refers to a gas pricing algorithm.
         gas = self._gas(gas_estimate, **kwargs)
-        self.gas_price = kwargs['gas_price'] if ('gas_price' in kwargs) else DefaultGasPrice()
-        assert(isinstance(self.gas_price, GasPrice))
+        self.gas_strategy = kwargs['gas_strategy'] if ('gas_strategy' in kwargs) else DefaultGasPrice()
+        assert(isinstance(self.gas_strategy, GasStrategy))
+        gas_params_last = None
 
         # Get the transaction this one is supposed to replace.
         # If there is one, try to borrow the nonce from it as long as that transaction isn't finished.
@@ -670,9 +720,9 @@ class Transact:
             # Gas should be calculated from the original time of submission
             self.initial_time = replaced_tx.initial_time if replaced_tx.initial_time else time.time()
             # Use gas strategy from the original transaction if one was not provided
-            if 'gas_price' not in kwargs:
-                self.gas_price = replaced_tx.gas_price if replaced_tx.gas_price else DefaultGasPrice()
-            self.gas_price_last = replaced_tx.gas_price_last
+            if 'gas_strategy' not in kwargs:
+                self.gas_strategy = replaced_tx.gas_strategy if replaced_tx.gas_strategy else DefaultGasPrice()
+            self.gas_strategy_last = replaced_tx.gas_strategy_last
             # Detain replacement until gas strategy produces a price acceptable to the node
             if replaced_tx.tx_hashes:
                 most_recent_tx = replaced_tx.tx_hashes[-1]
@@ -680,6 +730,7 @@ class Transact:
 
         while True:
             seconds_elapsed = int(time.time() - self.initial_time)
+            gas_params = self._gas_params(seconds_elapsed, self.gas_strategy)
 
             # CAUTION: if transact_async is called rapidly, we will hammer the node with these JSON-RPC requests
             if self.nonce is not None and self.web3.eth.getTransactionCount(from_account) > self.nonce:
@@ -721,27 +772,27 @@ class Transact:
             # - no transaction has been sent yet, or
             # - the requested gas price has changed enough since the last transaction has been sent
             # - the gas price on a replacement has sufficiently exceeded that of the original transaction
-            gas_price_value = self.gas_price.get_gas_price(seconds_elapsed)
             transaction_was_sent = len(self.tx_hashes) > 0 or (replaced_tx is not None and len(replaced_tx.tx_hashes) > 0)
             # Uncomment this to debug state during transaction submission
-            # self.logger.debug(f"Transaction {self.name()} is churning: was_sent={transaction_was_sent}, gas_price_value={gas_price_value} gas_price_last={self.gas_price_last}")
-            if not transaction_was_sent or (gas_price_value is not None and gas_price_value > self.gas_price_last * 1.125):
-                self.gas_price_last = gas_price_value
+            # self.logger.debug(f"Transaction {self.name()} is churning: was_sent={transaction_was_sent}")
+            # TODO: For EIP-1559 transactions, both maxFeePerGas and maxPriorityFeePerGas need to be bumped 12.5% to replace.
+            if not transaction_was_sent or (gas_params_last and self._gas_exceeds_replacement_threshold(gas_params_last, gas_params)):
+                gas_params_last = gas_params
 
                 try:
                     # We need the lock in order to not try to send two transactions with the same nonce.
                     with transaction_lock:
                         if self.nonce is None:
-                            nonce_calculation = _get_nonce_calc(self.web3)
-                            if nonce_calculation == NonceCalculation.PARITY_NEXTNONCE:
+                            nonce_calc = _get_endpoint_behavior(self.web3).nonce_calc
+                            if nonce_calc == NonceCalculation.PARITY_NEXTNONCE:
                                 self.nonce = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
-                            elif nonce_calculation == NonceCalculation.TX_COUNT:
+                            elif nonce_calc == NonceCalculation.TX_COUNT:
                                 self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
-                            elif nonce_calculation == NonceCalculation.SERIAL:
+                            elif nonce_calc == NonceCalculation.SERIAL:
                                 tx_count = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
                                 next_serial = next_nonce[from_account]
                                 self.nonce = max(tx_count, next_serial)
-                            elif nonce_calculation == NonceCalculation.PARITY_SERIAL:
+                            elif nonce_calc == NonceCalculation.PARITY_SERIAL:
                                 tx_count = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
                                 next_serial = next_nonce[from_account]
                                 self.nonce = max(tx_count, next_serial)
@@ -752,16 +803,15 @@ class Transact:
                             self.logger.info(f"Transaction {self.name()} with nonce={self.nonce} was replaced")
                             return None
 
-                        tx_hash = self._func(from_account, gas, gas_price_value, self.nonce)
+                        tx_hash = self._func(from_account, gas, gas_params, self.nonce)
                         self.tx_hashes.append(tx_hash)
 
                     self.logger.info(f"Sent transaction {self.name()} with nonce={self.nonce}, gas={gas},"
-                                     f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
+                                     f" gas_params={gas_params if gas_params else 'default'}"
                                      f" (tx_hash={tx_hash})")
                 except Exception as e:
                     self.logger.warning(f"Failed to send transaction {self.name()} with nonce={self.nonce}, gas={gas},"
-                                        f" gas_price={gas_price_value if gas_price_value is not None else 'default'}"
-                                        f" ({e})")
+                                        f" gas_params={gas_params if gas_params else 'default'} ({e})")
 
                     if len(self.tx_hashes) == 0:
                         raise
@@ -782,6 +832,7 @@ class Transact:
         return Invocation(self.address, Calldata(self._contract_function()._encode_transaction_data()))
 
 
+# TODO: Add EIP-1559 support.
 class RecoveredTransact(Transact):
     """ Models a pending transaction retrieved from the mempool.
 
@@ -804,6 +855,7 @@ class RecoveredTransact(Transact):
         self.nonce = nonce
         self.tx_hashes.append(latest_tx_hash)
         self.current_gas = current_gas
+        self.gas_price_last = None
 
     def name(self):
         return f"Recovered tx with nonce {self.nonce}"
@@ -813,22 +865,22 @@ class RecoveredTransact(Transact):
         # TODO: Read transaction data from chain, create a new state machine to manage gas for the transaction.
         raise NotImplementedError()
 
-    def cancel(self, gas_price: GasPrice):
-        return synchronize([self.cancel_async(gas_price)])[0]
+    def cancel(self, gas_strategy: GasStrategy):
+        return synchronize([self.cancel_async(gas_strategy)])[0]
 
-    async def cancel_async(self, gas_price: GasPrice):
-        assert isinstance(gas_price, GasPrice)
+    async def cancel_async(self, gas_strategy: GasStrategy):
+        assert isinstance(gas_strategy, GasStrategy)
         initial_time = time.time()
         self.gas_price_last = self.current_gas
         self.tx_hashes.clear()
 
-        if gas_price.get_gas_price(0) <= self.current_gas * 1.125:
+        if gas_strategy.get_gas_price(0) <= self.current_gas * 1.125:
             self.logger.warning(f"Recovery gas price is less than current gas price {self.current_gas}; "
                                 "cancellation will be deferred until the strategy produces an acceptable price.")
 
         while True:
             seconds_elapsed = int(time.time() - initial_time)
-            gas_price_value = gas_price.get_gas_price(seconds_elapsed)
+            gas_price_value = gas_strategy.get_gas_price(seconds_elapsed)
             if gas_price_value > self.gas_price_last * 1.125:
                 self.gas_price_last = gas_price_value
                 # Transaction lock isn't needed here, as we are replacing an existing nonce

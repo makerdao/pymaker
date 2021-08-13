@@ -134,20 +134,20 @@ class TestTransact:
 
     def test_custom_gas_price(self):
         # given
-        gas_price = FixedGasPrice(25000000100)
+        gas_price = FixedGasPrice(25000000100, None, None)
 
         # when
-        self.token.transfer(self.second_address, Wad(500)).transact(gas_price=gas_price)
+        self.token.transfer(self.second_address, Wad(500)).transact(gas_strategy=gas_price)
 
         # then
         assert self.web3.eth.getBlock('latest', full_transactions=True).transactions[0].gasPrice == gas_price.gas_price
 
     def test_custom_gas_price_async(self):
         # given
-        gas_price = FixedGasPrice(25000000200)
+        gas_price = FixedGasPrice(25000000200, None, None)
 
         # when
-        synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas_price=gas_price)])
+        synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas_strategy=gas_price)])
 
         # then
         assert self.web3.eth.getBlock('latest', full_transactions=True).transactions[0].gasPrice == gas_price.gas_price
@@ -235,7 +235,7 @@ class TestTransactReplace:
         self.web3.eth.getTransaction = MagicMock(return_value={'nonce': nonce})
         # and
         transact_1 = self.token.transfer(self.second_address, Wad(500))
-        future_receipt_1 = asyncio.ensure_future(transact_1.transact_async(gas_price=FixedGasPrice(1)))
+        future_receipt_1 = asyncio.ensure_future(transact_1.transact_async(gas_strategy=FixedGasPrice(1, None, None)))
         # and
         await asyncio.sleep(0.2)
         # then
@@ -249,7 +249,7 @@ class TestTransactReplace:
         transact_2 = self.token.transfer(self.third_address, Wad(700))
         # FIXME: Ganache produces a "the tx doesn't have the correct nonce" error.
         future_receipt_2 = asyncio.ensure_future(transact_2.transact_async(replace=transact_1,
-                                                                           gas_price=FixedGasPrice(150000)))
+                                                                           gas_price=FixedGasPrice(150000, None, None)))
         # and
         await asyncio.sleep(2)
         # then

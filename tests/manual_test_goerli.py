@@ -21,7 +21,7 @@ import sys
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address, eth_transfer, web3_via_http
-from pymaker.gas import GeometricGasPrice
+from pymaker.gas import DefaultGasPrice, GeometricGasPrice
 from pymaker.lifecycle import Lifecycle
 from pymaker.keys import register_keys
 from pymaker.numeric import Wad
@@ -59,9 +59,11 @@ else:
     our_address = None
     run_transactions = False
 
-gas_price = None if len(sys.argv) <= 4 else \
-    GeometricGasPrice(initial_price=int(float(sys.argv[4]) * GeometricGasPrice.GWEI),
-                      every_secs=15,
+gas_strategy = DefaultGasPrice() if len(sys.argv) <= 4 else \
+    GeometricGasPrice(initial_price=None,  # int(float(sys.argv[4]) * GeometricGasPrice.GWEI),
+                      initial_feecap=int(60 * GeometricGasPrice.GWEI),
+                      initial_tip=int(2 * GeometricGasPrice.GWEI),
+                      every_secs=2,
                       max_price=100 * GeometricGasPrice.GWEI)
 
 eth = EthToken(web3, Address.zero())
@@ -79,7 +81,7 @@ class TestApp:
         if run_transactions and block % 3 == 0:
             # dummy transaction: send 0 ETH to ourself
             eth_transfer(web3=web3, to=our_address, amount=Wad(0)).transact(
-                from_address=our_address, gas=21000, gas_price=gas_price)
+                from_address=our_address, gas=21000, gas_strategy=gas_strategy)
 
         if our_address:
             logging.info(f"Eth balance is {eth.balance_of(our_address)}")
