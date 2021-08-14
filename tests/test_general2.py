@@ -27,6 +27,7 @@ from pymaker.numeric import Wad
 from pymaker.proxy import DSProxy, DSProxyCache
 from pymaker.token import DSToken
 from pymaker.util import synchronize, eth_balance
+from tests.conftest import patch_web3_block_data
 
 
 class TestTransact:
@@ -299,6 +300,20 @@ class TestTransactReplace:
         # and
         assert self.token.balance_of(self.second_address) == Wad(500)
 
+    def test_gas_to_replace_calculation(self, mocker):
+        dummy_tx = self.token.transfer(self.second_address, Wad(0))
+        type0_prev_gas_params = {'gasPrice': 20}
+        type0_curr_gas_params = {'gasPrice': 21}
+        assert not dummy_tx._gas_exceeds_replacement_threshold(type0_prev_gas_params, type0_curr_gas_params)
+        type0_curr_gas_params = {'gasPrice': 23}
+        assert dummy_tx._gas_exceeds_replacement_threshold(type0_prev_gas_params, type0_curr_gas_params)
+
+        patch_web3_block_data(dummy_tx.web3, mocker, 7 * FixedGasPrice.GWEI)
+        type2_prev_gas_params = {'maxFeePerGas': 100000000000, 'maxPriorityFeePerGas': 1000000000}
+        type2_curr_gas_params = {'maxFeePerGas': 100000000000, 'maxPriorityFeePerGas': 1265625000}
+        assert not dummy_tx._gas_exceeds_replacement_threshold(type2_prev_gas_params, type2_curr_gas_params)
+        type2_curr_gas_params = {'maxFeePerGas': 130000000000, 'maxPriorityFeePerGas': 1265625000}
+        assert dummy_tx._gas_exceeds_replacement_threshold(type2_prev_gas_params, type2_curr_gas_params)
 
 class TestTransactRecover:
     def setup_method(self):

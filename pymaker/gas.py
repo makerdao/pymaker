@@ -82,13 +82,11 @@ class NodeAwareGasStrategy(GasStrategy):
     Retrieves the default gas price provided by the Ethereum node to be consumed by subclasses.
     """
 
-    def __init__(self, web3: Web3, base_fee_multiplier=1.125, initial_tip=2 * GasStrategy.GWEI):
+    def __init__(self, web3: Web3):
         assert isinstance(web3, Web3)
         if self.__class__ == NodeAwareGasStrategy:
             raise NotImplementedError('This class is not intended to be used directly')
         self.web3 = web3
-        self.base_fee_multiplier = base_fee_multiplier
-        self.initial_tip = initial_tip
 
     def get_gas_price(self, time_elapsed: int) -> Optional[int]:
         """If user wants node to choose gas price, they should use DefaultGasPrice for the same functionality
@@ -101,13 +99,13 @@ class NodeAwareGasStrategy(GasStrategy):
         raise NotImplementedError("Please implement this method")
 
     def get_node_gas_price(self) -> int:
-        return max(self.web3.manager.request_blocking("eth_gasPrice", []), 1 * self.GWEI)
+        return max(self.web3.manager.request_blocking("eth_gasPrice", []), 1)
 
     def get_next_base_fee(self) -> Optional[int]:
         """Useful for calculating maxfee; a multiple of this value is suggested"""
         next_block = self.web3.eth.get_block('pending')
         if 'baseFeePerGas' in next_block:
-            return int(next_block['baseFeePerGas'])
+            return max(int(next_block['baseFeePerGas']), 1)
         else:
             return None
 
@@ -163,7 +161,7 @@ class FixedGasPrice(GasStrategy):
         return self.max_fee, self.tip
 
 
-class GeometricGasPrice(GasStrategy):
+class GeometricGasPrice(NodeAwareGasStrategy):
     """Geometrically increasing gas price.
 
     Start with `initial_price`, then increase it every 'every_secs' seconds by a fixed coefficient.
@@ -171,46 +169,48 @@ class GeometricGasPrice(GasStrategy):
     Coefficient can be adjusted, and there is an optional upper limit.
 
     To disable legacy (type 0) transactions, set initial_price None.
-    To disable EIP-1559 (type 2) transactions, set initial_feecap and initial_tip None.
+    To disable EIP-1559 (type 2) transactions, set initial_tip None.
     Other parameters apply to both transaction types.
 
     Attributes:
         initial_price: The initial gas price in Wei, used only for legacy transactions.
-        initial_feecap: Set this >= current basefee+tip, keeping in mind basefee can rise each block.
-        initial_tip: Initial priority fee paid on top of a base fee.
-        every_secs: Gas price increase interval (in seconds).
-        coefficient: Gas price multiplier, defaults to 1.125.
-        max_price: Optional upper limit, defaults to None.
+        initial_tip: Initial priority fee paid on top of a base fee (recommend 1 GWEI minimum).
+        every_secs: Gas increase interval (in seconds).
+        coefficient: Gas price and tip multiplier, defaults to 1.125.
+        max_price: Optional upper limit and fee cap, defaults to None.
     """
-    def __init__(self, initial_price: Optional[int], initial_feecap: Optional[int], initial_tip: Optional[int],
+    def __init__(self, web3: Web3, initial_price: Optional[int], initial_tip: Optional[int],
                  every_secs: int, coefficient=1.125, max_price: Optional[int] = None):
+        assert isinstance(web3, Web3)
         assert (isinstance(initial_price, int) and initial_price > 0) or initial_price is None
-        assert isinstance(initial_feecap, int) or initial_feecap is None
         assert isinstance(initial_tip, int) or initial_tip is None
+        assert initial_price or (initial_tip is not None and initial_tip > 0)
         assert isinstance(every_secs, int)
         assert isinstance(coefficient, float)
         assert (isinstance(max_price, int) and max_price > 0) or max_price is None
-        assert initial_price or (initial_tip is not None and initial_feecap > initial_tip >= 0)
         assert every_secs > 0
         assert coefficient > 1
         if initial_price and max_price:
             assert initial_price <= max_price
-        if initial_feecap and max_price:
-            assert initial_feecap <= max_price
+        if initial_tip and max_price:
+            assert initial_tip < max_price
+        super().__init__(web3)
 
         self.initial_price = initial_price
-        self.initial_feecap = initial_feecap
         self.initial_tip = initial_tip
         self.every_secs = every_secs
         self.coefficient = coefficient
         self.max_price = max_price
 
-    def scale_by_time(self, value: int, time_elapsed: int):
+    def scale_by_time(self, value: int, time_elapsed: int) -> int:
+        assert isinstance(value, int)
+        assert isinstance(time_elapsed, int)
         result = value
         if time_elapsed >= self.every_secs:
             for second in range(math.floor(time_elapsed / self.every_secs)):
+                # print(f"result={result} coeff={self.coefficient}")
                 result *= self.coefficient
-        return result
+        return math.ceil(result)
 
     def get_gas_price(self, time_elapsed: int) -> Optional[int]:
         assert isinstance(time_elapsed, int)
@@ -221,18 +221,29 @@ class GeometricGasPrice(GasStrategy):
         if self.max_price is not None:
             result = min(result, self.max_price)
 
-        return math.ceil(result)
+        return result
 
     def get_gas_fees(self, time_elapsed: int) -> Optional[Tuple[int, int]]:
         assert isinstance(time_elapsed, int)
-        if not self.initial_feecap:
+        if not self.initial_tip:
             return None
 
-        feecap = self.scale_by_time(self.initial_feecap, time_elapsed)
+        base_fee = self.get_next_base_fee()
         tip = self.scale_by_time(self.initial_tip, time_elapsed)
-        if self.max_price is not None:
-            feecap = min(feecap, self.max_price)
-        # TODO: Instead of asserting, apply a meaningful limit.
-        assert tip < feecap  # basefee is > 0, and tip can't exceed feecap
 
-        return math.ceil(feecap), tip
+        # This is how it should work, but doesn't; read more here: https://github.com/ethereum/go-ethereum/issues/23311
+        # if self.max_price:
+        #     # If the scaled tip would exceed our fee cap, reduce tip to largest possible
+        #     if base_fee + tip > self.max_price:
+        #         tip = max(0, self.max_price - base_fee)
+        #     # Honor the max_price, even if it does not exceed base fee
+        #     return self.max_price, tip
+        # else:
+        #     # If not limited by user, set a standard fee cap of twice the base fee with tip included
+        #     return (base_fee * 2) + tip, tip
+
+        # HACK: Ensure both feecap and tip are scaled, satisfying geth's current replacement logic.
+        feecap = self.scale_by_time(int(base_fee * 1.2), time_elapsed) + tip
+        if self.max_price and feecap > self.max_price:
+            feecap = self.max_price
+        return feecap, tip

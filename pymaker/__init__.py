@@ -18,13 +18,13 @@
 import asyncio
 import json
 import logging
-import pprint
 import re
 import requests
 import sys
 import time
 from enum import Enum, auto
 from functools import total_ordering, wraps
+from pprint import pprint
 from threading import Lock
 from typing import Optional
 from weakref import WeakKeyDictionary
@@ -527,29 +527,40 @@ class Transact:
         else:
             return gas_estimate + 100000
 
-    def _gas_params(self, seconds_elapsed: int, gas_strategy: GasStrategy) -> dict:
+    def _gas_fees(self, seconds_elapsed: int, gas_strategy: GasStrategy) -> dict:
         assert isinstance(seconds_elapsed, int)
         assert isinstance(gas_strategy, GasStrategy)
 
         gas_price = gas_strategy.get_gas_price(seconds_elapsed)
         gas_feecap, gas_tip = gas_strategy.get_gas_fees(seconds_elapsed)
 
-        if _get_endpoint_behavior(self.web3).supports_london and gas_feecap and gas_tip:
-            params = {'maxFeePerGas': gas_feecap,
-                      'maxPriorityFeePerGas': gas_tip}
-        elif gas_price:
+        if _get_endpoint_behavior(self.web3).supports_london and gas_feecap and gas_tip:  # prefer type 2 TXes
+            params = {'maxFeePerGas': gas_feecap, 'maxPriorityFeePerGas': gas_tip}
+        elif gas_price:  # fallback to type 0 if not supported or params not specified
             params = {'gasPrice': gas_price}
-        else:
+        else:            # let the node determine gas
             params = {}
         return params
 
-    @staticmethod
-    def _gas_exceeds_replacement_threshold(prev_gas_params: dict, current_gas_params: dict):
+    def _gas_exceeds_replacement_threshold(self, prev_gas_params: dict, curr_gas_params: dict):
         # TODO: Can a type 0 TX be replaced with a type 2 TX?  Vice-versa?
-        if 'gasPrice' in prev_gas_params and 'gasPrice' in current_gas_params:
-            return current_gas_params['gasPrice'] > prev_gas_params['gasPrice'] * 1.125
-        # TODO: Implement EIP-1559 support
-        return False
+
+        # Determine if a type 0 transaction would be replaced
+        if 'gasPrice' in prev_gas_params and 'gasPrice' in curr_gas_params:
+            return curr_gas_params['gasPrice'] > prev_gas_params['gasPrice'] * 1.125
+        # Determine if a type 2 transaction would be replaced
+        elif 'maxFeePerGas' in prev_gas_params and 'maxFeePerGas' in curr_gas_params:
+            # This is how it should work, but doesn't; read here: https://github.com/ethereum/go-ethereum/issues/23311
+            # base_fee = int(self.web3.eth.get_block('pending')['baseFeePerGas'])
+            # prev_effective_price = base_fee + prev_gas_params['maxPriorityFeePerGas']
+            # curr_effective_price = base_fee + curr_gas_params['maxPriorityFeePerGas']
+            # print(f"base={base_fee} prev_eff={prev_effective_price} curr_eff={curr_effective_price}")
+            # return curr_effective_price > prev_effective_price * 1.125
+            feecap_bumped = curr_gas_params['maxFeePerGas'] > prev_gas_params['maxFeePerGas'] * 1.125
+            tip_bumped = curr_gas_params['maxPriorityFeePerGas'] > prev_gas_params['maxPriorityFeePerGas'] * 1.125
+            return feecap_bumped and tip_bumped
+        else:  # Replacement impossible if no parameters were offered
+            return False
 
     def _func(self, from_account: str, gas: int, gas_price_params: dict, nonce: Optional[int]):
         assert isinstance(from_account, str)
@@ -561,6 +572,7 @@ class Transact:
                               **gas_price_params,
                               **nonce_dict,
                               **self._as_dict(self.extra)}
+        pprint(transaction_params)
         if self.contract is not None:
             if self.function_name is None:
 
@@ -706,7 +718,7 @@ class Transact:
         gas = self._gas(gas_estimate, **kwargs)
         self.gas_strategy = kwargs['gas_strategy'] if ('gas_strategy' in kwargs) else DefaultGasPrice()
         assert(isinstance(self.gas_strategy, GasStrategy))
-        gas_params_last = None
+        gas_fees_last = None
 
         # Get the transaction this one is supposed to replace.
         # If there is one, try to borrow the nonce from it as long as that transaction isn't finished.
@@ -730,7 +742,7 @@ class Transact:
 
         while True:
             seconds_elapsed = int(time.time() - self.initial_time)
-            gas_params = self._gas_params(seconds_elapsed, self.gas_strategy)
+            gas_fees = self._gas_fees(seconds_elapsed, self.gas_strategy)
 
             # CAUTION: if transact_async is called rapidly, we will hammer the node with these JSON-RPC requests
             if self.nonce is not None and self.web3.eth.getTransactionCount(from_account) > self.nonce:
@@ -776,8 +788,8 @@ class Transact:
             # Uncomment this to debug state during transaction submission
             # self.logger.debug(f"Transaction {self.name()} is churning: was_sent={transaction_was_sent}")
             # TODO: For EIP-1559 transactions, both maxFeePerGas and maxPriorityFeePerGas need to be bumped 12.5% to replace.
-            if not transaction_was_sent or (gas_params_last and self._gas_exceeds_replacement_threshold(gas_params_last, gas_params)):
-                gas_params_last = gas_params
+            if not transaction_was_sent or (gas_fees_last and self._gas_exceeds_replacement_threshold(gas_fees_last, gas_fees)):
+                gas_fees_last = gas_fees
 
                 try:
                     # We need the lock in order to not try to send two transactions with the same nonce.
@@ -803,15 +815,15 @@ class Transact:
                             self.logger.info(f"Transaction {self.name()} with nonce={self.nonce} was replaced")
                             return None
 
-                        tx_hash = self._func(from_account, gas, gas_params, self.nonce)
+                        tx_hash = self._func(from_account, gas, gas_fees, self.nonce)
                         self.tx_hashes.append(tx_hash)
 
                     self.logger.info(f"Sent transaction {self.name()} with nonce={self.nonce}, gas={gas},"
-                                     f" gas_params={gas_params if gas_params else 'default'}"
+                                     f" gas_fees={gas_fees if gas_fees else 'default'}"
                                      f" (tx_hash={tx_hash})")
                 except Exception as e:
                     self.logger.warning(f"Failed to send transaction {self.name()} with nonce={self.nonce}, gas={gas},"
-                                        f" gas_params={gas_params if gas_params else 'default'} ({e})")
+                                        f" gas_fees={gas_fees if gas_fees else 'default'} ({e})")
 
                     if len(self.tx_hashes) == 0:
                         raise
