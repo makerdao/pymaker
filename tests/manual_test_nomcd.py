@@ -39,11 +39,13 @@ web3 = web3_via_http(endpoint_uri, timeout=10)
 print(web3.clientVersion)
 
 """
+Purpose: Tests pymaker on chains or layer-2s where multi-collateral Dai is not deployed.
+
 Argument:           Reqd?   Example:
 Ethereum node URI   yes     https://localhost:8545
 Ethereum address    no      0x0000000000000000000000000000000aBcdef123
 Private key         no      key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
-Gas price (GWEI)    no      9
+Gas tip (GWEI)      no      9
 """
 
 
@@ -60,11 +62,11 @@ else:
     run_transactions = False
 
 gas_strategy = DefaultGasPrice() if len(sys.argv) <= 4 else \
-    GeometricGasPrice(initial_price=None,  # int(float(sys.argv[4]) * GeometricGasPrice.GWEI),
-                      initial_feecap=int(60 * GeometricGasPrice.GWEI),
-                      initial_tip=int(2 * GeometricGasPrice.GWEI),
-                      every_secs=2,
-                      max_price=100 * GeometricGasPrice.GWEI)
+    GeometricGasPrice(web3=web3,
+                      initial_price=None,
+                      initial_tip=int(float(sys.argv[4]) * GeometricGasPrice.GWEI),
+                      every_secs=5,
+                      max_price=50 * GeometricGasPrice.GWEI)
 
 eth = EthToken(web3, Address.zero())
 

@@ -21,6 +21,8 @@ from typing import Optional, Tuple
 from pymaker.gas import DefaultGasPrice, FixedGasPrice, GasStrategy, GeometricGasPrice, NodeAwareGasStrategy
 from tests.conftest import patch_web3_block_data
 
+GWEI = GasStrategy.GWEI
+
 
 class TestGasPrice:
     def test_not_implemented(self):
@@ -146,9 +148,9 @@ class TestFixedGasPrice:
 
 
 class TestGeometricGasPrice:
-    def test_gas_price_should_increase_with_time(self, web3):
+    def test_gas_price_should_increase_with_time(self, web3, mocker):
         # given
-        geometric_gas_price = GeometricGasPrice(web3=web3, initial_price=100, initial_tip=1, every_secs=10)
+        geometric_gas_price = GeometricGasPrice(web3=web3, initial_price=100, initial_tip=None, every_secs=10)
 
         # expect
         assert geometric_gas_price.get_gas_price(0) == 100
@@ -160,12 +162,20 @@ class TestGeometricGasPrice:
         assert geometric_gas_price.get_gas_price(50) == 181
         assert geometric_gas_price.get_gas_price(100) == 325
 
-        # TODO: test geometric_gas_price.get_gas_fees()
+        geometric_gas_price = GeometricGasPrice(web3=web3, initial_price=None, initial_tip=1 * GWEI, every_secs=10)
+        patch_web3_block_data(web3, mocker, base_fee=10 * GWEI)
+        last_fees = (0, 0)
+        for i in [0, 10, 20, 30, 50, 100, 300, 1800, 3600]:
+            current_fees = geometric_gas_price.get_gas_fees(i)
+            assert current_fees[1] > last_fees[1]
+            last_fees = current_fees
 
-    def test_gas_price_should_obey_max_value(self, web3):
+    def test_gas_price_should_obey_max_value(self, web3, mocker):
         # given
+        max_price = 2500
         geometric_gas_price = GeometricGasPrice(web3=web3, initial_price=1000, initial_tip=10,
-                                                every_secs=60, coefficient=1.125, max_price=2500)
+                                                every_secs=60, coefficient=1.125, max_price=max_price)
+        patch_web3_block_data(web3, mocker, base_fee=10 * GWEI)
 
         # expect
         assert geometric_gas_price.get_gas_price(0) == 1000
@@ -179,16 +189,32 @@ class TestGeometricGasPrice:
         assert geometric_gas_price.get_gas_price(100000) == 2500
         # assert geometric_gas_price.get_gas_price(1000000) == 2500  # 277 hours produces overflow
 
-        # TODO: test geometric_gas_price.get_gas_fees()
+        for i in [0, 120, 3600, 100000]:
+            print(f"checking {i} seconds")
+            current_fees = geometric_gas_price.get_gas_fees(i)
+            assert current_fees[0] <= max_price
+            assert current_fees[1] <= current_fees[0]
 
-    def test_behaves_with_realistic_values(self, web3):
+    @staticmethod
+    def assert_gas_fees_equivalent(lhs: Tuple, rhs: Tuple, decimals=2):
+        assert isinstance(lhs, Tuple)
+        assert isinstance(rhs, Tuple)
+        left_feecap = lhs[0] / GasStrategy.GWEI
+        left_tip = lhs[1] / GasStrategy.GWEI
+        right_feecap = rhs[0] / GasStrategy.GWEI
+        right_tip = rhs[1] / GasStrategy.GWEI
+        assert round(left_feecap, decimals) == round(right_feecap, decimals)
+        assert round(left_tip, decimals) == round(right_tip, decimals)
+
+    def test_behaves_with_realistic_values(self, web3, mocker):
         # given
         GWEI = 1000000000
-        geometric_gas_price = GeometricGasPrice(web3=web3, initial_price=100*GWEI, initial_tip=1*GWEI,
-                                                every_secs=10, coefficient=1+(0.125*2))
+        base_fee = 50*GWEI
+        geometric_gas_price = GeometricGasPrice(web3=web3, initial_price=100*GWEI, initial_tip=15*GWEI,
+                                                every_secs=10, coefficient=1.25, max_price=4000*GWEI)
+        patch_web3_block_data(web3, mocker, base_fee)
 
-        for seconds in [0,1,10,12,30,60]:
-            print(f"gas price after {seconds} seconds is {geometric_gas_price.get_gas_price(seconds)/GWEI}")
+        # See gas sandbox spreadsheet in test folder to validate calculations
 
         assert round(geometric_gas_price.get_gas_price(0) / GWEI, 1) == 100.0
         assert round(geometric_gas_price.get_gas_price(1) / GWEI, 1) == 100.0
@@ -196,8 +222,12 @@ class TestGeometricGasPrice:
         assert round(geometric_gas_price.get_gas_price(12) / GWEI, 1) == 125.0
         assert round(geometric_gas_price.get_gas_price(30) / GWEI, 1) == 195.3
         assert round(geometric_gas_price.get_gas_price(60) / GWEI, 1) == 381.5
+        assert round(geometric_gas_price.get_gas_price(180) / GWEI, 1) == 4000.0
 
-        # TODO: test geometric_gas_price.get_gas_fees()
+        self.assert_gas_fees_equivalent(geometric_gas_price.get_gas_fees(0), (75 * GWEI, 15 * GWEI))
+        self.assert_gas_fees_equivalent(geometric_gas_price.get_gas_fees(30), (146.48 * GWEI, 29.30 * GWEI))
+        self.assert_gas_fees_equivalent(geometric_gas_price.get_gas_fees(60), (286.10 * GWEI, 57.22 * GWEI))
+        self.assert_gas_fees_equivalent(geometric_gas_price.get_gas_fees(300), (4000 * GWEI, 4000 * GWEI))
 
     def test_should_require_positive_initial_price(self, web3):
         with pytest.raises(AssertionError):

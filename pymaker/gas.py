@@ -246,4 +246,4 @@ class GeometricGasPrice(NodeAwareGasStrategy):
         feecap = self.scale_by_time(int(base_fee * 1.2), time_elapsed) + tip
         if self.max_price and feecap > self.max_price:
             feecap = self.max_price
-        return feecap, tip
+        return feecap, min(tip, feecap)
