@@ -57,7 +57,7 @@ class TestNodeAwareGasPrice:
             return self.get_node_gas_price() * max(time_elapsed, 1)
 
         def get_gas_fees(self, time_elapsed: int) -> Optional[Tuple[int, int]]:
-            return int(self.get_next_base_fee()*1.5), 2 * self.GWEI
+            return int(self.get_base_fee() * 1.5), 2 * self.GWEI
 
     class BadImplementation(NodeAwareGasStrategy):
         pass

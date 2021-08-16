@@ -101,11 +101,11 @@ class NodeAwareGasStrategy(GasStrategy):
     def get_node_gas_price(self) -> int:
         return max(self.web3.manager.request_blocking("eth_gasPrice", []), 1)
 
-    def get_next_base_fee(self) -> Optional[int]:
+    def get_base_fee(self) -> Optional[int]:
         """Useful for calculating maxfee; a multiple of this value is suggested"""
-        next_block = self.web3.eth.get_block('pending')
-        if 'baseFeePerGas' in next_block:
-            return max(int(next_block['baseFeePerGas']), 1)
+        pending_block = self.web3.eth.get_block('pending')
+        if 'baseFeePerGas' in pending_block:
+            return max(int(pending_block['baseFeePerGas']), 1)
         else:
             return None
 
@@ -228,7 +228,10 @@ class GeometricGasPrice(NodeAwareGasStrategy):
         if not self.initial_tip:
             return None
 
-        base_fee = self.get_next_base_fee()
+        base_fee = self.get_base_fee()
+        if not base_fee:
+            raise RuntimeError("Node does not provide baseFeePerGas; type 2 transactions are not available")
+
         tip = self.scale_by_time(self.initial_tip, time_elapsed)
 
         # This is how it should work, but doesn't; read more here: https://github.com/ethereum/go-ethereum/issues/23311

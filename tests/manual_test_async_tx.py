@@ -45,40 +45,40 @@ our_address = Address(web3.eth.defaultAccount)
 weth = DssDeployment.from_node(web3).collaterals['ETH-A'].gem
 
 GWEI = 1000000000
-slow_gas = GeometricGasPrice(initial_price=int(15 * GWEI), every_secs=42, max_price=200 * GWEI)
-fast_gas = GeometricGasPrice(initial_price=int(30 * GWEI), every_secs=42, max_price=200 * GWEI)
+slow_gas = GeometricGasPrice(web3=web3, initial_price=None, initial_tip=int(0.1 * GWEI), every_secs=42, max_price=200 * GWEI)
+fast_gas = GeometricGasPrice(web3=web3, initial_price=None, initial_tip=int(4.5 * GWEI), every_secs=42, max_price=200 * GWEI)
 
 
 class TestApp:
     def main(self):
-        # self.test_replacement()
+        self.test_replacement()
         self.test_simultaneous()
         self.shutdown()
 
     def test_replacement(self):
         first_tx = weth.deposit(Wad(4))
         logging.info(f"Submitting first TX with gas price deliberately too low")
-        self._run_future(first_tx.transact_async(gas_price=slow_gas))
-        time.sleep(0.5)
+        self._run_future(first_tx.transact_async(gas_strategy=slow_gas))
+        time.sleep(0.1)
 
         second_tx = weth.deposit(Wad(6))
         logging.info(f"Replacing first TX with legitimate gas price")
-        second_tx.transact(replace=first_tx, gas_price=fast_gas)
+        second_tx.transact(replace=first_tx, gas_strategy=fast_gas)
 
         assert first_tx.replaced
 
     def test_simultaneous(self):
-        self._run_future(weth.deposit(Wad(1)).transact_async(gas_price=fast_gas))
-        self._run_future(weth.deposit(Wad(3)).transact_async(gas_price=fast_gas))
-        self._run_future(weth.deposit(Wad(5)).transact_async(gas_price=fast_gas))
-        self._run_future(weth.deposit(Wad(7)).transact_async(gas_price=fast_gas))
+        self._run_future(weth.deposit(Wad(1)).transact_async(gas_strategy=fast_gas))
+        self._run_future(weth.deposit(Wad(3)).transact_async(gas_strategy=fast_gas))
+        self._run_future(weth.deposit(Wad(5)).transact_async(gas_strategy=fast_gas))
+        self._run_future(weth.deposit(Wad(7)).transact_async(gas_strategy=fast_gas))
         time.sleep(33)
 
     def shutdown(self):
         balance = weth.balance_of(our_address)
         if Wad(0) < balance < Wad(100):  # this account's tiny WETH balance came from this test
             logging.info(f"Unwrapping {balance} WETH")
-            assert weth.withdraw(balance).transact(gas_price=fast_gas)
+            assert weth.withdraw(balance).transact(gas_strategy=fast_gas)
 
     @staticmethod
     def _run_future(future):
