@@ -382,10 +382,10 @@ class DssDeployment:
         """
         assert isinstance(usr, Address)
 
-        gas_price = kwargs['gas_price'] if 'gas_price' in kwargs else DefaultGasPrice()
-        self.dai_adapter.approve(approval_function=hope_directly(from_address=usr, gas_price=gas_price),
+        gas_strategy = kwargs['gas_strategy'] if 'gas_strategy' in kwargs else DefaultGasPrice()
+        self.dai_adapter.approve(approval_function=hope_directly(from_address=usr, gas_strategy=gas_strategy),
                                  source=self.vat.address)
-        self.dai.approve(self.dai_adapter.address).transact(from_address=usr, gas_price=gas_price)
+        self.dai.approve(self.dai_adapter.address).transact(from_address=usr, gas_strategy=gas_strategy)
 
     def active_auctions(self) -> dict:
         flips = {}

@@ -25,10 +25,8 @@ class GasStrategy(object):
 
     """Abstract class, which can be inherited for implementing different gas price strategies.
 
-    `GasPrice` class contains only one method, `get_gas_price`, which is responsible for
-    returning the gas price (in Wei) for a specific point in time. It is possible to build
-    custom gas price strategies by implementing this method so the gas price returned
-    increases over time. The piece of code responsible for sending Ethereum transactions
+    To build custom gas price strategies, override methods within such that gas fees returned 
+    increase over time. The piece of code responsible for sending Ethereum transactions
     (please see :py:class:`pymaker.Transact`) will in this case overwrite the transaction
     with another one, using the same `nonce` but increasing gas price. If the value returned
     by `get_gas_price` does not go up, no new transaction gets submitted to the network.
@@ -58,7 +56,7 @@ class GasStrategy(object):
         raise NotImplementedError("Please implement this method")
 
     def get_gas_fees(self, time_elapsed: int) -> Tuple[int, int]:
-        """Return fee cap (max fee) and tip for type 2 (EIP-1559) transactions"""
+        """Return max fee (fee cap) and priority fee (tip) for type 2 (EIP-1559) transactions"""
         raise NotImplementedError("Please implement this method")
 
 
@@ -122,7 +120,7 @@ class FixedGasPrice(GasStrategy):
         max_fee:   Maximum fee (in Wei) for EIP-1559 transactions, should be >= (base_fee + tip)
         tip:       Priority fee (in Wei) for EIP-1559 transactions
     """
-    def __init__(self, gas_price: Optional[int], max_fee: Optional[int], tip: Optional[int]):
+    def __init__(self, gas_price: Optional[int], max_fee: Optional[int] = None, tip: Optional[int] = None):
         assert isinstance(gas_price, int) or gas_price is None
         assert isinstance(max_fee, int) or max_fee is None
         assert isinstance(tip, int) or tip is None

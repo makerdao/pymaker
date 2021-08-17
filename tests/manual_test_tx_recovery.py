@@ -43,7 +43,9 @@ weth = DssDeployment.from_node(web3).collaterals['ETH-A'].gem
 stuck_txes_to_submit = int(sys.argv[3]) if len(sys.argv) > 3 else 1
 
 GWEI = 1000000000
-increasing_gas = GeometricGasPrice(initial_price=int(1 * GWEI), every_secs=30, coefficient=1.5, max_price=100 * GWEI)
+too_low_gas = FixedGasPrice(gas_price=int(0.4 * GWEI), max_fee=None, tip=None)
+increasing_gas = GeometricGasPrice(web3=web3, initial_price=1*GWEI, initial_tip=None,
+                                   every_secs=30, coefficient=1.5, max_price=200*GWEI)
 
 
 class TestApp:
@@ -55,14 +57,14 @@ class TestApp:
 
         if len(pending_txes) > 0:
             while len(pending_txes) > 0:
-                pending_txes[0].cancel(gas_price=increasing_gas)
+                pending_txes[0].cancel(gas_strategy=increasing_gas)
                 # After the synchronous cancel, wait to see if subsequent transactions get mined
                 time.sleep(15)
                 pending_txes = get_pending_transactions(web3)
         else:
             logging.info(f"No pending transactions were found; submitting {stuck_txes_to_submit}")
             for i in range(1, stuck_txes_to_submit+1):
-                self._run_future(weth.deposit(Wad(i)).transact_async(gas_price=FixedGasPrice(int(0.4 * i * GWEI))))
+                self._run_future(weth.deposit(Wad(i)).transact_async(gas_strategy=too_low_gas))
             time.sleep(2)
 
         self.shutdown()
