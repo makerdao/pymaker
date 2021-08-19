@@ -17,6 +17,7 @@
 
 import asyncio
 import logging
+import math
 import os
 import sys
 import time
@@ -27,7 +28,6 @@ from web3 import Web3
 
 from pymaker import _get_endpoint_behavior, _track_status, Address, eth_transfer, NonceCalculation, Receipt, \
     Transact, Wad, web3_via_http
-from pymaker.deployment import DssDeployment
 from pymaker.gas import FixedGasPrice, GasStrategy, GeometricGasPrice
 from pymaker.keys import register_keys
 from pymaker.util import synchronize, bytes_to_hexstring
@@ -45,15 +45,14 @@ if len(sys.argv) > 2:
     web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
     register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
     our_address = Address(web3.eth.defaultAccount)
-    stuck_txes_to_submit = int(sys.argv[3]) if len(sys.argv) > 3 else 1
+    stuck_txes_to_submit = int(sys.argv[3]) if len(sys.argv) > 3 else 0
 else:
     our_address = None
     stuck_txes_to_submit = 0
 
 GWEI = 1000000000
-too_low_gas = FixedGasPrice(gas_price=int(0.4 * GWEI), max_fee=None, tip=None)
-increasing_gas = GeometricGasPrice(web3=web3, initial_price=1*GWEI, initial_tip=None,
-                                   every_secs=30, coefficient=1.5, max_price=200*GWEI)
+# TODO: Dynamically choose prices based upon current block's base fee
+too_low_gas = FixedGasPrice(gas_price=int(24 * GWEI), max_fee=None, tip=None)
 
 
 def get_pending_transactions(web3: Web3, address: Address = None) -> list:
@@ -67,11 +66,10 @@ def get_pending_transactions(web3: Web3, address: Address = None) -> list:
         items = web3.manager.request_blocking("parity_pendingTransactions", [])
         if address:
             items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
-            return list(map(lambda item: RecoveredTransact(web3=web3,
-                                                           address=Address(item['from']),
-                                                           nonce=int(item['nonce'], 16),
-                                                           latest_tx_hash=item['hash'],
-                                                           current_gas=int(item['gasPrice'], 16)), items))
+            return list(map(lambda item: PendingTransact(web3=web3,
+                                                         address=Address(item['from']),
+                                                         nonce=int(item['nonce'], 16),
+                                                         current_gas=int(item['gasPrice'], 16)), items))
         else:
             summarize_transactions(items)
     else:
@@ -79,11 +77,10 @@ def get_pending_transactions(web3: Web3, address: Address = None) -> list:
         summarize_transactions(items)
         if address:
             items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
-            return list(map(lambda item: RecoveredTransact(web3=web3,
-                                                           address=Address(item['from']),
-                                                           nonce=item['nonce'],
-                                                           latest_tx_hash=item['hash'],
-                                                           current_gas=item['gasPrice']), items))
+            return list(map(lambda item: PendingTransact(web3=web3,
+                                                         address=Address(item['from']),
+                                                         nonce=item['nonce'],
+                                                         current_gas=item['gasPrice']), items))
         else:
             summarize_transactions(items)
     return []
@@ -109,90 +106,78 @@ def summarize_transactions(txes):
           f"with gas from {lowest_gas} to {highest_gas} gwei")
 
 
-class RecoveredTransact(Transact):
+class PendingTransact(Transact):
     """ Models a pending transaction retrieved from the mempool.
 
     These can be created by a call to `get_pending_transactions`, enabling the consumer to implement logic which
     cancels pending transactions upon keeper/bot startup.
     """
-    def __init__(self, web3: Web3,
-                 address: Address,
-                 nonce: int,
-                 latest_tx_hash: str,
-                 current_gas: int):
+    def __init__(self, web3: Web3, address: Address, nonce: int, current_gas: int):
         assert isinstance(current_gas, int)
-        super().__init__(origin=None,
-                         web3=web3,
-                         abi=None,
-                         address=address,
-                         contract=None,
-                         function_name=None,
-                         parameters=None)
+        super().__init__(origin=None, web3=web3, abi=None, address=address, contract=None,
+                         function_name=None, parameters=None)
         self.nonce = nonce
-        self.tx_hashes.append(latest_tx_hash)
         self.current_gas = current_gas
-        self.gas_price_last = None
 
     def name(self):
-        return f"Recovered tx with nonce {self.nonce}"
+        return f"Pending TX with nonce {self.nonce} and gas at {self.current_gas/GWEI} gwei"
 
     @_track_status
     async def transact_async(self, **kwargs) -> Optional[Receipt]:
         # TODO: Read transaction data from chain, create a new state machine to manage gas for the transaction.
         raise NotImplementedError()
 
-    def cancel(self, gas_strategy: GasStrategy):
-        return synchronize([self.cancel_async(gas_strategy)])[0]
+    def cancel(self):
+        return synchronize([self.cancel_async()])[0]
 
-    async def cancel_async(self, gas_strategy: GasStrategy):
-        assert isinstance(gas_strategy, GasStrategy)
+    async def cancel_async(self):
         initial_time = time.time()
-        self.gas_price_last = self.current_gas
-        self.tx_hashes.clear()
 
-        if gas_strategy.get_gas_price(0) <= self.current_gas * 1.125:
-            self.logger.warning(f"Recovery gas price is less than current gas price {self.current_gas}; "
-                                "cancellation will be deferred until the strategy produces an acceptable price.")
+        supports_eip1559 = _get_endpoint_behavior(web3).supports_eip1559
+        tx_type = 0  # TODO: Pass gas details into ctor so we know the TX type.
 
-        while True:
-            seconds_elapsed = int(time.time() - initial_time)
-            gas_price_value = gas_strategy.get_gas_price(seconds_elapsed)
-            if gas_price_value > self.gas_price_last * 1.125:
-                self.gas_price_last = gas_price_value
-                # Transaction lock isn't needed here, as we are replacing an existing nonce
-                tx_hash = bytes_to_hexstring(self.web3.eth.sendTransaction({'from': self.address.address,
-                                                                            'to': self.address.address,
-                                                                            'gasPrice': gas_price_value,
-                                                                            'nonce': self.nonce,
-                                                                            'value': 0}))
-                self.tx_hashes.append(tx_hash)
-                self.logger.info(f"Attempting to cancel recovered tx with nonce={self.nonce}, "
-                                 f"gas_price={gas_price_value} (tx_hash={tx_hash})")
-
-            for tx_hash in self.tx_hashes:
-                receipt = self._get_receipt(tx_hash)
-                if receipt:
-                    self.logger.info(f"{self.name()} was cancelled (tx_hash={tx_hash})")
-                    return
-
-            await asyncio.sleep(0.75)
+        # Transaction lock isn't needed here, as we are replacing an existing nonce
+        if supports_eip1559 and tx_type == 2:
+            # TODO: Consider multiplying base_fee by 1.2 here to mitigate potential increase in subsequent blocks.
+            base_fee = int(self.web3.eth.get_block('pending')['baseFeePerGas'])
+            bumped_tip = math.ceil(min(1*GWEI, self.current_gas-base_fee) * 1.125)
+            gas_fees = {'maxFeePerGas': base_fee + bumped_tip, 'maxPriorityFeePerGas': bumped_tip}
+            tx_hash = bytes_to_hexstring(self.web3.eth.sendTransaction({'from': self.address.address,
+                                                                        'to': self.address.address,
+                                                                        **gas_fees,
+                                                                        'nonce': self.nonce,
+                                                                        'value': 0}))
+        else:
+            bumped_gas = math.ceil(self.current_gas * 1.125)
+            gas_fees = {'gasPrice': bumped_gas}
+            tx_hash = bytes_to_hexstring(self.web3.eth.sendTransaction({'from': self.address.address,
+                                                                        'to': self.address.address,
+                                                                        **gas_fees,
+                                                                        'nonce': self.nonce,
+                                                                        'value': 0}))
+        self.logger.info(f"Cancelling tx with nonce={self.nonce}, gas_fees={gas_fees} (tx_hash={tx_hash})")
 
 
 class TestApp:
     def main(self):
-        print(f"Connected to {os.environ['ETH_RPC_URL']}")
+        print(f"Connected to {os.environ['ETH_RPC_URL']} at block {web3.eth.get_block('latest').number}")
         pending_txes = get_pending_transactions(web3, our_address)
 
         if our_address:
+            print(f"{our_address} TX count is {web3.eth.getTransactionCount(our_address.address, block_identifier='pending')}")
             pprint(list(map(lambda t: f"{t.name()} with gas {t.current_gas}", pending_txes)))
             if len(pending_txes) > 0:
-                while len(pending_txes) > 0:
-                    pending_txes[0].cancel(gas_strategy=increasing_gas)
-                    # After the synchronous cancel, wait to see if subsequent transactions get mined
-                    time.sleep(15)
-                    pending_txes = get_pending_transactions(web3)
-            else:
-                logging.info(f"No pending transactions were found; submitting {stuck_txes_to_submit}")
+                # User would implement their own cancellation logic here, which could involve waiting before
+                # submitting subsequent cancels.
+                for tx in pending_txes:
+                    if tx.current_gas < 20 * GWEI:
+                        print(f"Attempting to cancel TX with nonce={tx.nonce}")
+                        tx.cancel()
+                    else:
+                        print(f"Gas for TX with nonce={tx.nonce} is too high; leaving alone")
+
+            if stuck_txes_to_submit:
+                logging.info(f"Submitting {stuck_txes_to_submit} transactions with low gas")
                 for i in range(1, stuck_txes_to_submit+1):
                     self._run_future(eth_transfer(web3=web3, to=our_address, amount=Wad(0)).transact_async(
                         gas_strategy=too_low_gas))

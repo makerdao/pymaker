@@ -516,7 +516,7 @@ class Transact:
         return params
 
     def _gas_exceeds_replacement_threshold(self, prev_gas_params: dict, curr_gas_params: dict):
-        # TODO: Can a type 0 TX be replaced with a type 2 TX?  Vice-versa?
+        # NOTE: Experimentally (on OpenEthereum), I discovered a type 0 TX cannot be replaced with a type 2 TX.
 
         # Determine if a type 0 transaction would be replaced
         if 'gasPrice' in prev_gas_params and 'gasPrice' in curr_gas_params:
