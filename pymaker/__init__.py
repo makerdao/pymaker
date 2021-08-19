@@ -78,14 +78,14 @@ class NonceCalculation(Enum):
 
 
 class EndpointBehavior:
-    def __init__(self, nonce_calc: NonceCalculation, supports_london: bool):
+    def __init__(self, nonce_calc: NonceCalculation, supports_eip1559: bool):
         assert isinstance(nonce_calc, NonceCalculation)
-        assert isinstance(supports_london, bool)
+        assert isinstance(supports_eip1559, bool)
         self.nonce_calc = nonce_calc
-        self.supports_london = supports_london
+        self.supports_eip1559 = supports_eip1559
 
     def __repr__(self):
-        if self.supports_london:
+        if self.supports_eip1559:
             return f"{self.nonce_calc} with EIP 1559 support"
         else:
             return f"{self.nonce_calc} without EIP 1559 support"
@@ -428,34 +428,6 @@ class TransactStatus(Enum):
      FINISHED = auto()
 
 
-def get_pending_transactions(web3: Web3, address: Address = None) -> list:
-    """Retrieves a list of pending transactions from the mempool."""
-    assert isinstance(web3, Web3)
-    assert isinstance(address, Address) or address is None
-
-    if address is None:
-        address = Address(web3.eth.defaultAccount)
-
-    # Get the list of pending transactions and their details from specified sources
-    nonce_calc = _get_endpoint_behavior(web3).nonce_calc
-    if False and nonce_calc in (NonceCalculation.PARITY_NEXTNONCE, NonceCalculation.PARITY_SERIAL):
-        items = web3.manager.request_blocking("parity_pendingTransactions", [])
-        items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
-        items = filter(lambda item: item['blockNumber'] is None, items)
-        txes = map(lambda item: RecoveredTransact(web3=web3, address=address, nonce=int(item['nonce'], 16),
-                                                  latest_tx_hash=item['hash'], current_gas=int(item['gasPrice'], 16)),
-                   items)
-    else:
-        items = web3.manager.request_blocking("eth_getBlockByNumber", ["pending", True])['transactions']
-        items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
-        list(items)  # Unsure why this is required
-        txes = map(lambda item: RecoveredTransact(web3=web3, address=address, nonce=item['nonce'],
-                                                  latest_tx_hash=item['hash'], current_gas=item['gasPrice']),
-                   items)
-
-    return list(txes)
-
-
 class Transact:
     """Represents an Ethereum transaction before it gets executed."""
 
@@ -531,10 +503,11 @@ class Transact:
         assert isinstance(seconds_elapsed, int)
         assert isinstance(gas_strategy, GasStrategy)
 
+        supports_eip1559 = _get_endpoint_behavior(self.web3).supports_eip1559
         gas_price = gas_strategy.get_gas_price(seconds_elapsed)
-        gas_feecap, gas_tip = gas_strategy.get_gas_fees(seconds_elapsed)
+        gas_feecap, gas_tip = gas_strategy.get_gas_fees(seconds_elapsed) if supports_eip1559 else (None, None)
 
-        if _get_endpoint_behavior(self.web3).supports_london and gas_feecap and gas_tip:  # prefer type 2 TXes
+        if supports_eip1559 and gas_feecap and gas_tip:  # prefer type 2 TXes
             params = {'maxFeePerGas': gas_feecap, 'maxPriorityFeePerGas': gas_tip}
         elif gas_price:  # fallback to type 0 if not supported or params not specified
             params = {'gasPrice': gas_price}
@@ -845,76 +818,6 @@ class Transact:
             :py:class:`pymaker.Invocation` object for this pending Ethereum transaction.
         """
         return Invocation(self.address, Calldata(self._contract_function()._encode_transaction_data()))
-
-
-# TODO: Add EIP-1559 support.
-class RecoveredTransact(Transact):
-    """ Models a pending transaction retrieved from the mempool.
-
-    These can be created by a call to `get_pending_transactions`, enabling the consumer to implement logic which
-    cancels pending transactions upon keeper/bot startup.
-    """
-    def __init__(self, web3: Web3,
-                 address: Address,
-                 nonce: int,
-                 latest_tx_hash: str,
-                 current_gas: int):
-        assert isinstance(current_gas, int)
-        super().__init__(origin=None,
-                         web3=web3,
-                         abi=None,
-                         address=address,
-                         contract=None,
-                         function_name=None,
-                         parameters=None)
-        self.nonce = nonce
-        self.tx_hashes.append(latest_tx_hash)
-        self.current_gas = current_gas
-        self.gas_price_last = None
-
-    def name(self):
-        return f"Recovered tx with nonce {self.nonce}"
-
-    @_track_status
-    async def transact_async(self, **kwargs) -> Optional[Receipt]:
-        # TODO: Read transaction data from chain, create a new state machine to manage gas for the transaction.
-        raise NotImplementedError()
-
-    def cancel(self, gas_strategy: GasStrategy):
-        return synchronize([self.cancel_async(gas_strategy)])[0]
-
-    async def cancel_async(self, gas_strategy: GasStrategy):
-        assert isinstance(gas_strategy, GasStrategy)
-        initial_time = time.time()
-        self.gas_price_last = self.current_gas
-        self.tx_hashes.clear()
-
-        if gas_strategy.get_gas_price(0) <= self.current_gas * 1.125:
-            self.logger.warning(f"Recovery gas price is less than current gas price {self.current_gas}; "
-                                "cancellation will be deferred until the strategy produces an acceptable price.")
-
-        while True:
-            seconds_elapsed = int(time.time() - initial_time)
-            gas_price_value = gas_strategy.get_gas_price(seconds_elapsed)
-            if gas_price_value > self.gas_price_last * 1.125:
-                self.gas_price_last = gas_price_value
-                # Transaction lock isn't needed here, as we are replacing an existing nonce
-                tx_hash = bytes_to_hexstring(self.web3.eth.sendTransaction({'from': self.address.address,
-                                                                            'to': self.address.address,
-                                                                            'gasPrice': gas_price_value,
-                                                                            'nonce': self.nonce,
-                                                                            'value': 0}))
-                self.tx_hashes.append(tx_hash)
-                self.logger.info(f"Attempting to cancel recovered tx with nonce={self.nonce}, "
-                                 f"gas_price={gas_price_value} (tx_hash={tx_hash})")
-
-            for tx_hash in self.tx_hashes:
-                receipt = self._get_receipt(tx_hash)
-                if receipt:
-                    self.logger.info(f"{self.name()} was cancelled (tx_hash={tx_hash})")
-                    return
-
-            await asyncio.sleep(0.75)
 
 
 class Transfer:

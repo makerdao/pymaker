@@ -20,8 +20,7 @@ import pytest
 from mock import MagicMock
 from web3 import Web3, HTTPProvider
 
-from pymaker import Address, Calldata, eth_transfer, get_pending_transactions, \
-    Receipt, RecoveredTransact, TransactStatus
+from pymaker import Address, Calldata, eth_transfer, Receipt, TransactStatus
 from pymaker.gas import FixedGasPrice
 from pymaker.numeric import Wad
 from pymaker.proxy import DSProxy, DSProxyCache
@@ -314,36 +313,3 @@ class TestTransactReplace:
         assert not dummy_tx._gas_exceeds_replacement_threshold(type2_prev_gas_params, type2_curr_gas_params)
         type2_curr_gas_params = {'maxFeePerGas': 130000000000, 'maxPriorityFeePerGas': 1265625000}
         assert dummy_tx._gas_exceeds_replacement_threshold(type2_prev_gas_params, type2_curr_gas_params)
-
-class TestTransactRecover:
-    def setup_method(self):
-        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
-        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
-        self.token = DSToken.deploy(self.web3, 'ABC')
-        assert self.token.mint(Wad(100)).transact()
-
-    def test_nothing_pending(self):
-        # given no pending transactions created by prior tests
-
-        # then
-        assert get_pending_transactions(self.web3) == []
-
-    @pytest.mark.skip("Ganache and Parity testchains don't seem to simulate pending transactions in the mempool")
-    @pytest.mark.asyncio
-    async def test_recover_pending_tx(self, other_address):
-        # given
-        low_gas = FixedGasPrice(1)
-        await self.token.transfer(other_address, Wad(5)).transact_async(gas_price=low_gas)
-        await asyncio.sleep(0.5)
-
-        # when
-        pending = get_pending_transactions(self.web3)
-
-        # and
-        assert len(pending) == 1
-        recovered: RecoveredTransact = pending[0]
-        high_gas = FixedGasPrice(int(1 * FixedGasPrice.GWEI))
-        recovered.cancel(high_gas)
-
-        # then
-        assert get_pending_transactions(self.web3) == []
