@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
+from pprint import pformat
 from typing import Optional, Tuple
 from web3 import Web3
 
@@ -37,13 +38,13 @@ class GasStrategy(object):
     """
 
     def get_gas_price(self, time_elapsed: int) -> Optional[int]:
-        """Return gas price applicable for a given point in time.
+        """Return gas price applicable for type 0 transactions.
 
-        Bear in mind that Parity (don't know about other Ethereum nodes) requires the gas
-        price for overwritten transactions to go up by at least 10%. Also, you may return
+        Bear in mind that Geth requires the gas price for overwritten transactions to increase by at
+        least 10%, while OpenEthereum requires a gas price bump of 12.5%. Also, you may return
         `None` which will make the node use the default gas price, but once you returned
         a numeric value (gas price in Wei), you shouldn't switch back to `None` as such
-        transaction also may not get properly overwritten.
+        transaction will likely not get overwritten.
 
         Args:
             time_elapsed: Number of seconds since this specific Ethereum transaction
@@ -56,8 +57,23 @@ class GasStrategy(object):
         raise NotImplementedError("Please implement this method")
 
     def get_gas_fees(self, time_elapsed: int) -> Tuple[int, int]:
-        """Return max fee (fee cap) and priority fee (tip) for type 2 (EIP-1559) transactions"""
+        """Return max fee (fee cap) and priority fee (tip) for type 2 (EIP-1559) transactions.
+
+        Note that Web3 currently requires specifying both `maxFeePerGas` and `maxPriorityFeePerGas` on a type 2
+        transaction.  This is inconsistent with the EIP-1559 spec.
+
+        Args:
+            time_elapsed: Number of seconds since this specific Ethereum transaction
+                has been originally sent for the first time.
+
+        Returns:
+            Gas price in Wei, or `None` if default gas price should be used. Default gas price
+            means it's the Ethereum node the keeper is connected to will decide on the gas price.
+        """
         raise NotImplementedError("Please implement this method")
+
+    def __repr__(self):
+        return f"{__name__}({pformat(vars(self))})"
 
 
 class DefaultGasPrice(GasStrategy):
@@ -71,7 +87,7 @@ class DefaultGasPrice(GasStrategy):
         return None
 
     def get_gas_fees(self, time_elapsed: int) -> Optional[Tuple[int, int]]:
-        return None, None
+        return None
 
 
 class NodeAwareGasStrategy(GasStrategy):

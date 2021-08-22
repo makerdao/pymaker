@@ -33,17 +33,20 @@ from pymaker.keys import register_keys
 from pymaker.util import synchronize, bytes_to_hexstring
 
 
-logging.basicConfig(format='%(asctime)-15s %(levelname)-8s %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)-15s [%(thread)d] %(levelname)-8s %(message)s', level=logging.DEBUG)
 # reduce logspew
 logging.getLogger('urllib3').setLevel(logging.INFO)
 logging.getLogger("web3").setLevel(logging.INFO)
 logging.getLogger("asyncio").setLevel(logging.INFO)
 logging.getLogger("requests").setLevel(logging.INFO)
 
+transact = False
 web3 = web3_via_http(endpoint_uri=os.environ['ETH_RPC_URL'])
-if len(sys.argv) > 2:
+if len(sys.argv) > 1:
     web3.eth.defaultAccount = sys.argv[1]   # ex: 0x0000000000000000000000000000000aBcdef123
-    register_keys(web3, [sys.argv[2]])      # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
+    if len(sys.argv) > 2:
+        register_keys(web3, [sys.argv[2]])  # ex: key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
+        transact = True
     our_address = Address(web3.eth.defaultAccount)
     stuck_txes_to_submit = int(sys.argv[3]) if len(sys.argv) > 3 else 0
 else:
@@ -51,12 +54,25 @@ else:
     stuck_txes_to_submit = 0
 
 GWEI = 1000000000
-# TODO: Dynamically choose prices based upon current block's base fee
-too_low_gas = FixedGasPrice(gas_price=int(24 * GWEI), max_fee=None, tip=None)
+base_fee = int(web3.eth.get_block('pending')['baseFeePerGas'])
+# Uses a type 0 TX
+low_gas_type0 = FixedGasPrice(gas_price=base_fee, max_fee=None, tip=None)
+# Forces a type 2 TX (erroring out if not supported by node)
+tip = 1*GWEI
+low_gas_type2 = FixedGasPrice(gas_price=None, max_fee=int(base_fee * 0.9) + tip, tip=tip)
+# Favors a type 2 TX if the node supports it, otherwise falls back to a type 0 TX
+low_gas_nodechoice = FixedGasPrice(low_gas_type0.gas_price, low_gas_type2.max_fee, low_gas_type2.tip)
+low_gas = low_gas_nodechoice
+print(f"Base fee is {base_fee/GWEI}; using {low_gas} for low gas")
 
 
 def get_pending_transactions(web3: Web3, address: Address = None) -> list:
-    """Retrieves a list of pending transactions from the mempool."""
+    """Retrieves a list of pending transactions from the mempool.
+
+    Default OpenEthereum configurations gossip and then drop transactions which do not exceed the base fee.
+    Third-party node providers (such as Infura) assign endpoints round-robin, such that the mempool on the node you've
+    connected to has no relationship to the node where your TX was submitted.
+    """
     assert isinstance(web3, Web3)
     assert isinstance(address, Address) or address is None
 
@@ -66,10 +82,13 @@ def get_pending_transactions(web3: Web3, address: Address = None) -> list:
         items = web3.manager.request_blocking("parity_pendingTransactions", [])
         if address:
             items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
-            return list(map(lambda item: PendingTransact(web3=web3,
-                                                         address=Address(item['from']),
-                                                         nonce=int(item['nonce'], 16),
-                                                         current_gas=int(item['gasPrice'], 16)), items))
+            return list(map(lambda item:
+                PendingTransact(web3=web3,
+                                address=Address(item['from']),
+                                nonce=int(item['nonce'], 16),
+                                gas_price=int(item['gasPrice'], 16),
+                                gas_feecap=int(item['maxFeePerGas'], 16) if 'maxFeePerGas' in item else None,
+                                gas_tip=int(item['maxPriorityFeePerGas'], 16) if 'maxPriorityFeePerGas' in item else None), items))
         else:
             summarize_transactions(items)
     else:
@@ -77,10 +96,14 @@ def get_pending_transactions(web3: Web3, address: Address = None) -> list:
         summarize_transactions(items)
         if address:
             items = filter(lambda item: item['from'].lower() == address.address.lower(), items)
-            return list(map(lambda item: PendingTransact(web3=web3,
-                                                         address=Address(item['from']),
-                                                         nonce=item['nonce'],
-                                                         current_gas=item['gasPrice']), items))
+
+            return list(map(lambda item:
+                PendingTransact(web3=web3,
+                                address=Address(item['from']),
+                                nonce=item['nonce'],
+                                gas_price=item['gasPrice'],
+                                gas_feecap=item['maxFeePerGas'] if 'maxFeePerGas' in item else None,
+                                gas_tip=item['maxPriorityFeePerGas'] if 'maxPriorityFeePerGas' in item else None), items))
         else:
             summarize_transactions(items)
     return []
@@ -102,7 +125,7 @@ def summarize_transactions(txes):
         highest_gas = max(highest_gas, gas_price) if highest_gas else gas_price
         addresses.add(tx['from'])
         # pprint(tx)
-    print(f"Found {len(txes)} TXes from {len(addresses)} unique addresses "
+    print(f"This node's mempool contains {len(txes)} TXes from {len(addresses)} unique addresses "
           f"with gas from {lowest_gas} to {highest_gas} gwei")
 
 
@@ -112,15 +135,23 @@ class PendingTransact(Transact):
     These can be created by a call to `get_pending_transactions`, enabling the consumer to implement logic which
     cancels pending transactions upon keeper/bot startup.
     """
-    def __init__(self, web3: Web3, address: Address, nonce: int, current_gas: int):
-        assert isinstance(current_gas, int)
+    def __init__(self, web3: Web3, address: Address, nonce: int, gas_price: int, gas_feecap: int = None, gas_tip: int = None):
+        assert isinstance(web3, Web3)
+        assert isinstance(address, Address)
+        assert isinstance(nonce, int)
+        assert isinstance(gas_price, int)
+        assert isinstance(gas_feecap, int) or gas_feecap is None
+        assert isinstance(gas_tip, int) or gas_tip is None
+
         super().__init__(origin=None, web3=web3, abi=None, address=address, contract=None,
                          function_name=None, parameters=None)
         self.nonce = nonce
-        self.current_gas = current_gas
+        self.gas_price = gas_price
+        self.gas_feecap = gas_feecap
+        self.gas_tip = gas_tip
 
     def name(self):
-        return f"Pending TX with nonce {self.nonce} and gas at {self.current_gas/GWEI} gwei"
+        return f"Pending TX with nonce {self.nonce} and gas_price={self.gas_price} gas_feecap={self.gas_feecap} gas_tip={self.gas_tip}"
 
     @_track_status
     async def transact_async(self, **kwargs) -> Optional[Receipt]:
@@ -131,32 +162,31 @@ class PendingTransact(Transact):
         return synchronize([self.cancel_async()])[0]
 
     async def cancel_async(self):
-        initial_time = time.time()
-
         supports_eip1559 = _get_endpoint_behavior(web3).supports_eip1559
-        tx_type = 0  # TODO: Pass gas details into ctor so we know the TX type.
-
         # Transaction lock isn't needed here, as we are replacing an existing nonce
-        if supports_eip1559 and tx_type == 2:
-            # TODO: Consider multiplying base_fee by 1.2 here to mitigate potential increase in subsequent blocks.
+        if self.gas_feecap and self.gas_tip:
+            assert supports_eip1559
             base_fee = int(self.web3.eth.get_block('pending')['baseFeePerGas'])
-            bumped_tip = math.ceil(min(1*GWEI, self.current_gas-base_fee) * 1.125)
-            gas_fees = {'maxFeePerGas': base_fee + bumped_tip, 'maxPriorityFeePerGas': bumped_tip}
-            tx_hash = bytes_to_hexstring(self.web3.eth.sendTransaction({'from': self.address.address,
-                                                                        'to': self.address.address,
-                                                                        **gas_fees,
-                                                                        'nonce': self.nonce,
-                                                                        'value': 0}))
+            bumped_tip = math.ceil(min(1 * GWEI, self.gas_tip) * 1.125)
+            bumped_feecap = max(base_fee + bumped_tip, math.ceil((self.gas_feecap + bumped_tip) * 1.125))
+            gas_fees = {'maxFeePerGas': bumped_feecap, 'maxPriorityFeePerGas': bumped_tip}
+            # CAUTION: On OpenEthereum//v3.3.0-rc.4, this produces an underpriced gas error; even when multiplying by 2
         else:
-            bumped_gas = math.ceil(self.current_gas * 1.125)
-            gas_fees = {'gasPrice': bumped_gas}
-            tx_hash = bytes_to_hexstring(self.web3.eth.sendTransaction({'from': self.address.address,
-                                                                        'to': self.address.address,
-                                                                        **gas_fees,
-                                                                        'nonce': self.nonce,
-                                                                        'value': 0}))
-        self.logger.info(f"Cancelling tx with nonce={self.nonce}, gas_fees={gas_fees} (tx_hash={tx_hash})")
-
+            assert False
+            if supports_eip1559:
+                base_fee = math.ceil(self.web3.eth.get_block('pending')['baseFeePerGas'])
+                bumped_tip = math.ceil(min(1 * GWEI, self.gas_price - base_fee) * 1.125)
+                gas_fees = {'maxFeePerGas': math.ceil((self.gas_price + bumped_tip) * 1.25), 'maxPriorityFeePerGas': bumped_tip}
+            else:
+                bumped_gas = math.ceil(self.gas_price * 1.125)
+                gas_fees = {'gasPrice': bumped_gas}
+        self.logger.info(f"Attempting to cancel TX with nonce={self.nonce} using gas_fees={gas_fees}")
+        tx_hash = bytes_to_hexstring(self.web3.eth.sendTransaction({'from': self.address.address,
+                                                                    'to': self.address.address,
+                                                                    **gas_fees,
+                                                                    'nonce': self.nonce,
+                                                                    'value': 0}))
+        self.logger.info(f"Cancelled TX with nonce={self.nonce}; TX hash: {tx_hash}")
 
 class TestApp:
     def main(self):
@@ -165,23 +195,22 @@ class TestApp:
 
         if our_address:
             print(f"{our_address} TX count is {web3.eth.getTransactionCount(our_address.address, block_identifier='pending')}")
-            pprint(list(map(lambda t: f"{t.name()} with gas {t.current_gas}", pending_txes)))
-            if len(pending_txes) > 0:
+            pprint(list(map(lambda t: f"{t.name()}", pending_txes)))
+            if transact and len(pending_txes) > 0:
                 # User would implement their own cancellation logic here, which could involve waiting before
                 # submitting subsequent cancels.
                 for tx in pending_txes:
-                    if tx.current_gas < 20 * GWEI:
-                        print(f"Attempting to cancel TX with nonce={tx.nonce}")
+                    if tx.gas_price < 100 * GWEI:
                         tx.cancel()
                     else:
                         print(f"Gas for TX with nonce={tx.nonce} is too high; leaving alone")
 
-            if stuck_txes_to_submit:
+            if transact and stuck_txes_to_submit:
                 logging.info(f"Submitting {stuck_txes_to_submit} transactions with low gas")
                 for i in range(1, stuck_txes_to_submit+1):
-                    self._run_future(eth_transfer(web3=web3, to=our_address, amount=Wad(0)).transact_async(
-                        gas_strategy=too_low_gas))
-                time.sleep(2)
+                    self._run_future(eth_transfer(web3=web3, to=our_address, amount=Wad(i*10)).transact_async(
+                        gas_strategy=low_gas))
+            time.sleep(2)  # Give event loop a chance to send the transactions
 
     @staticmethod
     def _run_future(future):

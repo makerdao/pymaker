@@ -569,35 +569,45 @@ class Transact:
         return function_factory(*self.parameters)
 
     def _interlocked_choose_nonce_and_send(self, from_account: str, gas: int, gas_fees: dict):
+        global next_nonce
         assert isinstance(from_account, str)    # address of the sender
         assert isinstance(gas, int)             # gas amount
         assert isinstance(gas_fees, dict)       # gas fee parameters
+
+        # We need the lock in order to not try to send two transactions with the same nonce.
+        transaction_lock.acquire()
+        # self.logger.debug(f"lock {id(transaction_lock)} acquired")
+
+        if from_account not in next_nonce:
+            # logging.debug(f"Initializing nonce for {from_account}")
+            next_nonce[from_account] = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
+
         try:
-            # We need the lock in order to not try to send two transactions with the same nonce.
-            with transaction_lock:
-                if self.nonce is None:
-                    nonce_calc = _get_endpoint_behavior(self.web3).nonce_calc
-                    if nonce_calc == NonceCalculation.PARITY_NEXTNONCE:
-                        self.nonce = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
-                    elif nonce_calc == NonceCalculation.TX_COUNT:
-                        self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
-                    elif nonce_calc == NonceCalculation.SERIAL:
-                        tx_count = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
-                        next_serial = next_nonce[from_account]
-                        self.nonce = max(tx_count, next_serial)
-                    elif nonce_calc == NonceCalculation.PARITY_SERIAL:
-                        tx_count = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
-                        next_serial = next_nonce[from_account]
-                        self.nonce = max(tx_count, next_serial)
-                    next_nonce[from_account] = self.nonce + 1
+            if self.nonce is None:
+                nonce_calc = _get_endpoint_behavior(self.web3).nonce_calc
+                if nonce_calc == NonceCalculation.PARITY_NEXTNONCE:
+                    self.nonce = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
+                elif nonce_calc == NonceCalculation.TX_COUNT:
+                    self.nonce = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
+                elif nonce_calc == NonceCalculation.SERIAL:
+                    tx_count = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
+                    next_serial = next_nonce[from_account]
+                    self.nonce = max(tx_count, next_serial)
+                elif nonce_calc == NonceCalculation.PARITY_SERIAL:
+                    tx_count = int(self.web3.manager.request_blocking("parity_nextNonce", [from_account]), 16)
+                    next_serial = next_nonce[from_account]
+                    self.nonce = max(tx_count, next_serial)
+                next_nonce[from_account] = self.nonce + 1
+                # self.logger.debug(f"Chose nonce {self.nonce} with tx_count={tx_count} and "
+                #                   f"next_serial={next_serial}; next is {next_nonce[from_account]}")
 
-                # Trap replacement while original is holding the lock awaiting nonce assignment
-                if self.replaced:
-                    self.logger.info(f"Transaction {self.name()} with nonce={self.nonce} was replaced")
-                    return None
+            # Trap replacement while original is holding the lock awaiting nonce assignment
+            if self.replaced:
+                self.logger.info(f"Transaction {self.name()} with nonce={self.nonce} was replaced")
+                return None
 
-                tx_hash = self._func(from_account, gas, gas_fees, self.nonce)
-                self.tx_hashes.append(tx_hash)
+            tx_hash = self._func(from_account, gas, gas_fees, self.nonce)
+            self.tx_hashes.append(tx_hash)
 
             self.logger.info(f"Sent transaction {self.name()} with nonce={self.nonce}, gas={gas},"
                              f" gas_fees={gas_fees if gas_fees else 'default'}"
@@ -608,6 +618,9 @@ class Transact:
 
             if len(self.tx_hashes) == 0:
                 raise
+        finally:
+            transaction_lock.release()
+            # self.logger.debug(f"lock {id(transaction_lock)} released with next_nonce={next_nonce[from_account]}")
 
     def name(self) -> str:
         """Returns the nicely formatted name of this pending Ethereum transaction.
@@ -703,16 +716,13 @@ class Transact:
             invocation was successful, or `None` if it failed.
         """
 
-        global next_nonce
         self.initial_time = time.time()
         unknown_kwargs = set(kwargs.keys()) - {'from_address', 'replace', 'gas', 'gas_buffer', 'gas_strategy'}
         if len(unknown_kwargs) > 0:
             raise ValueError(f"Unknown kwargs: {unknown_kwargs}")
 
-        # Get the from account; initialize the first nonce for the account.
+        # Get the account from which the transaction will be submitted
         from_account = kwargs['from_address'].address if ('from_address' in kwargs) else self.web3.eth.defaultAccount
-        if not next_nonce or from_account not in next_nonce:
-            next_nonce[from_account] = self.web3.eth.getTransactionCount(from_account, block_identifier='pending')
 
         # First we try to estimate the gas usage of the transaction. If gas estimation fails
         # it means there is no point in sending the transaction, thus we fail instantly and
