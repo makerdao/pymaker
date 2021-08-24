@@ -637,24 +637,30 @@ class TestJug:
 
 
 class TestPot:
+    def setup_class(self):
+        self.test_started = int(time.time())
+
     def test_getters(self, mcd):
         assert isinstance(mcd.pot.pie(), Wad)
         assert isinstance(mcd.pot.dsr(), Ray)
-        assert isinstance(mcd.pot.rho(), datetime)
+        assert isinstance(mcd.pot.rho(), int)
 
         assert mcd.pot.pie() >= Wad(0)
         assert mcd.pot.dsr() > Ray.from_number(1)
-        assert datetime.fromtimestamp(0) < mcd.pot.rho() < datetime.utcnow()
+        assert 0 < mcd.pot.rho() < self.test_started
 
     def test_drip(self, mcd):
         chi_before = mcd.pot.chi()
         assert isinstance(chi_before, Ray)
+        time.sleep(1)
         assert mcd.pot.drip().transact()
+        time.sleep(1)
         chi_after = mcd.pot.chi()
         if mcd.pot.dsr() == Ray.from_number(1):
             assert chi_before == chi_after
         else:
             assert chi_before < chi_after
+        assert self.test_started < mcd.pot.rho() < int(time.time())
 
 
 class TestOsm:

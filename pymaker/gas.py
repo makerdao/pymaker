@@ -222,7 +222,6 @@ class GeometricGasPrice(NodeAwareGasStrategy):
         result = value
         if time_elapsed >= self.every_secs:
             for second in range(math.floor(time_elapsed / self.every_secs)):
-                # print(f"result={result} coeff={self.coefficient}")
                 result *= self.coefficient
         return math.ceil(result)
 
