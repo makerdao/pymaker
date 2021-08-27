@@ -87,7 +87,7 @@ class DefaultGasPrice(GasStrategy):
         return None
 
     def get_gas_fees(self, time_elapsed: int) -> Optional[Tuple[int, int]]:
-        return None
+        return None, None
 
 
 class NodeAwareGasStrategy(GasStrategy):
@@ -239,7 +239,7 @@ class GeometricGasPrice(NodeAwareGasStrategy):
     def get_gas_fees(self, time_elapsed: int) -> Optional[Tuple[int, int]]:
         assert isinstance(time_elapsed, int)
         if not self.initial_tip:
-            return None
+            return None, None
 
         base_fee = self.get_base_fee()
         if not base_fee:

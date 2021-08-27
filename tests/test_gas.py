@@ -46,9 +46,9 @@ class TestDefaultGasPrice:
         assert default_gas_price.get_gas_price(1000000) is None
 
         # expect
-        assert default_gas_price.get_gas_fees(0) == None
-        assert default_gas_price.get_gas_fees(1) == None
-        assert default_gas_price.get_gas_fees(1000000) == None
+        assert default_gas_price.get_gas_fees(0) == (None, None)
+        assert default_gas_price.get_gas_fees(1) == (None, None)
+        assert default_gas_price.get_gas_fees(1000000) == (None, None)
 
 
 class TestNodeAwareGasPrice:
