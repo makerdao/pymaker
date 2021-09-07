@@ -97,13 +97,11 @@ def _get_endpoint_behavior(web3: Web3) -> EndpointBehavior:
     if web3 not in endpoint_behavior:
 
         # Determine nonce calculation
-        providers_without_nonce_calculation = ['infura', 'quiknode']
+        providers_without_nonce_calculation = ['alchemy', 'infura', 'quiknode']
         requires_serial_nonce = any(provider in web3.manager.provider.endpoint_uri for provider in
                                     providers_without_nonce_calculation)
         is_parity = "parity" in web3.clientVersion.lower() or "openethereum" in web3.clientVersion.lower()
-        if is_parity and requires_serial_nonce:
-            nonce_calc = NonceCalculation.PARITY_SERIAL
-        elif requires_serial_nonce:
+        if requires_serial_nonce:
             nonce_calc = NonceCalculation.SERIAL
         elif is_parity:
             nonce_calc = NonceCalculation.PARITY_NEXTNONCE
