@@ -44,7 +44,7 @@ def create_surplus(mcd: DssDeployment, flapper: Flapper, deployment_address: Add
         assert collateral.adapter.join(deployment_address, ink).transact(
             from_address=deployment_address)
         # CAUTION: dart needs to be adjusted over time to keep tests happy
-        frob(mcd, collateral, deployment_address, dink=ink, dart=Wad.from_number(7500))
+        frob(mcd, collateral, deployment_address, dink=ink, dart=Wad.from_number(3000))
         assert mcd.jug.drip(collateral.ilk).transact(from_address=deployment_address)
         joy = mcd.vat.dai(mcd.vow.address)
         # total surplus > total debt + surplus auction lot size + surplus buffer
