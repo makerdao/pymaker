@@ -2,7 +2,7 @@
 
 Python API for Maker contracts.
 
-![Build Status](https://github.com/makerdao/petrometer/actions/workflows/.github/workflows/tests.yaml/badge.svg?branch=master)
+![Build Status](https://github.com/makerdao/pymaker/actions/workflows/.github/workflows/tests.yaml/badge.svg?branch=master)
 
 <https://chat.makerdao.com/channel/keeper>
 
