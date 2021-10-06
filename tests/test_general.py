@@ -20,10 +20,12 @@ from hexbytes import HexBytes
 from web3 import HTTPProvider, Web3
 from web3._utils.request import _get_session
 
-from pymaker import Address, Calldata, Receipt, Transfer, web3_via_http
+from pymaker import Address, Calldata, Contract, Receipt, Transfer, web3_via_http
 from pymaker.numeric import Wad
 from pymaker.util import eth_balance
 from tests.helpers import is_hashable
+
+test_abi = Contract._load_abi(__name__, 'abi/GemMock.abi')
 
 
 class TestConnect:
@@ -180,6 +182,21 @@ class TestCalldata:
 
         # expect
         assert calldata2a == calldata2b
+
+    def test_from_contract_abi(self, web3):
+        # given
+        calldata1a = Calldata('0xa9059cbb'  # function 4byte signature
+                              '00000000000000000000000011223344556600000000000000000000000000ff'
+                              '000000000000000000000000000000000000000000000000000000000000007b')
+
+        calldata1b = Calldata.from_contract_abi(web3,
+                                             'transfer(address,uint256)',
+                                             ['0x11223344556600000000000000000000000000ff', 123],
+                                             test_abi)
+
+        # expect
+        assert calldata1a == calldata1b
+
 
 class TestReceipt:
     @pytest.fixture()

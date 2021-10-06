@@ -38,6 +38,7 @@ from web3._utils.contracts import get_function_info, encode_abi
 from web3._utils.events import get_event_data
 from web3.exceptions import TransactionNotFound
 from web3.middleware import geth_poa_middleware
+from web3.exceptions import LogTopicError, TransactionNotFound
 
 from eth_abi.codec import ABICodec
 from eth_abi.registry import registry as default_registry
@@ -316,6 +317,21 @@ class Calldata:
 
         return cls(calldata)
 
+    @classmethod
+    def from_contract_abi(cls, web3: Web3, fn_sign: str, fn_args: list, contract_abi):
+        """ Create a `Calldata` according to the given contract abi """
+        assert isinstance(web3, Web3)
+        assert isinstance(fn_sign, str)
+        assert isinstance(fn_args, list)
+
+        fn_split = re.split('[(),]', fn_sign)
+        fn_name = fn_split[0]
+
+        fn_abi, fn_selector, fn_arguments = get_function_info(fn_name, abi_codec=web3.codec, contract_abi=contract_abi, args=fn_args)
+        calldata = encode_abi(web3, fn_abi, fn_arguments, fn_selector)
+
+        return cls(calldata)
+
     def as_bytes(self) -> bytes:
         """Return the calldata as a byte array."""
         return bytes.fromhex(self.value.replace('0x', ''))
@@ -382,11 +398,15 @@ class Receipt:
                         from pymaker.token import ERC20Token
                         transfer_abi = [abi for abi in ERC20Token.abi if abi.get('name') == 'Transfer'][0]
                         codec = ABICodec(default_registry)
-                        event_data = get_event_data(codec, transfer_abi, receipt_log)
-                        self.transfers.append(Transfer(token_address=Address(event_data['address']),
-                                                       from_address=Address(event_data['args']['from']),
-                                                       to_address=Address(event_data['args']['to']),
-                                                       value=Wad(event_data['args']['value'])))
+                        try:
+                            event_data = get_event_data(codec, transfer_abi, receipt_log)
+                            self.transfers.append(Transfer(token_address=Address(event_data['address']),
+                                                           from_address=Address(event_data['args']['from']),
+                                                           to_address=Address(event_data['args']['to']),
+                                                           value=Wad(event_data['args']['value'])))
+                        # UniV3 Mint logIndex: 3 has an NFT mint of 1, from null, to a given address, but only 2 types (address, address)
+                        except LogTopicError:
+                            continue
 
                     # $ seth keccak $(seth --from-ascii "Mint(address,uint256)")
                     # 0x0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885
