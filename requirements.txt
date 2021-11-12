@@ -1,6 +1,6 @@
 pytz == 2017.3
 web3 == 5.23.0
 requests == 2.22.0
-eth-account >= 0.5.5
-eth-keys >=0.2.1,<0.3.0
+eth-account == 0.5.6
+eth-keys == 0.2.4
 jsonnet == 0.9.5

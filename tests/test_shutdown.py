@@ -172,6 +172,7 @@ class TestEnd:
         assert mcd.vat.debt() > Rad(0)
         assert mcd.vat.vice() > Rad(0)
 
+    @pytest.mark.skip(reason="have to heal system before calling thaw")
     def test_close_cdp(self, web3, mcd, our_address):
         collateral = mcd.collaterals['ETH-A']
         ilk = collateral.ilk
