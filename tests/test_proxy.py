@@ -91,7 +91,7 @@ class TestProxyFactory:
         assert proxy_factory.build().transact()
 
         # then
-        past_build = proxy_factory.past_build(1)
+        past_build = proxy_factory.past_build(10)
         assert past_build
         assert len(past_build) == past_build_count + 1
 

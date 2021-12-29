@@ -20,12 +20,13 @@ import pytest
 from mock import MagicMock
 from web3 import Web3, HTTPProvider
 
-from pymaker import Address, eth_transfer, get_pending_transactions, RecoveredTransact, TransactStatus, Calldata, Receipt
+from pymaker import Address, Calldata, eth_transfer, Receipt, TransactStatus
 from pymaker.gas import FixedGasPrice
 from pymaker.numeric import Wad
 from pymaker.proxy import DSProxy, DSProxyCache
 from pymaker.token import DSToken
 from pymaker.util import synchronize, eth_balance
+from tests.conftest import patch_web3_block_data
 
 
 class TestTransact:
@@ -133,20 +134,20 @@ class TestTransact:
 
     def test_custom_gas_price(self):
         # given
-        gas_price = FixedGasPrice(25000000100)
+        gas_price = FixedGasPrice(25000000100, None, None)
 
         # when
-        self.token.transfer(self.second_address, Wad(500)).transact(gas_price=gas_price)
+        self.token.transfer(self.second_address, Wad(500)).transact(gas_strategy=gas_price)
 
         # then
         assert self.web3.eth.getBlock('latest', full_transactions=True).transactions[0].gasPrice == gas_price.gas_price
 
     def test_custom_gas_price_async(self):
         # given
-        gas_price = FixedGasPrice(25000000200)
+        gas_price = FixedGasPrice(25000000200, None, None)
 
         # when
-        synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas_price=gas_price)])
+        synchronize([self.token.transfer(self.second_address, Wad(500)).transact_async(gas_strategy=gas_price)])
 
         # then
         assert self.web3.eth.getBlock('latest', full_transactions=True).transactions[0].gasPrice == gas_price.gas_price
@@ -221,6 +222,7 @@ class TestTransactReplace:
         self.token = DSToken.deploy(self.web3, 'ABC')
         self.token.mint(Wad(1000000)).transact()
 
+    @pytest.mark.skip("Using Web3 5.21.0, transactions sent to Ganache cannot be replaced")
     @pytest.mark.asyncio
     async def test_transaction_replace(self):
         # given
@@ -233,9 +235,9 @@ class TestTransactReplace:
         self.web3.eth.getTransaction = MagicMock(return_value={'nonce': nonce})
         # and
         transact_1 = self.token.transfer(self.second_address, Wad(500))
-        future_receipt_1 = asyncio.ensure_future(transact_1.transact_async(gas_price=FixedGasPrice(100000)))
+        future_receipt_1 = asyncio.ensure_future(transact_1.transact_async(gas_strategy=FixedGasPrice(1, None, None)))
         # and
-        await asyncio.sleep(2)
+        await asyncio.sleep(0.2)
         # then
         assert future_receipt_1.done() is False
         assert self.token.balance_of(self.second_address) == Wad(0)
@@ -245,10 +247,11 @@ class TestTransactReplace:
         self.web3.eth.getTransaction = original_get_transaction
         # and
         transact_2 = self.token.transfer(self.third_address, Wad(700))
+        # FIXME: Ganache produces a "the tx doesn't have the correct nonce" error.
         future_receipt_2 = asyncio.ensure_future(transact_2.transact_async(replace=transact_1,
-                                                                           gas_price=FixedGasPrice(150000)))
+                                                                           gas_price=FixedGasPrice(150000, None, None)))
         # and
-        await asyncio.sleep(10)
+        await asyncio.sleep(2)
         # then
         assert transact_1.status == TransactStatus.FINISHED
         assert future_receipt_1.done()
@@ -296,36 +299,17 @@ class TestTransactReplace:
         # and
         assert self.token.balance_of(self.second_address) == Wad(500)
 
+    def test_gas_to_replace_calculation(self, mocker):
+        dummy_tx = self.token.transfer(self.second_address, Wad(0))
+        type0_prev_gas_params = {'gasPrice': 20}
+        type0_curr_gas_params = {'gasPrice': 21}
+        assert not dummy_tx._gas_exceeds_replacement_threshold(type0_prev_gas_params, type0_curr_gas_params)
+        type0_curr_gas_params = {'gasPrice': 23}
+        assert dummy_tx._gas_exceeds_replacement_threshold(type0_prev_gas_params, type0_curr_gas_params)
 
-class TestTransactRecover:
-    def setup_method(self):
-        self.web3 = Web3(HTTPProvider("http://localhost:8555"))
-        self.web3.eth.defaultAccount = self.web3.eth.accounts[0]
-        self.token = DSToken.deploy(self.web3, 'ABC')
-        assert self.token.mint(Wad(100)).transact()
-
-    def test_nothing_pending(self):
-        # given no pending transactions created by prior tests
-
-        # then
-        assert get_pending_transactions(self.web3) == []
-
-    @pytest.mark.skip("Ganache and Parity testchains don't seem to simulate pending transactions in the mempool")
-    @pytest.mark.asyncio
-    async def test_recover_pending_tx(self, other_address):
-        # given
-        low_gas = FixedGasPrice(1)
-        await self.token.transfer(other_address, Wad(5)).transact_async(gas_price=low_gas)
-        await asyncio.sleep(0.5)
-
-        # when
-        pending = get_pending_transactions(self.web3)
-
-        # and
-        assert len(pending) == 1
-        recovered: RecoveredTransact = pending[0]
-        high_gas = FixedGasPrice(int(1 * FixedGasPrice.GWEI))
-        recovered.cancel(high_gas)
-
-        # then
-        assert get_pending_transactions(self.web3) == []
+        patch_web3_block_data(dummy_tx.web3, mocker, 7 * FixedGasPrice.GWEI)
+        type2_prev_gas_params = {'maxFeePerGas': 100000000000, 'maxPriorityFeePerGas': 1000000000}
+        type2_curr_gas_params = {'maxFeePerGas': 100000000000, 'maxPriorityFeePerGas': 1265625000}
+        assert not dummy_tx._gas_exceeds_replacement_threshold(type2_prev_gas_params, type2_curr_gas_params)
+        type2_curr_gas_params = {'maxFeePerGas': 130000000000, 'maxPriorityFeePerGas': 1265625000}
+        assert dummy_tx._gas_exceeds_replacement_threshold(type2_prev_gas_params, type2_curr_gas_params)

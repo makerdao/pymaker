@@ -18,7 +18,7 @@
 import logging
 from pprint import pformat
 from web3 import Web3
-from web3._utils.events import get_event_data
+from web3._utils.events import AttributeDict, get_event_data
 
 from eth_abi.codec import ABICodec
 from eth_abi.registry import registry as default_registry
@@ -37,8 +37,8 @@ class LogNote:
         self._data = args['data']
 
     @classmethod
-    def from_event(cls, event: dict, contract_abi: list):
-        assert isinstance(event, dict)
+    def from_event(cls, event: AttributeDict, contract_abi: list):
+        assert isinstance(event, AttributeDict)
         assert isinstance(contract_abi, list)
 
         log_note_abi = [abi for abi in contract_abi if abi.get('name') == 'LogNote'][0]

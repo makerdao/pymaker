@@ -63,6 +63,6 @@ class Collateral:
         Args
             usr: User making transactions with this collateral
         """
-        gas_price = kwargs['gas_price'] if 'gas_price' in kwargs else DefaultGasPrice()
-        self.adapter.approve(hope_directly(from_address=usr, gas_price=gas_price), self.vat.address)
-        self.adapter.approve_token(directly(from_address=usr, gas_price=gas_price))
+        gas_strategy = kwargs['gas_strategy'] if 'gas_strategy' in kwargs else DefaultGasPrice()
+        self.adapter.approve(hope_directly(from_address=usr, gas_strategy=gas_strategy), self.vat.address)
+        self.adapter.approve_token(directly(from_address=usr, gas_strategy=gas_strategy))

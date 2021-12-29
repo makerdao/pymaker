@@ -938,9 +938,8 @@ class Pot(Contract):
         chi = self._contract.functions.chi().call()
         return Ray(chi)
 
-    def rho(self) -> datetime:
-        rho = self._contract.functions.rho().call()
-        return datetime.fromtimestamp(rho)
+    def rho(self) -> int:
+        return Web3.toInt(self._contract.functions.rho().call())
 
     def drip(self) -> Transact:
         return Transact(self, self.web3, self.abi, self.address, self._contract, 'drip', [])

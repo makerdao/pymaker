@@ -18,13 +18,15 @@
 import json
 import os
 import re
+import time
+import warnings
 from typing import Dict, List, Optional
 
 import pkg_resources
 from pymaker.auctions import Clipper, Flapper, Flipper, Flopper
 from web3 import Web3, HTTPProvider
 
-from pymaker import Address
+from pymaker import Address, Contract
 from pymaker.approval import directly, hope_directly
 from pymaker.auth import DSGuard
 from pymaker.etherdelta import EtherDelta
@@ -46,6 +48,8 @@ from pymaker.dsrmanager import DsrManager
 
 
 def deploy_contract(web3: Web3, contract_name: str, args: Optional[list] = None) -> Address:
+    warnings.warn("DEPRECATED: Please subclass Contract and call Contract._deploy instead.",
+                  category=DeprecationWarning, stacklevel=2)
     """Deploys a new contract.
 
     Args:
@@ -62,12 +66,7 @@ def deploy_contract(web3: Web3, contract_name: str, args: Optional[list] = None)
 
     abi = json.loads(pkg_resources.resource_string('pymaker.deployment', f'abi/{contract_name}.abi'))
     bytecode = str(pkg_resources.resource_string('pymaker.deployment', f'abi/{contract_name}.bin'), 'utf-8')
-    if args is not None:
-        tx_hash = web3.eth.contract(abi=abi, bytecode=bytecode).constructor(*args).transact()
-    else:
-        tx_hash = web3.eth.contract(abi=abi, bytecode=bytecode).constructor().transact()
-    receipt = web3.eth.getTransactionReceipt(tx_hash)
-    return Address(receipt['contractAddress'])
+    return Contract._deploy(web3, abi, bytecode, args if args else [])
 
 
 class Deployment:
@@ -383,10 +382,10 @@ class DssDeployment:
         """
         assert isinstance(usr, Address)
 
-        gas_price = kwargs['gas_price'] if 'gas_price' in kwargs else DefaultGasPrice()
-        self.dai_adapter.approve(approval_function=hope_directly(from_address=usr, gas_price=gas_price),
+        gas_strategy = kwargs['gas_strategy'] if 'gas_strategy' in kwargs else DefaultGasPrice()
+        self.dai_adapter.approve(approval_function=hope_directly(from_address=usr, gas_strategy=gas_strategy),
                                  source=self.vat.address)
-        self.dai.approve(self.dai_adapter.address).transact(from_address=usr, gas_price=gas_price)
+        self.dai.approve(self.dai_adapter.address).transact(from_address=usr, gas_strategy=gas_strategy)
 
     def active_auctions(self) -> dict:
         flips = {}

@@ -21,7 +21,7 @@ import sys
 from web3 import Web3, HTTPProvider
 
 from pymaker import Address, eth_transfer, web3_via_http
-from pymaker.gas import GeometricGasPrice
+from pymaker.gas import DefaultGasPrice, GeometricGasPrice
 from pymaker.lifecycle import Lifecycle
 from pymaker.keys import register_keys
 from pymaker.numeric import Wad
@@ -39,11 +39,13 @@ web3 = web3_via_http(endpoint_uri, timeout=10)
 print(web3.clientVersion)
 
 """
+Purpose: Tests pymaker on chains or layer-2s where multi-collateral Dai is not deployed.
+
 Argument:           Reqd?   Example:
 Ethereum node URI   yes     https://localhost:8545
 Ethereum address    no      0x0000000000000000000000000000000aBcdef123
 Private key         no      key_file=~keys/default-account.json,pass_file=~keys/default-account.pass
-Gas price (GWEI)    no      9
+Gas tip (GWEI)      no      9
 """
 
 
@@ -59,10 +61,12 @@ else:
     our_address = None
     run_transactions = False
 
-gas_price = None if len(sys.argv) <= 4 else \
-    GeometricGasPrice(initial_price=int(float(sys.argv[4]) * GeometricGasPrice.GWEI),
-                      every_secs=15,
-                      max_price=100 * GeometricGasPrice.GWEI)
+gas_strategy = DefaultGasPrice() if len(sys.argv) <= 4 else \
+    GeometricGasPrice(web3=web3,
+                      initial_price=None,
+                      initial_tip=int(float(sys.argv[4]) * GeometricGasPrice.GWEI),
+                      every_secs=5,
+                      max_price=50 * GeometricGasPrice.GWEI)
 
 eth = EthToken(web3, Address.zero())
 
@@ -79,7 +83,7 @@ class TestApp:
         if run_transactions and block % 3 == 0:
             # dummy transaction: send 0 ETH to ourself
             eth_transfer(web3=web3, to=our_address, amount=Wad(0)).transact(
-                from_address=our_address, gas=21000, gas_price=gas_price)
+                from_address=our_address, gas=21000, gas_strategy=gas_strategy)
 
         if our_address:
             logging.info(f"Eth balance is {eth.balance_of(our_address)}")

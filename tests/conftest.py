@@ -19,6 +19,8 @@ import logging
 import pytest
 
 from web3 import Web3, HTTPProvider
+from web3._utils.events import AttributeDict
+
 
 from pymaker import Address, web3_via_http
 from pymaker.auctions import Flipper, Flapper, Flopper
@@ -57,6 +59,13 @@ def web3() -> Web3:
 
     assert len(web3.eth.accounts) > 3
     return web3
+
+
+def patch_web3_block_data(web3, mocker, base_fee):
+    # TODO: Build a new testchain with a node which provides EIP-1559 baseFee in getBlock response.
+    block_data = dict(web3.eth.get_block('pending'))
+    block_data['baseFeePerGas'] = base_fee
+    mocker.patch.object(web3.eth, 'get_block', return_value=AttributeDict(block_data))
 
 
 @pytest.fixture(scope="session")

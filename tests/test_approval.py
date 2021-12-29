@@ -83,7 +83,7 @@ def test_direct_approval_should_obey_gas_price():
     global web3, our_address, second_address, token
 
     # when
-    directly(gas_price=FixedGasPrice(25000000000))(token, second_address, "some-name")
+    directly(gas_strategy=FixedGasPrice(25000000000))(token, second_address, "some-name")
 
     # then
     assert web3.eth.getBlock('latest', full_transactions=True).transactions[0].gasPrice == 25000000000
@@ -129,7 +129,7 @@ def test_via_tx_manager_approval_should_obey_gas_price():
     tx = TxManager.deploy(web3)
 
     # when
-    via_tx_manager(tx, gas_price=FixedGasPrice(15000000000))(token, second_address, "some-name")
+    via_tx_manager(tx, gas_strategy=FixedGasPrice(15000000000))(token, second_address, "some-name")
 
     # then
     assert web3.eth.getBlock('latest', full_transactions=True).transactions[0].gasPrice == 15000000000
