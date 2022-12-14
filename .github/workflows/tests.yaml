@@ -14,14 +14,14 @@ jobs:
     steps:
 
       - name: Checkout repository and submodules
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.6'
+          python-version: '3.8'
 
       - name: install python packages
         run: |
