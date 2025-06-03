@@ -210,11 +210,6 @@ class Address:
 class Contract:
     logger = logging.getLogger()
 
-    # At class level, precompute common event signatures
-    EVENT_SIGNATURES = {
-        'Etch': Web3.keccak(text="Etch(bytes32,address[])").hex(),
-    }
-
     @staticmethod
     def _deploy(web3: Web3, abi: list, bytecode: str, args: list = [], timeout=60) -> Address:
         """Meant to be called by a subclass, deploy the contract to the connected chain"""
@@ -269,31 +264,31 @@ class Contract:
                 return cls(log)
             return callback
 
-        # Use precomputed signature if available, otherwise compute dynamically
-        if event in self.EVENT_SIGNATURES:
-            event_signature = self.EVENT_SIGNATURES[event]
-        else:
-            event_signature = contract.events[event].build_filter().topics[0]
+        results = []
+
+        if event == "Etch":
+            event_etch      = contract.events.Etch()
+            event_signature = Web3.keccak(text="Etch(bytes32,address[])").hex()
+
         
-        # Use getLogs directly (no event_filter needed)
-        raw_logs = self.web3.eth.get_logs({
-            "address": contract.address,
-            "fromBlock": from_block,
-            "toBlock": to_block,
-            "topics": [event_signature]
-        })
+            # Use getLogs directly (no event_filter needed)
+            raw_logs = self.web3.eth.get_logs({
+                "address": contract.address,
+                "fromBlock": from_block,
+                "toBlock": to_block,
+                "topics": [event_signature]
+            })
+            
+            # Process logs using the contract's event processor
+            for entry in raw_logs:
+                try:
+                    result = event_etch.processLog(entry)
+                    results.append(result)
+                except Exception as e:
+                    self.logger.warning(f"Failed to process log: {e}")
+                    continue
         
-        # Process logs using the contract's event processor
-        processed_logs = []
-        for raw_log in raw_logs:
-            try:
-                processed_log = contract.events[event].processLog(raw_log)
-                processed_logs.append(processed_log)
-            except Exception as e:
-                self.logger.warning(f"Failed to process log: {e}")
-                continue
-        
-        return list(map(_event_callback(cls, True), processed_logs))
+        return list(map(_event_callback(cls, True), results))
 
     @staticmethod
     def _load_abi(package, resource) -> list:
