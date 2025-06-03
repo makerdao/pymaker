@@ -141,6 +141,7 @@ class DSRoles(Contract):
 class Etch:
     def __init__(self, log):
         self.slate = log['args']['slate']
+        self.yays = log['args']['yays']  # Extract yays directly
         self.address = log['address']
         self.block_number = log['blockNumber']
         self.log_index = log['logIndex']
